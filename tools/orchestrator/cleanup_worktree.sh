@@ -7,6 +7,10 @@
 # branch (local and remote) is the head of a MERGED PR or an ancestor of origin/main. Deleting the remote branch of
 # an open PR makes GitHub close that PR. On refusal, or when GitHub can't be read, it exits 1 with an ERROR on stderr
 # and keeps the worktree, the branches and the containers.
+# WORKTREE is the name under $WORKTREE_ROOT of the worktree that has BRANCH checked out. It exits 2 before anything is
+# checked or removed when WORKTREE is a path, names a directory that is not a registered worktree, or doesn't match
+# BRANCH (BRANCH checked out elsewhere, or WORKTREE registered on another branch). Otherwise the worktree would look
+# "already gone" and only the branches would be deleted, or another branch's worktree would be removed.
 # Removes only containers named $CONTAINER_PREFIX-<worktree>* (config.sh), with their anonymous volumes; never
 # another project's. With PRUNE_DOCKER_CACHE=1 it also prunes all build cache and dangling images.
 set -u
@@ -14,6 +18,24 @@ source "$(dirname "$0")/config.sh"
 if [[ $# -ne 2 ]]; then echo "usage: cleanup_worktree.sh WORKTREE BRANCH" >&2; exit 2; fi
 wt=$1; branch=$2
 dir="$WORKTREE_ROOT/$wt"
+if [[ $wt == */* || $wt == *\\* ]]; then
+  echo "ERROR WORKTREE must be a name under $WORKTREE_ROOT, not a path: $wt; removed nothing" >&2
+  exit 2
+fi
+registered() { git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"; }
+if [[ -e $dir ]] && ! registered; then
+  echo "ERROR $dir is not a registered worktree; removed nothing" >&2
+  exit 2
+fi
+branch_dir=$(git -C "$main" worktree list --porcelain   | awk -v want="branch refs/heads/$branch" '/^worktree / { path = substr($0, 10) } $0 == want { print path }')
+if [[ -n $branch_dir && $branch_dir != "$dir" ]]; then
+  echo "ERROR $branch is checked out in $branch_dir, not $dir; removed nothing" >&2
+  exit 2
+fi
+if [[ -z $branch_dir ]] && registered; then
+  echo "ERROR $dir is not the worktree of $branch; removed nothing" >&2
+  exit 2
+fi
 short=${wt//-/}   # spec-03-pr-8 -> spec03pr8
 remote_tip=""     # origin/$branch as require_merged checked it
 
@@ -53,7 +75,6 @@ if command -v docker >/dev/null 2>&1; then
   fi
 fi
 # The branches go only once the worktree is gone: a worktree still held by a process keeps its branch.
-registered() { git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"; }
 for _ in 1 2 3 4 5 6; do
   registered || break
   git -C "$main" worktree remove --force "$dir" 2>/dev/null && break

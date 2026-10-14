@@ -38,6 +38,8 @@ def test_every_ci_job_runs_exactly_one_check_script() -> None:
         "real-data-scan": 1,
         "licenses": 1,
         "tools": 1,
+        "build": 1,
+        "audit": 1,
     }
 
 

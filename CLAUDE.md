@@ -126,10 +126,12 @@ pnpm format          # vp fmt --write (Oxfmt)
 The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:
 
 ```sh
-pnpm check:code        # check: vp check (Oxfmt + Oxlint), tsc -b, vp test run, build
+pnpm check:code        # check: vp check (Oxfmt + Oxlint), language check (INV-90), tsc -b, vp test run
 pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
 pnpm check:tools       # tools: ruff, pytest tools/tests, bash -n on the shell scripts
+pnpm check:build       # build: pnpm -r build
+pnpm check:audit       # audit: pnpm audit --prod at high, action pins and read-only permissions (INV-108)
 ```
 
 Tooling is Vite+ (`vp`): Oxlint for lint (including the C15 limits `max-lines` 800 and `complexity` 15), Oxfmt for
