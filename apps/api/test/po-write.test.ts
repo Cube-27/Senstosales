@@ -1,7 +1,7 @@
 // SPEC-10 PR 2: manual PO create and edit (the legacy `/po/create` form) and PO delete, over HTTP on the full app.
 // Expected values are worked by hand from ARCHITECTURE §6.2, §6.4 and §6.7. Synthetic values only (C1).
 import type { Instant } from "@senstosales/db";
-import { dc, invoice, poLot, reconciliationIssue, srv, srvItem, supplier } from "@senstosales/db";
+import { dc, invoice, poItem, poLot, reconciliationIssue, srv, srvItem, supplier } from "@senstosales/db";
 import type { Fy, GstPct, IsoDate, Money, Qty } from "@senstosales/domain";
 import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
@@ -394,6 +394,7 @@ describe("DELETE /api/po/:id", () => {
     expect(res.body).toEqual({ ok: true });
     expect((await detail(id)).status).toBe(404);
     const b = app.db.build;
+    expect(await app.db.query(b.select().from(poItem))).toEqual([]);
     expect(await app.db.query(b.select().from(poLot))).toEqual([]);
     expect(await app.db.query(b.select().from(reconciliationIssue))).toEqual([]);
     expect(await app.db.query(b.select({ poId: srv.poId, poNumber: srv.poNumber }).from(srv))).toEqual([

@@ -6,7 +6,7 @@ import { WriteBatch } from "@senstosales/db";
 import type { DeleteBlockReason } from "@senstosales/domain";
 import { deleteBlock, poUninvoicedQty } from "@senstosales/domain";
 
-import { ConflictError, NotFoundError, ValidationError } from "../errors.ts";
+import { ConflictError, fieldError, NotFoundError } from "../errors.ts";
 import { deletePoStatements, isDuplicatePoNumber } from "../repositories/po.ts";
 import type { PoFilters } from "../repositories/po-list.ts";
 import {
@@ -116,7 +116,7 @@ export function poService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
       const [row, items, lots] = await Promise.all([load(id), itemsOfPo(db, id), lotsOfPo(db, id)]);
       // As legacy: the PO number is the PO's identity; a different one is a different PO.
       if (form.poNumber !== row.poNumber) {
-        throw new ValidationError("po-number-changed", "The PO number cannot be changed.");
+        throw fieldError("po-number-changed", "poNumber", "The PO number cannot be changed.");
       }
       const stored = { id, poDate: row.poDate, amendNo: row.amendNo, version };
       return save(form, { header: row, items, lots }, stored, () => ({
