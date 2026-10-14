@@ -1,0 +1,30 @@
+// PO and PO item rows (ARCHITECTURE §8.2). Plain rows only; derived values come from the domain (C2).
+import type { Db } from "@senstosales/db";
+import { po, poItem } from "@senstosales/db";
+import { eq } from "drizzle-orm";
+
+/** The PO header fields recompute needs, or `undefined` when there is no such PO. */
+export async function findPo(db: Db, poId: string) {
+  const rows = await db.query(
+    db.build.select({ id: po.id, supplierId: po.supplierId, poDate: po.poDate }).from(po).where(eq(po.id, poId)),
+  );
+  return rows[0];
+}
+
+/** The PO's items with their stored inputs, in item-number order. */
+export const poItemsOf = (db: Db, poId: string) =>
+  db.query(
+    db.build
+      .select({
+        id: poItem.id,
+        ordQty: poItem.ordQty,
+        poRcdQty: poItem.poRcdQty,
+        poRejQty: poItem.poRejQty,
+        cancelledAt: poItem.cancelledAt,
+        manualDispatchedQty: poItem.manualDispatchedQty,
+        manualSetAt: poItem.manualSetAt,
+      })
+      .from(poItem)
+      .where(eq(poItem.poId, poId))
+      .orderBy(poItem.poItemNo),
+  );
