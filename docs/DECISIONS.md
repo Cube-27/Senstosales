@@ -173,3 +173,21 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Alternatives: Fix it in a separate PR.
 - Why: PR 3's "blocked by the staged hook" criterion cannot hold without it.
 - Reversible: yes.
+
+### D-0015 — UI primitives from shadcn/ui
+
+- Date: 2026-10-14 · Spec/PR: SPEC-14 PR 5 · Status: decided-owner
+- Decision: UI primitives are shadcn/ui components generated with the shadcn CLI into `apps/web/src/components/ui/` (owned MIT source, not a package) and restyled to the `globals.css` tokens; runtime dependencies are Radix UI, cva, clsx and tailwind-merge. The DataTable stays custom on TanStack Table with the C8 fixed-layout, no-shift pager rules.
+- Alternatives: Port the legacy primitives (SPEC-14 PR 5 as first written); the shadcn data-table.
+- Why: Accessible, maintained primitives with less owned code to write. ARCHITECTURE §12.3 and §16 (rev 1.2) and SPEC-14 §1, §2, §4.1 and PR 5 updated.
+- Reversible: costly — every primitive would be rewritten.
+- Owner answer: Owner decision, 2026-10-14.
+
+### D-0016 — The UI freeze covers flows and on-screen elements
+
+- Date: 2026-10-14 · Spec/PR: — · Status: decided-owner
+- Decision: Frozen means the user flows and the set of on-screen elements: no flow changes and no added or removed elements, routes, labels or columns. Minor visual changes are allowed when they reduce maintenance, improve performance or increase consistency (e.g. shadcn/ui defaults where the difference is cosmetic, unified spacing and states). CSV/Excel layouts stay frozen cell for cell.
+- Alternatives: Pixel-level match to legacy with only bug, accessibility, usability and consistency fixes (rev 1.1 wording).
+- Why: A pixel match would make every shadcn/ui default a deviation (D-0015) with no benefit to users. ARCHITECTURE §1, §2 C7, §12.2 and A-2 (rev 1.2), CLAUDE.md C7, INV-66, INV-67, `docs/specs/README.md` and SPEC-14 updated.
+- Reversible: yes — reword C7 back.
+- Owner answer: Owner decision, 2026-10-14.
