@@ -20,6 +20,12 @@ importers:
 
   packages/db:
     dependencies:
+      '@senstosales/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@senstosales/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4
