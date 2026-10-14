@@ -9,6 +9,7 @@ const node = process.argv[2];
 if (!node) throw new Error("usage: node build-sidecar.mjs <node.exe>");
 const major = Number(execFileSync(node, ["-p", "process.versions.node.split('.')[0]"], { encoding: "utf8" }).trim());
 mkdirSync("dist", { recursive: true });
+mkdirSync("shell/src-tauri/binaries", { recursive: true });
 await build({
   entryPoints: ["server/main.ts"],
   bundle: true,

@@ -20,3 +20,6 @@ powershell -File measure/focus.ps1 -AppDir <dir> -DataDir <empty-dir>         # 
 
 Path test: install with `SenstoSpike_0.0.1_x64-setup.exe /S /D=<dir with spaces and non-ASCII>` and point the
 scripts at that directory and at a non-ASCII data directory.
+
+Windows paths over 260 characters break the Rust link step (LNK1104); with a deep checkout, set a short
+`CARGO_TARGET_DIR`.

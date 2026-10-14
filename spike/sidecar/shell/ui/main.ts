@@ -7,7 +7,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function waitHealthy(base: string): Promise<boolean> {
   for (let i = 0; i < 400; i++) {
     try {
-      if ((await fetch(`${base}/api/health`)).ok) return true;
+      // no-cors: the response is opaque, but it resolves only if the server answered. The API needs no CORS header.
+      await fetch(`${base}/api/health`, { mode: "no-cors" });
+      return true;
     } catch {
       // not listening yet
     }

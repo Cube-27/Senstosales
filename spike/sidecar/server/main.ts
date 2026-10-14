@@ -18,12 +18,8 @@ const sqliteVersion = (db.prepare("SELECT sqlite_version() AS v").get() as { v: 
 const boots = (db.prepare("SELECT count(*) AS n FROM boot").get() as { n: number }).n;
 
 const app = new Hono();
-// The shell page (origin http://tauri.localhost on Windows) polls health before navigating here; only that origin
-// may read it cross-origin.
 app.get("/api/health", (c) =>
-  c.json({ ok: true, pid: process.pid, node: process.version, sqliteVersion, boots, execPath: process.execPath, dataDir }, 200, {
-    "Access-Control-Allow-Origin": "http://tauri.localhost",
-  }),
+  c.json({ ok: true, pid: process.pid, node: process.version, sqliteVersion, boots, execPath: process.execPath, dataDir }),
 );
 let served = false;
 app.get("/", (c) => {
