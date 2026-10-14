@@ -37,9 +37,14 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
      `spec-NN/pr-M-<short-name>`;
    - `tools/orchestrator/start_agent.sh <name> spec-NN-pr-M "<prompt>"` with: "Run `/implement-pr` for SPEC-NN
      PR M. An orchestrator assigned you this row. Own the PR through `/implement-pr` §6 until it merges."
-3. **Review and merge.** The implementor owns its PR and starts one reviewer once the PR is implemented,
-   simplified and green. With `MERGE AFTER FIX` it fixes the items and gets CI green; there is no second review.
-   Then it comments `READY <sha7>`. You don't rebase, fix or edit PRs yourself.
+3. **Review and merge.** The implementor owns its PR and starts one reviewer as soon as the PR is open
+   (implemented and simplified), while CI runs. The reviewer sends its items back to the implementor; with
+   `MERGE AFTER FIX` it fixes them and gets CI green; there is no second review. The implementor then hands the
+   PR back to you with `READY <sha7>` on green CI. After each merge, close the implementor's tab and worktree and
+   any processes it started, then tell the next waiting implementor to rebase.
+   **Plugin prompts** (auto-simplify, code-review) that land in the orchestrator session are forwarded to the
+   PR's implementor, never run here: the orchestrator writes no code and runs no reviews.
+   You don't rebase, fix or edit PRs yourself.
    - CI red after 3 honest attempts: escalate (§2).
    - To merge, pick the next `READY` PR and send its implementor `YOUR TURN` with the next free decision IDs and the
      new "Current focus" text. It rebases, adds the tracker commit and comments `READY` again. Then:
