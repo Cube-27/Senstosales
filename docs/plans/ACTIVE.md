@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-07 PR 2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
+In flight: SPEC-07 PR 4, SPEC-08 PR 1-2. Next: SPEC-07 PR 3, 5, 6, SPEC-08 PR 3-4. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -114,7 +114,7 @@ In flight: SPEC-07 PR 2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: S
 | PR  | Scope                                                 | Status     | Notes |
 | --- | ----------------------------------------------------- | ---------- | ----- |
 | 1   | App factory, errors and guards                        | done (#35) |       |
-| 2   | Node platform entry and adapters                      | todo       |       |
+| 2   | Node platform entry and adapters                      | done (#36) |       |
 | 3   | Startup upgrade gate                                  | todo       |       |
 | 4   | Simple login                                          | todo       |       |
 | 5   | Onboarding, supplier, settings, buyers, BHEL password | todo       |       |
@@ -184,16 +184,16 @@ In flight: SPEC-07 PR 2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: S
 
 ## [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md)
 
-| PR  | Scope                                 | Status | Notes |
-| --- | ------------------------------------- | ------ | ----- |
-| 1   | App skeleton, router and query        | todo   |       |
-| 2   | Frozen design carry-over              | todo   |       |
-| 3   | Design validators                     | todo   |       |
-| 4   | Shell components                      | todo   |       |
-| 5   | Primitives and FormField              | todo   |       |
-| 6   | DataTable, Pagination and list search | todo   |       |
-| 7   | Platform adapter                      | todo   |       |
-| 8   | Playwright harness and `e2e` job      | todo   |       |
+| PR  | Scope                                 | Status | Notes                                                                                                                |
+| --- | ------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | App skeleton, router and query        | todo   | static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review) |
+| 2   | Frozen design carry-over              | todo   |                                                                                                                      |
+| 3   | Design validators                     | todo   |                                                                                                                      |
+| 4   | Shell components                      | todo   |                                                                                                                      |
+| 5   | Primitives and FormField              | todo   |                                                                                                                      |
+| 6   | DataTable, Pagination and list search | todo   |                                                                                                                      |
+| 7   | Platform adapter                      | todo   |                                                                                                                      |
+| 8   | Playwright harness and `e2e` job      | todo   |                                                                                                                      |
 
 ## [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md)
 
@@ -226,13 +226,13 @@ In flight: SPEC-07 PR 2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: S
 
 ## [SPEC-18 — Web: DC and invoice screens](../specs/SPEC-18-web-dc-invoice.md)
 
-| PR  | Scope                       | Status | Notes |
-| --- | --------------------------- | ------ | ----- |
-| 1   | DC list and detail          | todo   |       |
-| 2   | DC create                   | todo   |       |
-| 3   | Invoice list and detail     | todo   |       |
-| 4   | Invoice create (both modes) | todo   |       |
-| 5   | Document flow e2e           | todo   |       |
+| PR  | Scope                       | Status | Notes                                                                                                                |
+| --- | --------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | DC list and detail          | todo   | static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review) |
+| 2   | DC create                   | todo   |                                                                                                                      |
+| 3   | Invoice list and detail     | todo   |                                                                                                                      |
+| 4   | Invoice create (both modes) | todo   |                                                                                                                      |
+| 5   | Document flow e2e           | todo   |                                                                                                                      |
 
 ## [SPEC-19 — BHEL scraper and sync](../specs/SPEC-19-bhel-scraper-sync.md)
 

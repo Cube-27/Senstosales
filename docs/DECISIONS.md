@@ -1130,3 +1130,43 @@ None.
 - Alternatives: Also send a quoted ASCII `filename=` fallback.
 - Why: The only reader is our own client in WebView2/Chromium, which reads `filename*`; a fallback listed first would win in the client's parser and mangle non-ASCII names.
 - Reversible: yes.
+
+### D-0135 — Port line `SENSTO_PORT=<n>`; exit on stdin EOF
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 2 (#36) · Status: decided
+- Decision: The node entry prints one line, `SENSTO_PORT=<n>`, once it is listening, and exits when stdin reaches EOF.
+- Alternatives: `{"port": n}` as written in SPEC-07 §4.2.
+- Why: ADR 0001 (accepted, SPEC-01 PR 1) chose this line and the stdin-EOF exit, and SPEC-07 depends on that decision.
+- Reversible: yes, until SPEC-20 builds the shell.
+
+### D-0136 — `SENSTO_DATA_DIR` overrides the data directory
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 2 (#36) · Status: decided
+- Decision: `SENSTO_DATA_DIR`, when set, replaces `%LOCALAPPDATA%\SenstoSales`. With neither set, startup stops with a plain message.
+- Alternatives: No override; fall back to the home folder.
+- Why: Tests and development need a temporary data folder (the ADR 0001 spike used the same variable). A guessed folder could put data in the app folder, against INV-82.
+- Reversible: yes.
+
+### D-0137 — `config.json` created only when needed
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 2 (#36) · Status: decided
+- Decision: `config.json` is neither created nor read until something needs it. Startup creates only the data folders.
+- Alternatives: Write an empty `config.json` at startup.
+- Why: Nothing in core stores configuration yet, and an empty file would be speculative.
+- Reversible: yes.
+
+### D-0138 — Health version from `package.json`; health job is the active one
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 2 (#36) · Status: decided
+- Decision: `/api/health` reports `version` from `apps/api/package.json` (0.1.0), which SPEC-20's `stamp-version` will write from `VERSION`. Its `job` is the running job, else the oldest queued one, else `null`.
+- Alternatives: A hard-coded constant; read `VERSION` at runtime (breaks inside the SEA); report only a running job.
+- Why: INV-105 stamps `VERSION` into every `package.json`, and a JSON import is bundled into the SEA. A queued job is also busy from the shell's point of view.
+- Reversible: yes.
+
+### D-0139 — Storage keys: allow-list plus resolved-path check
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 2 (#36) · Status: decided
+- Decision: Storage keys and SPA paths allow only `[A-Za-z0-9_.-]` names joined by `/`, and each resolved path must also stay under the root. Both checks run.
+- Alternatives: Only the allow-list; only the resolved-path check.
+- Why: Keys are system-made. The allow-list rejects drive letters, UNC paths, alternate data streams and backslashes on Windows without relying on path normalisation. The resolved-path check guards the file-system call itself, and SonarCloud's taint analysis recognises it (INV-96).
+- Reversible: yes.
