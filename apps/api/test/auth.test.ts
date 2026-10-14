@@ -1,6 +1,6 @@
 // SPEC-07 PR 4: the simple `admin` login (INV-80, A-17, A2-11): login, remember-me, logout, session, change
 // password and reset-to-defaults (EC-08). No backoff and no complexity rule (C11).
-import { appUser, auditLog, session, type Instant } from "@senstosales/db";
+import { appUser, auditLog, session, type Db, type Instant } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
@@ -23,8 +23,11 @@ afterEach(() => {
   open = [];
 });
 
-/** An app over a migrated in-memory DB with no supplier and no user row, as on first run; `clock.at` moves time. */
-async function setup() {
+/**
+ * An app over a migrated in-memory DB with no supplier and no user row, as on first run; `clock.at` moves time. The
+ * services see the DB through `wrap`.
+ */
+async function setup(wrap: (db: Db) => Db = (db) => db) {
   const db = await migratedDb();
   open.push(db);
   const clock: Clock & { at: string } = {
@@ -34,7 +37,7 @@ async function setup() {
       throw new Error("not used");
     },
   };
-  const { auth } = createServices({ db, clock });
+  const { auth } = createServices({ db: wrap(db), clock });
   const t = testApp({ ...authRoutes(auth), "buyers.list": () => [] }, auth.signedIn);
 
   const login = (password: string, rememberMe = false) =>
@@ -137,6 +140,43 @@ describe("login and session (INV-80, A2-11)", () => {
     const { login } = await setup();
     for (let i = 0; i < 20; i++) expect((await login(`wrong-${i}`)).status).toBe(401);
     expect((await login("admin")).status).toBe(200);
+  });
+});
+
+/** A DB whose batches wait until `count` of them were built, then commit in order: overlapping requests. */
+function holdBatches(count: number) {
+  return (db: Db): Db => {
+    const held: (() => void)[] = [];
+    return {
+      ...db,
+      async batch(statements) {
+        await new Promise<void>((release) => {
+          held.push(release);
+          if (held.length === count) for (const r of held) r();
+        });
+        await db.batch(statements);
+      },
+    };
+  };
+}
+
+describe("overlapping first logins", () => {
+  it("both succeed when both batches are built before either commits, with one user row", async () => {
+    const { db, login, buyers, auditActions } = await setup(holdBatches(2));
+    const [first, second] = await Promise.all([login("admin"), login("admin")]);
+    expect([first.status, second.status]).toEqual([200, 200]);
+    const cookies = [first, second].map(
+      (res) => `session=${TOKEN_COOKIE.exec(res.headers.get("set-cookie") ?? "")?.[1]}`,
+    );
+    expect(await Promise.all(cookies.map((c) => buyers(c)))).toEqual([200, 200]);
+
+    const users = await db.query(db.build.select({ id: appUser.id }).from(appUser));
+    expect(users).toHaveLength(1);
+    const sessions = await db.query(db.build.select({ userId: session.userId }).from(session));
+    const audits = await db.query(db.build.select({ entityId: auditLog.entityId }).from(auditLog));
+    expect(sessions.map((s) => s.userId)).toEqual([users[0]?.id, users[0]?.id]);
+    expect(audits.map((a) => a.entityId)).toEqual([users[0]?.id, users[0]?.id]);
+    expect(await auditActions()).toEqual(["login", "login"]);
   });
 });
 
