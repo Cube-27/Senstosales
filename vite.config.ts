@@ -83,7 +83,8 @@ export default defineConfig({
       },
     ],
   },
-  fmt: { printWidth: 120, ignorePatterns: ["pnpm-lock.yaml", "LICENSE"] },
+  // Parser fixture pages keep the BHEL markup as served (SPEC-06 §4.3): reformatting would change what is parsed.
+  fmt: { printWidth: 120, ignorePatterns: ["pnpm-lock.yaml", "LICENSE", "packages/parsers/fixtures/**/*.html"] },
   test: { include: ["{packages,apps,tools}/*/test/**/*.test.ts"] },
   staged: {
     "*.{js,mjs,cjs,ts,tsx,json,jsonc,css,md,yml,yaml}": "vp check --fix",
