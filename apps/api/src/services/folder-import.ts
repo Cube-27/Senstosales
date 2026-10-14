@@ -13,6 +13,7 @@ import { flagCountsSince } from "../repositories/flags.ts";
 import { findJob } from "../repositories/jobs.ts";
 import type { FileResult, UploadFile } from "./po-ingest.ts";
 import { ingestPoFile } from "./po-ingest.ts";
+import { ingestSrvFile } from "./srv-ingest.ts";
 import type { IngestContext, SourceDocumentDeps } from "./source-documents.ts";
 import { ingestContext } from "./source-documents.ts";
 
@@ -43,6 +44,7 @@ export type FolderImportService = ReturnType<typeof folderImportService>;
 export function folderImportHandlers(deps: SourceDocumentDeps): JobHandlers {
   return {
     "po.import-folder": folderImportHandler(deps, "po", ingestPoFile),
+    "srv.import-folder": folderImportHandler(deps, "srv", ingestSrvFile),
   };
 }
 

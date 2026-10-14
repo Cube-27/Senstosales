@@ -15,6 +15,7 @@ import { createServices } from "../src/services/index.ts";
 import { jobWorker } from "../src/services/job-worker.ts";
 import { gate, ID, json, memoryLogger, testApp } from "./helpers.ts";
 import { poPage } from "./po-pages.ts";
+import { srvPage } from "./srv-pages.ts";
 import { fixedClock, memoryStorage, supplierDb, SUPPLIER } from "./service-deps.ts";
 
 let db: NodeDb;
@@ -32,11 +33,11 @@ beforeEach(async () => {
 afterEach(() => db.close());
 
 const file = (name: string, html: string) => ({ name, html });
-const stage = (files: ReturnType<typeof file>[], stagingId?: string) =>
-  http.client.request("jobs.stage", { body: { kind: "po", files, ...(stagingId && { stagingId }) } });
+const stage = (files: ReturnType<typeof file>[], stagingId?: string, kind: "po" | "srv" = "po") =>
+  http.client.request("jobs.stage", { body: { kind, files, ...(stagingId && { stagingId }) } });
 
-async function runImport(stagingId: string) {
-  const { id } = await http.client.request("jobs.start", { body: { type: "po.import-folder", stagingId } });
+async function runImport(stagingId: string, type: "po.import-folder" | "srv.import-folder" = "po.import-folder") {
+  const { id } = await http.client.request("jobs.start", { body: { type, stagingId } });
   await runner.idle();
   return http.client.request("jobs.detail", { params: { id } });
 }
@@ -178,6 +179,70 @@ describe("a PO folder of good, older and broken files", () => {
     const { job } = await runImport(stagingId);
 
     expect(job.summary?.["flags"]).toEqual({ QTY_MISMATCH: 1 });
+  });
+});
+
+describe("an SRV folder of good, older, broken and PO-not-found files", () => {
+  test("ingests each file in its own batch and keeps the summary in the job", async () => {
+    await http.client.request("po.upload", {
+      body: { files: [file("po.html", poPage({ date: "10/04/2025", items: [{ no: 10 }, { no: 20 }] }))] },
+    });
+    await http.client.request("srv.upload", {
+      body: { files: [file("stored.html", srvPage("4500001", [{ srv: "7000001", date: "01/05/2025", item: 10 }]))] },
+    });
+    const { stagingId } = await stage(
+      [
+        // Cites 12.000 ordered where the PO orders 10.000 (INV-52).
+        file("good.html", srvPage("4500001", [{ srv: "7000002", date: "02/05/2025", item: 20, ord: "12.000" }])),
+        file("older.html", srvPage("4500001", [{ srv: "7000001", date: "20/04/2025", item: 10 }])),
+        file(
+          "broken.html",
+          srvPage("4500001", [
+            { srv: "7000003", date: "03/05/2025", item: 20 },
+            { srv: "7000003", date: "03/05/2025", item: 20 },
+          ]),
+        ),
+        file("unknown-po.html", srvPage("4500099", [{ srv: "7000009", date: "02/05/2025", item: 10 }])),
+      ],
+      undefined,
+      "srv",
+    );
+
+    const { job } = await runImport(stagingId, "srv.import-folder");
+
+    expect([job.type, job.status, job.progress]).toEqual([
+      "srv.import-folder",
+      "done",
+      { total: 4, done: 2, skipped: 1, failed: 1, current: null },
+    ]);
+    expect(job.summary).toEqual({
+      total: 4,
+      done: 2,
+      skipped: 1,
+      failed: 1,
+      skippedDocuments: [
+        {
+          document: "older.html",
+          reason: "Older than the stored SRV 7000001 (dated 2025-05-01). Nothing was changed.",
+        },
+      ],
+      failedDocuments: [
+        {
+          document: "broken.html",
+          reason: expect.stringMatching(/^Could not read this SRV page \(duplicate-srv-item-key\): SRV 7000003/),
+        },
+      ],
+      flags: { QTY_MISMATCH: 1 },
+    });
+    const srvs = await db.query(
+      db.build.select({ number: srv.srvNumber, po: srv.poNumber }).from(srv).orderBy(srv.srvNumber),
+    );
+    expect(srvs).toEqual([
+      { number: "7000001", po: "4500001" },
+      { number: "7000002", po: "4500001" },
+      { number: "7000009", po: "4500099" },
+    ]);
+    expect(stagedKeys()).toEqual([]);
   });
 });
 
