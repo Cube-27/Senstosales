@@ -32,6 +32,9 @@ importers:
       '@senstosales/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@senstosales/parsers':
+        specifier: workspace:*
+        version: link:../../packages/parsers
       '@senstosales/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas

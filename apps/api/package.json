@@ -9,6 +9,7 @@
     "@hono/node-server": "^2.1.5",
     "@senstosales/db": "workspace:*",
     "@senstosales/domain": "workspace:*",
+    "@senstosales/parsers": "workspace:*",
     "@senstosales/schemas": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",
