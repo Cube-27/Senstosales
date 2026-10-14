@@ -1,0 +1,6 @@
+// Local-only D1 binding for the spike; no account, no remote database.
+{
+  "name": "spike-db",
+  "compatibility_date": "2026-10-01",
+  "d1_databases": [{ "binding": "DB", "database_name": "spike", "database_id": "00000000-0000-0000-0000-000000000000" }]
+}

@@ -1,0 +1,5 @@
+# Spike-local pnpm settings (this folder is installed with --ignore-workspace; never merged).
+minimumReleaseAge: 0
+allowBuilds:
+  esbuild: true
+  workerd: true
