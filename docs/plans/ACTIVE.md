@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-07 PR 1-2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
+In flight: SPEC-07 PR 2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -111,25 +111,25 @@ In flight: SPEC-07 PR 1-2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner:
 
 ## [SPEC-07 — API foundation, startup, auth, onboarding and settings](../specs/SPEC-07-api-foundation-auth-settings.md)
 
-| PR  | Scope                                                 | Status | Notes |
-| --- | ----------------------------------------------------- | ------ | ----- |
-| 1   | App factory, errors and guards                        | todo   |       |
-| 2   | Node platform entry and adapters                      | todo   |       |
-| 3   | Startup upgrade gate                                  | todo   |       |
-| 4   | Simple login                                          | todo   |       |
-| 5   | Onboarding, supplier, settings, buyers, BHEL password | todo   |       |
-| 6   | Route conformance                                     | todo   |       |
+| PR  | Scope                                                 | Status     | Notes |
+| --- | ----------------------------------------------------- | ---------- | ----- |
+| 1   | App factory, errors and guards                        | done (#35) |       |
+| 2   | Node platform entry and adapters                      | todo       |       |
+| 3   | Startup upgrade gate                                  | todo       |       |
+| 4   | Simple login                                          | todo       |       |
+| 5   | Onboarding, supplier, settings, buyers, BHEL password | todo       |       |
+| 6   | Route conformance                                     | todo       |       |
 
 ## [SPEC-08 — Ingestion services and the job model](../specs/SPEC-08-ingestion-jobs.md)
 
-| PR  | Scope                                  | Status | Notes |
-| --- | -------------------------------------- | ------ | ----- |
-| 1   | Jobs port, worker and job API          | todo   |       |
-| 2   | Source documents and recompute service | todo   |       |
-| 3   | PO ingest service and upload           | todo   |       |
-| 4   | SRV ingest service and upload          | todo   |       |
-| 5   | Folder import jobs                     | todo   |       |
-| 6   | `recompute-all` job                    | todo   |       |
+| PR  | Scope                                  | Status | Notes                                                                              |
+| --- | -------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| 1   | Jobs port, worker and job API          | todo   |                                                                                    |
+| 2   | Source documents and recompute service | todo   |                                                                                    |
+| 3   | PO ingest service and upload           | todo   | client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131) |
+| 4   | SRV ingest service and upload          | todo   |                                                                                    |
+| 5   | Folder import jobs                     | todo   |                                                                                    |
+| 6   | `recompute-all` job                    | todo   |                                                                                    |
 
 ## [SPEC-09 — Corpus import and report (local only)](../specs/SPEC-09-corpus-import-report.md)
 
@@ -207,13 +207,13 @@ In flight: SPEC-07 PR 1-2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner:
 
 ## [SPEC-16 — Web: PO and SRV screens, uploads and folder import](../specs/SPEC-16-web-po-srv-import.md)
 
-| PR  | Scope                               | Status | Notes |
-| --- | ----------------------------------- | ------ | ----- |
-| 1   | PO list                             | todo   |       |
-| 2   | PO detail and manual dispatched qty | todo   |       |
-| 3   | PO create and edit                  | todo   |       |
-| 4   | SRV list and detail                 | todo   |       |
-| 5   | Folder import and job progress      | todo   |       |
+| PR  | Scope                               | Status | Notes                                                                              |
+| --- | ----------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| 1   | PO list                             | todo   | client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131) |
+| 2   | PO detail and manual dispatched qty | todo   |                                                                                    |
+| 3   | PO create and edit                  | todo   |                                                                                    |
+| 4   | SRV list and detail                 | todo   |                                                                                    |
+| 5   | Folder import and job progress      | todo   |                                                                                    |
 
 ## [SPEC-17 — Web: deviations, ledger, delivery tracker and reports](../specs/SPEC-17-web-deviations-ledger-tracker-reports.md)
 

@@ -1090,3 +1090,43 @@ None.
 - Alternatives: Change the label lookup (inventing handling, C18).
 - Why: Found while building the fixtures; neither the spec nor any decision covers it. The SPEC-06 PR 6 corpus test shows whether real pages have such values.
 - Reversible: yes.
+
+### D-0130 — `createApp` takes a handler map
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 1 (#35) · Status: decided
+- Decision: `createApp(deps, handlers)` takes a map from route name to handler and mounts only the routes that have one, in the route table's order. Handlers get `{ params, query, body }` decoded by the table's schemas, and their return value is encoded by its response schema.
+- Alternatives: One Hono sub-app per resource with `@hono/zod-validator`.
+- Why: Each route's validation, codecs and error shape are in one place, and the route-table types are used directly. `@hono/zod-validator` would be one more dependency doing what `safeParse` already does.
+- Reversible: yes.
+
+### D-0131 — 10 MB cap on the whole body, before parsing
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 1 (#35) · Status: decided
+- Decision: The 10 MB cap applies to the whole request body and is checked before parsing. An upload of several files that passes 10 MB in total is refused, even if each file is under 10 MB. The web client (SPEC-08 PR 3, SPEC-16) splits uploads into requests of at most 10 MB of JSON-encoded body, escaping included.
+- Alternatives: A larger total cap for upload routes, with a per-file check after parsing; that needs a total limit no spec gives.
+- Why: INV-110 refuses bodies before parsing, and a file's size is only known after parsing.
+- Reversible: yes.
+
+### D-0132 — 413 and 415 in the error hierarchy
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 1 (#35) · Status: decided
+- Decision: `PayloadTooLargeError` (413) and `UnsupportedMediaTypeError` (415, a mutation that is not JSON) are added to the `AppError` hierarchy.
+- Alternatives: Answer 400 for both.
+- Why: SPEC-07 §6 asks for 413 for an oversize body and allows 415 for a text/plain POST.
+- Reversible: yes.
+
+### D-0133 — `createServices` added with the first service
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 1 (#35) · Status: decided
+- Decision: `createServices(deps)` and `services/index.ts` arrive with the first service (SPEC-07 PR 4). `AppDeps` is `{ port, logger }` until later PRs need more. In production, `createApp(deps)` builds its handlers from `createServices`.
+- Alternatives: An empty factory in PR 1.
+- Why: No service existed yet; an empty seam would be speculative (ENGINEERING "Subtract before you add").
+- Reversible: yes.
+
+### D-0134 — Downloads named with RFC 5987 `filename*` only
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 1 (#35) · Status: decided
+- Decision: A download's `Content-Disposition` is `attachment; filename*=UTF-8''<encoded>`, built by `contentDisposition` in `packages/schemas` beside the client's reader.
+- Alternatives: Also send a quoted ASCII `filename=` fallback.
+- Why: The only reader is our own client in WebView2/Chromium, which reads `filename*`; a fallback listed first would win in the client's parser and mangle non-ASCII names.
+- Reversible: yes.
