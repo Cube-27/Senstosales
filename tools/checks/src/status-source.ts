@@ -20,10 +20,20 @@ const DECLARATIONS = [
 // `itemStatus`, `po_status`, `ItemStatus`, `getPOStatus`; not `jobStatus`, `repoStatus` or `PoStatusBadge`.
 const isStatusName = (name: string): boolean =>
   /(?:^|_)(?:item|po)_?status$/i.test(name) || /(?:Item|Po|PO)Status$/.test(name);
-// A status value as the outcome of a return, arrow, ternary, `??`, assignment or SQL CASE branch. Comparisons
-// (`===`, `!==`), `case` labels, arrays and object maps don't match.
-const PRODUCED_VALUE =
-  /(?:\breturn|=>|\?|(?<![=!<>])=(?![=>])|\b(?:THEN|ELSE|then|else))\s*(["'`])(Pending|Delivered|Closed|Cancelled)\1/;
+// A status value as the outcome of a return, arrow, ternary, `??` or SQL CASE branch, or of an assignment (JS or
+// SQL `SET`). Comparisons (`===`, `!==`, SQL `WHERE status = 'Closed'`), JSX attributes (`status="Closed"`, no
+// spaces around `=`), `case` labels, arrays and object maps don't match, so consumers can filter and display.
+const PRODUCED_VALUE = /(?:\breturn|=>|\?|\b(?:THEN|ELSE|then|else))\s*(["'`])(Pending|Delivered|Closed|Cancelled)\1/;
+const ASSIGNED_VALUE = /\s=\s+(["'`])(Pending|Delivered|Closed|Cancelled)\1/;
+const SQL_PREDICATE_BEFORE = /\b(?:where|and|or|on|having)\s+[\w$.]+$/i;
+
+function producedValue(line: string): string | undefined {
+  const produced = PRODUCED_VALUE.exec(line);
+  if (produced) return produced[2];
+  const assigned = ASSIGNED_VALUE.exec(line);
+  if (assigned && !SQL_PREDICATE_BEFORE.test(line.slice(0, assigned.index))) return assigned[2];
+  return undefined;
+}
 
 /** INV-64 findings for one file, as `path:line message (INV-64)`. */
 export function statusViolations(path: string, text: string): string[] {
@@ -32,7 +42,7 @@ export function statusViolations(path: string, text: string): string[] {
     if (COMMENT_LINE.test(line)) return [];
     const at = `${path}:${index + 1}`;
     const names = DECLARATIONS.map((pattern) => pattern.exec(line)?.[1]).filter((name) => name && isStatusName(name));
-    const value = PRODUCED_VALUE.exec(line)?.[2];
+    const value = producedValue(line);
     return [
       ...[...new Set(names)].map((name) => `${at} status function ${name} (INV-64)`),
       ...(value ? [`${at} status value "${value}" (INV-64)`] : []),

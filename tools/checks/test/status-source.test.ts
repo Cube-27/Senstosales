@@ -24,6 +24,8 @@ describe("statusViolations", () => {
     ["const s = (r) => 'Closed';", 'status value "Closed"'],
     ['const s = gte(rcd, ord) ? "Closed" : other;', 'status value "Closed"'],
     ['status = "Pending";', 'status value "Pending"'],
+    ["UPDATE po SET status = 'Closed' WHERE id = ?", 'status value "Closed"'],
+    ['let s = "Pending";', 'status value "Pending"'],
     ["  if (row.cancelled) return `Cancelled`;", 'status value "Cancelled"'],
     ["CASE WHEN rcd_qty_m >= ord_qty_m THEN 'Closed' ELSE 'Pending' END", 'status value "Closed"'],
     ["  when rcd_qty_m >= ord_qty_m then 'Closed'", 'status value "Closed"'],
@@ -42,6 +44,11 @@ describe("statusViolations", () => {
     "const badge = { Pending: 'warning', Closed: 'success' };",
     "  itemStatuses: readonly ItemStatus[],",
     "type Row = { status: ItemStatus };",
+    // SQL filters and JSX display compare or show a status; they don't derive one.
+    "  WHERE po.status = 'Pending'",
+    "  AND status = 'Closed'",
+    '<option value="Pending">Pending</option>',
+    '<StatusBadge status="Closed" />',
     // Other statuses are not item or PO status.
     "function jobStatus(job: Job) {",
     "const repoStatus = () => git.status();",
