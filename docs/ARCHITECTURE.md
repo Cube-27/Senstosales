@@ -1,6 +1,6 @@
 # SenstoSales — Architecture
 
-Status: design, rev 1, 2026-10-14.
+Status: design, rev 1.1, 2026-10-14.
 
 **Role of this document.** This is the single design reference. Related documents:
 

@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-- SPEC-00 PR 1 merging; next: SPEC-01 spikes and SPEC-00 PR 2–4.
+- Next: SPEC-01 spikes and SPEC-00 PR 2–4.
 - Blocked: none.
 - Pending-owner defaults (work proceeds on them): see the open-items index in [`DECISIONS.md`](../DECISIONS.md).
 

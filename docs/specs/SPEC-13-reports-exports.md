@@ -103,7 +103,7 @@ report list endpoints return the same rows as the exports for the same filters.
   not name, and the legacy UI saved them under `.xlsx` file names while the server produced CSV. Under A-2 the
   exports are kept with the output the user actually received; the file-name/content mismatch is a legacy bug.
   Conservative reading: keep CSV content and give the file a `.csv` name (a bug fix allowed by A-2). Owner to
-  confirm; ARCHITECTURE §11.2 should list them (escalated, not edited here).
+  confirm; ARCHITECTURE §11.2 should list them (D-0006, `pending-owner`; not edited here).
 - **Cell safety vs number formats.** §10.4 says Excel/CSV cells are written as strings, but INV-68 freezes number
   formats. Conservative reading: the string rule applies to text values; numeric values stay numeric with their
   legacy formats. Recorded as INV-94; owner to confirm.

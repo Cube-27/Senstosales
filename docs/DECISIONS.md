@@ -54,7 +54,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 
 ### D-0001 — No release-age quarantine; trust policy no-downgrade
 
-- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 1 · Status: confirmed
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 1 · Status: decided-owner
 - Decision: `pnpm-workspace.yaml` sets `minimumReleaseAge: 0` with `trustPolicy: no-downgrade` (`trustPolicyIgnoreAfter` one year). There is no `.npmrc` release-age setting.
 - Alternatives: pnpm's one-day default quarantine; a longer `minimumReleaseAge`.
 - Why: Vite+ ships new dependency versions that a quarantine blocks; `no-downgrade` still refuses a release whose provenance or signature weakens. SPEC-00 §4.2 updated to match.
@@ -63,7 +63,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 
 ### D-0002 — Toolchain: Vite+ (Oxlint, Oxfmt, Vitest), TypeScript 7, no ESLint or Prettier
 
-- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 1 · Status: confirmed
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 1 · Status: decided-owner
 - Decision: `vp` is the single CLI: Oxlint (`vp lint`, including the C15 limits), Oxfmt (`vp fmt`), Vitest (`vp test`, imports from `vite-plus/test`), `vp staged` hooks. TypeScript 7 strict with `tsc -b`. Vite+ is not version-pinned through a catalog. No ESLint, Prettier or separate hook manager.
 - Alternatives: ESLint + Prettier + lefthook; TypeScript 5.x.
 - Why: One config and one CLI; Oxlint carries `max-lines` and `complexity` for C15 (SPEC-00 §4.2, README cross-cutting facts).
