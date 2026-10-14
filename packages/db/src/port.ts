@@ -64,10 +64,36 @@ export class UniqueViolation extends DbError {
 const UNIQUE = /UNIQUE constraint failed: ([^:]+)/;
 
 /** Maps an executor error to a `DbError`. Drizzle wraps a single query's error, so the database's is the deepest cause. */
-export function toDbError(err: unknown): DbError {
+function toDbError(err: unknown): DbError {
   let root = err;
   while (root instanceof Error && root.cause instanceof Error) root = root.cause;
   const message = root instanceof Error ? root.message : String(root);
   const unique = UNIQUE.exec(message)?.[1];
   return unique === undefined ? new DbError(message, { cause: err }) : new UniqueViolation(unique, { cause: err });
+}
+
+async function mapErrors<T>(run: PromiseLike<T>): Promise<T> {
+  try {
+    return await run;
+  } catch (err) {
+    throw toDbError(err);
+  }
+}
+
+/** A Drizzle async SQLite database whose driver has a native batch (sqlite-proxy, D1). */
+type BatchingDatabase = BaseSQLiteDatabase<"async", unknown> & {
+  batch(statements: [Statement, ...Statement[]]): Promise<unknown>;
+};
+
+/** The port over an executor's Drizzle database, so every executor has the same batch semantics and errors. */
+export function wrapDrizzle(drizzleDb: BatchingDatabase): Db {
+  return {
+    build: drizzleDb,
+    query: mapErrors,
+    async batch(statements) {
+      if (statements.length === 0) return;
+      // Drizzle types its batch as a non-empty tuple; the length check is that proof.
+      await mapErrors(drizzleDb.batch(statements as [Statement, ...Statement[]]));
+    },
+  };
 }

@@ -155,11 +155,9 @@ describe("node executor", () => {
   test("backupTo writes a readable copy of a live database, rows still in the WAL included", async () => {
     const db = await withTables("backup-source");
     await db.batch([insertParent(db, "P1", 1), insertParent(db, "P2", 2)]);
-    const target = join(dir, "backup-copy.db");
-    await db.backupTo(target);
+    await db.backupTo(join(dir, "backup-copy.db"));
 
-    const copy = openNodeDb(target);
-    opened.push(copy);
+    const copy = open("backup-copy");
     expect(await parentIds(copy)).toEqual([["P1"], ["P2"]]);
     expect(await copy.query(copy.build.values(sql`PRAGMA integrity_check`))).toEqual([["ok"]]);
   });

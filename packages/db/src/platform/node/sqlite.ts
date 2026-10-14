@@ -4,7 +4,7 @@ import { backup, DatabaseSync, type SQLInputValue, type StatementSync } from "no
 
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 
-import { toDbError, type Db } from "../../port.ts";
+import { wrapDrizzle, type Db } from "../../port.ts";
 
 const PRAGMAS = [
   "journal_mode = WAL",
@@ -14,6 +14,8 @@ const PRAGMAS = [
   "cache_size = -32000",
   "temp_store = MEMORY",
 ];
+
+const STATEMENT_CACHE_SIZE = 500;
 
 type Method = "run" | "all" | "values" | "get";
 type Query = { sql: string; params: unknown[]; method: Method };
@@ -28,11 +30,13 @@ export function openNodeDb(path: string): NodeDb {
   const conn = new DatabaseSync(path);
   for (const pragma of PRAGMAS) conn.exec(`PRAGMA ${pragma}`);
 
-  // Drizzle maps rows by position, so statements return arrays. Builders give a fixed set of SQL texts to cache.
+  // Drizzle maps rows by position, so statements return arrays. Most SQL texts repeat, but multi-row inserts and
+  // `inArray` vary with their length, so the cache is emptied when full instead of growing for the process's life.
   const prepared = new Map<string, StatementSync>();
   const prepare = (sql: string): StatementSync => {
     let stmt = prepared.get(sql);
     if (stmt === undefined) {
+      if (prepared.size >= STATEMENT_CACHE_SIZE) prepared.clear();
       stmt = conn.prepare(sql);
       stmt.setReturnArrays(true);
       prepared.set(sql, stmt);
@@ -69,23 +73,7 @@ export function openNodeDb(path: string): NodeDb {
   );
 
   return {
-    build: drizzleDb,
-    async query(statement) {
-      try {
-        return await statement;
-      } catch (err) {
-        throw toDbError(err);
-      }
-    },
-    async batch(statements) {
-      const [first, ...rest] = statements;
-      if (first === undefined) return;
-      try {
-        await drizzleDb.batch([first, ...rest]);
-      } catch (err) {
-        throw toDbError(err);
-      }
-    },
+    ...wrapDrizzle(drizzleDb),
     async backupTo(path) {
       await backup(conn, path);
     },
