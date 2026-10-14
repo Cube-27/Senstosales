@@ -1690,3 +1690,51 @@ None.
 - Alternatives: Retarget after the merge, or warn and merge anyway.
 - Why: After the merge the stacked PRs are already closed. If the merge then fails, the retargeted PRs only point at the base they would need anyway.
 - Reversible: yes.
+
+### D-0205 — Folder-import staging layout
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 5 (#47) · Status: decided
+- Decision: Each staged file is stored as `{name, html}` JSON at `staging/<stagingId>/<kind>/<ulid>.json`. A job reads only its own kind's folder. Ids count up in the order they are made (D-0163), so files are ingested in the order they were staged.
+- Alternatives: Put the file name in the key; keep a per-staging manifest.
+- Why: A key built from the request's file name would break C17. A manifest would need read-modify-write across batches.
+- Reversible: yes.
+
+### D-0206 — Job documents carry a key and a label
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 5 (#47) · Status: decided
+- Decision: `JobHandler.documents()` returns `{ key, label }`. `process` gets the key, and `current` and job events show the label.
+- Alternatives: One string, which for folder import would show the storage key to the user.
+- Why: The progress panel and the summary must name the file.
+- Reversible: yes.
+
+### D-0207 — The worker writes a common job summary
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 5 (#47) · Status: decided
+- Decision: Every job with a handler ends with `summary = { total, done, skipped, failed, skippedDocuments, failedDocuments, ...finish() }`, where each document entry is `{document, reason}`. `finish` runs after any end (done, cancelled or failed). If it throws, it is logged and its part is left out.
+- Alternatives: Each handler builds its whole summary from the job row and events.
+- Why: The counts and issues are the same for every job type (§7.4), so later job types get them for free.
+- Reversible: yes.
+
+### D-0208 — Flags by type = flags opened since the job started
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 5 (#47) · Status: decided
+- Decision: The folder-import summary counts `reconciliation_issue` rows with `opened_at >= job.started_at`, by type.
+- Alternatives: A `job_id` column on `reconciliation_issue`, which changes ARCHITECTURE §8.2.
+- Why: Only one job runs at a time (INV-98). A flag a user raises by hand during the import would also be counted.
+- Reversible: yes.
+
+### D-0209 — Staged files are deleted however the job ends
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 5 (#47) · Status: decided
+- Decision: `finish` deletes them after done, cancelled and failed alike. To retry, the user stages the folder again.
+- Alternatives: Keep them after a failure.
+- Why: SPEC-08 §9 says "deleted after the job".
+- Reversible: yes.
+
+### D-0210 — Empty staging fails the job
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 5 (#47) · Status: decided
+- Decision: A folder-import job whose staging area holds no files of its kind ends `failed` with "No files were uploaded for this import. Choose the folder again."
+- Alternatives: End `done` with zero files.
+- Why: The user should see that nothing was imported.
+- Reversible: yes.
