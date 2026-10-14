@@ -1,5 +1,5 @@
-# Normalise text to LF in the repo; checkouts follow the platform except where pinned below.
-* text=auto
+# Text is LF in the repo and in every checkout: Oxfmt rejects CRLF, so a Windows checkout would fail `vp check`.
+* text=auto eol=lf
 # Shell scripts run under bash, which fails on CRLF line endings (Git Bash on Windows included).
 *.sh text eol=lf
 # Hook and CI configs are read by tools that expect LF.
