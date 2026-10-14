@@ -4,7 +4,7 @@
 import { WriteBatch, type Instant, type Statement } from "@senstosales/db";
 import type { SQL } from "drizzle-orm";
 
-import { AuthError, ValidationError } from "../errors.ts";
+import { AuthError, fieldError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import * as repo from "../repositories/auth.ts";
 import { ACTOR, audit as auditEntry } from "./audit.ts";
@@ -29,11 +29,6 @@ const isDefault = (user: repo.User | null): boolean => user?.passwordChangedAt =
 
 async function passwordMatches(user: repo.User | null, password: string): Promise<boolean> {
   return user === null ? password === DEFAULT_PASSWORD : verifyPassword(password, user.passwordHash);
-}
-
-/** A 400 naming the field, so the settings form can show it there. */
-function fieldError(code: string, field: string, message: string): ValidationError {
-  return new ValidationError(code, message, { fields: [{ path: `body.${field}`, message }] });
 }
 
 const wrongCurrentPassword = () =>

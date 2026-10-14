@@ -54,6 +54,14 @@ export class UnsupportedMediaTypeError extends AppError {
   readonly status = 415;
 }
 
+/** A 400 naming the field, so a form can show the message there. */
+export const fieldError = (code: string, field: string, message: string): ValidationError =>
+  new ValidationError(code, message, { fields: [{ path: `body.${field}`, message }] });
+
+/** An edit that sent a version someone else has since changed (INV-95, D-0124). */
+export const staleVersion = (): ConflictError =>
+  new ConflictError("stale-version", "Someone else changed this. Reload it and try again.");
+
 /** No supplier yet (INV-78): the web app reads this as "open /onboarding". */
 export const onboardingRequired = (): ConflictError =>
   new ConflictError("onboarding-required", "Set up the supplier details first.");
