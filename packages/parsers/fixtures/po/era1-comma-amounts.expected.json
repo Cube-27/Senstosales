@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000108",
+  "poDate": "2023-07-03",
+  "enquiry": "E-000108",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "125000",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "147500",
+  "remarks": "Amounts in rupees.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN108010",
+      "description": "ARMOURED CABLE 3 CORE 16 SQMM",
+      "drawingNo": null,
+      "unit": "MTR",
+      "ordQty": "100",
+      "rate": "1250",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "100",
+          "delyDate": "2023-09-30",
+          "entryAllowDate": "2023-10-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000108",
+    "PO DATE": "03/07/2023",
+    "ENQUIRY": "E-000108",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "1,25,000.00",
+    "NET PO VAL": "1,47,500.00",
+    "REMARKS": "Amounts in rupees.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

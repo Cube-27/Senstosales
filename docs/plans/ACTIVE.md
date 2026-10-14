@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-06 PR 5, SPEC-07 PR 1. Next: SPEC-07 PR 2-3, SPEC-08 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
+In flight: SPEC-07 PR 1-2. Next: SPEC-07 PR 3-6, SPEC-08 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -106,7 +106,7 @@ In flight: SPEC-06 PR 5, SPEC-07 PR 1. Next: SPEC-07 PR 2-3, SPEC-08 PR 1. Waiti
 | 2   | HTML utilities, dates, PO header           | done (#28) |                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 3   | PO items, lots, continuation rows, GEMC    | done (#30) |                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 4   | SRV parser                                 | done (#29) |                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 5   | Fixture completion and golden runner       | todo       |                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 5   | Fixture completion and golden runner       | done (#34) |                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 6   | Corpus test                                | todo       | H4. Check (from #28 review): cheerio `text()` joins `<br>` and nested-table cell text with no space; `findByLabel`'s value-below ignores colspan. Check (from #29 review): SRV error locations name no table on multi-table pages; the SRV date is the first row's when rows of one SRV disagree. Check (from #30 review): an empty DELY QTY with a LOT NO fails the file (revisit with corpus). |
 
 ## [SPEC-07 — API foundation, startup, auth, onboarding and settings](../specs/SPEC-07-api-foundation-auth-settings.md)

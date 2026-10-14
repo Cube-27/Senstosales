@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000138",
+  "poDate": "2024-09-30",
+  "enquiry": "E-000138",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": "QT/0138",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "990",
+  "rcNo": "RC-0138",
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "1168.2",
+  "remarks": "Older label spellings.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN138010",
+      "description": "SIGNAL LAMP",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "99",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-12-31",
+          "entryAllowDate": "2025-01-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER NO.": "4100000138",
+    "PO DATE": "30-SEP-24",
+    "ENQ NO.": "E-000138",
+    "ENQ. DATE": "02-SEP-24",
+    "QUOTATION": "QT/0138",
+    "QUOT DATE": "10-SEP-24",
+    "R.C. NO": "RC-0138",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "990.00",
+    "NET PO VAL": "1168.20",
+    "REMARKS": "Older label spellings.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

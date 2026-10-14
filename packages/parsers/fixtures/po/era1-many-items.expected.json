@@ -1,0 +1,213 @@
+{
+  "poNumber": "4100000115",
+  "poDate": "2023-11-06",
+  "enquiry": "E-000115",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": "Q-115",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "8040",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "9487.2",
+  "remarks": "Eight items; deliver together.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN115010",
+      "description": "SPARE PART TYPE A",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "4",
+      "rate": "30",
+      "rcdQty": "1",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "4",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 20,
+      "materialCode": "SYN115020",
+      "description": "SPARE PART TYPE B",
+      "drawingNo": null,
+      "unit": "KG",
+      "ordQty": "8",
+      "rate": "60",
+      "rcdQty": "2",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "8",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 30,
+      "materialCode": "SYN115030",
+      "description": "SPARE PART TYPE C",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "12",
+      "rate": "90",
+      "rcdQty": "3",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "12",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 40,
+      "materialCode": "SYN115040",
+      "description": "SPARE PART TYPE D",
+      "drawingNo": null,
+      "unit": "KG",
+      "ordQty": "16",
+      "rate": "120",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "16",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 50,
+      "materialCode": "SYN115050",
+      "description": "SPARE PART TYPE E",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "20",
+      "rate": "150",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "20",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 60,
+      "materialCode": "SYN115060",
+      "description": "SPARE PART TYPE F",
+      "drawingNo": null,
+      "unit": "KG",
+      "ordQty": "24",
+      "rate": "180",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "24",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 70,
+      "materialCode": "SYN115070",
+      "description": "SPARE PART TYPE G",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "28",
+      "rate": "210",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "28",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    },
+    {
+      "poItemNo": 80,
+      "materialCode": "SYN115080",
+      "description": "SPARE PART TYPE H",
+      "drawingNo": null,
+      "unit": "KG",
+      "ordQty": "32",
+      "rate": "240",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "32",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000115",
+    "PO DATE": "06/11/2023",
+    "ENQUIRY": "E-000115",
+    "ENQ DATE": "",
+    "QUOTATION": "Q-115",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "8040.00",
+    "NET PO VAL": "9487.20",
+    "REMARKS": "Eight items; deliver together.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

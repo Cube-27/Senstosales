@@ -1,0 +1,41 @@
+[
+  {
+    "poNumber": "4100000111",
+    "srvNumber": "5001101",
+    "srvDate": "2023-11-02",
+    "rawHeader": {
+      "PO NO": "4100000111",
+      "SRV NO": "5001101",
+      "SRV DATE": "02/11/2023",
+      "PO ITM": "10",
+      "LOT NO": "1",
+      "SRV ITM": "1",
+      "MATERIAL CODE": "SYN111010",
+      "UNIT": "NOS",
+      "ORD QTY": "2.000",
+      "RECVD QTY": "2.000",
+      "ACPT QTY": "2.000",
+      "REJ QTY": "0.000",
+      "CHALLAN NO": "45",
+      "CHALLAN DATE": "27/10/2023",
+      "INV NO": "45",
+      "INV DATE": "27/10/2023"
+    },
+    "items": [
+      {
+        "poItemNo": 10,
+        "lotNo": 1,
+        "srvItemNo": 1,
+        "materialCode": "SYN111010",
+        "ordQty": "2",
+        "rcdQty": "2",
+        "acceptedQty": "2",
+        "rejQty": "0",
+        "challanNo": "45",
+        "challanDate": "2023-10-27",
+        "invoiceNo": "45",
+        "invoiceDate": "2023-10-27"
+      }
+    ]
+  }
+]

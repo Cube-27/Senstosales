@@ -1,0 +1,74 @@
+{
+  "poNumber": "4100000123",
+  "poDate": "2024-03-04",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "2400",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "2832",
+  "remarks": "Item 10 printed once per lot.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN123010",
+      "description": "PUMP IMPELLER",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "8",
+      "rate": "300",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "5",
+          "delyDate": "2024-05-31",
+          "entryAllowDate": "2024-06-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        },
+        {
+          "lotNo": 2,
+          "delyQty": "3",
+          "delyDate": "2024-06-30",
+          "entryAllowDate": "2024-07-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000123",
+    "PO DATE": "04/03/2024",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "2400.00",
+    "NET PO VAL": "2832.00",
+    "REMARKS": "Item 10 printed once per lot.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "poNumber": "4100000126",
+  "poDate": "2024-04-15",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "880",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "1038.4",
+  "remarks": "Older page with tax registration labels.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN126010",
+      "description": "RUBBER GROMMET",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "88",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-06-30",
+          "entryAllowDate": "2024-07-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000126",
+    "PO DATE": "15/04/2024",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "880.00",
+    "NET PO VAL": "1038.40",
+    "REMARKS": "Older page with tax registration labels.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Deputy Manager",
+    "PHONE:": "011-20000001",
+    "FAX:": "011-20000002",
+    "EMAIL:": "stores@example.com",
+    "TIN NO": "TIN-000126",
+    "ECC NO": "ECC-000126",
+    "MPCT NO": "MPCT-000126",
+    "FOB VALUE": "0.00"
+  }
+}

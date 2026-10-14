@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000109",
+  "poDate": "2023-07-20",
+  "enquiry": "E-000109",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "840",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "991.2",
+  "remarks": "Pack in wooden crates.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN109010",
+      "description": "GLAND PACKING ROPE",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "84",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2023-09-15",
+          "entryAllowDate": "2023-09-30",
+          "entryAllowNote": null,
+          "destCode": "12"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000109",
+    "PO DATE": "20/07/2023",
+    "ENQUIRY": "E-000109",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "840.00",
+    "NET PO VAL": "991.20",
+    "REMARKS": "Pack in wooden crates.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

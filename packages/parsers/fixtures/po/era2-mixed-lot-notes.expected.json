@@ -1,0 +1,82 @@
+{
+  "poNumber": "4100000139",
+  "poDate": "2024-10-14",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "S",
+  "amendNo": 0,
+  "poValue": "4000",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "4720",
+  "remarks": "Lots 2 and 3 not allowed.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN139010",
+      "description": "CONTACTOR 32 A",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "40",
+      "rate": "100",
+      "rcdQty": "10",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-12-31",
+          "entryAllowDate": "2025-01-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        },
+        {
+          "lotNo": 2,
+          "delyQty": "15",
+          "delyDate": "2025-01-31",
+          "entryAllowDate": null,
+          "entryAllowNote": "Short Closed",
+          "destCode": "31"
+        },
+        {
+          "lotNo": 3,
+          "delyQty": "15",
+          "delyDate": "2025-02-28",
+          "entryAllowDate": null,
+          "entryAllowNote": "Entry Not Allowed",
+          "destCode": null
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000139",
+    "PO DATE": "14-OCT-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "S",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "4000.00",
+    "NET PO VAL": "4720.00",
+    "REMARKS": "Lots 2 and 3 not allowed.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

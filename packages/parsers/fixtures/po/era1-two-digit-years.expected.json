@@ -1,0 +1,74 @@
+{
+  "poNumber": "4100000114",
+  "poDate": "2023-10-09",
+  "enquiry": "E-000114",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": "Q-114",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "320",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "377.6",
+  "remarks": "Dates printed with two-digit years.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN114010",
+      "description": "HOSE CLIP 25 MM",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "32",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "6",
+          "delyDate": "2023-12-31",
+          "entryAllowDate": "2024-01-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        },
+        {
+          "lotNo": 2,
+          "delyQty": "4",
+          "delyDate": "2024-01-31",
+          "entryAllowDate": "2024-02-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000114",
+    "PO DATE": "09/10/23",
+    "ENQUIRY": "E-000114",
+    "ENQ DATE": "01/09/23",
+    "QUOTATION": "Q-114",
+    "QUOT-DATE": "12/09/23",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "320.00",
+    "NET PO VAL": "377.60",
+    "REMARKS": "Dates printed with two-digit years.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000128",
+  "poDate": "2024-05-06",
+  "enquiry": "E-000128",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": "QT/0128",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "4500",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "5310",
+  "remarks": "Single item order.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN128010",
+      "description": "CONTROL RELAY 110 V",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "5",
+      "rate": "900",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "5",
+          "delyDate": "2024-07-31",
+          "entryAllowDate": "2024-08-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000128",
+    "PO DATE": "06-MAY-24",
+    "ENQUIRY": "E-000128",
+    "ENQ DATE": "02-APR-24",
+    "QUOTATION": "QT/0128",
+    "QUOT-DATE": "15-APR-24",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "4500.00",
+    "NET PO VAL": "5310.00",
+    "REMARKS": "Single item order.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

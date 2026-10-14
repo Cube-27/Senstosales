@@ -1,0 +1,108 @@
+{
+  "poNumber": "4100000136",
+  "poDate": "2024-09-02",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "1800",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "2124",
+  "remarks": "Descriptions listed after the items.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN136010",
+      "description": "FIRST ITEM TEXT FIRST ITEM MORE TEXT",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "60",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-11-30",
+          "entryAllowDate": "2024-12-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    },
+    {
+      "poItemNo": 20,
+      "materialCode": "SYN136020",
+      "description": "SECOND ITEM TEXT",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "60",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-11-30",
+          "entryAllowDate": "2024-12-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    },
+    {
+      "poItemNo": 30,
+      "materialCode": "SYN136030",
+      "description": "THIRD ITEM TEXT",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "60",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-11-30",
+          "entryAllowDate": "2024-12-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000136",
+    "PO DATE": "02-SEP-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "1800.00",
+    "NET PO VAL": "2124.00",
+    "REMARKS": "Descriptions listed after the items.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

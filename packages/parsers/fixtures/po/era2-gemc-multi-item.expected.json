@@ -1,0 +1,87 @@
+{
+  "poNumber": "4100000133",
+  "poDate": "2024-07-15",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "GM",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "29500",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "29500",
+  "remarks": "GEMC/5521 rates inclusive of GST.",
+  "gemcNumber": "5521",
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN133010",
+      "description": "UPS 1 KVA",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "3",
+      "rate": "5900",
+      "rcdQty": "0",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "3",
+          "delyDate": "2024-09-30",
+          "entryAllowDate": "2024-10-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    },
+    {
+      "poItemNo": 20,
+      "materialCode": "SYN133020",
+      "description": "BATTERY 12 V 7 AH",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "4",
+      "rate": "2950",
+      "rcdQty": "0",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "4",
+          "delyDate": "2024-09-30",
+          "entryAllowDate": "2024-10-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000133",
+    "PO DATE": "15-JUL-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "GM",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "29500.00",
+    "NET PO VAL": "29500.00",
+    "REMARKS": "GEMC/5521 rates inclusive of GST.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}
