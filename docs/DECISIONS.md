@@ -192,6 +192,24 @@ None.
 - Why: Measured in the spike (ADR 0002 Results). Local D1 refuses `PRAGMA user_version`, `journal_mode`, `BEGIN` and `SAVEPOINT`, and accepts triggers and views.
 - Reversible: yes — nothing is built yet; SPEC-05 implements it.
 
+### D-0018 — No Python in the repo tooling
+
+- Date: 2026-10-14 · Spec/PR: tooling PR (#10) · Status: decided
+- Decision: The merge guard is TypeScript (`tools/orchestrator/src/merge-guard.ts`, run by `node` with no build step, behaviour identical to `merge_guard.py`); the hook in `.claude/settings.json` denies when `node` or the script fails. The orchestrator tests are Vitest under `tools/orchestrator/test/`, including `bash -n` over `tools/orchestrator/*.sh`, so the `tools` CI job and `pnpm check:tools` fold into `check`. The shell scripts parse JSON with `node`. `ruff.toml`, `tools/tests/` and the uv/ruff/pytest steps are deleted; ARCHITECTURE rev 1.4 drops the C15 ruff C90 mention.
+- Alternatives: Keep Python for the repo tools only (a second toolchain, uv on every machine and CI runner).
+- Why: One language and one toolchain (Vite+) for the whole TypeScript project.
+- Reversible: yes — tooling only.
+- Owner answer: Owner decision, 2026-10-14.
+
+### D-0019 — Node 26
+
+- Date: 2026-10-14 · Spec/PR: tooling PR (#10) · Status: decided
+- Decision: Node 26 everywhere: CI `setup-node` 26, `engines` `node >=26`, `@types/node` `^26`, and the Node 26 SEA sidecar (ARCHITECTURE rev 1.4: §3, §13, §16, A-4; SPEC-00, SPEC-01, SPEC-20).
+- Alternatives: Stay on Node 24 LTS.
+- Why: Node 26 becomes LTS in late October 2026, before the desktop release; it is installed on the build machine.
+- Reversible: costly — the SEA sidecar and CI move together.
+- Owner answer: Owner decision, 2026-10-14.
+
 ### D-0020 — Signed decimals parse
 
 - Date: 2026-10-14 · Spec/PR: SPEC-02 PR 1 (#7) · Status: decided
