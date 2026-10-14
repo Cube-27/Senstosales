@@ -362,3 +362,19 @@ None.
 - Alternatives: Return a `Result` from every tax function; `bigint` Money.
 - Why: Follows D-0022 (never a lossy number). The case is unreachable with valid invoice input, so a `Result` would burden every caller.
 - Reversible: yes.
+
+### D-0039 — GEMC source-rate brand constructor
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 2 (#14) · Status: decided
+- Decision: `gemcSourceRate(rate: Money)` is an explicit, unchecked brand applied where the GST-inclusive rate is read (BHEL page, manual GEMC entry, stored source column); `gemcNetRate` takes only a `GemcSourceRate` and returns plain `Money`, so its output cannot be divided again without an explicit re-brand (INV-17).
+- Alternatives: A string-only `parseGemcSourceRate`.
+- Why: The stored source column arrives as integer `Money`, not a string. SPEC-05/06/08 brand at their read boundary.
+- Reversible: yes.
+
+### D-0040 — GEMC number as captured
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 2 (#14) · Status: decided
+- Decision: `extractGemcNumber` returns the captured group as written (case kept, `gemc-ab12` -> `ab12`), with no normalisation; a word between `GEMC` and the number is captured as the number (EC-18).
+- Alternatives: Upper-case or otherwise normalise the number.
+- Why: Legacy regex behaviour (A2-3, INV-19); the spec states no normalisation.
+- Reversible: yes.

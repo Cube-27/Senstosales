@@ -27,3 +27,5 @@ export { defaultGc } from "./gc.ts";
 export { matchSrvItem, resolveDocLink } from "./links.ts";
 export type { LineTax, LineTaxInput } from "./tax.ts";
 export { invoiceLineTax, invoiceTotals } from "./tax.ts";
+export type { GemcSourceRate } from "./gemc.ts";
+export { extractGemcNumber, gemcNetRate, gemcSourceRate } from "./gemc.ts";

@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-03 PR 2, 5, 6. Next: SPEC-02 PR 5, SPEC-04. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
+In flight: SPEC-03 PR 5 (#17), PR 6 (#18), SPEC-02 PR 5 (#19). Next: SPEC-04. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -72,7 +72,7 @@ In flight: SPEC-03 PR 2, 5, 6. Next: SPEC-02 PR 5, SPEC-04. Waiting on owner: SP
 | PR  | Scope                             | Status     | Notes |
 | --- | --------------------------------- | ---------- | ----- |
 | 1   | FY, document keys and GC defaults | done (#12) |       |
-| 2   | GEMC                              | todo       |       |
+| 2   | GEMC                              | done (#14) |       |
 | 3   | Tax                               | done (#15) |       |
 | 4   | Links and item matching           | done (#16) |       |
 | 5   | Guards and line validation        | todo       |       |
