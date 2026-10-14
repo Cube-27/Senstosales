@@ -113,6 +113,12 @@ async function errorBody(res: FetchResponse): Promise<ErrorBody> {
   return parsed.success ? parsed.data : { code: `http-${res.status}`, message: "Something went wrong. Try again." };
 }
 
+/** The `Content-Disposition` of a download named `fileName` (RFC 5987), as `fileName` below reads it back. */
+export function contentDisposition(fileName: string): string {
+  const encoded = encodeURIComponent(fileName).replace(/['()*]/g, (ch) => `%${ch.charCodeAt(0).toString(16)}`);
+  return `attachment; filename*=UTF-8''${encoded}`;
+}
+
 /** The download name from `Content-Disposition` (legacy names such as `DC_<n>.xlsx`, SPEC-12). */
 function fileName(res: FetchResponse): string {
   const header = res.headers.get("content-disposition") ?? "";
