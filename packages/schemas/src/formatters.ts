@@ -13,14 +13,19 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 /** Indian grouping: `"12345678"` -> `"1,23,45,678"` (the last three digits, then pairs). */
 function groupIndian(digits: string): string {
-  if (digits.length <= 3) return digits;
-  return `${digits.slice(0, -3).replace(/\B(?=(\d{2})+$)/g, ",")},${digits.slice(-3)}`;
+  const groups = [digits.slice(-3)];
+  for (let end = digits.length - 3; end > 0; end -= 2) groups.unshift(digits.slice(Math.max(0, end - 2), end));
+  return groups.join(",");
 }
 
-/** `n / unit` rounded half toward +infinity, as legacy `Math.round` does, in exact integer arithmetic. */
+/**
+ * `n / unit` rounded half toward +infinity, as legacy `Math.round` does, in exact integer arithmetic. No sum may
+ * pass 2^53, so it splits off the remainder instead of adding `unit / 2` first.
+ */
 function roundDiv(n: number, unit: number): number {
-  const shifted = n + unit / 2;
-  return (shifted - (((shifted % unit) + unit) % unit)) / unit;
+  const rem = n % unit;
+  const [floor, up] = rem < 0 ? [(n - rem) / unit - 1, rem + unit] : [(n - rem) / unit, rem];
+  return up * 2 >= unit ? floor + 1 : floor;
 }
 
 /** A count of records or items: `1234567` -> `"12,34,567"`. */
@@ -59,7 +64,8 @@ function compact(negative: boolean, abs: number, gap: string): string {
   if (abs >= CRORE) body = `${hundredths(abs, CRORE)}${gap}Cr`;
   else if (abs >= LAKH) body = `${hundredths(abs, LAKH)}${gap}L`;
   else body = groupIndian(String(roundDiv(abs, ONE_RUPEE)));
-  return `${negative ? `-${gap}` : ""}${RUPEE}${body}`;
+  const sign = negative ? "-" + gap : "";
+  return sign + RUPEE + body;
 }
 
 /** A compact amount, rounded to whole rupees first: `150000` -> `"₹1.50L"`, `99999.5` -> `"₹1.00L"`. */
