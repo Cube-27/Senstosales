@@ -30,14 +30,17 @@ const HTML_FIXTURE_DIRS = /^packages\/(?:parsers|scraper)\/fixtures\//;
 // live (SPEC-12, SPEC-13); their contents are not scanned and review keeps real data out of them (D-0010).
 const DOCUMENT_FILE = /\.(?:xlsx|xlsm|xls|docx|doc|pdf|zip)$/i;
 const DOCUMENT_DIRS = /^packages\/documents\/(?:templates|test)\//;
+// Whole-file rules, checked in order; the first match is the file's only finding.
+const PATH_RULES: ReadonlyArray<{ rule: string; test: (path: string, head: Buffer) => boolean }> = [
+  {
+    rule: "database-file",
+    test: (path, head) => DATABASE_FILE.test(path) || head.subarray(0, SQLITE_HEADER.length).equals(SQLITE_HEADER),
+  },
+  { rule: "html-outside-fixtures", test: (path) => HTML_FILE.test(path) && !HTML_FIXTURE_DIRS.test(path) },
+  { rule: "document-outside-fixtures", test: (path) => DOCUMENT_FILE.test(path) && !DOCUMENT_DIRS.test(path) },
+];
 const COMPANY_DETAILS = "company-details";
-const RULES = new Set([
-  ...LINE_RULES.map(({ rule }) => rule),
-  "database-file",
-  "html-outside-fixtures",
-  "document-outside-fixtures",
-  COMPANY_DETAILS,
-]);
+const RULES = new Set([...[...LINE_RULES, ...PATH_RULES].map(({ rule }) => rule), COMPANY_DETAILS]);
 const ALLOWLIST_PATH = "tools/checks/real-data-allow.txt";
 const COMPANY_DETAILS_PATH = "tools/checks/company-details.local.txt";
 const ALLOW_ENTRY = /^(\S+):(\S+)\s+#\s*\S/;
@@ -48,11 +51,11 @@ export function parseAllowlist(text: string): ReadonlySet<string> {
   text.split(/\r?\n/).forEach((raw, index) => {
     const line = raw.trim();
     if (line === "" || line.startsWith("#")) return;
-    const match = ALLOW_ENTRY.exec(line);
-    if (!match || !RULES.has(match[2])) {
+    const [, path, rule = ""] = ALLOW_ENTRY.exec(line) ?? [];
+    if (!RULES.has(rule)) {
       throw new Error(`${ALLOWLIST_PATH}:${index + 1}: expected "path:rule  # justification" with a known rule`);
     }
-    entries.add(`${match[1]}:${match[2]}`);
+    entries.add(`${path}:${rule}`);
   });
   return entries;
 }
@@ -63,13 +66,6 @@ export function parseCompanyDetails(text: string): string[] {
     .split(/\r?\n/)
     .map((line) => line.trim().toLowerCase())
     .filter(Boolean);
-}
-
-function pathRule(path: string, head: Buffer): string | undefined {
-  if (DATABASE_FILE.test(path) || head.subarray(0, SQLITE_HEADER.length).equals(SQLITE_HEADER)) return "database-file";
-  if (HTML_FILE.test(path) && !HTML_FIXTURE_DIRS.test(path)) return "html-outside-fixtures";
-  if (DOCUMENT_FILE.test(path) && !DOCUMENT_DIRS.test(path)) return "document-outside-fixtures";
-  return undefined;
 }
 
 /** The file as text (UTF-8, or UTF-16 with a byte-order mark, as Excel saves CSV), or undefined when binary. */
@@ -84,16 +80,18 @@ function decode(content: Buffer): string | undefined {
 
 /** Findings for one file, before the allowlist is applied. `companyDetails` comes from parseCompanyDetails. */
 export function scanFile(path: string, content: Buffer, companyDetails: readonly string[] = []): Finding[] {
-  const rule = pathRule(path, content);
-  if (rule) return [{ path, line: 0, rule }];
+  const pathRule = PATH_RULES.find(({ test }) => test(path, content));
+  if (pathRule) return [{ path, line: 0, rule: pathRule.rule }];
   const decoded = decode(content);
   if (decoded === undefined) return [];
   const findings: Finding[] = [];
   decoded.split(/\r?\n/).forEach((text, index) => {
     // Every distinct rule on the line, so allowlisting one rule for a file can't hide another on the same line.
     const rules = new Set(LINE_RULES.filter(({ pattern }) => pattern.test(text)).map(({ rule }) => rule));
-    const lower = text.toLowerCase();
-    if (companyDetails.some((value) => lower.includes(value))) rules.add(COMPANY_DETAILS);
+    if (companyDetails.length > 0) {
+      const lower = text.toLowerCase();
+      if (companyDetails.some((value) => lower.includes(value))) rules.add(COMPANY_DETAILS);
+    }
     for (const rule of rules) findings.push({ path, line: index + 1, rule });
   });
   return findings;
@@ -117,7 +115,6 @@ export function selectFiles(staged: boolean): Array<{ path: string; read: () => 
 
 function main(argv: string[]): number {
   const allow = parseAllowlist(readFileSync(ALLOWLIST_PATH, "utf8"));
-  // Gitignored, so absent in CI and forks: that part of the scan is then skipped silently.
   const companyDetails = existsSync(COMPANY_DETAILS_PATH)
     ? parseCompanyDetails(readFileSync(COMPANY_DETAILS_PATH, "utf8"))
     : [];

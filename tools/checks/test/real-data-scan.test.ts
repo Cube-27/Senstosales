@@ -239,10 +239,12 @@ describe("real-data-scan --staged (the pre-commit hook)", () => {
     }
   }
 
-  it("is run by the committed pre-commit hook, through vp staged", () => {
-    // Without this file the Vite+ dispatcher exits 0 and nothing is scanned at commit time.
+  it("is run by the committed pre-commit hook, through vp staged", async () => {
+    // Without the hook script the Vite+ dispatcher exits 0 and nothing is scanned at commit time.
     const hookScript = readFileSync(new URL("../../../.vite-hooks/pre-commit", import.meta.url), "utf8");
-    expect(hookScript).toBe("vp staged\n");
+    expect(hookScript.split(/\r?\n/)).toContain("vp staged");
+    const { default: config } = await import(new URL("../../../vite.config.ts", import.meta.url).href);
+    expect(config.staged["*"]()).toBe("node tools/checks/src/real-data-scan.ts --staged");
   });
 
   it("blocks a staged value from the local company-details file without printing it", () => {
