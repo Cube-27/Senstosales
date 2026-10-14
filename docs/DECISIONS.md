@@ -1474,3 +1474,75 @@ None.
 - Alternatives: Include acknowledged flags.
 - Why: SPEC-10 §2 names open flags; the flags screen (PR 5) shows acknowledged ones.
 - Reversible: yes.
+
+### D-0178 — An upload parses first; the PO number is the storage key
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: An uploaded PO page is parsed first to learn its PO number, the key of `html/po/<po>.html`. The date guard runs next; only an accepted page is stored, with its PO date, before the ingest batch. A page that does not parse fails with the parser's code and message and is not stored (EC-29).
+- Alternatives: Key unparseable uploads by a ULID, which would need a new key space and a change to D-0144.
+- Why: An upload has no PO number before parsing. Storing after the guard means a skipped older upload never replaces the stored page. Scrapes (SPEC-19) know the key first and still store before parsing; the user still has the uploaded file.
+- Reversible: yes.
+
+### D-0179 — Ingest context from the one supplier row
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: `ingestContext(db, jobId)` reads the install's supplier (A2-12) and uses `ACTOR`. With no supplier yet it throws `onboardingRequired()` (409).
+- Alternatives: Take the supplier from the session; rely only on the app's onboarding gate.
+- Why: There is one supplier and one user per install. Upload and the import jobs share one context.
+- Reversible: yes.
+
+### D-0180 — A PO re-ingest updates the header with a version check
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: An accepted re-ingest updates the header with `updateWithVersion` against the version the guard read: it bumps the version, and a PO changed by another upload since the guard read it fails that file instead of being overwritten. Recompute alone still leaves the version alone (D-0142).
+- Alternatives: A plain update without a version bump.
+- Why: The document really changed, so an edit opened on the earlier page gets a 409 (INV-95). The guard is read outside the batch (C4), so the check in the statement stops a concurrent older upload from winning (INV-42).
+- Reversible: yes.
+
+### D-0181 — Lots are replaced per page item; a cancelled item keeps its lots
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: The lots of each item on the page are deleted and re-inserted from the page. An item cancelled by the amendment keeps its last lots.
+- Alternatives: Delete the lots of cancelled items too.
+- Why: The most conservative reading of INV-42 and INV-48: cancelling changes only `cancelled_at`.
+- Reversible: yes.
+
+### D-0182 — Unmatched SRV lines are matched on every accepted PO ingest
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: The PO batch matches every unmatched line of the supplier's SRVs with that PO number (INV-39), and sets `srv.po_id` on SRVs stored while the PO was not found (INV-40).
+- Alternatives: Attach and match only SRVs that were not found, as SPEC-08 §4.2 lists.
+- Why: When an amendment adds an item, INV-39 matches the line that has its material code; otherwise that receipt would never count.
+- Reversible: yes.
+
+### D-0183 — `splitUpload` lives in `packages/schemas` with `MAX_BODY_BYTES`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: The web client's upload split and the API's body limit share one constant in `packages/schemas`. A file that alone exceeds the cap is returned in `tooLarge` and not sent.
+- Alternatives: A helper in `apps/web` with its own constant; send oversize files and get a 413.
+- Why: One constant for both sides; a 413 would fail every other file in the same request.
+- Reversible: yes.
+
+### D-0184 — `matchSrvItem` takes null material codes
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: `PoItemRef.materialCode` is `string | null`; a line with no code matches nothing.
+- Alternatives: Filter nulls in each caller.
+- Why: Stored items and SRV lines are nullable in the schema; PO and SRV ingest would otherwise each re-interpret INV-39.
+- Reversible: yes.
+
+### D-0185 — `po.buyer_id` is left null on ingest
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: Ingest does not map the page's division to a buyer.
+- Alternatives: Match the division text to `buyer.unit_name`.
+- Why: No spec or Appendix A rule defines that mapping (C2).
+- Reversible: yes.
+
+### D-0186 — `createServices` exposes `poIngest`; `ServiceDeps` carries `Storage`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 3 (#42) · Status: decided
+- Decision: `createServices` builds `poIngest` from `ServiceDeps`, which now includes the `Storage` port; `apiRoutes` mounts `po.upload` from it and `main.ts` passes the data folder's fs storage.
+- Alternatives: Build the ingest deps in `main.ts`.
+- Why: Routes call use cases through `createServices` (SPEC-07 §4.1), and SRV ingest and the import jobs need the same storage.
+- Reversible: yes.
