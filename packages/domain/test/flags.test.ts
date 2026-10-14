@@ -94,6 +94,11 @@ describe("INV-52: QTY_MISMATCH", () => {
   it("does not flag an unmatched SRV line", () => {
     expect(detect([item()], [srvLine({ poItemId: null, ordQty: qty("95") })])).toEqual([]);
   });
+
+  // EC-31: a page without an ORD QTY column stores 0, and legacy compares only a positive SRV ord_qty.
+  it("does not flag an SRV line whose ord_qty is 0", () => {
+    expect(detect([item()], [srvLine({ ordQty: qty("0") })])).toEqual([]);
+  });
 });
 
 // INV-53: a cited challan/invoice number with no document of that number in the SRV date's FY (A-10).
