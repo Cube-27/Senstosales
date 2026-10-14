@@ -1,21 +1,13 @@
 // SPEC-07 PR 2: `/api/health` reports the version, the schema version and the active job (INV-105).
 import type { Instant } from "@senstosales/db";
-import { applyMigrations, job, LATEST_VERSION, planMigrations, readSchemaVersion } from "@senstosales/db";
-import { openNodeDb } from "@senstosales/db/node";
+import { job, LATEST_VERSION } from "@senstosales/db";
 import { describe, expect, it, onTestFinished } from "vite-plus/test";
 
 import { healthRoutes } from "../src/routes/health.ts";
+import { migratedDb } from "./db.ts";
 import { testApp } from "./helpers.ts";
 
-const AT = "2025-04-01T05:30:00.000Z" as Instant;
 const progress = { total: 0, done: 0, skipped: 0, failed: 0, current: null };
-
-async function migratedDb() {
-  const db = openNodeDb(":memory:");
-  onTestFinished(() => db.close());
-  await applyMigrations(db, planMigrations(await readSchemaVersion(db)), { appVersion: "0.1.0", appliedAt: AT });
-  return db;
-}
 
 type JobRow = typeof job.$inferInsert;
 const jobRow = (id: string, status: JobRow["status"], createdAt: string): JobRow => ({
@@ -28,6 +20,7 @@ const jobRow = (id: string, status: JobRow["status"], createdAt: string): JobRow
 
 async function health(jobs: JobRow[]) {
   const db = await migratedDb();
+  onTestFinished(() => db.close());
   if (jobs.length > 0) await db.batch(jobs.map((row) => db.build.insert(job).values(row)));
   const { send } = testApp(healthRoutes({ version: "1.2.3", db }));
   const res = await send("/api/health");

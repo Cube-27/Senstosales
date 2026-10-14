@@ -7,13 +7,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 
-import type { Instant } from "@senstosales/db";
-import { applyMigrations, LATEST_VERSION, planMigrations, readSchemaVersion } from "@senstosales/db";
-import { openNodeDb } from "@senstosales/db/node";
+import { LATEST_VERSION } from "@senstosales/db";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished } from "vite-plus/test";
 
 import { DATA_FOLDERS, resolveDataDir } from "../../src/platform/node/data-dir.ts";
 import { type RunningServer, startServer } from "../../src/platform/node/main.ts";
+import { migratedDb } from "../db.ts";
 
 const MAIN = join(import.meta.dirname, "../../src/platform/node/main.ts");
 const INDEX = "<!doctype html><title>app</title><div id=root></div>";
@@ -52,15 +51,7 @@ function get(port: number, path: string, host = `127.0.0.1:${port}`): Promise<Re
 
 async function migrate(dataDir: string): Promise<void> {
   await mkdir(join(dataDir, "db"), { recursive: true });
-  const db = openNodeDb(join(dataDir, "db", "senstosales.db"));
-  try {
-    await applyMigrations(db, planMigrations(await readSchemaVersion(db)), {
-      appVersion: "0.1.0",
-      appliedAt: "2025-04-01T05:30:00.000Z" as Instant,
-    });
-  } finally {
-    db.close();
-  }
+  (await migratedDb(join(dataDir, "db", "senstosales.db"))).close();
 }
 
 async function webRoot(): Promise<string> {

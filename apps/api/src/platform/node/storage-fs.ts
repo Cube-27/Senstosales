@@ -2,14 +2,14 @@
 // `exports/<ulid>.<ext>`), so a key is `/`-separated plain segments; anything that could leave the root (`..`,
 // absolute, drive-qualified, backslashes) is refused before the file system sees it (INV-96, C17).
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 
 import type { Storage } from "../../ports/storage.ts";
 
 const SEGMENT = /^[\w.-]+$/;
 
 /** A file or folder name that cannot leave its parent: no separators, drive letters, `.` or `..`. */
-export const isPlainName = (s: string): boolean => SEGMENT.test(s) && s !== "." && s !== "..";
+const isPlainName = (s: string): boolean => SEGMENT.test(s) && s !== "." && s !== "..";
 
 function refuse(key: string): never {
   throw new Error(`Storage key not allowed: ${JSON.stringify(key)}`);
@@ -65,14 +65,7 @@ export function createFsStorage(root: string): Storage {
       }
       return entries
         .filter((e) => e.isFile())
-        .map(
-          (e) =>
-            folder +
-            join(e.parentPath, e.name)
-              .slice(dir.length + 1)
-              .split(sep)
-              .join("/"),
-        )
+        .map((e) => folder + relative(dir, join(e.parentPath, e.name)).replaceAll(sep, "/"))
         .filter((key) => key.startsWith(prefix))
         .toSorted();
     },

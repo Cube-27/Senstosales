@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 
 import { openNodeDb } from "@senstosales/db/node";
 import { getRequestListener } from "@hono/node-server";
-import type { Hono } from "hono";
 
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
@@ -33,12 +32,12 @@ export interface RunningServer {
 }
 
 /** JSON lines on stderr; stdout carries only the port line. SPEC-21 replaces this with the pino adapter. */
-const stderrLogger: Logger = Object.fromEntries(
-  (["debug", "info", "warn", "error"] as const).map((level) => [
-    level,
-    (fields: LogFields, message: string) => process.stderr.write(`${JSON.stringify({ level, message, ...fields })}\n`),
-  ]),
-) as unknown as Logger;
+const line =
+  (level: keyof Logger) =>
+  (fields: LogFields, message: string): void => {
+    process.stderr.write(`${JSON.stringify({ level, message, ...fields })}\n`);
+  };
+const stderrLogger: Logger = { debug: line("debug"), info: line("info"), warn: line("warn"), error: line("error") };
 
 function listen(server: Server): Promise<AddressInfo> {
   return new Promise((resolve, reject) => {
@@ -48,18 +47,16 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const dir = await prepareDataDir(options.dataDir);
-  const db = openNodeDb(dir.dbFile);
+  const db = openNodeDb(await prepareDataDir(options.dataDir));
   // SPEC-07 PR 3 puts the upgrade gate here, before anything listens.
 
-  // The Host guard needs the port, which is known only after `listen`; nothing can call before then.
-  let app: Hono | undefined;
-  const server = createServer(
-    getRequestListener((req) => (app ? app.fetch(req) : new Response(null, { status: 503 }))),
-  );
+  // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
+  // port earlier.
+  const server = createServer();
   const address = await listen(server);
-  app = createApp({ port: address.port, logger: stderrLogger }, healthRoutes({ version: options.version, db }));
+  const app = createApp({ port: address.port, logger: stderrLogger }, healthRoutes({ version: options.version, db }));
   app.get("*", spa(options.webRoot));
+  server.on("request", getRequestListener(app.fetch));
 
   return {
     host: address.address,
