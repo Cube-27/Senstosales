@@ -1066,3 +1066,27 @@ None.
 - Alternatives: Treat it as a conflict (not detectable inside the batch without a trigger or a read).
 - Why: INV-95 specifies only the stale-version case (C18).
 - Reversible: yes.
+
+### D-0127 — Synthetic fixtures with independently computed expected JSON
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 5 (#34) · Status: decided
+- Decision: The parser fixtures added in PR 5 are synthetic. A one-off generator, kept outside the repo, writes each page and its expected JSON from one plain description; the expected values are computed from that description, never by running the parser. Cases with tricky parser rules (repeated item row, replaced lot, item 100+ description) have hand-written expected values. Only the pages and JSON are committed.
+- Alternatives: Anonymise corpus pages (the corpus may not be read in this row); commit the generator as a tool.
+- Why: C1. Committed fixtures are data reviewed as written; a committed generator would be a second, unreviewed model of the page format.
+- Reversible: yes.
+
+### D-0128 — Legacy-failure files covered by synthetic stand-ins
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 5 (#34) · Status: decided
+- Decision: The SPEC-06 §6 category "files the legacy parser failed on" is covered by `legacy-item-100-description` (EC-23) and `legacy-drawing-separators` (D-0113) until anonymised corpus cases exist.
+- Alternatives: Leave the category empty until H4.
+- Why: Those are the documented cases where legacy extraction differs.
+- Reversible: yes. Add anonymised corpus cases after SPEC-06 PR 6.
+
+### D-0129 — Header value spelled like a label (EC-26)
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 5 (#34) · Status: decided
+- Decision: v1 keeps the current `findByLabel` behaviour: a value such as `RC` beside `ORD-TYPE` reads as the `RC NO` label, so the field takes the cell below. A unit test in `po-header.test.ts` pins it; no fixture relies on it.
+- Alternatives: Change the label lookup (inventing handling, C18).
+- Why: Found while building the fixtures; neither the spec nor any decision covers it. The SPEC-06 PR 6 corpus test shows whether real pages have such values.
+- Reversible: yes.
