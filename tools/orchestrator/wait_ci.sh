@@ -11,7 +11,6 @@
 source "$(dirname "$0")/config.sh"
 pr=$1; sha=$2; deadline=$(( $(date +%s) + ${3:-45} * 60 )); lag_end=$(( $(date +%s) + 180 )); first=""
 poll=${WAIT_CI_POLL_S:-15}; no_run_s=${WAIT_CI_NO_RUN_S:-300}; no_run_end=$(( $(date +%s) + no_run_s ))
-err() { echo "ERROR $*" >&2; exit 1; }
 [[ $sha =~ ^[0-9a-f]{7,40}$ ]] || err "usage: wait_ci.sh PR SHA7 [TIMEOUT_MIN] (SHA7: 7-40 hex digits)"
 
 # Fails when the PR conflicts with its base; mergeable is UNKNOWN while GitHub is still computing it.

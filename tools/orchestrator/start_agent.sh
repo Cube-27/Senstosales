@@ -9,7 +9,6 @@
 set -u
 source "$(dirname "$0")/config.sh"
 name=$1; wt=$2; prompt=$3; min_free=${4:-$MIN_FREE_MB}
-err() { echo "ERROR $*" >&2; exit 1; }
 # herdr agent names are lowercase; checked before memory or herdr is touched.
 [[ $name =~ ^[a-z0-9][a-z0-9-]*$ ]] || err "agent name must be lowercase: '$name' (a-z, 0-9 and '-', not starting with '-')"
 dir="$WORKTREE_ROOT/$wt"

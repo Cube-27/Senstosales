@@ -3,25 +3,23 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
+import { parse } from "yaml";
 
 import { REPO } from "./shell.ts";
 
-/** Job name -> its `run:` commands, from the two-space-indented keys under `jobs:` in ci.yml. */
-function ciJobs(): Map<string, string[]> {
-  const text = readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8").replaceAll("\r\n", "\n");
-  const jobs = new Map<string, string[]>();
-  let current: string[] | undefined;
-  for (const line of text.split("\njobs:\n", 2)[1]!.split("\n")) {
-    const job = /^ {2}([\w-]+):$/.exec(line);
-    const run = /^\s+- run: (.+)$/.exec(line);
-    if (job) jobs.set(job[1]!, (current = []));
-    else if (current && run) current.push(run[1]!.trim());
-  }
-  return jobs;
+type Workflow = { jobs: Record<string, { steps: Array<{ run?: string }> }> };
+
+/** Job name -> its `run:` commands, in ci.yml order. */
+function ciJobs(): Array<[string, string[]]> {
+  const workflow = parse(readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8")) as Workflow;
+  return Object.entries(workflow.jobs).map(([job, { steps }]) => [
+    job,
+    steps.flatMap((step) => (step.run === undefined ? [] : [step.run.trim()])),
+  ]);
 }
 
 const scripts = (): Record<string, string> =>
-  JSON.parse(readFileSync(join(REPO, "package.json"), "utf8")).scripts as Record<string, string>;
+  (JSON.parse(readFileSync(join(REPO, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
 
 function checkScriptsOf(commands: string[]): string[] {
   const byCommand = new Map(
@@ -33,13 +31,13 @@ function checkScriptsOf(commands: string[]): string[] {
 
 describe("CI parity", () => {
   it("runs exactly one check script in every CI job", () => {
-    const counts = Object.fromEntries([...ciJobs()].map(([job, commands]) => [job, checkScriptsOf(commands).length]));
+    const counts = Object.fromEntries(ciJobs().map(([job, commands]) => [job, checkScriptsOf(commands).length]));
 
     expect(counts).toEqual({ check: 1, "real-data-scan": 1, licenses: 1, build: 1, audit: 1 });
   });
 
   it("chains every CI check script in job order in verify", () => {
-    const inCi = [...ciJobs().values()].map((commands) => checkScriptsOf(commands)[0]);
+    const inCi = ciJobs().map(([, commands]) => checkScriptsOf(commands)[0]);
 
     expect(scripts()["verify"]).toBe(inCi.map((name) => `pnpm ${name}`).join(" && "));
   });

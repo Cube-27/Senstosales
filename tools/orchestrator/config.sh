@@ -26,13 +26,15 @@ PRUNE_DOCKER_CACHE=${PRUNE_DOCKER_CACHE:-0}
 MAX_WORKERS=${MAX_WORKERS:-4}
 MIN_FREE_MB=${MIN_FREE_MB:-1500}
 
-# json_field PATH: prints the field at PATH (dot-separated, e.g. result.agent.pane_id) of the JSON on stdin. Fails,
-# printing nothing, when the input is not JSON or the field is missing.
+err() { echo "ERROR $*" >&2; exit 1; }
+
+# json_field PATH...: prints, one line each, the field at each PATH (dot-separated, e.g. result.agent.pane_id) of the
+# JSON on stdin; a missing field prints an empty line and makes it fail. Input that is not JSON prints nothing.
 json_field() {
-  node -e 'let value = JSON.parse(require("fs").readFileSync(0, "utf8"));
-for (const key of process.argv[1].split(".")) value = value[key];
-if (value === undefined) process.exit(1);
-console.log(value);' "$1"
+  node -e 'const data = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const values = process.argv.slice(1).map((path) => path.split(".").reduce((value, key) => value?.[key], data));
+for (const value of values) console.log(value ?? "");
+process.exitCode = values.includes(undefined) ? 1 : 0;' "$@"
 }
 
 # Free physical memory in MB, or nothing when it can't be read. Windows (Git Bash), Linux, macOS.

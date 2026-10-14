@@ -1,6 +1,6 @@
 // Helpers for tests that run the orchestrator tools as Claude Code and the orchestrator run them: through bash, with
 // stub programs on PATH.
-import { execFileSync, spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,18 +27,16 @@ export function stubBin(dir: string, stubs: Record<string, string>): string {
 }
 
 /** A stub body that runs this Node, for a PATH that holds only stubs. */
-export const realNode = (): string => `exec "${process.execPath.replaceAll("\\", "/")}" "$@"`;
-
-export type Run = { status: number | null; stdout: string; stderr: string };
+export const REAL_NODE = `exec "${process.execPath.replaceAll("\\", "/")}" "$@"`;
 
 export function run(
   command: string,
   args: string[],
   options: { cwd?: string; env?: NodeJS.ProcessEnv; input?: string },
-): Run {
-  const result: SpawnSyncReturns<string> = spawnSync(command, args, { ...options, encoding: "utf8", timeout: 120_000 });
+) {
+  const result = spawnSync(command, args, { ...options, encoding: "utf8", timeout: 120_000 });
   if (result.error) throw result.error;
-  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+  return result;
 }
 
 export const git = (cwd: string, ...args: string[]): string =>

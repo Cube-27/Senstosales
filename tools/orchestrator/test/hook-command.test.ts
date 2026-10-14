@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 
-import { BASH, REPO, realNode, run, stubBin } from "./shell.ts";
+import { BASH, REPO, REAL_NODE, run, stubBin } from "./shell.ts";
 
 function hookCommand(): string {
   const settings = JSON.parse(readFileSync(join(REPO, ".claude", "settings.json"), "utf8"));
@@ -20,11 +20,11 @@ function runHook(stubs: Record<string, string>, command: string) {
 
 describe.skipIf(BASH === undefined)("merge-guard hook command", () => {
   it("allows a plain command", () => {
-    expect(runHook({ node: realNode() }, "git status").status).toBe(0);
+    expect(runHook({ node: REAL_NODE }, "git status").status).toBe(0);
   });
 
   it("denies a direct merge", () => {
-    expect(runHook({ node: realNode() }, "gh pr merge 7").status).toBe(2);
+    expect(runHook({ node: REAL_NODE }, "gh pr merge 7").status).toBe(2);
   });
 
   it.each([

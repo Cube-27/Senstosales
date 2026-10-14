@@ -14,16 +14,22 @@ const tempDir = (): string => mkdtempSync(join(tmpdir(), "orch-"));
 const posix = (path: string): string => path.replaceAll("\\", "/");
 const read = (path: string): string => (existsSync(path) ? readFileSync(path, "utf8").trim() : "");
 
-/** Runs SCRIPT with STUBS first on PATH, from a throwaway repo: the scripts read `git worktree list`, and
- * watch_agents.sh keeps its pidfile in the git common dir, which must not be the real repo's. */
-function runScript(dir: string, script: string, args: string[], stubs: Record<string, string>, env = {}) {
+/** DIR/repo, a throwaway git repository, created on first use. */
+function initRepo(dir: string): string {
   const repo = join(dir, "repo");
   if (!existsSync(repo)) {
     mkdirSync(repo);
     git(repo, "init", "-q");
   }
+  return repo;
+}
+
+/** Runs SCRIPT with STUBS first on PATH, from CWD (default: a throwaway repo): the scripts read `git worktree list`,
+ * and watch_agents.sh keeps its pidfile in the git common dir, which must not be the real repo's. */
+function runScript(dir: string, script: string, args: string[], stubs: Record<string, string>, env = {}, cwd?: string) {
   const PATH = `${stubBin(dir, stubs)}${delimiter}${process.env["PATH"]}`;
-  return run(BASH!, [join(ORCHESTRATOR, script), ...args], { cwd: repo, env: { ...process.env, ...env, PATH } });
+  const options = { cwd: cwd ?? initRepo(dir), env: { ...process.env, ...env, PATH } };
+  return run(BASH!, [join(ORCHESTRATOR, script), ...args], options);
 }
 
 // `gh pr view` as wait_ci.sh asks for it: the head line, then one line per check run.
@@ -62,20 +68,22 @@ describe.skipIf(BASH === undefined)("wait_ci.sh", SLOW, () => {
   });
 });
 
-type MergeCase = { branch?: string; files?: string[]; mergeExit?: number; after?: string };
+type MergeCase = { branch?: string; files?: string[]; merged?: boolean; mergeExit?: number; after?: string };
 
-/** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's branch and changed files, `pr merge` exiting MERGEEXIT
- * (calls counted in gh-merges), and AFTER as the "<state> <head>" read once the merge call returned. */
+/** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's changed files, `pr merge` exiting MERGEEXIT (calls counted
+ * in gh-merges), and the PR state "<state> <head> <branch>": MERGED at HEAD when MERGED, else OPEN until a merge call,
+ * then AFTER. */
 function ghForMerge(dir: string, c: MergeCase): string {
   const files = c.files ?? ["docs/plans/ACTIVE.md", "src/a.ts"];
   const merges = posix(join(dir, "gh-merges"));
+  const branch = c.branch ?? "spec-01/pr-1-x";
+  const before = `${c.merged ? "MERGED" : "OPEN"} ${HEAD} ${branch}`;
   return [
     'case "$*" in',
     `  *statusCheckRollup*) ${GH_GREEN} ;;`,
-    `  *headRefName*) echo "${c.branch ?? "spec-01/pr-1-x"}" ;;`,
     `  "pr diff"*) printf "%s\\n" ${files.map((f) => `"${f}"`).join(" ")} ;;`,
     `  "pr merge"*) echo merge >> "${merges}"; echo "GraphQL: Something went wrong" >&2; exit ${c.mergeExit ?? 0} ;;`,
-    `  *state,headRefOid*) echo "${c.after ?? `MERGED ${HEAD}`}" ;;`,
+    `  *state,headRefOid,headRefName*) [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch}" || echo "${before}" ;;`,
     `  *headRefOid*) echo "${HEAD}" ;;`,
     "  *) exit 1 ;;",
     "esac",
@@ -106,6 +114,14 @@ describe.skipIf(BASH === undefined)("merge_pr.sh", SLOW, () => {
 
     expect(result).toMatchObject({ status: 1, merges: 1 });
     expect(result.stderr).toContain("ERROR merge of PR #7 failed");
+  });
+
+  it("exits 0 without merging again when the PR is already merged at the head", () => {
+    const result = mergePr({ merged: true });
+
+    expect(result).toMatchObject({ status: 0, merges: 0 });
+    expect(result.stdout).toBe(`already merged: PR #7 at ${HEAD}
+`);
   });
 
   it("refuses a spec PR whose diff does not touch the tracker", () => {
@@ -142,7 +158,6 @@ const agents = (...entries: Array<[string, string, string]>): string =>
         name,
         agent_status: status,
         workspace_id: workspace,
-        pane_id: `${workspace}:p${name}`,
       })),
     },
   });
@@ -164,13 +179,8 @@ describe.skipIf(BASH === undefined)("watch_agents.sh", SLOW, () => {
 
   it("reports the last agent gone", () => {
     const dir = tempDir();
-    const result = runScript(
-      dir,
-      "watch_agents.sh",
-      [],
-      { herdr: herdrSequence(dir, [AGENT_A, NO_AGENTS]), gh: "exit 0" },
-      WATCH_ENV,
-    );
+    const herdr = herdrSequence(dir, [AGENT_A, NO_AGENTS]);
+    const result = runScript(dir, "watch_agents.sh", [], { herdr, gh: "exit 0" }, WATCH_ENV);
 
     expect([result.status, result.stdout]).toEqual([0, "GONE impl-a\n"]);
   });
@@ -210,11 +220,15 @@ function mergedWorktree(dir: string): { main: string; origin: string } {
   return { main, origin };
 }
 
-function runCleanup(dir: string, main: string, docker = "exit 0", worktree = "spec-01-pr-1") {
-  const PATH = `${stubBin(dir, { gh: "exit 0", docker })}${delimiter}${process.env["PATH"]}`;
-  const args = [join(ORCHESTRATOR, "cleanup_worktree.sh"), worktree, "spec-01/pr-1-x"];
-  return run(BASH!, args, { cwd: main, env: { ...process.env, PATH, CLEANUP_RETRY_S: "0" } });
-}
+const runCleanup = (dir: string, main: string, docker = "exit 0", worktree = "spec-01-pr-1") =>
+  runScript(
+    dir,
+    "cleanup_worktree.sh",
+    [worktree, "spec-01/pr-1-x"],
+    { gh: "exit 0", docker },
+    { CLEANUP_RETRY_S: "0" },
+    main,
+  );
 
 const branches = (main: string, origin: string): string[] => [
   git(main, "branch", "--list", "spec-01/pr-1-x"),
@@ -344,9 +358,7 @@ describe.skipIf(BASH === undefined)("start_agent.sh", SLOW, () => {
 
   it("waits for another start, then gives up", () => {
     const dir = tempDir();
-    mkdirSync(join(dir, "repo"));
-    git(join(dir, "repo"), "init", "-q");
-    mkdirSync(join(dir, "repo", ".git", "start_agent.lock"));
+    mkdirSync(join(initRepo(dir), ".git", "start_agent.lock"));
     const result = startAgent(dir, agents(), { START_AGENT_LOCK_WAIT_S: "1" });
 
     expect(result.status).toBe(1);

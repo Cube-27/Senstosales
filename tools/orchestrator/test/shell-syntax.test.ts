@@ -8,16 +8,8 @@ import { BASH, ORCHESTRATOR, run } from "./shell.ts";
 const SCRIPTS = readdirSync(ORCHESTRATOR).filter((name) => name.endsWith(".sh"));
 
 describe.skipIf(BASH === undefined)("orchestrator shell scripts", () => {
-  it("are all found", () => {
-    expect(SCRIPTS).toEqual([
-      "cleanup_worktree.sh",
-      "close_agent.sh",
-      "config.sh",
-      "merge_pr.sh",
-      "start_agent.sh",
-      "wait_ci.sh",
-      "watch_agents.sh",
-    ]);
+  it("include merge_pr.sh, so the directory read found them", () => {
+    expect(SCRIPTS).toContain("merge_pr.sh");
   });
 
   it.each(SCRIPTS)("%s parses", (name) => {
