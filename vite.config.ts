@@ -43,8 +43,9 @@ function restrictImports(...extra: Array<{ group: string[]; message: string }>):
 // repositories import neither services nor routes.
 const LAYERS = "ARCHITECTURE §4: apps/api layers are routes -> services -> repositories.";
 const NO_HONO = { group: ["hono", "hono/**", "@hono/**"], message: LAYERS };
-const NO_ROUTES = { group: ["../routes/*", "../routes/**", "../app.ts"], message: LAYERS };
-const NO_SERVICES = { group: ["../services/*", "../services/**"], message: LAYERS };
+// `**/` so the rule holds at any depth (`services/po/x.ts` importing `../../routes/po.ts`).
+const NO_ROUTES = { group: ["**/routes/**", "**/app.ts"], message: LAYERS };
+const NO_SERVICES = { group: ["**/services/**"], message: LAYERS };
 
 export default defineConfig({
   lint: {
@@ -67,26 +68,20 @@ export default defineConfig({
     },
     overrides: [
       {
-        // C12: core packages depend on ports. apps/* (including apps/desktop) are not covered.
-        files: ["packages/*/src/**"],
+        // C12: core packages and the API depend on ports. apps/web and apps/desktop are not covered.
+        files: ["packages/*/src/**", "apps/api/src/**"],
         rules: { "no-restricted-imports": NO_RUNTIME_IMPORTS },
       },
       {
-        // C12: a package's port adapters (node:sqlite for Db, Playwright for Scraper) live in its src/platform/.
-        files: ["packages/*/src/platform/**"],
+        // C12: port adapters (node:sqlite for Db, Playwright for Scraper, the API's node entry) live in src/platform/.
+        files: ["packages/*/src/platform/**", "apps/api/src/platform/**"],
         rules: { "no-restricted-imports": "off" },
-      },
-      {
-        // C12 in the API: its node entry and adapters live in apps/api/src/platform/ (SPEC-07 §4.1).
-        files: ["apps/api/src/**"],
-        rules: { "no-restricted-imports": NO_RUNTIME_IMPORTS },
       },
       { files: ["apps/api/src/services/**"], rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES) } },
       {
         files: ["apps/api/src/repositories/**"],
         rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES, NO_SERVICES) },
       },
-      { files: ["apps/api/src/platform/**"], rules: { "no-restricted-imports": "off" } },
       {
         // C3: integer milli-units and 1e-5 money, YYYY-MM-DD strings; no floats or Date in the domain.
         files: ["packages/domain/src/**"],

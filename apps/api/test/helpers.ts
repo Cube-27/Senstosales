@@ -1,9 +1,12 @@
+import { createClient } from "@senstosales/schemas";
+
 import type { Handlers } from "../src/app.ts";
 import { createApp } from "../src/app.ts";
 import type { LogFields, Logger } from "../src/ports/logger.ts";
 
 export const PORT = 41234;
 export const HOST = `127.0.0.1:${PORT}`;
+export const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
 
 export interface LogLine {
   level: keyof Logger;
@@ -22,16 +25,19 @@ export function memoryLogger(): Logger & { lines: LogLine[] } {
   return { lines, debug: at("debug"), info: at("info"), warn: at("warn"), error: at("error") };
 }
 
-/** An app on the test port with `handlers`, and a `send` that adds the loopback Host unless the test sets one. */
+/**
+ * An app on the test port with `handlers`; `send` adds the loopback Host unless the test sets one, and `client` is
+ * the typed web client over `send`, as the SPA calls it.
+ */
 export function testApp(handlers: Handlers = {}) {
   const logger = memoryLogger();
   const app = createApp({ port: PORT, logger }, handlers);
-  const send = (path: string, init: RequestInit = {}) => {
+  const send = async (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (!headers.has("host")) headers.set("host", HOST);
     return app.request(`http://${HOST}${path}`, { ...init, headers });
   };
-  return { app, send, logger };
+  return { app, send, client: createClient(send), logger };
 }
 
 export const json = (method: string, body: unknown): RequestInit => ({

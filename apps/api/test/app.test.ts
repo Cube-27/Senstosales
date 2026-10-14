@@ -1,6 +1,5 @@
 // SPEC-07 PR 1: route mounting from the route table, the codecs at the boundary and the one error shape.
-import type { FetchLike } from "@senstosales/schemas";
-import { ApiError, createClient, zGstPct, zMoney } from "@senstosales/schemas";
+import { ApiError, zErrorBody, zGstPct, zMoney } from "@senstosales/schemas";
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
@@ -13,26 +12,18 @@ import {
   UnsupportedMediaTypeError,
   ValidationError,
 } from "../src/errors.ts";
-import { json, testApp } from "./helpers.ts";
+import { ID, json, testApp } from "./helpers.ts";
 
-const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
 const nine = z.decode(zGstPct, "9");
 const buyerWire = { unitName: "Unit A", state: "State B", stateCode: "09", gstin: null };
 
-const zInvalidInput = z.object({
+const zInvalidInput = zErrorBody.extend({
   code: z.literal("invalid-input"),
-  message: z.string(),
   details: z.object({ fields: z.array(z.object({ path: z.string(), message: z.string().min(1) })) }),
 });
 
 /** A 400 body that names the invalid fields. */
 const invalidInput = async (res: Response) => zInvalidInput.parse(await res.json());
-
-/** The typed web client over the app, as the SPA will call it. */
-function clientOf(send: ReturnType<typeof testApp>["send"]) {
-  const fetchImpl: FetchLike = async (url, init) => send(url, init);
-  return createClient(fetchImpl);
-}
 
 describe("mounting from the route table", () => {
   it("decodes the body through the codecs and encodes the response", async () => {
@@ -50,14 +41,14 @@ describe("mounting from the route table", () => {
   });
 
   it("round-trips through the typed client", async () => {
-    const { send } = testApp({ "settings.get": () => ({ cgstPct: nine, sgstPct: nine, preferences: {} }) });
-    const settings = await clientOf(send).request("settings.get");
+    const { client } = testApp({ "settings.get": () => ({ cgstPct: nine, sgstPct: nine, preferences: {} }) });
+    const settings = await client.request("settings.get");
     expect(settings).toEqual({ cgstPct: 900000, sgstPct: 900000, preferences: {} });
   });
 
   it("passes path ids to the handler", async () => {
-    const { send } = testApp({ "buyers.update": ({ params, body }) => ({ id: params.id, ...body }) });
-    const buyer = await clientOf(send).request("buyers.update", { params: { id: ID }, body: buyerWire });
+    const { client } = testApp({ "buyers.update": ({ params, body }) => ({ id: params.id, ...body }) });
+    const buyer = await client.request("buyers.update", { params: { id: ID }, body: buyerWire });
     expect(buyer).toEqual({ id: ID, ...buyerWire });
   });
 
@@ -89,14 +80,14 @@ describe("mounting from the route table", () => {
   });
 
   it("sends a download with its legacy file name", async () => {
-    const { send } = testApp({
+    const { send, client } = testApp({
       "invoice.export": () => ({ fileName: "Invoices 2024-25.xlsx", bytes: new Uint8Array([1, 2, 3]) }),
     });
     const res = await send("/api/invoice/export");
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/octet-stream");
     expect(res.headers.get("content-disposition")).toBe("attachment; filename*=UTF-8''Invoices%202024-25.xlsx");
-    const download = await clientOf(send).request("invoice.export");
+    const download = await client.request("invoice.export");
     expect(download).toEqual({ fileName: "Invoices 2024-25.xlsx", bytes: new Uint8Array([1, 2, 3]) });
   });
 
@@ -154,14 +145,18 @@ describe("validation errors (400)", () => {
 
 describe("errors use one body shape", () => {
   it.each([
-    [new ValidationError("bad-thing", "That is not valid."), 400],
-    [new AuthError("login-required", "Please log in."), 401],
-    [new ForbiddenError("not-allowed", "You cannot do that."), 403],
-    [new NotFoundError("po-not-found", "This PO was not found."), 404],
-    [new ConflictError("dc-number-taken", "DC 12 already exists in 2024-25.", { number: "12" }), 409],
-    [new PayloadTooLargeError("too-large", "Too large."), 413],
-    [new UnsupportedMediaTypeError("json-only", "Send JSON."), 415],
-  ])("%s answers its status with { code, message, details? }", async (error, status) => {
+    [new ValidationError("bad-thing", "That is not valid."), 400, { code: "bad-thing", message: "That is not valid." }],
+    [new AuthError("login-required", "Please log in."), 401, { code: "login-required", message: "Please log in." }],
+    [new ForbiddenError("not-allowed", "No."), 403, { code: "not-allowed", message: "No." }],
+    [new NotFoundError("po-not-found", "Not found."), 404, { code: "po-not-found", message: "Not found." }],
+    [
+      new ConflictError("dc-number-taken", "DC 12 already exists in 2024-25.", { number: "12" }),
+      409,
+      { code: "dc-number-taken", message: "DC 12 already exists in 2024-25.", details: { number: "12" } },
+    ],
+    [new PayloadTooLargeError("too-large", "Too large."), 413, { code: "too-large", message: "Too large." }],
+    [new UnsupportedMediaTypeError("json-only", "Send JSON."), 415, { code: "json-only", message: "Send JSON." }],
+  ])("%s answers its status with { code, message, details? }", async (error, status, body) => {
     const { send } = testApp({
       "buyers.list": () => {
         throw error;
@@ -169,24 +164,16 @@ describe("errors use one body shape", () => {
     });
     const res = await send("/api/buyers");
     expect(res.status).toBe(status);
-    const expected = error.details
-      ? { code: error.code, message: error.message, details: error.details }
-      : {
-          code: error.code,
-          message: error.message,
-        };
-    expect(await res.json()).toEqual(expected);
+    expect(await res.json()).toStrictEqual(body);
   });
 
   it("the client reads the same shape", async () => {
-    const { send } = testApp({
+    const { client } = testApp({
       "buyers.list": () => {
         throw new NotFoundError("buyer-not-found", "This buyer was not found.");
       },
     });
-    const err = await clientOf(send)
-      .request("buyers.list")
-      .catch((e: unknown) => e);
+    const err = await client.request("buyers.list").catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err).toMatchObject({ status: 404, body: { code: "buyer-not-found", message: "This buyer was not found." } });
   });

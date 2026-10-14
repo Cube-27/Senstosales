@@ -15,6 +15,7 @@ export { type ErrorBody, zErrorBody, zListQuery, zOk, zPaged } from "./api/commo
 export { type PathParams, type RouteDef, routes } from "./routes.ts";
 export {
   ApiError,
+  contentDisposition,
   createClient,
   type Download,
   type FetchLike,

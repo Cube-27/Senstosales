@@ -1,12 +1,12 @@
 // SPEC-07 PR 1: the Host guard (C10, INV-79), JSON-only mutations (INV-102) and the body cap (INV-110).
 import { describe, expect, it } from "vite-plus/test";
 
-import { HOST, json, PORT, testApp } from "./helpers.ts";
+import { HOST, ID, json, PORT, testApp } from "./helpers.ts";
 
 const ok = { ok: true } as const;
 
 describe("Host guard (C10, INV-79)", () => {
-  const { send } = testApp({ "buyers.list": () => [] });
+  const { app, send } = testApp({ "buyers.list": () => [] });
 
   it.each([`127.0.0.1:${PORT}`, `localhost:${PORT}`])("answers Host %s", async (host) => {
     const res = await send("/api/buyers", { headers: { host } });
@@ -30,7 +30,6 @@ describe("Host guard (C10, INV-79)", () => {
   });
 
   it("refuses a request with no Host header", async () => {
-    const { app } = testApp();
     const res = await app.request(new Request(`http://${HOST}/api/buyers`));
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ code: "bad-host", message: "This address is not allowed." });
@@ -44,7 +43,6 @@ describe("Host guard (C10, INV-79)", () => {
 
 describe("JSON-only mutations (INV-102)", () => {
   const { send } = testApp({ "auth.logout": () => ok, "buyers.delete": () => ok });
-  const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
   const notJson = { code: "json-only", message: "The request must be sent as JSON." };
 
   it("refuses a text/plain POST with 415", async () => {
@@ -101,19 +99,23 @@ describe("Body cap (INV-110)", () => {
   const prefix = '{"files":[{"name":"a.html","html":"';
   const suffix = '"}]}';
   /** An upload body of exactly `bytes` bytes. */
-  const uploadOf = (bytes: number) => prefix + "x".repeat(bytes - prefix.length - suffix.length) + suffix;
+  const upload = (bytes: number): RequestInit => ({
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: prefix + "x".repeat(bytes - prefix.length - suffix.length) + suffix,
+  });
 
   it("accepts a body of exactly 10 MB", async () => {
-    const res = await send("/api/po/upload", json("POST", JSON.parse(uploadOf(10 * MB))));
+    const res = await send("/api/po/upload", upload(10 * MB));
     expect(res.status).toBe(200);
     expect(received.at(-1)).toBe(10 * MB - prefix.length - suffix.length);
   });
 
   it("refuses an 11 MB body with 413 before the handler runs", async () => {
     const before = received.length;
-    const res = await send("/api/po/upload", json("POST", JSON.parse(uploadOf(11 * MB))));
+    const res = await send("/api/po/upload", upload(11 * MB));
     expect(res.status).toBe(413);
-    expect(await res.json()).toEqual({ code: "too-large", message: "The file is too large. The limit is 10 MB." });
+    expect(await res.json()).toEqual({ code: "too-large", message: "The upload is too large. The limit is 10 MB." });
     expect(received.length).toBe(before);
   });
 

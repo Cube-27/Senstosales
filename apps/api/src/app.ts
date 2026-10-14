@@ -2,7 +2,7 @@
 // have a handler, and one `onError`. Inputs are decoded and outputs encoded with the table's schemas, so the wire
 // format lives only in `packages/schemas` (C3) and handlers see the domain's types.
 import type { Download, RouteDef, RouteName, RouteOutput } from "@senstosales/schemas";
-import { routes } from "@senstosales/schemas";
+import { contentDisposition, routes } from "@senstosales/schemas";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -87,11 +87,11 @@ function decode(part: string, schema: z.ZodType, value: unknown): unknown {
 
 /** A repeated key (`types=po&types=dc`) is an array; a single one is a string (D-0106). */
 function readQuery(c: Context): Record<string, string | string[]> {
-  const entries = Object.entries(c.req.queries()).map(([key, values]) => [
+  const entries = Object.entries(c.req.queries()).map(([key, values]): [string, string | string[]] => [
     key,
-    values.length === 1 ? values[0] : values,
+    values.length === 1 && values[0] !== undefined ? values[0] : values,
   ]);
-  return Object.fromEntries(entries) as Record<string, string | string[]>;
+  return Object.fromEntries(entries);
 }
 
 async function readJson(c: Context): Promise<unknown> {
@@ -104,10 +104,10 @@ async function readJson(c: Context): Promise<unknown> {
 
 /** A download named by `Content-Disposition` (D-0105). */
 function sendFile(c: Context, file: Download): Response {
-  const name = encodeURIComponent(file.fileName).replace(/['()*]/g, (ch) => `%${ch.charCodeAt(0).toString(16)}`);
-  // A copy: `Response` takes only bytes backed by a plain ArrayBuffer.
-  return c.body(new Uint8Array(file.bytes), 200, {
+  // `Response` takes only bytes backed by a plain ArrayBuffer; copy only a view of a shared one.
+  const bytes = file.bytes.buffer instanceof ArrayBuffer ? (file.bytes as Uint8Array<ArrayBuffer>) : file.bytes.slice();
+  return c.body(bytes, 200, {
     "content-type": "application/octet-stream",
-    "content-disposition": `attachment; filename*=UTF-8''${name}`,
+    "content-disposition": contentDisposition(file.fileName),
   });
 }
