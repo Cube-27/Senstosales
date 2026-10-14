@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-04 PR 4, SPEC-05 PR 4-5. Next: SPEC-06 PR 5, SPEC-07 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
+In flight: SPEC-05 PR 4-5, SPEC-06 PR 5. Next: SPEC-07 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -85,7 +85,7 @@ In flight: SPEC-04 PR 4, SPEC-05 PR 4-5. Next: SPEC-06 PR 5, SPEC-07 PR 1. Waiti
 | 1   | Primitives and enums             | done (#20) |       |
 | 2   | Entities and API shapes          | done (#23) |       |
 | 3   | Route table and typed client     | done (#27) |       |
-| 4   | OpenAPI generation and freshness | todo       |       |
+| 4   | OpenAPI generation and freshness | done (#31) |       |
 | 5   | Shared formatters                | done (#21) |       |
 
 ## [SPEC-05 — Database: schema, migrations, Db port, seed](../specs/SPEC-05-db-schema-migrations.md)
