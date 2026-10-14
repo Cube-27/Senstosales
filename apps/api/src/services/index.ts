@@ -41,7 +41,7 @@ export function createServices(deps: ServiceDeps) {
     secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
     folderImport: folderImportService(deps),
-    po: poService(deps),
+    po: poService(withSupplier),
     poIngest: poIngestService(deps),
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),

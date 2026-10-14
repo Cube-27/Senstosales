@@ -1,13 +1,14 @@
 // `createApp(deps, handlers)` (SPEC-07 §4.1): the guards every request passes, the routes of the route table that
 // have a handler, and one `onError`. Inputs are decoded and outputs encoded with the table's schemas, so the wire
 // format lives only in `packages/schemas` (C3) and handlers see the domain's types.
+import { ConflictError as StaleVersionError } from "@senstosales/db";
 import type { Download, RouteDef, RouteName, RouteOutput } from "@senstosales/schemas";
 import { contentDisposition, routes } from "@senstosales/schemas";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { AppError, onboardingRequired, ValidationError } from "./errors.ts";
+import { AppError, onboardingRequired, staleVersion, ValidationError } from "./errors.ts";
 import { requireSession } from "./middleware/auth.ts";
 import { bodyLimit } from "./middleware/body-limit.ts";
 import { hostGuard } from "./middleware/host-guard.ts";
@@ -68,6 +69,8 @@ export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   app.notFound((c) => c.json(NOT_FOUND, 404));
   app.onError((err, c) => {
     if (err instanceof AppError) return c.json(err.toBody(), err.status);
+    // Any versioned update in a batch that commits after someone else's edit (INV-95).
+    if (err instanceof StaleVersionError) return c.json(staleVersion().toBody(), 409);
     deps.logger.error(
       { method: c.req.method, path: c.req.path, error: String(err), stack: err.stack },
       "request failed",

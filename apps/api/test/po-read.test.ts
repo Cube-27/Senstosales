@@ -22,6 +22,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import { poRoutes } from "../src/routes/po.ts";
 import { recomputePo } from "../src/services/recompute.ts";
 import { poService } from "../src/services/po.ts";
+import { supplierRef } from "../src/services/supplier.ts";
 import { testApp } from "./helpers.ts";
 import { fixedClock, supplierDb, SUPPLIER } from "./service-deps.ts";
 
@@ -46,7 +47,8 @@ beforeEach(async () => {
 });
 afterEach(() => db.close());
 
-const app = (signedIn = true) => testApp(poRoutes(poService({ db })), () => Promise.resolve(signedIn));
+const app = (signedIn = true) =>
+  testApp(poRoutes(poService({ db, clock: fixedClock, supplierId: supplierRef(db) })), () => Promise.resolve(signedIn));
 
 /** The JSON fields these tests read; each test asserts the values. */
 interface Wire {

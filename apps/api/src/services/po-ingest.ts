@@ -14,7 +14,7 @@ import { eq, inArray } from "drizzle-orm";
 import { newId } from "../ids.ts";
 import { findPoByNumber } from "../repositories/po.ts";
 import { unmatchedSrvLines } from "../repositories/srv.ts";
-import type { PoSnapshot } from "./recompute.ts";
+import type { PoSnapshot, RecomputeDeps } from "./recompute.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
 import type { IngestContext, SourceDocumentDeps } from "./source-documents.ts";
 import { ingestContext, storeSourceDocument } from "./source-documents.ts";
@@ -28,8 +28,31 @@ export interface UploadFile {
 
 export type FileResult = RouteOutput<"po.upload">["results"][number];
 
-type StoredPo = NonNullable<Awaited<ReturnType<typeof findPoByNumber>>>;
+export type StoredPo = NonNullable<Awaited<ReturnType<typeof findPoByNumber>>>;
 type DocItem = PoDocument["items"][number];
+
+/** What storing a PO reads from its page or from the manual form, whose text fields may be blank. */
+export type PoValues = Pick<
+  PoDocument,
+  | "poNumber"
+  | "poDate"
+  | "enquiry"
+  | "quotation"
+  | "orderType"
+  | "poStatusCode"
+  | "amendNo"
+  | "poValue"
+  | "netPoValue"
+  | "remarks"
+  | "gemcNumber"
+  | "rawHeader"
+> & { readonly items: readonly PoItemValues[] };
+
+type PoItemValues = Omit<DocItem, "materialCode" | "description" | "unit"> & {
+  readonly materialCode: string | null;
+  readonly description: string | null;
+  readonly unit: string | null;
+};
 type Item = PoSnapshot["items"][number];
 type MatchedLine = Awaited<ReturnType<typeof unmatchedSrvLines>>[number];
 
@@ -88,32 +111,11 @@ async function ingestStatements(
   stored: StoredPo | undefined,
   ctx: IngestContext,
 ): Promise<Statement[]> {
-  const { db } = deps;
   const now = deps.clock.now();
-  const poId = stored?.id ?? newId();
-  const before = stored && (await loadPoSnapshot(db, stored.id));
-  const plan = planItems(doc, before?.items ?? [], now);
-  const matched = (await unmatchedSrvLines(db, ctx.supplierId, doc.poNumber)).map((line) => ({
-    ...line,
-    poItemId: matchSrvItem(line, plan.items),
-  }));
-  const rematched = new Set(matched.map((line) => line.id));
-  const snapshot: PoSnapshot = {
-    po: { id: poId, supplierId: ctx.supplierId, poDate: doc.poDate },
-    items: plan.items,
-    dcLines: before?.dcLines ?? [],
-    invoiceLines: before?.invoiceLines ?? [],
-    srvLines: [...(before?.srvLines ?? []).filter((line) => !rematched.has(line.id)), ...matched],
-    storedFlags: before?.storedFlags ?? [],
-  };
-  // INV-19: GEMC when the remarks carry a GEMC number.
-  const isGemc = doc.gemcNumber !== null;
+  const { poId, plan, statements } = await storePoStatements(deps, doc, stored, { supplierId: ctx.supplierId, now });
   return [
-    headerStatement(db, doc, { poId, isGemc, stored, supplierId: ctx.supplierId }),
-    ...itemStatements(db, plan, { poId, isGemc, supplierId: ctx.supplierId, now }),
-    ...matchStatements(db, poId, matched),
-    ...recomputeStatements(deps, snapshot),
-    db.build.insert(auditLog).values({
+    ...statements,
+    deps.db.build.insert(auditLog).values({
       id: newId(),
       at: now,
       actor: ctx.actor,
@@ -134,10 +136,49 @@ async function ingestStatements(
 }
 
 /**
+ * The statements that store `values` as the PO `stored`, or as a new PO: header (version-checked against
+ * `stored.version`, INV-95), items and lots, cancel and restore (INV-48), matching of unmatched SRV lines (INV-39,
+ * INV-40) and recompute. The manual PO form stores through this too, as legacy did. The caller adds the audit row.
+ */
+export async function storePoStatements(
+  deps: RecomputeDeps,
+  values: PoValues,
+  stored: StoredPo | undefined,
+  { supplierId, now }: { supplierId: string; now: Instant },
+) {
+  const { db } = deps;
+  const poId = stored?.id ?? newId();
+  const before = stored && (await loadPoSnapshot(db, stored.id));
+  const plan = planItems(values, before?.items ?? [], now);
+  const matched = (await unmatchedSrvLines(db, supplierId, values.poNumber)).map((line) => ({
+    ...line,
+    poItemId: matchSrvItem(line, plan.items),
+  }));
+  const rematched = new Set(matched.map((line) => line.id));
+  const snapshot: PoSnapshot = {
+    po: { id: poId, supplierId, poDate: values.poDate },
+    items: plan.items,
+    dcLines: before?.dcLines ?? [],
+    invoiceLines: before?.invoiceLines ?? [],
+    srvLines: [...(before?.srvLines ?? []).filter((line) => !rematched.has(line.id)), ...matched],
+    storedFlags: before?.storedFlags ?? [],
+  };
+  // INV-19: GEMC when the remarks carry a GEMC number.
+  const isGemc = values.gemcNumber !== null;
+  const statements = [
+    headerStatement(db, values, { poId, isGemc, stored, supplierId }),
+    ...itemStatements(db, plan, { poId, isGemc, supplierId, now }),
+    ...matchStatements(db, poId, matched),
+    ...recomputeStatements(deps, snapshot),
+  ];
+  return { poId, plan, statements };
+}
+
+/**
  * The PO's items once this page is applied: the page's items, keeping the stored id and manual quantity of each one
  * already stored, and the stored items the page lacks, cancelled (INV-48).
  */
-function planItems(doc: PoDocument, storedItems: readonly Item[], now: Instant) {
+function planItems(doc: PoValues, storedItems: readonly Item[], now: Instant) {
   const byNo = new Map(storedItems.map((item) => [item.poItemNo, item]));
   const fromPage = doc.items.map((docItem) => {
     const old = byNo.get(docItem.poItemNo);
@@ -175,7 +216,7 @@ type ItemPlan = ReturnType<typeof planItems>;
 
 function headerStatement(
   db: Db,
-  doc: PoDocument,
+  doc: PoValues,
   {
     poId,
     isGemc,
@@ -207,7 +248,7 @@ function headerStatement(
 }
 
 /** The page's item values; a GEMC rate is kept as the GST-inclusive source and its net is derived (INV-16, INV-17). */
-function itemValues(item: DocItem, isGemc: boolean) {
+function itemValues(item: PoItemValues, isGemc: boolean) {
   return {
     poItemNo: item.poItemNo,
     materialCode: item.materialCode,
