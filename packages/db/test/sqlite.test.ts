@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { sql } from "drizzle-orm";
-import { afterAll, describe, expect, test } from "vite-plus/test";
+import { afterAll, describe, expect, expectTypeOf, test } from "vite-plus/test";
 
 import { WriteBatch, type Db } from "../src/index.ts";
 import { openNodeDb, type NodeDb } from "../src/platform/node/sqlite.ts";
@@ -161,4 +161,10 @@ describe("node executor", () => {
     expect(await parentIds(copy)).toEqual([["P1"], ["P2"]]);
     expect(await copy.query(copy.build.values(sql`PRAGMA integrity_check`))).toEqual([["ok"]]);
   });
+});
+
+test("the port offers no transaction() (C4)", () => {
+  expectTypeOf<Db>().not.toHaveProperty("transaction");
+  expectTypeOf<Db["build"]>().not.toHaveProperty("transaction");
+  expectTypeOf<Db["build"]>().not.toHaveProperty("batch");
 });
