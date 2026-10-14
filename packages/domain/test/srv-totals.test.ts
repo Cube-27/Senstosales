@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import type { SrvTotalsLine } from "../src/index.ts";
+import type { SrvTotals, SrvTotalsLine } from "../src/index.ts";
 import { srvLineRcd, srvTotals } from "../src/index.ts";
 import { money, qty } from "./unwrap.ts";
 
@@ -25,7 +25,7 @@ describe("INV-11: one SRV line's received quantity", () => {
 });
 
 describe("INV-09, INV-11, INV-12: SRV list totals", () => {
-  it.each<[string, Row[], ReturnType<typeof srvTotals>]>([
+  it.each<[string, Row[], Record<keyof SrvTotals, number>]>([
     ["no lines", [], { ordQty: 0, rcdQty: 0, acceptedQty: 0, rejQty: 0, value: 0 }],
     [
       // Accepted shows received (INV-09, EC-11); value is received × the PO item's rate.

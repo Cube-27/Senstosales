@@ -14,6 +14,7 @@ import { poService } from "./po.ts";
 import { createSecretsService } from "./secrets.ts";
 import { createSettingsService } from "./settings.ts";
 import { srvIngestService } from "./srv-ingest.ts";
+import { srvService } from "./srv.ts";
 import { createSupplierService, supplierRef, type SupplierRef } from "./supplier.ts";
 
 export interface ServiceDeps {
@@ -41,6 +42,7 @@ export function createServices(deps: ServiceDeps) {
     po: poService(deps),
     poIngest: poIngestService(deps),
     srvIngest: srvIngestService(deps),
+    srv: srvService(deps),
   };
 }
 
