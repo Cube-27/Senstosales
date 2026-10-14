@@ -121,6 +121,18 @@ describe("applyMigrations", () => {
     expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(1);
   });
 
+  test("an empty plan sends no batch, so it never takes the write lock", async () => {
+    const db = await migrated();
+    const batches: number[] = [];
+    const recording: Db = {
+      build: db.build,
+      query: (s) => db.query(s),
+      batch: async (s) => void batches.push(s.length),
+    };
+    await applyMigrations(recording, [], { appVersion: "0.2.0", appliedAt: AT });
+    expect(batches).toEqual([]);
+  });
+
   test("a DB carrying a newer version is refused", async () => {
     const db = await migrated();
     await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (2, 'future', ${AT}, '9.0.0')`)]);

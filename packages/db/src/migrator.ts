@@ -43,12 +43,13 @@ export function planMigrations(current: number, migrations: readonly Migration[]
   return migrations.filter((m) => m.version > current);
 }
 
-/** Applies `plan` and records each version, in one batch. An empty plan writes nothing. */
+/** Applies `plan` and records each version, in one batch. An empty plan sends no batch, so it takes no write lock. */
 export async function applyMigrations(
   db: Db,
   plan: readonly Migration[],
   stamp: { appVersion: string; appliedAt: Instant },
 ): Promise<void> {
+  if (plan.length === 0) return;
   const statements: Statement[] = plan.flatMap((m) => [
     ...m.statements.map((s) => db.build.run(sql.raw(s))),
     db.build.insert(schemaMigration).values({ version: m.version, name: m.name, ...stamp }),
