@@ -4,9 +4,9 @@ import type { zInvoiceKind } from "@senstosales/schemas";
 import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 import { fy, instant, isoDate, moneyU5, pctU5, qtyM, ulid } from "../types.ts";
-import { dc, dcItem, supplierSnapshot } from "./dc.ts";
+import { dc, dcItem } from "./dc.ts";
 import { po, poItem } from "./po.ts";
-import { supplierId } from "./supplier.ts";
+import { supplierId, supplierSnapshot } from "./supplier.ts";
 
 const taxAmounts = () => ({
   taxable: moneyU5("taxable_u5").notNull(),

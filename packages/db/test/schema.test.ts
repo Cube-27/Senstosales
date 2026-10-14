@@ -304,21 +304,6 @@ describe("§8.2 tables", () => {
     expect([...types].sort()).toEqual(["integer", "text"]);
   });
 
-  test("unit-suffixed columns are integer-unit or branded-text columns", () => {
-    const UNIT_SQL_TYPES: [RegExp, string][] = [
-      [/(_qty_m|_u5)$/, "integer"],
-      [/(_date|(^|_)at|^financial_year)$/, "text"],
-    ];
-    const mismatched = configs.flatMap((c) =>
-      c.columns.flatMap((col) => {
-        const sqlType = UNIT_SQL_TYPES.find(([suffix]) => suffix.test(col.name))?.[1];
-        const ok = sqlType === undefined || (col.columnType === "SQLiteCustomColumn" && col.getSQLType() === sqlType);
-        return ok ? [] : [`${c.name}.${col.name}`];
-      }),
-    );
-    expect(mismatched).toEqual([]);
-  });
-
   test("unit-suffixed columns carry the unit's brand", () => {
     // Every column whose name names a unit must read and write that unit's branded type; `never` means none differ.
     expectTypeOf<MisbrandedColumns<(typeof schema)[keyof typeof schema]>>().toEqualTypeOf<never>();

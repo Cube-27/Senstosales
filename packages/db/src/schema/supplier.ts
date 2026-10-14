@@ -26,6 +26,14 @@ export const supplierId = () =>
     .notNull()
     .references(() => supplier.id);
 
+/** The supplier details a DC or invoice carries, editable per document as in legacy. */
+export const supplierSnapshot = () => ({
+  supplierName: text("supplier_name"),
+  supplierAddress: text("supplier_address"),
+  supplierGstin: text("supplier_gstin"),
+  supplierContact: text("supplier_contact"),
+});
+
 /** GST percentages and preferences; never auth state. */
 export const settings = sqliteTable(
   "settings",

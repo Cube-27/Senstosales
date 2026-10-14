@@ -3,15 +3,7 @@ import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core
 
 import { fy, instant, isoDate, qtyM, ulid } from "../types.ts";
 import { po, poItem } from "./po.ts";
-import { supplierId } from "./supplier.ts";
-
-/** The supplier details a DC or invoice carries, editable per document as in legacy. */
-export const supplierSnapshot = () => ({
-  supplierName: text("supplier_name"),
-  supplierAddress: text("supplier_address"),
-  supplierGstin: text("supplier_gstin"),
-  supplierContact: text("supplier_contact"),
-});
+import { supplierId, supplierSnapshot } from "./supplier.ts";
 
 export const dc = sqliteTable(
   "dc",
