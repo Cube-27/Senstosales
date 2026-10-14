@@ -5,6 +5,8 @@ import type { SQLWrapper } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
+import { staleTable } from "./version.ts";
+
 /** Drizzle's statement builders, without its transaction() or batch(). Build here; run through `Db`. */
 export type QueryBuilder = Omit<BaseSQLiteDatabase<"async", unknown>, "transaction" | "batch">;
 
@@ -63,6 +65,17 @@ export class UniqueViolation extends DbError {
   }
 }
 
+/** An update carried a stale `version` (INV-95); the API answers 409. `table` is the one that refused it. */
+export class ConflictError extends DbError {
+  override name = "ConflictError";
+  readonly table: string;
+
+  constructor(table: string, options?: ErrorOptions) {
+    super(`The ${table} was changed by someone else. Reload and try again.`, options);
+    this.table = table;
+  }
+}
+
 const UNIQUE = /UNIQUE constraint failed: ([^:]+)/;
 
 /** Maps an executor error to a `DbError`. Drizzle wraps a single query's error, so the database's is the deepest cause. */
@@ -71,7 +84,9 @@ function toDbError(err: unknown): DbError {
   while (root instanceof Error && root.cause instanceof Error) root = root.cause;
   const message = root instanceof Error ? root.message : String(root);
   const unique = UNIQUE.exec(message)?.[1];
-  return unique === undefined ? new DbError(message, { cause: err }) : new UniqueViolation(unique, { cause: err });
+  if (unique !== undefined) return new UniqueViolation(unique, { cause: err });
+  const stale = staleTable(message);
+  return stale === undefined ? new DbError(message, { cause: err }) : new ConflictError(stale, { cause: err });
 }
 
 async function mapErrors<T>(run: PromiseLike<T>): Promise<T> {

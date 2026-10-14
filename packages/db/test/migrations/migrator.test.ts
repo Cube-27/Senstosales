@@ -17,6 +17,7 @@ import {
 } from "../../src/index.ts";
 import * as schema from "../../src/schema/index.ts";
 import { openNodeDb, type NodeDb } from "../../src/platform/node/sqlite.ts";
+import { totalChanges } from "../fixtures.ts";
 import type { Instant } from "../../src/types.ts";
 
 const AT = "2025-04-01T05:30:00.000Z" as Instant;
@@ -26,8 +27,6 @@ function open(): NodeDb {
   onTestFinished(() => db.close());
   return db;
 }
-
-const totalChanges = async (db: Db) => (await db.query(db.build.values<[number]>(sql`SELECT total_changes()`)))[0]?.[0];
 
 const objects = (db: Db, type: string) =>
   db.query(db.build.values<[string]>(sql`SELECT name FROM sqlite_master WHERE type = ${type} ORDER BY name`));
