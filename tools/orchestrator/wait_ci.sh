@@ -1,6 +1,7 @@
 #!/bin/bash
 # wait_ci.sh PR SHA7 [TIMEOUT_MIN] — waits until every check run on commit SHA7 of the PR has finished, then prints
-# them. Waiting on the head SHA avoids reading the previous commit's results. Exits 0 only when every check passed
+# them. SHA7 is a 7-40 hex-digit prefix of the head commit, matched as a prefix (as merge_pr.sh does). Waiting on
+# the head SHA avoids reading the previous commit's results. Exits 0 only when every check passed
 # (SUCCESS, NEUTRAL or SKIPPED); 1 on a failed check, a moved head, or TIMEOUT_MIN (default 45). Right after a push
 # GitHub may still report the old head, so a different head is an error once it is neither SHA7 nor the head seen
 # first, or after 3 minutes.
@@ -11,6 +12,7 @@ source "$(dirname "$0")/config.sh"
 pr=$1; sha=$2; deadline=$(( $(date +%s) + ${3:-45} * 60 )); lag_end=$(( $(date +%s) + 180 )); first=""
 poll=${WAIT_CI_POLL_S:-15}; no_run_s=${WAIT_CI_NO_RUN_S:-300}; no_run_end=$(( $(date +%s) + no_run_s ))
 err() { echo "ERROR $*" >&2; exit 1; }
+[[ $sha =~ ^[0-9a-f]{7,40}$ ]] || err "usage: wait_ci.sh PR SHA7 [TIMEOUT_MIN] (SHA7: 7-40 hex digits)"
 
 # Fails when the PR conflicts with its base; mergeable is UNKNOWN while GitHub is still computing it.
 check_conflict() {
@@ -43,16 +45,16 @@ all_reported() {
 
 while (( $(date +%s) < deadline )); do
   out=$(gh pr view "$pr" --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup --jq "
-    \"\(.headRefOid[:7]) \(.mergeable) \(.mergeStateStatus)\",
+    \"\(.headRefOid) \(.mergeable) \(.mergeStateStatus)\",
     (.statusCheckRollup[] | select(.__typename==\"CheckRun\") | select(.name|test(\"$CI_IGNORE_CHECKS\")|not)
     | \"\(.name) \(.status) \(.conclusion)\")" 2>/dev/null)
   read -r head merge <<< "${out%%$'\n'*}"
   [[ -z $first ]] && first=$head
-  if [[ -n $head && $head != "$sha" ]]; then
+  if [[ -n $head && $head != "$sha"* ]]; then
     if [[ $head != "$first" ]] || (( $(date +%s) >= lag_end )); then err "head is no longer $sha (now $head)"; fi
     sleep "$poll"; continue   # GitHub has not caught up with the push yet
   fi
-  [[ $head == "$sha" ]] || { sleep "$poll"; continue; }   # gh failed; retry
+  [[ $head == "$sha"* ]] || { sleep "$poll"; continue; }   # gh failed; retry
   checks=$(tail -n +2 <<< "$out")
   check_conflict "$merge"
   check_ci_started "$checks"
