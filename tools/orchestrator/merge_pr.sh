@@ -4,6 +4,7 @@
 # chain `gh pr merge` after a wait with `;`: a failed wait must stop the merge. The merge-guard hook denies
 # `gh pr merge` typed as a tool call; this script's own call is not a tool call, so it passes.
 # A spec PR (branch spec-NN/...) must carry its tracker commit: its diff must touch docs/plans/ACTIVE.md.
+# Open PRs based on the PR's branch are first retargeted to its base; a failed retarget refuses the merge.
 # Safe to rerun: a PR already MERGED at SHA7 exits 0 without merging again. When `gh pr merge` fails, the PR state is
 # re-read for MERGE_CONFIRM_S seconds (default 30): exits 0 if the PR is MERGED at the expected head, else 1.
 set -eu
@@ -30,6 +31,15 @@ if [[ $full != "$sha"* ]]; then err "head is $full, not $sha"; fi
 if [[ $branch =~ ^spec-[0-9]+/ ]] && ! gh pr diff "$pr" --name-only | grep -qxF "$tracker"; then
   err "PR #$pr ($branch) does not touch $tracker: the tracker commit is missing. Send YOUR TURN and wait for READY before merging."
 fi
+# GitHub deletes a merged PR's head branch and closes every open PR based on it (#43, stacked on #42, was closed).
+# Retarget those to the merged PR's base first; a failed list or retarget refuses the merge.
+base=$(gh pr view "$pr" --json baseRefName --jq .baseRefName) || err "cannot read the base of PR #$pr"
+stacked=$(gh pr list --state open --base "$branch" --json number --jq '.[].number') \
+  || err "cannot list the open PRs based on $branch"
+for n in $stacked; do
+  gh pr edit "$n" --base "$base" >/dev/null || err "cannot retarget PR #$n from $branch to $base; not merging PR #$pr"
+  echo "retargeted PR #$n from $branch to $base"
+done
 if gh pr merge "$pr" --squash --match-head-commit "$full"; then exit 0; fi
 
 end=$(( $(date +%s) + ${MERGE_CONFIRM_S:-30} ))
