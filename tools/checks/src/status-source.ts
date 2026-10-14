@@ -12,8 +12,8 @@ const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/;
 // Function declarations, function-valued bindings and class methods; group 1 is the name.
 const DECLARATIONS = [
   /\bfunction\b[\s*]*([\w$]+)\s*[<(]/,
-  // `[^=]*` spans any type annotation between the name and `=`.
-  /\b(?:const|let|var)\s+([\w$]+)[^=]*=\s*(?:async\s+)?(?:function\b|[(<]|[\w$]+\s*=>)/,
+  // `:[^=]+` spans any type annotation between the name and `=`.
+  /\b(?:const|let|var)\s+([\w$]+)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:function\b|[(<]|[\w$]+\s*=>)/,
   // `[^{;=]*` spans a return type; `=` keeps arrow callbacks out.
   /^\s*(?:(?:public|private|protected|static|async|override)\s+)*([\w$]+)\s*\([^)]*\)[^{;=]*\{\s*$/,
 ];
