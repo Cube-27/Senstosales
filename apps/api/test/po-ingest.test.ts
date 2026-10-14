@@ -22,6 +22,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
 import { poUploadRoutes } from "../src/routes/po-upload.ts";
+import { poIngestService } from "../src/services/po-ingest.ts";
 import { json, testApp } from "./helpers.ts";
 import { poPage, type PageSpec } from "./po-pages.ts";
 import { fixedClock, memoryStorage, NOW, supplierDb, SUPPLIER } from "./service-deps.ts";
@@ -33,7 +34,7 @@ let client: ReturnType<typeof testApp>["client"];
 beforeEach(async () => {
   db = await supplierDb();
   storage = memoryStorage();
-  client = testApp(poUploadRoutes({ db, storage, clock: fixedClock })).client;
+  client = testApp(poUploadRoutes(poIngestService({ db, storage, clock: fixedClock }))).client;
 });
 afterEach(() => db.close());
 
@@ -134,7 +135,9 @@ describe("GEMC rates (INV-16, INV-17)", () => {
 describe("the date guard (INV-42, INV-44)", () => {
   test("an older page is skipped and changes nothing, with no flag and no audit row", async () => {
     await uploadOne({ date: "01/05/2025", items: [{ no: 10 }] });
-    const before = { po: await poRow(), items: await items() };
+    const sources = () => db.query(db.build.select().from(sourceDocument));
+    const before = { po: await poRow(), items: await items(), sources: await sources() };
+    const page = storage.files.get("html/po/4500001.html");
 
     const result = await uploadOne({ date: "30/04/2025", amend: 1, items: [{ no: 10, ord: "99.000" }, { no: 30 }] });
 
@@ -143,10 +146,12 @@ describe("the date guard (INV-42, INV-44)", () => {
       status: "skipped",
       reason: "Older than the stored PO 4500001 (dated 2025-05-01). Nothing was changed.",
     });
-    expect({ po: await poRow(), items: await items() }).toEqual(before);
+    expect({ po: await poRow(), items: await items(), sources: await sources() }).toEqual(before);
+    // The stored page stays the newer one, so a re-parse never brings the older data back (EC-29).
+    expect(storage.files.get("html/po/4500001.html")).toBe(page);
     expect(await db.query(db.build.select().from(poLot))).toHaveLength(1);
     expect(await db.query(db.build.select().from(reconciliationIssue))).toEqual([]);
-    expect(await audits()).toHaveLength(1);
+    expect(await db.query(db.build.select().from(auditLog))).toHaveLength(2);
   });
 
   test("a page of the same date is accepted and replaces the stored values", async () => {
@@ -243,7 +248,7 @@ describe("re-ingest never writes dispatch (INV-47)", () => {
 });
 
 describe("the date winner after accept (INV-45)", () => {
-  async function srvOn(poId: string | null, poItemId: string | null, srvDate: string): Promise<void> {
+  async function srvOn(poId: string | null, poItemId: string | null, srvDate: string, code = "SYN-10"): Promise<void> {
     await db.batch([
       db.build.insert(srv).values({
         id: "V1",
@@ -260,7 +265,7 @@ describe("the date winner after accept (INV-45)", () => {
         supplierId: SUPPLIER,
         srvId: "V1",
         poItemId,
-        materialCode: "SYN-10",
+        materialCode: code,
         poItemNo: 10,
         lotNo: 1,
         srvItemNo: 1,
@@ -297,6 +302,22 @@ describe("the date winner after accept (INV-45)", () => {
     expect(line?.poItemId).toBe((await items())[0]?.id);
     expect((await items()).map((i) => [i.rcdQty, i.rejQty])).toEqual([[3000, 1000]]);
   });
+
+  test("an attached SRV line left unmatched is matched once an amendment adds its material code", async () => {
+    await uploadOne(page("10/04/2025"));
+    // EC-12: SYN-30 is on no item yet.
+    await srvOn((await poRow())?.id ?? null, null, "2025-05-01", "SYN-30");
+
+    await uploadOne({ date: "11/04/2025", items: [{ no: 10 }, { no: 30 }] });
+
+    const [line] = await db.query(db.build.select().from(srvItem));
+    expect(line?.poItemId).toBe((await items())[1]?.id);
+    // Item 30 now counts the SRV (it wins on date); item 10 has no SRV line, so the PO's 0 stands.
+    expect((await items()).map((i) => [i.poItemNo, i.rcdQty, i.rejQty])).toEqual([
+      [10, 0, 0],
+      [30, 3000, 1000],
+    ]);
+  });
 });
 
 describe("failures (INV-50)", () => {
@@ -327,7 +348,9 @@ describe("failures (INV-50)", () => {
       batch: (statements) =>
         db.batch(statements.length > 3 && ++ingestBatches === 2 ? [...statements, poison] : statements),
     };
-    const { client: refusingClient } = testApp(poUploadRoutes({ db: refusing, storage, clock: fixedClock }));
+    const { client: refusingClient } = testApp(
+      poUploadRoutes(poIngestService({ db: refusing, storage, clock: fixedClock })),
+    );
     const files = ["4500001", "4500002", "4500003"].map((number) => ({
       name: `${number}.html`,
       html: poPage({ number, date: "10/04/2025", items: [{ no: 10 }] }),
@@ -344,10 +367,74 @@ describe("failures (INV-50)", () => {
     expect([...storage.files.keys()]).toContain("html/po/4500002.html");
   });
 
+  test("a refused source-document batch fails that file only (SPEC-08 §4.3)", async () => {
+    // The second source-document batch (three statements) also carries a row the supplier's primary key refuses.
+    let sourceBatches = 0;
+    const poison = db.build.insert(supplier).values({ id: SUPPLIER, name: "x", bankDetails: {}, invoiceDefaults: {} });
+    const refusing: Db = {
+      build: db.build,
+      query: (statement) => db.query(statement),
+      batch: (statements) =>
+        db.batch(statements.length === 3 && ++sourceBatches === 2 ? [...statements, poison] : statements),
+    };
+    const { client: refusingClient } = testApp(
+      poUploadRoutes(poIngestService({ db: refusing, storage, clock: fixedClock })),
+    );
+    const files = ["4500001", "4500002", "4500003"].map((number) => ({
+      name: `${number}.html`,
+      html: poPage({ number, date: "10/04/2025", items: [{ no: 10 }] }),
+    }));
+
+    const { results } = await refusingClient.request("po.upload", { body: { files } });
+
+    expect(results.map((r) => r.status)).toEqual(["accepted", "failed", "accepted"]);
+    expect(results[1]?.reason).toBe("PO 4500002 could not be saved. Nothing from this file was changed.");
+    const stored = await db.query(db.build.select({ n: po.poNumber }).from(po).orderBy(po.poNumber));
+    expect(stored.map((r) => r.n)).toEqual(["4500001", "4500003"]);
+  });
+
+  test("a PO changed by another upload after the guard read it is not overwritten (INV-42, INV-95)", async () => {
+    await uploadOne({ date: "01/05/2025", items: [{ no: 10 }] });
+    // Another upload commits a newer page between this file's guard read and its ingest batch.
+    let raced = false;
+    const racing: Db = {
+      build: db.build,
+      query: (statement) => db.query(statement),
+      batch: async (statements) => {
+        if (statements.length > 3 && !raced) {
+          raced = true;
+          await db.batch([
+            db.build
+              .update(po)
+              .set({ poDate: "2025-05-03" as IsoDate, amendNo: 5, version: 2 })
+              .where(eq(po.poNumber, "4500001")),
+          ]);
+        }
+        return db.batch(statements);
+      },
+    };
+    const { client: racingClient } = testApp(
+      poUploadRoutes(poIngestService({ db: racing, storage, clock: fixedClock })),
+    );
+    const html = poPage({ date: "02/05/2025", amend: 1, items: [{ no: 10, ord: "99.000" }] });
+
+    const { results } = await racingClient.request("po.upload", { body: { files: [{ name: "a.html", html }] } });
+
+    expect(results).toEqual([
+      {
+        name: "a.html",
+        status: "failed",
+        reason: "PO 4500001 could not be saved. Nothing from this file was changed.",
+      },
+    ]);
+    expect(await poRow()).toMatchObject({ poDate: "2025-05-03", amendNo: 5, version: 2, ordQty: 10000 });
+    expect((await items()).map((i) => i.ordQty)).toEqual([10000]);
+  });
+
   test("an upload before onboarding is refused with 409", async () => {
     const empty = await supplierDb();
     await empty.batch([empty.build.delete(supplier)]);
-    const { send } = testApp(poUploadRoutes({ db: empty, storage, clock: fixedClock }));
+    const { send } = testApp(poUploadRoutes(poIngestService({ db: empty, storage, clock: fixedClock })));
 
     const res = await send("/api/po/upload", json("POST", { files: [{ name: "a.html", html: poPage(APRIL) }] }));
 

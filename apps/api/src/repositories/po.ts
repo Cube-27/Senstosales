@@ -11,11 +11,11 @@ export async function findPo(db: Db, poId: string) {
   return rows[0];
 }
 
-/** The supplier's PO with this BHEL number, with what the ingest guard and audit read, or `undefined`. */
+/** The supplier's PO with this BHEL number, with what the ingest guard, its version check and the audit read, or `undefined`. */
 export async function findPoByNumber(db: Db, supplierId: string, poNumber: string) {
   const rows = await db.query(
     db.build
-      .select({ id: po.id, poDate: po.poDate, amendNo: po.amendNo })
+      .select({ id: po.id, poDate: po.poDate, amendNo: po.amendNo, version: po.version })
       .from(po)
       .where(and(eq(po.supplierId, supplierId), eq(po.poNumber, poNumber))),
   );

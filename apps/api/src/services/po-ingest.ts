@@ -1,19 +1,19 @@
 // PO file ingest (SPEC-08 §4.2, ARCHITECTURE §7.2, §7.3): parse outside any batch, keep the raw page, then one
-// `WriteBatch` per file (INV-50): date guard (INV-42) → header, items and lots → cancel / restore (INV-48) → attach
-// SRVs stored before the PO (INV-39, INV-40) → recompute, which re-evaluates the date winner (INV-45) → flags → audit.
+// `WriteBatch` per file (INV-50): date guard (INV-42) → header, items and lots → cancel / restore (INV-48) → match
+// unmatched SRV lines of this PO number, attaching SRVs stored before the PO (INV-39, INV-40) → recompute, which re-evaluates the date winner (INV-45) → flags → audit.
 // DC lines, invoice lines and manual quantities are only read, never written (INV-47).
 import type { Db, Instant, Statement } from "@senstosales/db";
-import { auditLog, DbError, po, poItem, poLot, srv, srvItem, WriteBatch } from "@senstosales/db";
+import { auditLog, DbError, po, poItem, poLot, srv, srvItem, updateWithVersion, WriteBatch } from "@senstosales/db";
 import type { Qty } from "@senstosales/domain";
 import { acceptIncoming, gemcNetRate, gemcSourceRate, matchSrvItem } from "@senstosales/domain";
 import type { PoDocument } from "@senstosales/parsers";
 import { parsePo } from "@senstosales/parsers";
 import type { RouteOutput } from "@senstosales/schemas";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { newId } from "../ids.ts";
 import { findPoByNumber } from "../repositories/po.ts";
-import { unattachedSrvLines } from "../repositories/srv.ts";
+import { unmatchedSrvLines } from "../repositories/srv.ts";
 import type { PoSnapshot } from "./recompute.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
 import type { IngestContext, SourceDocumentDeps } from "./source-documents.ts";
@@ -31,11 +31,18 @@ export type FileResult = RouteOutput<"po.upload">["results"][number];
 type StoredPo = NonNullable<Awaited<ReturnType<typeof findPoByNumber>>>;
 type DocItem = PoDocument["items"][number];
 type Item = PoSnapshot["items"][number];
-type AttachedLine = Awaited<ReturnType<typeof unattachedSrvLines>>[number];
+type MatchedLine = Awaited<ReturnType<typeof unmatchedSrvLines>>[number];
 
 const ZERO = 0 as Qty;
 /** Placeholders for a new row's derived columns; recompute sets them in the same batch. */
 const DERIVED_PLACEHOLDER = { status: "Pending", dspQty: ZERO, rcdQty: ZERO, rejQty: ZERO, balanceQty: ZERO } as const;
+
+/** The PO ingest use cases, as `createServices` exposes them. */
+export const poIngestService = (deps: PoIngestDeps) => ({
+  upload: (files: readonly UploadFile[]) => uploadPoFiles(deps, files),
+});
+
+export type PoIngestService = ReturnType<typeof poIngestService>;
 
 /** `POST /api/po/upload`: each file in turn, so a later file of the same PO sees the earlier one's rows. */
 export async function uploadPoFiles(deps: PoIngestDeps, files: readonly UploadFile[]): Promise<FileResult[]> {
@@ -54,18 +61,20 @@ export async function ingestPoFile(deps: PoIngestDeps, file: UploadFile, ctx: In
     return { name, status: "failed", reason: `Could not read this PO page (${code}): ${message}` };
   }
   const doc = parsed.value;
-  // The PO number is the storage key, so an uploaded page is stored once it has parsed (EC-29).
-  await storeSourceDocument(deps, { kind: "po", key: doc.poNumber, html: file.html, docDate: doc.poDate }, ctx);
-  const stored = await findPoByNumber(deps.db, ctx.supplierId, doc.poNumber);
-  if (stored && !acceptIncoming(stored.poDate, doc.poDate)) {
-    const reason = `Older than the stored PO ${doc.poNumber} (dated ${stored.poDate}). Nothing was changed.`;
-    return { name, status: "skipped", reason };
-  }
-  const batch = new WriteBatch(deps.db);
-  for (const statement of await ingestStatements(deps, doc, stored, ctx)) batch.add(statement);
   try {
+    const stored = await findPoByNumber(deps.db, ctx.supplierId, doc.poNumber);
+    if (stored && !acceptIncoming(stored.poDate, doc.poDate)) {
+      const reason = `Older than the stored PO ${doc.poNumber} (dated ${stored.poDate}). Nothing was changed.`;
+      return { name, status: "skipped", reason };
+    }
+    // The PO number is the storage key, so an uploaded page is stored once it has parsed and passed the guard (EC-29).
+    await storeSourceDocument(deps, { kind: "po", key: doc.poNumber, html: file.html, docDate: doc.poDate }, ctx);
+    const batch = new WriteBatch(deps.db);
+    for (const statement of await ingestStatements(deps, doc, stored, ctx)) batch.add(statement);
     await batch.commit();
   } catch (err) {
+    // A refused statement, including a PO changed by another upload since the guard read it (INV-95), fails this
+    // file only (SPEC-08 §4.3).
     if (!(err instanceof DbError)) throw err;
     const reason = `PO ${doc.poNumber} could not be saved. Nothing from this file was changed.`;
     return { name, status: "failed", reason };
@@ -84,24 +93,25 @@ async function ingestStatements(
   const poId = stored?.id ?? newId();
   const before = stored && (await loadPoSnapshot(db, stored.id));
   const plan = planItems(doc, before?.items ?? [], now);
-  const attached = (await unattachedSrvLines(db, ctx.supplierId, doc.poNumber)).map((line) => ({
+  const matched = (await unmatchedSrvLines(db, ctx.supplierId, doc.poNumber)).map((line) => ({
     ...line,
     poItemId: matchSrvItem(line, plan.items),
   }));
+  const rematched = new Set(matched.map((line) => line.id));
   const snapshot: PoSnapshot = {
     po: { id: poId, supplierId: ctx.supplierId, poDate: doc.poDate },
     items: plan.items,
     dcLines: before?.dcLines ?? [],
     invoiceLines: before?.invoiceLines ?? [],
-    srvLines: [...(before?.srvLines ?? []), ...attached],
+    srvLines: [...(before?.srvLines ?? []).filter((line) => !rematched.has(line.id)), ...matched],
     storedFlags: before?.storedFlags ?? [],
   };
   // INV-19: GEMC when the remarks carry a GEMC number.
   const isGemc = doc.gemcNumber !== null;
   return [
-    headerStatement(db, doc, { poId, isGemc, exists: stored !== undefined, supplierId: ctx.supplierId }),
+    headerStatement(db, doc, { poId, isGemc, stored, supplierId: ctx.supplierId }),
     ...itemStatements(db, plan, { poId, isGemc, supplierId: ctx.supplierId, now }),
-    ...attachStatements(db, poId, attached),
+    ...matchStatements(db, poId, matched),
     ...recomputeStatements(deps, snapshot),
     db.build.insert(auditLog).values({
       id: newId(),
@@ -166,7 +176,12 @@ type ItemPlan = ReturnType<typeof planItems>;
 function headerStatement(
   db: Db,
   doc: PoDocument,
-  { poId, isGemc, exists, supplierId }: { poId: string; isGemc: boolean; exists: boolean; supplierId: string },
+  {
+    poId,
+    isGemc,
+    stored,
+    supplierId,
+  }: { poId: string; isGemc: boolean; stored: StoredPo | undefined; supplierId: string },
 ): Statement {
   const header = {
     poNumber: doc.poNumber,
@@ -183,14 +198,12 @@ function headerStatement(
     remarks: doc.remarks,
     rawHeader: doc.rawHeader,
   };
-  if (!exists) {
+  if (!stored) {
     return db.build.insert(po).values({ ...header, ...DERIVED_PLACEHOLDER, id: poId, supplierId, ordQty: ZERO });
   }
-  // A re-ingest changes the document, so an edit opened on the earlier one is stale (INV-95).
-  return db.build
-    .update(po)
-    .set({ ...header, version: sql`${po.version} + 1` })
-    .where(eq(po.id, poId));
+  // A re-ingest changes the document, so an edit opened on the earlier one is stale; and if another upload changed
+  // the PO since the guard read it, this batch fails instead of overwriting it (INV-95).
+  return updateWithVersion(db, po, poId, stored.version, header);
 }
 
 /** The page's item values; a GEMC rate is kept as the GST-inclusive source and its net is derived (INV-16, INV-17). */
@@ -240,8 +253,8 @@ function itemStatements(
   return statements;
 }
 
-/** SRVs stored while this PO was "not found" now belong to it, with each line's matched item. */
-function attachStatements(db: Db, poId: string, lines: readonly AttachedLine[]): Statement[] {
+/** Unmatched SRV lines take their matched item; SRVs stored while this PO was "not found" now belong to it. */
+function matchStatements(db: Db, poId: string, lines: readonly MatchedLine[]): Statement[] {
   if (lines.length === 0) return [];
   const srvIds = [...new Set(lines.map((line) => line.srvId))];
   return [

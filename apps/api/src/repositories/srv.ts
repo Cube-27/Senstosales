@@ -29,15 +29,16 @@ export const srvLinesOfPo = (db: Db, poId: string) =>
   );
 
 /**
- * The lines of the supplier's SRVs for `poNumber` stored while the PO was not in the system ("PO not found",
- * INV-40), with what item matching reads (INV-39).
+ * The unmatched lines of the supplier's SRVs for `poNumber`, with what item matching reads (INV-39): every line of
+ * an SRV stored while the PO was not in the system ("PO not found", INV-40), and lines of attached SRVs whose
+ * material code was on no item (EC-12).
  */
-export const unattachedSrvLines = (db: Db, supplierId: string, poNumber: string) =>
+export const unmatchedSrvLines = (db: Db, supplierId: string, poNumber: string) =>
   db.query(
     db.build
       .select({ ...lineColumns, srvId: srv.id, materialCode: srvItem.materialCode, poItemNo: srvItem.poItemNo })
       .from(srvItem)
       .innerJoin(srv, eq(srv.id, srvItem.srvId))
-      .where(and(eq(srv.supplierId, supplierId), eq(srv.poNumber, poNumber), isNull(srv.poId)))
+      .where(and(eq(srv.supplierId, supplierId), eq(srv.poNumber, poNumber), isNull(srvItem.poItemId)))
       .orderBy(srvItem.id),
   );

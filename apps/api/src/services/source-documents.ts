@@ -1,7 +1,7 @@
 // Raw BHEL HTML, kept before it is parsed (INV-107, ARCHITECTURE §7.3): stored through `Storage` and recorded in
 // `source_document`, so a parser fix can re-parse without re-scraping. Its own batch, committed before the ingest
 // batch, so a page whose data is then refused is still kept. A scraped page is stored before it is parsed; an uploaded
-// one once it has parsed, since its PO number is the key (EC-29).
+// one once it has parsed and passed the date guard, since its PO number is the key (EC-29).
 import type { Db } from "@senstosales/db";
 import { auditLog, sourceDocument, WriteBatch } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
