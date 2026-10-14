@@ -1,0 +1,82 @@
+{
+  "poNumber": "4100000129",
+  "poDate": "2024-05-20",
+  "enquiry": "E-000129",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "36000",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "42480",
+  "remarks": "Deliver in three lots.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN129010",
+      "description": "WELDING ELECTRODE 3.15 MM",
+      "drawingNo": null,
+      "unit": "KG",
+      "ordQty": "300",
+      "rate": "120",
+      "rcdQty": "100",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "100",
+          "delyDate": "2024-07-31",
+          "entryAllowDate": "2024-08-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        },
+        {
+          "lotNo": 2,
+          "delyQty": "100",
+          "delyDate": "2024-08-31",
+          "entryAllowDate": "2024-09-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        },
+        {
+          "lotNo": 3,
+          "delyQty": "100",
+          "delyDate": "2024-09-30",
+          "entryAllowDate": "2024-10-15",
+          "entryAllowNote": null,
+          "destCode": "32"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000129",
+    "PO DATE": "20-MAY-24",
+    "ENQUIRY": "E-000129",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "36000.00",
+    "NET PO VAL": "42480.00",
+    "REMARKS": "Deliver in three lots.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

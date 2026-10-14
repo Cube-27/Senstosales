@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000107",
+  "poDate": "2023-06-12",
+  "enquiry": "E-000107",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": "Q-107",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "9000",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "10620",
+  "remarks": "Rejected material to be replaced free of cost.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN107010",
+      "description": "BEARING HOUSING CAST IRON",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "20",
+      "rate": "450",
+      "rcdQty": "18",
+      "rejQty": "2",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "20",
+          "delyDate": "2023-08-31",
+          "entryAllowDate": "2023-09-15",
+          "entryAllowNote": null,
+          "destCode": "21"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000107",
+    "PO DATE": "12/06/2023",
+    "ENQUIRY": "E-000107",
+    "ENQ DATE": "",
+    "QUOTATION": "Q-107",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "9000.00",
+    "NET PO VAL": "10620.00",
+    "REMARKS": "Rejected material to be replaced free of cost.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

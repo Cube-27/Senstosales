@@ -1,0 +1,87 @@
+{
+  "poNumber": "4100000131",
+  "poDate": "2024-06-17",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 3,
+  "poValue": "6300",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "7434",
+  "remarks": "Amendment 3: delivery date of item 20 extended.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN131010",
+      "description": "GEAR COUPLING",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "210",
+      "rcdQty": "10",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-08-31",
+          "entryAllowDate": "2024-09-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    },
+    {
+      "poItemNo": 20,
+      "materialCode": "SYN131020",
+      "description": "PIN BUSH COUPLING",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "420",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2024-12-31",
+          "entryAllowDate": "2025-01-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000131",
+    "PO DATE": "17-JUN-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "3",
+    "PO-VALUE": "6300.00",
+    "NET PO VAL": "7434.00",
+    "REMARKS": "Amendment 3: delivery date of item 20 extended.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

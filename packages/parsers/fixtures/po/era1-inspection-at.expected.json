@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000113",
+  "poDate": "2023-09-18",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "2400",
+  "rcNo": null,
+  "inspection": "SUPPLIER WORKS",
+  "currency": "INR",
+  "netPoValue": "2832",
+  "remarks": "Inspection at supplier works.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN113010",
+      "description": "PRESSURE SWITCH",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "2",
+      "rate": "1200",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "2",
+          "delyDate": "2023-11-30",
+          "entryAllowDate": "2023-12-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000113",
+    "PO DATE": "18/09/2023",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION AT": "SUPPLIER WORKS",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "2400.00",
+    "NET PO VAL": "2832.00",
+    "REMARKS": "Inspection at supplier works.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

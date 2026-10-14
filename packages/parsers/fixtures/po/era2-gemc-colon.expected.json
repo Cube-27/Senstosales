@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000132",
+  "poDate": "2024-07-01",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "GM",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "11800",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "11800",
+  "remarks": "Order against GeMC: 8842-A dated 20-JUN-24.",
+  "gemcNumber": "8842-A",
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN132010",
+      "description": "DIGITAL MULTIMETER",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "5",
+      "rate": "2360",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "5",
+          "delyDate": "2024-08-31",
+          "entryAllowDate": "2024-09-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000132",
+    "PO DATE": "01-JUL-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "GM",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "11800.00",
+    "NET PO VAL": "11800.00",
+    "REMARKS": "Order against GeMC: 8842-A dated 20-JUN-24.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

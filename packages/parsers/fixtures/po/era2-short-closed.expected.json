@@ -1,0 +1,74 @@
+{
+  "poNumber": "4100000130",
+  "poDate": "2024-06-03",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "S",
+  "amendNo": 0,
+  "poValue": "2000",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "2360",
+  "remarks": "Balance quantity short closed.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN130010",
+      "description": "ISOLATOR HANDLE",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "20",
+      "rate": "100",
+      "rcdQty": "12",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "12",
+          "delyDate": "2024-08-31",
+          "entryAllowDate": "2024-09-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        },
+        {
+          "lotNo": 2,
+          "delyQty": "8",
+          "delyDate": "2024-09-30",
+          "entryAllowDate": null,
+          "entryAllowNote": "PO Short Closed",
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000130",
+    "PO DATE": "03-JUN-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "S",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "2000.00",
+    "NET PO VAL": "2360.00",
+    "REMARKS": "Balance quantity short closed.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}
