@@ -2,7 +2,7 @@
 // `exports/<ulid>.<ext>`), so a key is `/`-separated plain segments; anything that could leave the root (`..`,
 // absolute, drive-qualified, backslashes) is refused before the file system sees it (INV-96, C17).
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, relative, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
 import type { Storage } from "../../ports/storage.ts";
 
@@ -25,7 +25,13 @@ function segmentsOf(key: string): string[] {
 const isMissing = (err: unknown): boolean => (err as NodeJS.ErrnoException).code === "ENOENT";
 
 export function createFsStorage(root: string): Storage {
-  const pathOf = (key: string): string => join(root, ...segmentsOf(key));
+  const base = resolve(root);
+  // Plain names cannot leave the root; the resolved-path check makes that hold for the file system too.
+  const pathOf = (key: string): string => {
+    const path = resolve(base, ...segmentsOf(key));
+    if (!path.startsWith(base + sep)) refuse(key);
+    return path;
+  };
 
   return {
     async put(key, bytes) {
@@ -55,7 +61,7 @@ export function createFsStorage(root: string): Storage {
       const folder = prefix.slice(0, cut + 1);
       const start = prefix.slice(cut + 1);
       if (start !== "" && !isPlainName(start)) refuse(prefix);
-      const dir = folder === "" ? root : join(root, ...segmentsOf(folder.slice(0, -1)));
+      const dir = folder === "" ? base : pathOf(folder.slice(0, -1));
       let entries;
       try {
         entries = await readdir(dir, { recursive: true, withFileTypes: true });

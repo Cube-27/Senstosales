@@ -85,8 +85,10 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.main) {
-  main().catch((err: unknown) => {
+  try {
+    await main();
+  } catch (err) {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     process.exitCode = 1;
-  });
+  }
 }
