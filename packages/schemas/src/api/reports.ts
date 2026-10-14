@@ -31,10 +31,8 @@ export const zReconciliationRow = zReportItem.extend({ rcdQty: zQty, rejQty: zQt
 
 export const zRegisterExportQuery = z.object(zDateRange);
 
-export const zExportSelectedBody = z.object({
-  report: z.enum(["pending", "reconciliation"]),
-  poItemIds: z.array(zId).min(1),
-});
+/** The reconciliation rows of the selected POs (SPEC-13 §2). */
+export const zExportSelectedBody = z.object({ poIds: z.array(zId).min(1) });
 
 export const zDcIdQuery = z.object({ dcId: zId });
 

@@ -31,7 +31,7 @@ describe("route table (SPEC-04 §4.3, INV-101)", () => {
     }
   });
 
-  it("leaves exactly the login, reset, session, onboarding and health routes public (ARCHITECTURE §10.1)", () => {
+  it("leaves exactly the login, reset, session, onboarding and health routes public (ARCHITECTURE §10.1; onboarding §10.3, INV-78)", () => {
     const publicRoutes = table.filter((r) => r.public === true).map((r) => `${r.method} ${r.path}`);
     expect(publicRoutes.sort()).toEqual(
       [

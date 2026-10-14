@@ -126,6 +126,18 @@ describe("queries", () => {
   });
 });
 
+describe("export selected: the selected POs' reconciliation rows (SPEC-13 §2)", () => {
+  const body = routes["reports.exportSelected"].body;
+
+  it("takes the selected PO ids", () => {
+    expect(body.parse({ poIds: [ID] })).toEqual({ poIds: [ID] });
+  });
+
+  it("rejects an empty selection", () => {
+    expect(body.safeParse({ poIds: [] }).success).toBe(false);
+  });
+});
+
 describe("uploads (SPEC-08)", () => {
   it("needs at least one file", () => {
     expect(routes["po.upload"].body.safeParse({ files: [] }).success).toBe(false);

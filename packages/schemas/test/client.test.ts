@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
 import type { FetchLike, FetchResponse } from "../src/index.ts";
-import { ApiError, createClient, zGstPct, zMoney, zQty } from "../src/index.ts";
+import { ApiError, createClient, zGstPct, zIsoDate, zMoney, zQty } from "../src/index.ts";
 
 const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
 const ITEM = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B4";
@@ -57,6 +57,19 @@ describe("createClient: requests built from the route table", () => {
     const query = { q: "a b&c", types: ["po" as const, "dc" as const], valueMin: z.decode(zMoney, "1000") };
     await client.request("search.query", { query });
     expect(calls[0]?.url).toBe("/api/search?q=a%20b%26c&valueMin=1000&types=po&types=dc");
+  });
+
+  it("encodes a list query: paging, booleans and dates as wire strings", async () => {
+    const { client, calls } = fakeFetch(200, { items: [], total: 0 });
+    const query = {
+      page: 2,
+      pageSize: 25 as const,
+      flagged: true,
+      from: z.decode(zIsoDate, "2025-04-01"),
+      sort: "poDate" as const,
+    };
+    await client.request("po.list", { query });
+    expect(calls[0]?.url).toBe("/api/po?page=2&pageSize=25&sort=poDate&from=2025-04-01&flagged=true");
   });
 
   it("encodes the body through the codecs: percentages go as decimal strings (C3)", async () => {
