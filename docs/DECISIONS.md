@@ -1290,3 +1290,83 @@ None.
 - Alternatives: Migrate without a backup.
 - Why: C9 allows the upgrade only after a backup.
 - Reversible: yes.
+
+### D-0155 — The Jobs port only schedules (`enqueue`, `holds`)
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: The jobs service queues the row (it generates the id and runs the queue check), and the `Jobs` port only schedules the run (`enqueue(id, start)`) and says whether it holds a job (`holds(id)`). Claim, progress, the cancel flag and finish are repository statements that the job-worker service commits.
+- Alternatives: A port with `enqueue/claim/progress/isCancelRequested/finish`, as SPEC-08 §4.1 lists.
+- Why: Those calls are made by one service against the `job` table, so a port for them adds a layer with one caller; ids stay in services (C4). SPEC-19 and SPEC-21 register a `JobHandler` and do not call the port.
+- Reversible: yes.
+
+### D-0156 — Job parameters are held in memory
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: The start body is passed to the runner in memory, so a job runs only in the process that queued it (EC-28).
+- Alternatives: A `params_json` column on `job`, which changes ARCHITECTURE §8.2 and needs the owner.
+- Why: It keeps the table as specified.
+- Reversible: yes.
+
+### D-0157 — A start is refused while any job is queued or running
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: `POST /api/jobs` answers 409 `job-running` while a job is queued or running, not only running. The check and the insert are one `INSERT … SELECT … WHERE NOT EXISTS` statement.
+- Alternatives: Refuse only while a job is running, the scope of the partial unique index.
+- Why: INV-98 says "a second start is 409" and "single active job"; otherwise a queued job would wait behind the running one.
+- Reversible: yes.
+
+### D-0158 — Job progress counts are disjoint
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: `done`, `skipped` and `failed` are disjoint (`done` = processed without a skip or failure). `current` is the next document, written with each document's counts, and `null` once the job ends. A failed or cancelled job keeps the counts its committed batches reached.
+- Alternatives: `done` counts every processed document.
+- Why: The folder-import summary needs the three counts separately.
+- Reversible: yes.
+
+### D-0159 — Job bookkeeping writes no audit row
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: Queueing, claiming, progress, cancel and finish write no `audit_log` row.
+- Alternatives: An audit row per job write.
+- Why: The audit log records changes to business data. Job state is operational and has its own `job_event` log, and auditing it would add a row per document.
+- Reversible: yes.
+
+### D-0160 — The job list shows newest first by default
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: `GET /api/jobs` lists newest first unless `sort=createdAt` is given; ids break ties.
+- Alternatives: Always use the `dir` default (`asc`).
+- Why: The latest job is the one the UI shows.
+- Reversible: yes.
+
+### D-0161 — Cancelling a finished job returns it unchanged
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: Cancelling a `done`, `failed` or `cancelled` job answers 200 with the job as it is (`cancelRequested` stays false).
+- Alternatives: 409.
+- Why: Cancelling something already over is harmless, and the user needs no error (C11).
+- Reversible: yes.
+
+### D-0162 — A job type with no handler fails plainly
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: Until a type's handler exists, starting it creates a job that ends `failed` with "This kind of job is not available yet."
+- Alternatives: 400 at start.
+- Why: It needs no extra port method, and the job list shows what happened.
+- Reversible: yes.
+
+### D-0163 — Ids made in the same millisecond count up
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: `newId` increments the random part when it is called again in the same millisecond, so ids sort in the order they were made.
+- Alternatives: Order job events by `at`.
+- Why: Job events are ordered by id; events written in the same millisecond would otherwise come back in random order.
+- Reversible: yes.
+
+### D-0164 — Cancel ends a job no worker holds
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 1 (#40) · Status: decided
+- Decision: Cancelling a queued or running job that the `Jobs` adapter does not hold (one left by an earlier run of the app) commits the cancel flag and finishes the job as `cancelled` (stored progress, `current` null) in one batch, so a new start works (EC-28).
+- Alternatives: Leave the row blocking every start until the database is edited by hand.
+- Why: Cancel is the spec's own way out, and C11 forbids CLI-only recovery. This was review item 1 on #40.
+- Reversible: yes.
