@@ -14,12 +14,12 @@
     "verify": "pnpm check:code && pnpm check:real-data && pnpm check:licenses && pnpm check:build && pnpm check:audit"
   },
   "devDependencies": {
-    "@types/node": "^24.19.1",
+    "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
     "vite-plus": "^1.1.0"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "packageManager": "pnpm@11.22.0"
 }
