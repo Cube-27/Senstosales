@@ -9,7 +9,7 @@ export const MIGRATIONS_DIR = "packages/db/migrations";
 export const OUTPUT = "packages/db/src/migrations.generated.ts";
 
 const FILE = /^(\d{4})_(\w+)\.sql$/;
-const BREAKPOINT = "--> statement-breakpoint";
+export const BREAKPOINT = "--> statement-breakpoint";
 
 export interface MigrationFile {
   file: string;

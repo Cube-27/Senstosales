@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import { Miniflare } from "miniflare";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 
-import { DbError, UniqueViolation, type Db } from "../src/index.ts";
+import type { Db } from "../src/index.ts";
 import { openD1Db } from "../src/platform/d1/executor.ts";
 
 let mf: Miniflare;
@@ -31,15 +31,16 @@ describe("D1 executor", () => {
 
   test("a failing third statement leaves no row from the first two", async () => {
     const run = db.batch([insertParent("p3", 3), insertParent("p4", 4), insertParent("p5", 1)]);
-    await expect(run).rejects.toThrow(new UniqueViolation("parent.k"));
-    await expect(run).rejects.toBeInstanceOf(UniqueViolation);
+    await expect(run).rejects.toMatchObject({ name: "UniqueViolation", target: "parent.k" });
     expect(await parentIds()).toEqual([["p1"], ["p2"]]);
   });
 
   test("a foreign-key violation rolls the batch back as a DbError", async () => {
     const run = db.batch([insertParent("p6", 6), db.build.run(sql`INSERT INTO child VALUES ('c1', 'missing')`)]);
-    await expect(run).rejects.toBeInstanceOf(DbError);
-    await expect(run).rejects.toThrow(/FOREIGN KEY constraint failed/);
+    await expect(run).rejects.toMatchObject({
+      name: "DbError",
+      message: "FOREIGN KEY constraint failed: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_FOREIGNKEY)",
+    });
     expect(await parentIds()).toEqual([["p1"], ["p2"]]);
   });
 });

@@ -5,6 +5,7 @@
   "type": "module",
   "devDependencies": {
     "@senstosales/db": "workspace:*",
+    "@senstosales/gen": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "miniflare": "4.20260730.0",
     "yaml": "^2.9.1"

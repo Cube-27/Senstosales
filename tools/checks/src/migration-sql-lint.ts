@@ -4,11 +4,8 @@
 // keeps them out. No PRAGMA or transaction statements: the executor's batch supplies atomicity. One statement per
 // drizzle-kit breakpoint, so nothing hides behind an allowed one (a `;` inside a string literal is refused too).
 // Usage: node tools/checks/src/migration-sql-lint.ts (from the repo root)
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { BREAKPOINT, MIGRATIONS_DIR, readMigrationFiles } from "@senstosales/gen/migrations";
 
-const MIGRATIONS_DIR = "packages/db/migrations";
-const BREAKPOINT = "--> statement-breakpoint";
 const ID = String.raw`[\x60"]?(\w+)[\x60"]?`;
 const re = (source: string): RegExp => new RegExp(`^${source}$`, "is");
 
@@ -38,8 +35,7 @@ function chunks(sql: string): Chunk[] {
       .split(/\r?\n/)
       .filter((line) => !line.trim().startsWith("--"))
       .join("\n")
-      .trim()
-      .replace(/;$/, "")
+      .replace(/;?\s*$/, "")
       .trim();
     if (statement === "") return [];
     return [{ line: sql.slice(0, start).split("\n").length, statement }];
@@ -79,13 +75,13 @@ export function migrationSqlViolations(path: string, sql: string): string[] {
 
 /** Findings for every migration file in the repo. */
 export function runMigrationSqlLint(dir = MIGRATIONS_DIR): string[] {
-  return readdirSync(dir)
-    .filter((file) => file.endsWith(".sql"))
-    .flatMap((file) => migrationSqlViolations(`${dir}/${file}`, readFileSync(join(dir, file), "utf8")));
+  return readMigrationFiles(dir).flatMap(({ file, sql }) => migrationSqlViolations(`${dir}/${file}`, sql));
 }
 
-if (import.meta.main) {
+function main(): number {
   const found = runMigrationSqlLint();
   for (const finding of found) console.error(finding);
-  process.exit(found.length === 0 ? 0 : 1);
+  return found.length === 0 ? 0 : 1;
 }
+
+if (import.meta.main) process.exit(main());

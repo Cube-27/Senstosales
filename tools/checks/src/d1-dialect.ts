@@ -30,28 +30,24 @@ const schemaObjects = async (db: Db): Promise<string[]> =>
     )
   ).map(([type, name, text]) => `${type} ${name}: ${text ?? ""}`);
 
-/** Migrates an empty DB; returns its version and schema, or the error the executor raised. */
-async function migrate(
-  db: Db,
-  migrations: readonly Migration[],
-): Promise<string | { version: number; objects: string[] }> {
+/** Migrates an empty DB and returns its version and schema; an executor error is rethrown under `label`. */
+async function migrate(label: string, db: Db, migrations: readonly Migration[]) {
   try {
     await applyMigrations(db, planMigrations(await readSchemaVersion(db), migrations), STAMP);
   } catch (err) {
-    return err instanceof Error ? err.message : String(err);
+    throw new Error(`${label} refused the migrations: ${(err as Error).message}`, { cause: err });
   }
   return { version: await readSchemaVersion(db), objects: await schemaObjects(db) };
 }
 
-/** Where D1 and node:sqlite disagree on `migrations`; empty when both apply them to the same schema. */
+/** Where D1 and node:sqlite disagree on `migrations`; empty when both apply them to the same schema. Throws when
+ * either refuses them. */
 export async function d1DialectFindings(migrations: readonly Migration[] = MIGRATIONS): Promise<string[]> {
   const mf = new Miniflare({ modules: true, script: "export default {}", d1Databases: { DB: "dialect-check" } });
   const node = openNodeDb(":memory:");
   try {
-    const d1 = await migrate(openD1Db(await mf.getD1Database("DB")), migrations);
-    const expected = await migrate(node, migrations);
-    if (typeof d1 === "string") return [`D1 refused the migrations: ${d1}`];
-    if (typeof expected === "string") return [`node:sqlite refused the migrations: ${expected}`];
+    const d1 = await migrate("D1", openD1Db(await mf.getD1Database("DB")), migrations);
+    const expected = await migrate("node:sqlite", node, migrations);
     const version =
       d1.version === expected.version ? [] : [`D1 version ${d1.version}, node:sqlite ${expected.version}`];
     const missing = expected.objects.filter((o) => !d1.objects.includes(o)).map((o) => `missing on D1: ${o}`);
@@ -63,8 +59,10 @@ export async function d1DialectFindings(migrations: readonly Migration[] = MIGRA
   }
 }
 
-if (import.meta.main) {
+async function main(): Promise<number> {
   const found = await d1DialectFindings();
   for (const finding of found) console.error(finding);
-  process.exit(found.length === 0 ? 0 : 1);
+  return found.length === 0 ? 0 : 1;
 }
+
+if (import.meta.main) process.exit(await main());

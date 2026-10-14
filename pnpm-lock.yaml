@@ -75,6 +75,9 @@ importers:
       '@senstosales/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@senstosales/gen':
+        specifier: workspace:*
+        version: link:../gen
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4

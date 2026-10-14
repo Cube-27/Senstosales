@@ -6,6 +6,8 @@ import { SQLiteAsyncDialect } from "drizzle-orm/sqlite-core";
 
 import { wrapDrizzle, type Db } from "../../port.ts";
 
+// Renders each statement for the batch. It must match the dialect `drizzle(binding)` builds with: no casing or other
+// dialect options are passed to either.
 const dialect = new SQLiteAsyncDialect();
 
 export function openD1Db(binding: AnyD1Database): Db {
