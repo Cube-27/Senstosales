@@ -914,3 +914,27 @@ None.
 - Alternatives: Add the fields to the shapes now, with no column behind them.
 - Why: Shapes follow the schema; there is nothing to store or return yet.
 - Reversible: yes.
+
+### D-0108 — SRV header vocabulary and row selection
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 4 (#29) · Status: decided
+- Decision: Columns are matched by whole header text, case-insensitively, using the legacy alias list (`PO NO`/`PO NUMBER`/`PURCHASE ORDER`, `SRV DATE`/`DATE`/`RECEIPT DATE`, `LOT NO`/`LOT`, `RECVD`/`RECEIVED`/`RECD QTY`, `CHL DT`, `TAX INV`, …). Every table whose first row has `SRV NO`/`SRV NUMBER` is read. Rows with fewer than 5 cells, or whose SRV number has no digit (totals, notes), are skipped, as legacy did.
+- Alternatives: Read only the first SRV table; substring header matching.
+- Why: Matches the legacy parser's extraction (SPEC-06 §7); whole-cell matching follows D-0080.
+- Reversible: yes.
+
+### D-0109 — SRV empty cells and malformed values
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 4 (#29) · Status: decided
+- Decision: An empty received or rejected cell is 0; an empty ordered or accepted cell is null. Comma grouping is removed. A negative or non-numeric quantity is `bad-quantity` (EC-22). An empty PO number, SRV date or item key is `missing-field`. An item key that is not a positive integer is `bad-number`. A bad SRV, challan or invoice date is `bad-date`; an empty challan or invoice date is null. The SRV date and `rawHeader` come from the SRV's first row.
+- Alternatives: Legacy's strip-every-non-digit reading (`-1` → 1, `N/A` → 0); null received or rejected quantities.
+- Why: SPEC-06 §4.4 makes malformed input a typed failure, consistent with D-0083; the non-null `rcdQty`/`rejQty` follow D-0075 and legacy ingestion's 0 default.
+- Reversible: yes.
+
+### D-0110 — `mixed-po-numbers` ParseError code
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 4 (#29) · Status: decided
+- Decision: An SRV file with rows of more than one PO fails with `mixed-po-numbers`, located at the first row that differs. Rows are grouped by SRV number within that one PO, which equals grouping by `(po_number, srv_number)`.
+- Alternatives: Return SRVs of several POs; drop the differing rows.
+- Why: SPEC-06 §4.1 and `zSrvFile`: one file holds the SRVs of one PO.
+- Reversible: yes.
