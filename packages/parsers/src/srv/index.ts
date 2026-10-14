@@ -7,15 +7,16 @@ import type { SrvTable } from "./table.ts";
 
 type Group = { srv: SrvDocument; keys: Set<string> };
 
-export function parseSrv(html: string): ParseResult<SrvDocument[]> {
+/** At least one SRV, so a caller can read the file's PO number from the first. */
+export function parseSrv(html: string): ParseResult<[SrvDocument, ...SrvDocument[]]> {
   const groups = new Map<string, Group>();
   for (const table of srvTables(loadPage(html))) {
     const added = addRows(table, groups);
     if (!added.ok) return added;
   }
-  const srvs = [...groups.values()].map((group) => group.srv);
-  return srvs.length > 0
-    ? { ok: true, value: srvs }
+  const [first, ...rest] = [...groups.values()].map((group) => group.srv);
+  return first
+    ? { ok: true, value: [first, ...rest] }
     : { ok: false, error: { code: "no-srv-table", message: "The page has no SRV table with rows" } };
 }
 

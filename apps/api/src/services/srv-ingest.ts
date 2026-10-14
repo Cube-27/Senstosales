@@ -55,21 +55,23 @@ export async function ingestSrvFile(deps: SrvIngestDeps, file: UploadFile, ctx: 
   }
   const docs = parsed.value;
   // Every SRV in a file is of one PO (SPEC-06 §4.1), and the page is keyed by it (EC-29).
-  const poNumber = docs[0]?.poNumber ?? "";
+  const { poNumber } = docs[0];
   const docDate = docs.map((doc) => doc.srvDate).reduce((a, b) => (compareIsoDate(a, b) >= 0 ? a : b));
   await storeSourceDocument(deps, { kind: "srv", key: poNumber, html: file.html, docDate }, ctx);
 
   const stored = new Map((await srvsOfPoNumber(deps.db, ctx.supplierId, poNumber)).map((r) => [r.srvNumber, r]));
-  const isNewer = (doc: SrvDocument) => acceptIncoming(stored.get(doc.srvNumber)?.srvDate ?? null, doc.srvDate);
-  const accepted = docs.filter(isNewer);
-  const skipped = docs.filter((doc) => !isNewer(doc)).map((doc) => stored.get(doc.srvNumber));
+  const accepted: SrvDocument[] = [];
+  const skipped: StoredSrv[] = [];
+  for (const doc of docs) {
+    const old = stored.get(doc.srvNumber);
+    if (old && !acceptIncoming(old.srvDate, doc.srvDate)) skipped.push(old);
+    else accepted.push(doc);
+  }
   if (accepted.length === 0) return { name, status: "skipped", reason: `${olderThan(skipped)}. Nothing was changed.` };
 
-  const target = await findPoByNumber(deps.db, ctx.supplierId, poNumber);
+  const poId = (await findPoByNumber(deps.db, ctx.supplierId, poNumber))?.id ?? null;
   const batch = new WriteBatch(deps.db);
-  for (const statement of await ingestStatements(deps, { accepted, stored, poId: target?.id, ctx })) {
-    batch.add(statement);
-  }
+  for (const statement of await ingestStatements(deps, accepted, stored, poId, ctx)) batch.add(statement);
   try {
     await batch.commit();
   } catch (err) {
@@ -78,37 +80,39 @@ export async function ingestSrvFile(deps: SrvIngestDeps, file: UploadFile, ctx: 
     return { name, status: "failed", reason };
   }
   const notes = [
-    target ? null : `PO ${poNumber} is not in the system yet; its SRVs are stored and listed as "PO not found".`,
+    poId !== null ? null : `PO ${poNumber} is not in the system yet; its SRVs are stored and listed as "PO not found".`,
     skipped.length === 0 ? null : `${olderThan(skipped)}, so ${skipped.length === 1 ? "it was" : "they were"} skipped.`,
   ].filter((note) => note !== null);
   return { name, status: "accepted", reason: notes.length > 0 ? notes.join(" ") : null };
 }
 
 /** "Older than the stored SRV 1 (dated …)" for the stored SRVs a file's older copies lost to. */
-function olderThan(skipped: readonly (StoredSrv | undefined)[]): string {
-  const list = skipped.flatMap((s) => (s ? [`${s.srvNumber} (dated ${s.srvDate})`] : [])).join(", ");
+function olderThan(skipped: readonly StoredSrv[]): string {
+  const list = skipped.map((s) => `${s.srvNumber} (dated ${s.srvDate})`).join(", ");
   return `Older than the stored SRV${skipped.length === 1 ? "" : "s"} ${list}`;
 }
 
-interface IngestInput {
-  readonly accepted: readonly SrvDocument[];
-  readonly stored: ReadonlyMap<string, StoredSrv>;
-  /** The stored PO's id; `undefined` when the PO is not in the system (INV-40). */
-  readonly poId: string | undefined;
-  readonly ctx: IngestContext;
-}
-
-async function ingestStatements(deps: SrvIngestDeps, input: IngestInput): Promise<Statement[]> {
+/** `poId` is the stored PO's, or `null` when the PO is not in the system (INV-40). */
+async function ingestStatements(
+  deps: SrvIngestDeps,
+  accepted: readonly SrvDocument[],
+  stored: ReadonlyMap<string, StoredSrv>,
+  poId: string | null,
+  ctx: IngestContext,
+): Promise<Statement[]> {
   const { db } = deps;
-  const { accepted, stored, poId, ctx } = input;
-  const snapshot = poId === undefined ? undefined : await loadPoSnapshot(db, poId);
   const replacedIds = accepted.flatMap((doc) => stored.get(doc.srvNumber)?.id ?? []);
-  const oldIds = replacedIds.length === 0 ? [] : await srvItemKeysOf(db, replacedIds);
+  const [snapshot, oldItems, dcs, invoices] = await Promise.all([
+    poId === null ? undefined : loadPoSnapshot(db, poId),
+    replacedIds.length === 0 ? [] : srvItemKeysOf(db, replacedIds),
+    dcNumbersOf(db, ctx.supplierId),
+    invoiceNumbersOf(db, ctx.supplierId),
+  ]);
   const refs = {
-    dcs: await dcNumbersOf(db, ctx.supplierId),
-    invoices: await invoiceNumbersOf(db, ctx.supplierId),
+    dcs,
+    invoices,
     items: snapshot?.items,
-    idOf: new Map(oldIds.map((row) => [itemKey(row.srvId, row), row.id])),
+    idOf: new Map(oldItems.map((row) => [itemKey(row.srvId, row), row.id])),
   };
   const now = deps.clock.now();
   const statements: Statement[] = [];
@@ -122,10 +126,10 @@ async function ingestStatements(deps: SrvIngestDeps, input: IngestInput): Promis
       srvDate: doc.srvDate,
       financialYear: fyOf(doc.srvDate),
       rawHeader: doc.rawHeader,
-      poId: poId ?? null,
+      poId,
     };
+    if (before) statements.push(db.build.delete(srvItem).where(eq(srvItem.srvId, srvId)));
     statements.push(
-      db.build.delete(srvItem).where(eq(srvItem.srvId, srvId)),
       db.build
         .insert(srv)
         .values({ ...header, id: srvId, supplierId: ctx.supplierId, poNumber: doc.poNumber, srvNumber: doc.srvNumber })
