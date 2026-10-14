@@ -37,9 +37,15 @@ export type DeleteBlockReason =
   | "po-has-invoice";
 
 const DELETE_RULES: { [K in keyof DeleteLinks]: (links: DeleteLinks[K]) => DeleteBlockReason | null } = {
-  dc: ({ invoices, srvItems }) => (invoices > 0 ? "dc-has-invoice" : srvItems > 0 ? "dc-linked-srv" : null),
+  dc: ({ invoices, srvItems }) => {
+    if (invoices > 0) return "dc-has-invoice";
+    return srvItems > 0 ? "dc-linked-srv" : null;
+  },
   invoice: ({ srvItems }) => (srvItems > 0 ? "invoice-linked-srv" : null),
-  po: ({ dcs, invoices }) => (dcs > 0 ? "po-has-dc" : invoices > 0 ? "po-has-invoice" : null),
+  po: ({ dcs, invoices }) => {
+    if (dcs > 0) return "po-has-dc";
+    return invoices > 0 ? "po-has-invoice" : null;
+  },
   // The date winner recomputes after an SRV delete (ARCHITECTURE §6.7).
   srv: () => null,
 };
