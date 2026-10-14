@@ -4,7 +4,6 @@ import { appUser, session, type Db, type Instant, type Statement } from "@sensto
 import { and, eq, gt, lte } from "drizzle-orm";
 
 export type User = typeof appUser.$inferSelect;
-export type NewSession = typeof session.$inferInsert;
 
 export async function findUser(db: Db, username: string): Promise<User | null> {
   const rows = await db.query(db.build.select().from(appUser).where(eq(appUser.username, username)).limit(1));
@@ -31,7 +30,10 @@ export const updatePassword = (
   values: Pick<User, "passwordHash" | "passwordChangedAt">,
 ): Statement => db.build.update(appUser).set(values).where(eq(appUser.id, userId));
 
-export const insertSession = (db: Db, row: NewSession): Statement => db.build.insert(session).values(row);
+export const deleteUser = (db: Db, userId: string): Statement => db.build.delete(appUser).where(eq(appUser.id, userId));
+
+export const insertSession = (db: Db, row: typeof session.$inferInsert): Statement =>
+  db.build.insert(session).values(row);
 
 export const deleteSession = (db: Db, tokenHash: string): Statement =>
   db.build.delete(session).where(eq(session.tokenHash, tokenHash));

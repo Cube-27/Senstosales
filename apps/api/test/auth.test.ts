@@ -45,16 +45,16 @@ async function setup() {
     expect(res.status).toBe(200);
     return `session=${TOKEN_COOKIE.exec(res.headers.get("set-cookie") ?? "")?.[1]}`;
   };
-  const withCookie = (cookie: string, init: RequestInit = { method: "GET" }) => ({
-    ...init,
-    headers: { ...(init.headers as Record<string, string>), cookie },
-  });
-  const buyers = async (cookie?: string) =>
-    (await t.send("/api/buyers", cookie === undefined ? {} : withCookie(cookie))).status;
-  const sessionOf = async (cookie?: string) =>
-    (await t.send("/api/auth/session", cookie === undefined ? {} : withCookie(cookie))).json();
-  const post = (path: string, body: unknown, cookie?: string) =>
-    t.send(path, cookie === undefined ? json("POST", body) : withCookie(cookie, json("POST", body)));
+  /** A GET, or a JSON POST when `body` is given, with the session cookie when given. */
+  const call = (path: string, { body, cookie }: { body?: unknown; cookie?: string | undefined } = {}) => {
+    const init = body === undefined ? { method: "GET" } : json("POST", body);
+    const headers = new Headers(init.headers);
+    if (cookie !== undefined) headers.set("cookie", cookie);
+    return t.send(path, { ...init, headers });
+  };
+  const buyers = async (cookie?: string) => (await call("/api/buyers", { cookie })).status;
+  const sessionOf = async (cookie?: string) => (await call("/api/auth/session", { cookie })).json();
+  const post = (path: string, body: unknown, cookie?: string) => call(path, { body, cookie });
   const auditActions = async () =>
     (await db.query(db.build.select({ action: auditLog.action }).from(auditLog).orderBy(auditLog.id))).map(
       (r) => r.action,

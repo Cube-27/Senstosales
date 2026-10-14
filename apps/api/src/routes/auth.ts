@@ -5,10 +5,9 @@ import { deleteCookie, setCookie } from "hono/cookie";
 
 import type { Handlers } from "../app.ts";
 import { SESSION_COOKIE, sessionToken } from "../middleware/auth.ts";
-import type { AuthService } from "../services/auth.ts";
+import { SESSION_SECONDS, type AuthService } from "../services/auth.ts";
 
 const COOKIE = { path: "/", httpOnly: true, sameSite: "Strict" } as const;
-const REMEMBER_SECONDS = 365 * 24 * 60 * 60;
 const OK = { ok: true } as const;
 
 /** Change password and reset end every session, this one included, so the UI returns to the login. */
@@ -23,7 +22,7 @@ export function authRoutes(auth: AuthService): Required<Pick<Handlers, AuthRoute
   return {
     "auth.login": async ({ body }, c) => {
       const { token, session } = await auth.login(body.password);
-      setCookie(c, SESSION_COOKIE, token, body.rememberMe ? { ...COOKIE, maxAge: REMEMBER_SECONDS } : COOKIE);
+      setCookie(c, SESSION_COOKIE, token, body.rememberMe ? { ...COOKIE, maxAge: SESSION_SECONDS } : COOKIE);
       return session;
     },
     "auth.logout": async (_input, c) => {
