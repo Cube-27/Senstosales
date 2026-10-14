@@ -1,0 +1,30 @@
+# Edge cases deferred past v1
+
+Cases that the legacy business spec and the owner decisions (`ARCHITECTURE.md` Appendix A) do not cover, set aside
+on purpose for v1. Each row states what v1 does, which is always the spec's behaviour or, where the spec is silent,
+the frozen legacy behaviour.
+
+Rules (`ARCHITECTURE.md` §2 C18, A-27):
+- An agent that finds an uncovered edge case while coding adds a row here (next `EC-NN`, never renumbered) in the
+  same PR and implements the spec's behaviour. It never invents handling for the case.
+- Nothing here is built without an owner decision recorded in `ARCHITECTURE.md` Appendix A. When the owner admits a
+  row, it moves into the architecture, gets its `INV-NN` rows, and is struck through here with the date.
+- Examples use synthetic numbers only (public repo).
+
+| # | Case | Example | Why deferred (and v1 behaviour) | Found in |
+|---|---|---|---|---|
+| EC-01 | Received exceeds dispatched (`RECEIVED_EXCEEDS_DISPATCHED`) | PO item ord 10; one DC of 4; SRV received 6. | Not in the spec; owner put it out of v1 (A-24). v1: no flag; `balance = max(0, 10 − max(6, 4)) = 4`. | Architecture rev 1 review |
+| EC-02 | An amendment lowers `ord_qty` below what is already dispatched (`AMENDMENT_BELOW_DISPATCHED`) | ord 10 with DCs totalling 8; amended PO re-ingested with ord 6. | Not in the spec; out of v1 (A-24). v1: the amended PO is accepted; `OVER_DISPATCH` is raised because `dsp 8 > ord 6`. | Architecture rev 1 review |
+| EC-03 | SRV in a new FY referencing a DC from the previous FY | DC 12 dated 2025-03-28 (FY 2024-25); SRV dated 2025-04-03 (FY 2025-26) cites challan 12. | Spec §8 says do not link across FYs (A-26). v1: not linked; `DOC_NUMBER_CONFLICT` is raised; the raw number stays on the SRV item; DC 12 can be deleted because nothing links to it. | Owner direction 2026-10-14 |
+| EC-04 | Received exceeds ordered | ord 10, SRV received 10.5. | Not in the spec or the v1 flag set (A-24). v1: accepted as data, no flag; status Closed; balance 0. | Architecture rev 1 review |
+| EC-05 | A flag whose condition later disappears | `OVER_DISPATCH` on ord 10 / dsp 12; the user deletes a DC of 2. | Spec §8: flags remain until manually resolved. v1: the flag stays open until the user acknowledges it. | Architecture rev 1 review |
+| EC-06 | A PO whose items are all cancelled by amendment | Amended PO lists none of the original two items. | Spec §6 has no rule for it. v1: by the item rule over active items (A2-13) the PO shows Closed; items show Cancelled. | Architecture rev 1 review |
+| EC-07 | Inter-state supply (IGST) | Supplier state code differs from the BHEL unit's state code. | Legacy computes CGST + SGST only (A2-4). v1: same; IGST stays 0. | Architecture rev 1 review |
+| EC-08 | User forgets a changed login password | Password changed from the default and then forgotten. | Simple login, existing reset only (A-17, A-26). v1: the legacy reset-to-defaults, which asks for the current password once it was changed; no other recovery. | Architecture rev 1 review |
+| EC-09 | System Edge cannot be launched (policy, missing) | Locked-down office PC. | Owner chose system Edge (A-5). v1: a plain message that BHEL sync needs Microsoft Edge; folder import still works. Fallbacks are candidate K8. | Architecture rev 1 review |
+| EC-10 | Manual dispatched qty followed by a PO-direct invoice instead of a DC | manual 4 on an item; later a PO-direct invoice of 4 on the same item. | Owner tied the highlight to a real DC (A-15). v1: no `MANUAL_ADJUSTMENT_OVERLAP`; `dsp_qty` counts both (8) and `OVER_DISPATCH` is raised if it passes ord. | Architecture rev 1 review |
+| EC-11 | True accepted quantity when rejections exist | SRV rcd 10, accepted 7, rej 3. | Legacy shows `rcd_qty` in the Accepted column (A2-8, format freeze). v1: Accepted shows 10. | Architecture rev 1 review |
+| EC-12 | SRV item whose material code is on no item of its PO | SRV line for material 9000001 on a PO without it. | Spec §3 matches by material code only. v1: stored unmatched; contributes to no PO item; no flag. | Architecture rev 1 review |
+| EC-13 | PO-direct invoice on an item also dispatched by DC | DC 10 on ord 10, then a PO-direct invoice of 10 on the same item. | Spec §3 formula adds both. v1: `dsp_qty 20`; `OVER_DISPATCH` and `OVER_INVOICE` are raised. | Legacy audit (invariants) |
+| EC-14 | Editing a DC date moves it to another FY while an SRV cites its number | DC 7 re-dated from 2025-04-02 to 2025-03-30. | Spec §8 FY-aware linking. v1: the link is re-resolved, so it drops and `DOC_NUMBER_CONFLICT` is raised. (A date edit is refused only on a `(number, FY)` collision.) | Architecture rev 1 review |
+| EC-15 | Loading older PO data when the PO already has DCs or invoices | Newer PO stored with two DCs; user wants the older PO version. | Spec §4 says delete the newer PO first, but A-14 blocks deleting a PO with documents. v1: not possible without first deleting its DCs/invoices (themselves blocked while linked). | Architecture rev 1 review |
