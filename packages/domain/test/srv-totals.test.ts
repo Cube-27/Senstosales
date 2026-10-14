@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { SrvTotals, SrvTotalsLine } from "../src/index.ts";
-import { srvLineRcd, srvTotals } from "../src/index.ts";
+import { srvLineShown, srvTotals } from "../src/index.ts";
 import { money, qty } from "./unwrap.ts";
 
 type Row = [rcd: string | null, accepted: string | null, rej: string | null, item: [string, string, string] | null];
@@ -13,14 +13,14 @@ const line = ([rcd, accepted, rej, item]: Row): SrvTotalsLine => ({
   poItem: item === null ? null : { id: item[0], ordQty: qty(item[1]), rate: money(item[2]) },
 });
 
-describe("INV-11: one SRV line's received quantity", () => {
-  it.each<[Row, number]>([
-    [["4", "2", null, null], 4000],
-    [["0", "5", null, null], 5000],
-    [[null, "2", null, null], 2000],
-    [[null, null, "1", null], 0],
-  ])("%j -> %d", (row, expected) => {
-    expect(srvLineRcd(line(row))).toBe(expected);
+describe("INV-09, INV-11, INV-12: one SRV line as shown", () => {
+  it.each<[Row, Record<"rcdQty" | "acceptedQty" | "rejQty", number>]>([
+    [["10", "7", "3", null], { rcdQty: 10000, acceptedQty: 10000, rejQty: 3000 }],
+    [["0", "5", null, null], { rcdQty: 5000, acceptedQty: 5000, rejQty: 0 }],
+    [[null, "2", "1", null], { rcdQty: 2000, acceptedQty: 2000, rejQty: 1000 }],
+    [[null, null, null, null], { rcdQty: 0, acceptedQty: 0, rejQty: 0 }],
+  ])("%j -> %j", (row, expected) => {
+    expect(srvLineShown(line(row))).toEqual(expected);
   });
 });
 

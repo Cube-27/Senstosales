@@ -1,8 +1,8 @@
 export type { Result } from "./result.ts";
 export type { IsoDate } from "./dates.ts";
 export { compareIsoDate, parseIsoDate } from "./dates.ts";
-export type { ReceiptInput, SrvLine, SrvTotals, SrvTotalsLine } from "./receipt.ts";
-export { computeReceipt, dateWinner, srvLineRcd, srvTotals } from "./receipt.ts";
+export type { ReceiptInput, SrvLine, SrvLineQty, SrvTotals, SrvTotalsLine } from "./receipt.ts";
+export { computeReceipt, dateWinner, srvLineShown, srvTotals } from "./receipt.ts";
 export type { GstPct, Money, Qty } from "./units.ts";
 export {
   MONEY_DP,
