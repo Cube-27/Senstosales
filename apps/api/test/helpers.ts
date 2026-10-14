@@ -1,6 +1,6 @@
 import { createClient } from "@senstosales/schemas";
 
-import type { Handlers } from "../src/app.ts";
+import type { AppDeps, Handlers } from "../src/app.ts";
 import { createApp } from "../src/app.ts";
 import type { LogFields, Logger } from "../src/ports/logger.ts";
 
@@ -27,11 +27,11 @@ export function memoryLogger(): Logger & { lines: LogLine[] } {
 
 /**
  * An app on the test port with `handlers`; `send` adds the loopback Host unless the test sets one, and `client` is
- * the typed web client over `send`, as the SPA calls it.
+ * the typed web client over `send`, as the SPA calls it. Every request is signed in unless `signedIn` says otherwise.
  */
-export function testApp(handlers: Handlers = {}) {
+export function testApp(handlers: Handlers = {}, signedIn: AppDeps["signedIn"] = () => Promise.resolve(true)) {
   const logger = memoryLogger();
-  const app = createApp({ port: PORT, logger }, handlers);
+  const app = createApp({ port: PORT, logger, signedIn }, handlers);
   const send = async (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (!headers.has("host")) headers.set("host", HOST);

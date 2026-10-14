@@ -1210,3 +1210,59 @@ None.
 - Alternatives: Rely on the Storage adapter's key check alone.
 - Why: The key becomes a storage path (C17).
 - Reversible: yes.
+
+### D-0145 — Storing a source document is its own batch with its own audit row
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 2 (#37) · Status: decided
+- Decision: Storing a source document commits its raw HTML record and audit row in a batch of its own, before parsing.
+- Alternatives: Store the record in the same batch as the parsed rows.
+- Why: A page that later fails to parse is still kept.
+- Reversible: yes.
+
+### D-0146 — Sessions last one year; remember-me sets the cookie's Max-Age
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 4 (#38) · Status: decided
+- Decision: Every session row expires one year after login (the legacy cookie's `Max-Age`). Without remember-me the cookie has no `Max-Age` and ends with the browser session; with it, `Max-Age=31536000`.
+- Alternatives: Legacy's two cookies, both with a one-year Max-Age; a shorter server lifetime without remember-me.
+- Why: A2-11 says "session cookie plus remember me"; legacy server tokens never expired and one year is its only lifetime.
+- Reversible: yes.
+
+### D-0147 — Change password and reset end every session, the caller's included
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 4 (#38) · Status: decided
+- Decision: Both delete all session rows and clear the caller's cookie, so the UI returns to the login.
+- Alternatives: Keep the caller's session and end only the others.
+- Why: The legacy flow logs the user out ("Please log in again"; frozen flow, C7), and it satisfies INV-80's "ends other sessions".
+- Reversible: yes.
+
+### D-0148 — No user row means the default password
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 4 (#38) · Status: decided
+- Decision: Nothing is seeded. Until the first login there is no `app_user` row and the password is `admin` (D-0004). The first login creates the row in its batch (`ON CONFLICT DO NOTHING` on the username, with the user id read by username inside the batch, so overlapping first logins both succeed). Reset-to-defaults deletes the row and every session.
+- Alternatives: Seed the row in a migration; create it in onboarding.
+- Why: Startup is read-only (C9), and one representation of "default" avoids hashing `admin` on reset.
+- Reversible: yes.
+
+### D-0149 — A wrong current password is 400, not 401
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 4 (#38) · Status: decided
+- Decision: Change password and reset answer 400 `wrong-password` or `current-password-required` with the field path `body.currentPassword`. A wrong login password is 401 `wrong-password`; a missing or expired session is 401 `signed-out`.
+- Alternatives: 401 for all, as legacy.
+- Why: A 401 on a signed-in settings form would read as "session ended" to the client.
+- Reversible: yes.
+
+### D-0150 — Logout ends only this session
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 4 (#38) · Status: decided
+- Decision: Logout deletes the caller's session row only.
+- Alternatives: End every session, as legacy's single-token store did.
+- Why: Legacy kept one session at a time, so the two behave alike for its single WebView; INV-80 names only change password and reset as ending other sessions.
+- Reversible: yes.
+
+### D-0151 — PBKDF2 at 600 000 iterations in a self-describing hash
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 4 (#38) · Status: decided
+- Decision: `pbkdf2-sha256$<iterations>$<salt hex>$<hash hex>`, 16-byte salt, 600 000 iterations.
+- Alternatives: A fixed format without the iteration count.
+- Why: The OWASP figure for PBKDF2-SHA256; storing the count lets it rise without invalidating stored hashes.
+- Reversible: yes.
