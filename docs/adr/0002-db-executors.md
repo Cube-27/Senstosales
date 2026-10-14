@@ -7,9 +7,8 @@
 
 ## Context
 
-ARCHITECTURE §4.1 names node:sqlite behind `drizzle-orm/sqlite-proxy` as the `Db` executor now, with
-`batch = BEGIN IMMEDIATE … COMMIT`, and D1 `db.batch` later (candidate K1). One set of SQL migrations must run on
-both (§8). The spike answers whether that holds before SPEC-05 starts.
+ARCHITECTURE §4.1 names the `Db` executors: node:sqlite now, D1 later (candidate K1), with one set of SQL migrations
+for both (§8). The spike checks that before SPEC-05 starts.
 
 Questions (SPEC-01 §4.3):
 
@@ -39,7 +38,7 @@ Questions (SPEC-01 §4.3):
 | 1. Atomic batch       | Pass, 11/11 tests on both runtimes. A batch commits all rows; a failing third statement (UNIQUE) or a foreign-key violation leaves no row from the batch; the connection is usable after a rollback. A migration applied as one batch with a failing last statement leaves an empty schema.                             |
 | 2. PRAGMAs and backup | Pass. All six PRAGMAs read back as set. `node:sqlite` `backup()` on a live WAL connection copies rows still in the WAL, and the copy passes `PRAGMA integrity_check`.                                                                                                                                                   |
 | 3. Same SQL on D1     | Pass, 4/4 tests. The same `0000_init.sql` applied with `wrangler d1 execute --local --file` gives the same tables and indexes. `drizzle-orm/d1` `db.batch` commits, and rolls back on a failing third statement. `--file` execution is atomic: a failing last statement leaves no table.                                |
-| 4. 5k-row batch, node | Through Drizzle `db.batch` (SQL built inside the batch): median 234–283 ms, min about 100 ms, max about 770 ms (n=30, two rounds). Execute only (SQL prebuilt): median 47–64 ms (n=30, two rounds). Backup of the resulting 23.3 MB DB: 180–314 ms.                                                                     |
+| 4. 5k-row batch, node | Two rounds of n=30. Through Drizzle `db.batch` (SQL built inside the batch): median 234–283 ms, min about 100 ms, max about 770 ms. Execute only (SQL prebuilt): median 47–64 ms, so building the SQL takes most of the time. Backup of the resulting 23.3 MB DB: 180–314 ms.                                           |
 | 4. 5k-row batch, D1   | Local D1 through `getPlatformProxy` from Node: min 13.0 s, median 15.0 s, max 15.4 s (n=5). This is local workerd behind wrangler's proxy, not hosted D1 and not code running inside a Worker; the cause of the gap was not isolated. An earlier attempt under memory pressure failed with `ECONNRESET` from the proxy. |
 | C3 integer range      | An INTEGER above 2^53 read through node:sqlite throws a `RangeError` instead of losing precision.                                                                                                                                                                                                                       |
 
@@ -47,28 +46,30 @@ What local D1 refuses or accepts (probed with `DB.prepare(sql).all()`):
 
 - Refused: `PRAGMA user_version` (read and write, `SQLITE_AUTH`), `PRAGMA journal_mode`, `BEGIN`, `SAVEPOINT`,
   `SELECT sqlite_version()`. `PRAGMA foreign_keys` reads 1.
-- Accepted: `CREATE TRIGGER` and `CREATE VIEW`. D1 does not enforce C4's ban on them.
+- Accepted: `CREATE TRIGGER` and `CREATE VIEW`.
 
 Not verified: hosted D1 limits (statements per batch, bound parameters per statement, request size). They need a
-Cloudflare account, which only the owner can create; K1 is a candidate, so this is not needed now.
+Cloudflare account (owner only) and are not needed until K1 is admitted.
 
 ## Decision
 
 - Keep node:sqlite + `drizzle-orm/sqlite-proxy` as the executor; nothing measured contradicts ARCHITECTURE.
-- The `Db` port wraps Drizzle and exposes only `query` and `batch`. The sqlite-proxy driver also exposes
-  `transaction()`, which sends `BEGIN` and `COMMIT` as separate calls; D1 refuses `BEGIN`, so the port must not
-  pass it through (C4).
-- The migrator takes the schema version from `schema_migration`. Only the node executor reads and stamps
-  `PRAGMA user_version` as its mirror (§8.2, §13.3), because D1 refuses that PRAGMA. This clarifies SPEC-05
-  `planMigrations(userVersion)`: on node the input is `user_version`; the stamp is written in the same batch.
-- PRAGMAs are set by the node executor only (D1 refuses `journal_mode` and already has foreign keys on).
-- Migration files contain no transaction statements (`BEGIN`, `COMMIT`, `SAVEPOINT`); the executor's batch
-  supplies atomicity. SPEC-05's migration SQL lint is the only guard against triggers and views, since D1
-  accepts them.
-- Batches are single-row statements. Multi-row `VALUES` would reach D1's per-statement bound-parameter cap on large
-  imports; a 5k-row batch of single-row inserts stays under a second on node (max about 770 ms).
-- On Windows an open connection blocks deleting the DB file: restore (SPEC-21) closes every connection before
-  replacing the file.
+- The `Db` port wraps Drizzle rather than exposing it: the sqlite-proxy driver also has a `transaction()` that
+  sends `BEGIN` and `COMMIT` as separate calls, which C4 forbids and D1 refuses.
+- PRAGMAs are set by the node executor only.
+- The SPEC-05 migration lint enforces the §8.3 statement allowlist. D1 accepts triggers and views, so the lint, not
+  the database, is what keeps them out (INV-84). Migration files carry no transaction statements; the executor's
+  batch supplies atomicity.
+- The node build keeps the §13.3 version check on `user_version`, mirrored from `schema_migration` in the same
+  batch. D1 refuses `PRAGMA user_version`, so a D1 executor (K1) must read the version from `schema_migration`.
+  Nothing changes for SPEC-05 now.
+- Batch statement shape (single-row or chunked multi-row `VALUES`) is left to SPEC-05. Single-row is measured and
+  fast enough on node; chunk sizes for D1 wait on hosted limits (K1).
+- Restore (SPEC-21) closes every connection before replacing the DB file. On Windows an open connection blocks
+  deleting it.
+
+Open for SPEC-05, not tested here: the table-rebuild pattern usually wraps `PRAGMA foreign_keys=OFF`, which has no
+effect inside a transaction (SQLite documents this). Setting it on D1 was not probed.
 
 ## Reproduce
 
