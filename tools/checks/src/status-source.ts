@@ -13,17 +13,20 @@ const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/;
 const DECLARATIONS = [
   /\bfunction\b[\s*]*([\w$]+)\s*[<(]/,
   // `:[^=]+` spans any type annotation between the name and `=`.
-  /\b(?:const|let|var)\s+([\w$]+)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:function\b|[(<]|[\w$]+\s*=>)/,
+  /\b(?:const|let|var)\s+([\w$]+)\s*(?::[^=]+)?=\s*(?:async\b|function\b|[(<]|[\w$]+\s*=>)/,
   // `[^{;=]*` spans a return type; `=` keeps arrow callbacks out.
   /^\s*(?:(?:public|private|protected|static|async|override)\s+)*([\w$]+)\s*\([^)]*\)[^{;=]*\{\s*$/,
 ];
 // `itemStatus`, `po_status`, `ItemStatus`, `getPOStatus`; not `jobStatus`, `repoStatus` or `PoStatusBadge`.
 const isStatusName = (name: string): boolean =>
   /(?:^|_)(?:item|po)_?status$/i.test(name) || /(?:Item|Po|PO)Status$/.test(name);
-// A status value as the outcome of a return, arrow, ternary, `??` or SQL CASE branch, or of an assignment (JS or
-// SQL `SET`). Comparisons (`===`, `!==`, SQL `WHERE status = 'Closed'`), JSX attributes (`status="Closed"`, no
-// spaces around `=`), `case` labels, arrays and object maps don't match, so consumers can filter and display.
-const PRODUCED_VALUE = /(?:\breturn|=>|\?|\b(?:THEN|ELSE|then|else))\s*(["'`])(Pending|Delivered|Closed|Cancelled)\1/;
+// A status value as the outcome of a return, arrow, ternary, `??`, `&&`, `||` or SQL CASE branch, or of an
+// assignment (JS or SQL `SET`). Comparisons (`===`, `!==`, SQL `WHERE status = 'Closed'`), JSX attributes
+// (`status="Closed"`, no spaces around `=`), `case` labels, arrays and object maps don't match, so consumers can
+// filter and display.
+// `[?&|]` is the last character of `?`, `??`, `&&` and `||`.
+const PRODUCED_VALUE =
+  /(?:\breturn|=>|[?&|]|\b(?:THEN|ELSE|then|else))\s*(["'`])(Pending|Delivered|Closed|Cancelled)\1/;
 const ASSIGNED_VALUE = /\s=\s+(["'`])(Pending|Delivered|Closed|Cancelled)\1/;
 const SQL_PREDICATE_BEFORE = /\b(?:where|and|or|on|having)\s+[\w$.]+$/i;
 

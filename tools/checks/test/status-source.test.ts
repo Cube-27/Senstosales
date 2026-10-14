@@ -26,6 +26,7 @@ describe("statusViolations", () => {
     ['status = "Pending";', 'status value "Pending"'],
     ["UPDATE po SET status = 'Closed' WHERE id = ?", 'status value "Closed"'],
     ['let s = "Pending";', 'status value "Pending"'],
+    ['const s = (done && "Closed") || "Pending";', 'status value "Closed"'],
     ["  if (row.cancelled) return `Cancelled`;", 'status value "Cancelled"'],
     ["CASE WHEN rcd_qty_m >= ord_qty_m THEN 'Closed' ELSE 'Pending' END", 'status value "Closed"'],
     ["  when rcd_qty_m >= ord_qty_m then 'Closed'", 'status value "Closed"'],
