@@ -938,3 +938,35 @@ None.
 - Alternatives: Return SRVs of several POs; drop the differing rows.
 - Why: SPEC-06 §4.1 and `zSrvFile`: one file holds the SRVs of one PO.
 - Reversible: yes.
+
+### D-0111 — PO item cells: what is required, what defaults
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 3 (#30) · Status: decided
+- Decision: The item table must have PO ITM, MATERIAL CODE, UNIT, PO RATE, ORD QTY and RCD QTY columns, else `missing-field` at the column header. An item row needs a material code, rate and ordered quantity. An empty RCD QTY or REJ QTY cell is 0 (legacy `safe_to_float`); `rejQty` is null when the table has no REJ QTY column. A lot needs a whole LOT NO above 0 and a DELY QTY. DELY DATE is a page date or empty (null). DEST CODE is text or null. Malformed cells fail the file (`bad-quantity`, `bad-number`, `bad-date`) rather than being defaulted.
+- Alternatives: The legacy parser's silent defaults (0, lot 1, skipping the row) for every bad cell.
+- Why: SPEC-06 §4.4 gives stable error codes, and the §6 corpus test asserts that every date parses, so failing loudly is the conservative reading. Empty received and rejected cells keep the legacy 0 because they are common on unreceived items.
+- Reversible: yes. Relax the checks if the PR 6 corpus test shows real pages need it.
+
+### D-0112 — No synthetic lot for an item without lot rows
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 3 (#30) · Status: decided
+- Decision: An item whose page shows no lot gets `lots: []`. The legacy default lot (lot 1, delivery quantity = ordered quantity, no dates, dest 0) and its spreading of received and rejected quantities across lots are not ported.
+- Alternatives: Port the default lot.
+- Why: A document carries only what the page says (INV-49), and lots are planning only with no distribution (ARCHITECTURE §6.2, INV-06).
+- Reversible: yes.
+
+### D-0113 — Drawing-number pattern without backtracking
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 3 (#30) · Status: decided
+- Decision: The prefix after `DRG`/`DRAWING` is matched with no overlapping quantifiers: `[ .-]*`, then optionally `NO[.-]*\s*`, then optionally `:\s*`. The legacy lookahead `(?=\s|ITEM|VAR|REV|,|$)` is applied in code to the greedy run of number characters. Matches of 5 or more characters are kept, distinct, in code-unit order, joined by `, `.
+- Alternatives: The legacy regex as it was, which SonarCloud flags as super-linear (S8786).
+- Why: The output matches the legacy pattern for drawing numbers of 5 or more characters, except in odd separator orders such as `DRG NO : 123` (now read, where legacy read nothing).
+- Reversible: yes.
+
+### D-0114 — Shared parse-result helpers in `src/fields.ts`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 3 (#30) · Status: decided
+- Decision: `fail`, `readQty` and `readMoney` (comma grouping removed) live in one module of `packages/parsers`. The PO header and items use it, and it is open to the SRV parser.
+- Alternatives: A copy in each parser module.
+- Why: One rule for how page numbers are read and how failures are reported.
+- Reversible: yes.
