@@ -722,3 +722,59 @@ None.
 - Alternatives: Reuse `bad-quantity` for amounts; fail on an empty AMEND NO.
 - Why: Stable, specific codes for the ingest job event; comma stripping and the 0 default match the legacy parser (`safe_to_int`).
 - Reversible: yes.
+
+### D-0084 — Schema version source
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 3 (#26) · Status: decided
+- Decision: The schema version is `max(version)` in `schema_migration` on every build; `PRAGMA user_version` is neither written nor read. Supersedes D-0017's `user_version` wording. ARCHITECTURE §8.2/§13.3 (revision 1.5), SPEC-05, SPEC-07 (calls `readSchemaVersion`), INV-82 and ADR 0002 updated. The owner delegated this decision to the orchestrator.
+- Alternatives: Mirror the version into `user_version` on the node build, as D-0017 said.
+- Why: One version source that works on both executors; D1 refuses `PRAGMA user_version` (ADR 0002).
+- Reversible: yes, before SPEC-07 ships.
+
+### D-0085 — `checkVersion` folded into `planMigrations`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 3 (#26) · Status: decided
+- Decision: `planMigrations` throws `NewerDatabaseError` ("This data was saved by a newer version of SenstoSales."), so no caller can plan without the check.
+- Alternatives: A separate `checkVersion`, as the SPEC-05 §4.1 table listed.
+- Why: One call; the check cannot be skipped.
+- Reversible: yes.
+
+### D-0086 — Migrations numbered from 1
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 3 (#26) · Status: decided
+- Decision: drizzle-kit's `0000` is renamed `0001_init.sql` and its journal edited to `idx: 1`, so the next is `0002`; the meta snapshot is committed.
+- Alternatives: Keep drizzle-kit's 0-based numbering.
+- Why: The spec names `0001_init.sql`, and version 0 means an empty DB.
+- Reversible: yes.
+
+### D-0087 — Migration stamp values from the caller
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 3 (#26) · Status: decided
+- Decision: `applyMigrations` takes `{ appVersion, appliedAt }` from its caller.
+- Alternatives: Read the clock and app version inside the migrator.
+- Why: The Clock port and the VERSION file belong to SPEC-07.
+- Reversible: yes.
+
+### D-0088 — Generated files not formatted
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 3 (#26) · Status: decided
+- Decision: `**/*.generated.ts` is in the Oxfmt `ignorePatterns`; the generator's freshness test is its check.
+- Alternatives: Format the output in the generator.
+- Why: One source of truth for the file's content.
+- Reversible: yes.
+
+### D-0089 — Snapshot harness deferred to migration 0002
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 3 (#26) · Status: decided
+- Decision: The previous-version snapshot harness waits for `0002` (SPEC-05: "first used by 0002"); `planMigrations` already takes a migration list for it.
+- Alternatives: Build it now with nothing to exercise.
+- Why: No speculative code.
+- Reversible: yes.
+
+### D-0090 — GEMC number filled from the header
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 2 (#28) · Status: decided
+- Decision: `gemcNumber` is set in `parsePoHeader` from REMARKS rather than in PR 3.
+- Alternatives: Leave it to PR 3's `parsePo`.
+- Why: It depends only on a header field, so fixture headers match their expected JSON whole.
+- Reversible: yes.
