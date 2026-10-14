@@ -538,3 +538,51 @@ None.
 - Alternatives: Reject an empty batch.
 - Why: An empty batch has nothing to make atomic; committing twice would split one use case's writes (C4).
 - Reversible: yes.
+
+### D-0061 — Entity shapes are API read shapes of the §8.2 rows
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 2 (#23) · Status: decided
+- Decision: Entities use camelCase column names with the unit suffix dropped (`ord_qty_m` -> `ordQty`; the codec carries the unit). `supplier_id` (one supplier per install, A2-12) and `reconciliation_issue.fingerprint` (storage only) are left out; JSON columns become named fields (`bankDetails`, `rawHeader`, `details`, `before`/`after`, `progress`, `summary`).
+- Alternatives: Mirror the columns 1:1.
+- Why: The API never needs those two columns, and the domain already uses these field names.
+- Reversible: yes.
+
+### D-0062 — DC and invoice header fields come from the legacy forms
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 2 (#23) · Status: decided
+- Decision: DC: ourRef, departmentNo, consignee name/GSTIN/address, inspectionCompany, ewayBillNo, vehicleNo, lrNo, transporter, modeOfTransport, remarks, plus the supplier snapshot. Invoice: the buyer snapshot (name, GSTIN, address, state, state code, place of supply, buyer's order date), gemcNumber/gemcDate, paymentTerms, despatchDocNo, srvNo/srvDate, vehicleNo, lrNo, transporter, destination, termsOfDelivery, remarks, plus the supplier snapshot. Dropped: legacy multi-PO `po_numbers` (A-16), `source_type` (now `kind`), `mode_of_payment` (a fallback alias of payment terms) and stored list totals.
+- Alternatives: A minimal header set now, with fields added as screens need them.
+- Why: ARCHITECTURE §8.2 says only "header fields" and SPEC-11 §9 points to the legacy edit dialogs; these are the fields those forms show (C7 freezes the visible elements).
+- Reversible: yes, until SPEC-05 PR 2 creates the columns.
+
+### D-0063 — Per-endpoint bodies are built in PR 3
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 2 (#23) · Status: decided
+- Decision: SPEC-04 PR 2 ships the entities, the header shapes and the common list, paged and error shapes; PR 3 builds each route's request and response from them (`pick`/`extend`) next to its table entry.
+- Alternatives: Define every request body in PR 2.
+- Why: The PR-plan row lists exactly "list query, paged, error body" for `api/*.ts`, and each body sits more naturally beside its route.
+- Reversible: yes.
+
+### D-0064 — List query conventions
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 2 (#23) · Status: decided
+- Decision: `pageSize` must be 10, 25, 50 or 100 (default 10); `page` >= 1 (default 1); `sort` is optional and checked against the list's allowlist; `dir` is `asc|desc` (default `asc`); unknown query keys are stripped.
+- Alternatives: Any page size up to a cap; reject unknown keys.
+- Why: Legacy behaviour (the pager's options and its default of 10); SPEC-10 §4.2 requires an unknown sort column to be a 400.
+- Reversible: yes.
+
+### D-0065 — Error body is strict
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 2 (#23) · Status: decided
+- Decision: `zErrorBody` is `z.strictObject({ code, message, details?: record })`; `code` is any non-empty string.
+- Alternatives: An enum of codes.
+- Why: The codes are defined by the API specs (`delete-blocked`, the domain issue codes and so on), so the body shape is fixed here and the codes are set there.
+- Reversible: yes.
+
+### D-0066 — Job event level and text codes
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 2 (#23) · Status: decided
+- Decision: `job_event.level` is `info | warn | error`; `departmentNo` and `destCode` are strings (legacy stored integers).
+- Alternatives: Free-text level; integer codes.
+- Why: The three levels match the pino levels the API logs with; codes are identifiers, not numbers, so text keeps any leading zeros.
+- Reversible: yes.
