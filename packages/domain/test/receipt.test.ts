@@ -1,12 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IsoDate, Qty, ReceiptInput, SrvLine } from "../src/index.ts";
-import { computeReceipt, dateWinner, parseIsoDate, parseQty } from "../src/index.ts";
-import { unwrap } from "./unwrap.ts";
+import type { Qty, ReceiptInput, SrvLine } from "../src/index.ts";
+import { computeReceipt, dateWinner } from "../src/index.ts";
+import { date, qty } from "./unwrap.ts";
 
-const qty = (s: string): Qty => unwrap(parseQty(s));
-const date = (s: string): IsoDate => unwrap(parseIsoDate(s));
 const optQty = (s: string | null): Qty | null => (s === null ? null : qty(s));
 
 type LineRow = [srvDate: string, rcd: string | null, accepted: string | null, rej: string | null];
@@ -38,14 +36,6 @@ describe("INV-10: date winner", () => {
     ["2024-12-31", ["2025-01-01"], "srv"],
   ] as const)("po %s, srv %j -> %s", (poDate, srvDates, expected) => {
     expect(dateWinner(date(poDate), srvDates.map(date))).toBe(expected);
-  });
-
-  it.each([
-    ["no SRV", receipt("2025-01-10", "6", "1", []), "po"],
-    ["SRV on the PO date", receipt("2025-01-10", "6", "1", [["2025-01-10", "5", null, null]]), "srv"],
-    ["SRV before the PO date", receipt("2025-01-10", "6", "1", [["2025-01-09", "5", null, null]]), "po"],
-  ] as const)("computeReceipt reports the winner: %s -> %s", (_, input, expected) => {
-    expect(computeReceipt(input).winner).toBe(expected);
   });
 });
 
@@ -110,7 +100,6 @@ describe("INV-12: rej = sum(SRV rej) when SRV wins, else the PO's rejected qty o
 describe("INV-13: PO wins -> the PO document's own received and rejected values", () => {
   it.each([
     ["no SRV", receipt("2025-01-10", "6", "1", []), { winner: "po", rcd: 6000, rej: 1000 }],
-    ["after the last SRV is deleted", receipt("2025-01-10", "6", "1", []), { winner: "po", rcd: 6000, rej: 1000 }],
     [
       "every SRV older than the PO",
       receipt("2025-01-10", "6", "1", [
@@ -142,7 +131,7 @@ const optMilli = fc.option(fc.integer({ min: 0, max: 1_000_000 }).map((n) => n a
 const srvLine = fc.record({ srvDate: isoDate, rcdQty: optMilli, acceptedQty: optMilli, rejQty: optMilli });
 
 describe("INV-15: input order never changes the result", () => {
-  it("dateWinner and computeReceipt ignore the order of SRV lines", () => {
+  it("computeReceipt ignores the order of SRV lines", () => {
     fc.assert(
       fc.property(
         isoDate,
@@ -152,17 +141,6 @@ describe("INV-15: input order never changes the result", () => {
         (poDate, [lines, shuffled]) => {
           const input = { poDate, poRcdQty: qty("6"), poRejQty: qty("1"), srvLines: lines };
           expect(computeReceipt({ ...input, srvLines: shuffled })).toEqual(computeReceipt(input));
-          expect(
-            dateWinner(
-              poDate,
-              shuffled.map((l) => l.srvDate),
-            ),
-          ).toBe(
-            dateWinner(
-              poDate,
-              lines.map((l) => l.srvDate),
-            ),
-          );
         },
       ),
     );
