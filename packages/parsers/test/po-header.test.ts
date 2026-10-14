@@ -59,6 +59,16 @@ describe("parsePoHeader", () => {
     ]);
   });
 
+  it("takes a value spelled like a label as that label, so the field reads the cell below (EC-26)", () => {
+    const r = header(
+      page(
+        "<tr><td>RC NO</td><td>RC-7</td><td>ORD-TYPE</td><td>RC</td></tr>" +
+          "<tr><td>PO STATUS</td><td>A</td><td>INSPECTION BY</td><td>BHEL</td></tr>",
+      ),
+    );
+    expect(r.ok && [r.value.rcNo, r.value.orderType]).toEqual(["RC-7", "INSPECTION BY"]);
+  });
+
   it("reads an empty amendment number as 0", () => {
     const r = header(page("<tr><td>AMEND NO</td><td>&nbsp;</td></tr>"));
     expect(r.ok && r.value.amendNo).toBe(0);
