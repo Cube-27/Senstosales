@@ -76,22 +76,30 @@ type MergeCase = {
   sha?: string;
   mergeExit?: number;
   after?: string;
+  stacked?: string[];
+  listFails?: boolean;
+  editFails?: boolean;
 };
 
-/** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's changed files, `pr merge` exiting MERGEEXIT (calls counted
- * in gh-merges), and the PR state "<state> <head> <branch>": MERGED at HEAD when MERGED, else OPEN until a merge call,
- * then AFTER. */
+/** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's changed files, the open PRs STACKED on its branch,
+ * `pr list`, `pr edit` and `pr merge` (exiting MERGEEXIT) logged in order to gh-log, merges counted in gh-merges, and
+ * the PR state "<state> <head> <branch> <base>": MERGED at HEAD when MERGED, else OPEN until a merge call, then AFTER;
+ * the base is always `main`. */
 function ghForMerge(dir: string, c: MergeCase): string {
   const files = c.files ?? ["docs/plans/ACTIVE.md", "src/a.ts"];
   const merges = posix(join(dir, "gh-merges"));
+  const log = posix(join(dir, "gh-log"));
   const branch = c.branch ?? "spec-01/pr-1-x";
-  const before = `${c.merged ? "MERGED" : "OPEN"} ${HEAD} ${branch}`;
+  const before = `${c.merged ? "MERGED" : "OPEN"} ${HEAD} ${branch} main`;
+  const stacked = c.listFails ? "exit 1" : `printf "%s\\n" ${(c.stacked ?? []).join(" ")}`;
   return [
     'case "$*" in',
     `  *statusCheckRollup*) ${GH_GREEN} ;;`,
     `  "pr diff"*) printf "%s\\n" ${files.map((f) => `"${f}"`).join(" ")} ;;`,
-    `  "pr merge"*) echo merge >> "${merges}"; echo "GraphQL: Something went wrong" >&2; exit ${c.mergeExit ?? 0} ;;`,
-    `  *state,headRefOid,headRefName*) ${c.stateFails ? "exit 1;" : ""} [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch}" || echo "${before}" ;;`,
+    `  "pr list"*) echo "$*" >> "${log}"; ${stacked} ;;`,
+    `  "pr edit"*) echo "$*" >> "${log}"; exit ${c.editFails ? 1 : 0} ;;`,
+    `  "pr merge"*) echo "pr merge" >> "${log}"; echo merge >> "${merges}"; echo "GraphQL: Something went wrong" >&2; exit ${c.mergeExit ?? 0} ;;`,
+    `  *state,headRefOid,headRefName*) ${c.stateFails ? "exit 1;" : ""} [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch} main" || echo "${before}" ;;`,
     `  *headRefOid*) echo "${HEAD}" ;;`,
     "  *) exit 1 ;;",
     "esac",
@@ -102,7 +110,8 @@ function mergePr(c: MergeCase) {
   const dir = tempDir();
   const env = { WAIT_CI_POLL_S: "1", MERGE_CONFIRM_S: "0" };
   const result = runScript(dir, "merge_pr.sh", ["7", c.sha ?? HEAD.slice(0, 7)], { gh: ghForMerge(dir, c) }, env);
-  return { ...result, merges: read(join(dir, "gh-merges")).split("\n").filter(Boolean).length };
+  const lines = (name: string): string[] => read(join(dir, name)).split("\n").filter(Boolean);
+  return { ...result, log: lines("gh-log"), merges: lines("gh-merges").length };
 }
 
 describe("merge_pr.sh", SLOW, () => {
@@ -154,6 +163,37 @@ describe("merge_pr.sh", SLOW, () => {
 
     expect(result).toMatchObject({ status: 1, merges: 0 });
     expect(result.stderr).toBe("ERROR cannot read the state of PR #7\n");
+  });
+
+  it("retargets the open PRs based on its branch to its base before merging", () => {
+    const result = mergePr({ stacked: ["8", "9"] });
+
+    expect(result).toMatchObject({ status: 0, merges: 1 });
+    expect(result.log).toEqual([
+      "pr list --state open --base spec-01/pr-1-x --json number --jq .[].number",
+      "pr edit 8 --base main",
+      "pr edit 9 --base main",
+      "pr merge",
+    ]);
+    expect(result.stdout).toBe(
+      "check COMPLETED SUCCESS\nretargeted PR #8 from spec-01/pr-1-x to main\n" +
+        "retargeted PR #9 from spec-01/pr-1-x to main\n",
+    );
+  });
+
+  it("refuses to merge when a stacked PR cannot be retargeted", () => {
+    const result = mergePr({ stacked: ["8", "9"], editFails: true });
+
+    expect(result).toMatchObject({ status: 1, merges: 0 });
+    expect(result.log.slice(1)).toEqual(["pr edit 8 --base main"]);
+    expect(result.stderr).toBe("ERROR cannot retarget PR #8 from spec-01/pr-1-x to main; not merging PR #7\n");
+  });
+
+  it("refuses to merge when the stacked PRs cannot be listed", () => {
+    const result = mergePr({ listFails: true });
+
+    expect(result).toMatchObject({ status: 1, merges: 0 });
+    expect(result.stderr).toBe("ERROR cannot list the open PRs based on spec-01/pr-1-x\n");
   });
 
   it("merges a non-spec PR without a tracker change", () => {
