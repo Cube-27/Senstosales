@@ -1,0 +1,32 @@
+// The three date formats BHEL pages print (SPEC-06 §2), read as IST calendar dates (C3).
+import { parseIsoDate } from "@senstosales/domain";
+import type { IsoDate, Result } from "@senstosales/domain";
+
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+/** `DD/MM/YYYY` and `DD/MM/YY`. */
+const NUMERIC = /^(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})$/;
+/** `DD-MON-YY`. */
+const NAMED = /^(\d{1,2})-([A-Z]{3})-(\d{2})$/i;
+
+const pad = (n: string): string => n.padStart(2, "0");
+
+/** Day, month number and year as printed; a month name becomes its number. */
+function dateParts(text: string): [string, string, string] | undefined {
+  const numeric = NUMERIC.exec(text);
+  if (numeric) return [numeric[1] ?? "", numeric[2] ?? "", numeric[3] ?? ""];
+  const named = NAMED.exec(text);
+  const month = named ? MONTHS.indexOf((named[2] ?? "").toUpperCase()) + 1 : 0;
+  return named && month > 0 ? [named[1] ?? "", String(month), named[3] ?? ""] : undefined;
+}
+
+/**
+ * A page date as an `IsoDate`; anything else, including a date that does not exist, is an error. A two-digit year
+ * is 20YY, as the legacy parser read it (SPEC-06 §9).
+ */
+export function parsePageDate(text: string): Result<IsoDate> {
+  const parts = dateParts(text.trim());
+  const iso =
+    parts && parseIsoDate(`${parts[2].length === 2 ? "20" : ""}${parts[2]}-${pad(parts[1])}-${pad(parts[0])}`);
+  return iso?.ok ? iso : { ok: false, error: `Not a page date: "${text}"` };
+}

@@ -92,7 +92,17 @@ export const zSrvFile = z
 
 /** SPEC-06 §4.4: every parse failure, with a stable code and a plain message. */
 export type ParseError = {
-  code: "no-item-table" | "no-srv-table" | "bad-date" | "bad-quantity" | "duplicate-srv-item-key";
+  code:
+    | "no-item-table"
+    | "no-srv-table"
+    | "bad-date"
+    | "bad-quantity"
+    | "duplicate-srv-item-key"
+    | "missing-field"
+    | "bad-po-number"
+    | "bad-number";
   message: string;
   location?: string;
 };
+
+export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: ParseError };

@@ -5,7 +5,9 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
+    "@senstosales/domain": "workspace:*",
     "@senstosales/schemas": "workspace:*",
+    "cheerio": "^1.2.0",
     "zod": "^4.6.7"
   }
 }

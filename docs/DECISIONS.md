@@ -690,3 +690,35 @@ None.
 - Alternatives: Pretty-printed fixtures; rewriting pages as modern HTML (doctype, `lang`, `<th>`, no `width`/`cellpadding`) to pass Sonar's Web rules and 3% duplication gate.
 - Why: Fixtures stand in for BHEL pages and must keep the legacy markup the parser meets; the formatter re-laid every cell, Sonar flagged the legacy attributes, and fixtures repeat by nature. Like the lockfile they are data; all code stays analysed.
 - Reversible: yes — delete the ignore pattern and the properties file.
+
+### D-0080 — PO header label cells match the whole cell text
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 2 (#28) · Status: decided
+- Decision: A label is found only when the whole cleaned cell text matches its anchored pattern; inline `LABEL: value` cells are not read.
+- Alternatives: The legacy substring search with a filter on "DETAILS" values.
+- Why: Whole-cell matching cannot pick up headings like "PURCHASE ORDER DETAILS" and needs no filters; all fixtures match. The PR 6 corpus test will show if any page needs more.
+- Reversible: yes — widen the patterns.
+
+### D-0081 — Label value orientation from the parser's label vocabulary
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 2 (#28) · Status: decided
+- Decision: The value is the cell to the right unless that cell is itself a known label, then the cell below; a label with an empty value yields "" and a later occurrence with a value wins.
+- Alternatives: The legacy per-field "below/adjacent/any" preference with an uppercase "label-like" heuristic.
+- Why: The heuristic treats uppercase values such as `INR` as labels and drops them; the parser's own vocabulary is exact.
+- Reversible: yes.
+
+### D-0082 — Page date formats and two-digit years
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 2 (#28) · Status: decided
+- Decision: Only the spec's three formats (one- or two-digit day and month accepted, month names case-insensitive); a two-digit year is 20YY.
+- Alternatives: A century pivot; accepting ISO or DD-MM-YYYY too.
+- Why: SPEC-06 §2 and §9 (legacy `normalize_date` read all two-digit years as 20YY).
+- Reversible: yes.
+
+### D-0083 — New ParseError codes and header number reading
+
+- Date: 2026-10-15 · Spec/PR: SPEC-06 PR 2 (#28) · Status: decided
+- Decision: `missing-field`, `bad-po-number` and `bad-number` added (SPEC-06 §4.4 lists codes with "…"); header amounts have comma grouping removed before the domain's `parseMoney`; an empty AMEND NO is 0.
+- Alternatives: Reuse `bad-quantity` for amounts; fail on an empty AMEND NO.
+- Why: Stable, specific codes for the ingest job event; comma stripping and the 0 default match the legacy parser (`safe_to_int`).
+- Reversible: yes.
