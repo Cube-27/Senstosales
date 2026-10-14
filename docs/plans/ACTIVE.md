@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-04 PR 3, SPEC-05 PR 2, SPEC-06 PR 1 (#24). Next: SPEC-04 PR 4, SPEC-05 PR 3+, SPEC-06 PR 2+. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
+In flight: SPEC-04 PR 3, SPEC-06 PR 1 (#24). Next: SPEC-05 PR 3+, SPEC-04 PR 4, SPEC-06 PR 2+. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -93,7 +93,7 @@ In flight: SPEC-04 PR 3, SPEC-05 PR 2, SPEC-06 PR 1 (#24). Next: SPEC-04 PR 4, S
 | PR  | Scope                                  | Status     | Notes |
 | --- | -------------------------------------- | ---------- | ----- |
 | 1   | Db port and node:sqlite executor       | done (#22) |       |
-| 2   | Drizzle schema and custom types        | todo       |       |
+| 2   | Drizzle schema and custom types        | done (#25) |       |
 | 3   | Migration 0001 and migrator            | todo       |       |
 | 4   | D1 executor, dialect step and SQL lint | todo       |       |
 | 5   | Version helper and seed                | todo       |       |
