@@ -81,16 +81,16 @@ type MergeCase = {
   editFails?: boolean;
 };
 
-/** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's changed files, base `main`, the open PRs STACKED on its
- * branch, `pr list`, `pr edit` and `pr merge` (exiting MERGEEXIT) logged in order to gh-log, merges counted in
- * gh-merges, and the PR state "<state> <head> <branch>": MERGED at HEAD when MERGED, else OPEN until a merge call, then
- * AFTER. */
+/** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's changed files, the open PRs STACKED on its branch,
+ * `pr list`, `pr edit` and `pr merge` (exiting MERGEEXIT) logged in order to gh-log, merges counted in gh-merges, and
+ * the PR state "<state> <head> <branch> <base>": MERGED at HEAD when MERGED, else OPEN until a merge call, then AFTER;
+ * the base is always `main`. */
 function ghForMerge(dir: string, c: MergeCase): string {
   const files = c.files ?? ["docs/plans/ACTIVE.md", "src/a.ts"];
   const merges = posix(join(dir, "gh-merges"));
   const log = posix(join(dir, "gh-log"));
   const branch = c.branch ?? "spec-01/pr-1-x";
-  const before = `${c.merged ? "MERGED" : "OPEN"} ${HEAD} ${branch}`;
+  const before = `${c.merged ? "MERGED" : "OPEN"} ${HEAD} ${branch} main`;
   const stacked = c.listFails ? "exit 1" : `printf "%s\\n" ${(c.stacked ?? []).join(" ")}`;
   return [
     'case "$*" in',
@@ -99,8 +99,7 @@ function ghForMerge(dir: string, c: MergeCase): string {
     `  "pr list"*) echo "$*" >> "${log}"; ${stacked} ;;`,
     `  "pr edit"*) echo "$*" >> "${log}"; exit ${c.editFails ? 1 : 0} ;;`,
     `  "pr merge"*) echo "pr merge" >> "${log}"; echo merge >> "${merges}"; echo "GraphQL: Something went wrong" >&2; exit ${c.mergeExit ?? 0} ;;`,
-    `  *state,headRefOid,headRefName*) ${c.stateFails ? "exit 1;" : ""} [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch}" || echo "${before}" ;;`,
-    `  *baseRefName*) echo main ;;`,
+    `  *state,headRefOid,headRefName*) ${c.stateFails ? "exit 1;" : ""} [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch} main" || echo "${before}" ;;`,
     `  *headRefOid*) echo "${HEAD}" ;;`,
     "  *) exit 1 ;;",
     "esac",

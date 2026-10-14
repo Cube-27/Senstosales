@@ -13,12 +13,15 @@ pr=${1:-}; sha=${2:-}
 [[ $pr =~ ^[0-9]+$ && $sha =~ ^[0-9a-f]{7,40}$ ]] || err "usage: merge_pr.sh PR SHA7 (SHA7: 7-40 hex digits)"
 tracker=docs/plans/ACTIVE.md
 
-# "<state> <head sha> <branch>" of the PR, or nothing when gh fails.
-pr_state() { gh pr view "$pr" --json state,headRefOid,headRefName --jq '"\(.state) \(.headRefOid) \(.headRefName)"' 2>/dev/null || true; }
+# "<state> <head sha> <branch> <base branch>" of the PR, or nothing when gh fails.
+pr_state() {
+  gh pr view "$pr" --json state,headRefOid,headRefName,baseRefName \
+    --jq '"\(.state) \(.headRefOid) \(.headRefName) \(.baseRefName)"' 2>/dev/null || true
+}
 
 # Recurring: GitHub answered a merge with a GraphQL error although the merge went through, and a retry then added an
 # empty duplicate commit. Trust the PR state, never the exit code alone.
-read -r state head branch <<< "$(pr_state)"
+read -r state head branch base <<< "$(pr_state)"
 [[ -n $branch ]] || err "cannot read the state of PR #$pr"
 if [[ $state == MERGED && $head == "$sha"* ]]; then echo "already merged: PR #$pr at $head"; exit 0; fi
 
@@ -33,7 +36,6 @@ if [[ $branch =~ ^spec-[0-9]+/ ]] && ! gh pr diff "$pr" --name-only | grep -qxF 
 fi
 # GitHub deletes a merged PR's head branch and closes every open PR based on it (#43, stacked on #42, was closed).
 # Retarget those to the merged PR's base first; a failed list or retarget refuses the merge.
-base=$(gh pr view "$pr" --json baseRefName --jq .baseRefName) || err "cannot read the base of PR #$pr"
 stacked=$(gh pr list --state open --base "$branch" --json number --jq '.[].number') \
   || err "cannot list the open PRs based on $branch"
 for n in $stacked; do
