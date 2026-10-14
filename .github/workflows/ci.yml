@@ -66,7 +66,7 @@ jobs:
           name: license-report
           path: license-report/
 
-  # Orchestrator tooling: merge_guard.py and the shell scripts.
+  # Python and shell tooling: merge_guard.py, the orchestrator scripts and their tests.
   tools:
     runs-on: ubuntu-24.04
     steps:
@@ -74,6 +74,4 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-      - run: uvx ruff check tools && uvx ruff format --check tools
-      - run: uv run --with pytest pytest tools/tests
-      - run: for f in tools/orchestrator/*.sh; do bash -n "$f"; done
+      - run: bash tools/check-tools.sh

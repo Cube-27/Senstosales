@@ -129,7 +129,7 @@ The checks CI runs, by job (every job must pass before merge). Each is a root sc
 pnpm check:code        # check: vp check (Oxfmt + Oxlint), tsc -b, vp test run, build
 pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
-uvx ruff check tools && uvx ruff format --check tools && uv run --with pytest pytest tools/tests   # tools
+pnpm check:tools       # tools: ruff, pytest tools/tests, bash -n on the shell scripts
 ```
 
 Tooling is Vite+ (`vp`): Oxlint for lint (including the C15 limits `max-lines` 800 and `complexity` 15), Oxfmt for

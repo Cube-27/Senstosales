@@ -9,7 +9,8 @@
     "check:code": "vp check && tsc -b && vp test run && pnpm -r --if-present build",
     "check:real-data": "node tools/checks/src/real-data-scan.ts",
     "check:licenses": "node -e \"require('fs').mkdirSync('license-report',{recursive:true})\" && pnpm licenses list --json --recursive > license-report/licenses.json && node tools/checks/src/license-check.ts license-report/licenses.json",
-    "verify": "pnpm check:code && pnpm check:real-data && pnpm check:licenses"
+    "check:tools": "bash tools/check-tools.sh",
+    "verify": "pnpm check:code && pnpm check:real-data && pnpm check:licenses && pnpm check:tools"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
