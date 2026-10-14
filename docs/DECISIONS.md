@@ -1426,3 +1426,51 @@ None.
 - Alternatives: Order by creation time. Refuse the delete while a PO references the buyer, or clear the references.
 - Why: Readable in the settings list. Delete follows the frozen legacy behaviour, because the spec is silent on references.
 - Reversible: yes.
+
+### D-0172 — PO list text filter
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 1 (#44) · Status: decided
+- Decision: `q` matches the PO number or the GEMC number, case-insensitively, with `%` and `_` taken literally.
+- Alternatives: The legacy LIKE without escaping; also matching material codes.
+- Why: Legacy searched the PO number, supplier name and GEMC number, and the supplier is always ours.
+- Reversible: yes.
+
+### D-0173 — PO list order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 1 (#44) · Status: decided
+- Decision: The default is PO date descending. Every sort is followed by PO date descending, then PO number descending, then id. PO numbers sort as integers, with the text as a tiebreak. Status sorts by the legacy rank Pending < Delivered < Closed. A missing value sorts first ascending.
+- Alternatives: Text order for PO numbers; alphabetical status.
+- Why: Matches the legacy list's visible order.
+- Reversible: yes.
+
+### D-0174 — PO list filter semantics
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 1 (#44) · Status: decided
+- Decision: `valueMin`/`valueMax` compare `COALESCE(po_value, 0)`, and stats sum a missing value as 0. `flagged=true` keeps POs with at least one open flag and `flagged=false` keeps POs with none; `gemc=false` keeps non-GEMC POs.
+- Alternatives: Exclude POs with no value; treat `false` as "no filter".
+- Why: Legacy treated a missing value as 0; `false` is the plain reading of a boolean filter.
+- Reversible: yes.
+
+### D-0175 — PO item count counts every item
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 1 (#44) · Status: decided
+- Decision: `itemCount` includes cancelled items.
+- Alternatives: Active items only.
+- Why: Legacy counted every item row, and the detail still lists cancelled items.
+- Reversible: yes.
+
+### D-0176 — PO uninvoiced total from the domain
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 1 (#44) · Status: decided
+- Decision: The list row's `uninvoicedQty` is computed per page by the domain's `poUninvoicedQty` over the stored item columns, and is not stored.
+- Alternatives: A `po.uninvoiced_qty_m` column persisted by recompute.
+- Why: No such column exists in ARCHITECTURE §8.2, and C2 keeps the sum in the domain. Uninvoiced is not a sort key, so SQL never needs it.
+- Reversible: yes.
+
+### D-0177 — PO detail flags and lists order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 1 (#44) · Status: decided
+- Decision: The detail returns open flags only, oldest first. Lots are ordered by lot number; linked documents by document date, oldest first.
+- Alternatives: Include acknowledged flags.
+- Why: SPEC-10 §2 names open flags; the flags screen (PR 5) shows acknowledged ones.
+- Reversible: yes.
