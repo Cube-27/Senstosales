@@ -1,0 +1,13 @@
+{
+  "name": "@senstosales/db",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/platform/node/sqlite.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4"
+  }
+}
