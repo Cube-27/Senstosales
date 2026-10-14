@@ -474,3 +474,43 @@ None.
 - Alternatives: Anchored gitignore patterns (not known to behave the same in Oxlint).
 - Why: The builtin `domain` as a pattern blocked `@senstosales/domain` in every core package. Regression test in `lint-boundaries.test.ts`.
 - Reversible: yes.
+
+### D-0053 — Legacy display formats kept per screen
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: decided
+- Decision: Each distinct legacy display format is one named shared formatter: `fmtDate` (`05/01/2025`, empty `—`), `fmtDateMonthName` (`05 Jan 2025`, empty `-`; PO delivery dates and deviations), `fmtMoney` (full precision, `-₹848.75`), `fmtMoneyCompact` (`₹1.50L`, `₹1.00Cr`; rounded to whole rupees first), `fmtMoneyCompactSpaced` (`- ₹1.50 L`; delivery tracker, rounds the magnitude and only below a lakh), `fmtRate` (no rupee sign; legacy rate cells draw it apart), `fmtFy` (`FY 2024-25`).
+- Alternatives: One format per kind of value.
+- Why: SPEC-04 §9: where legacy shows two formats for the same kind of value, each screen keeps its own; unifying them needs an ADR (C7).
+- Reversible: yes.
+
+### D-0054 — Quantities display in whole units
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: decided
+- Decision: `fmtQty` rounds to whole units half toward +infinity, as legacy does for every quantity cell and total (`2.5 -> 3`, `-2.5 -> -2`). Recorded as EC-21.
+- Alternatives: Show up to 3 dp.
+- Why: SPEC-04 §4.4 asks for legacy-identical output; showing decimals would be new behaviour (C18).
+- Reversible: yes.
+
+### D-0055 — No negative zero
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: decided
+- Decision: An amount or quantity that rounds to zero prints unsigned (`0`, `₹0`); legacy printed `-0`, `-₹0` or `- ₹0` for small negatives such as `-0.4`.
+- Alternatives: Reproduce the sign.
+- Why: The sign is a float artefact of the legacy code, not a format.
+- Reversible: yes.
+
+### D-0056 — Exact ties in display rounding
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: decided
+- Decision: `fmtMoney`/`fmtRate` round to 2 dp through the domain `roundMoney`, half away from zero (D-0021): `848.755 -> ₹848.76` (legacy `toFixed` on the binary float shows `₹848.75`). The compact formats round hundredths of a lakh or crore half up on the exact value; whole rupees and whole units round half toward +infinity, as legacy `Math.round` does.
+- Alternatives: Emulate the float rounding.
+- Why: Stored amounts are exact (C3), so the display must not depend on binary floats; ties arise only for values with more decimals than shown, which the write paths already round.
+- Reversible: yes.
+
+### D-0057 — C12 lint: deep subpath globs
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: decided
+- Decision: The C12 prefix globs use `**` (`node:*`, `node:*/**`, `playwright/**`, `playwright-core/**`, `@playwright/**`, `@tauri-apps/**`), so subpaths at any depth are banned. Extends D-0052.
+- Alternatives: Keep single-level `*`.
+- Why: A gitignore-style `*` does not cross `/`, so `node:fs/promises` and `@tauri-apps/api/core` passed the ban. Regression test in `lint-boundaries.test.ts`.
+- Reversible: yes.
