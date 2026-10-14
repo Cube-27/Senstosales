@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-04 PR 1, PR 5. Next: SPEC-04 PR 2-4, then SPEC-05/06. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
+In flight: SPEC-04 PR 2-5. Next: SPEC-05, SPEC-06. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -80,13 +80,13 @@ In flight: SPEC-04 PR 1, PR 5. Next: SPEC-04 PR 2-4, then SPEC-05/06. Waiting on
 
 ## [SPEC-04 — Schemas, route table and formatters](../specs/SPEC-04-schemas-routes-formatters.md)
 
-| PR  | Scope                            | Status | Notes |
-| --- | -------------------------------- | ------ | ----- |
-| 1   | Primitives and enums             | todo   |       |
-| 2   | Entities and API shapes          | todo   |       |
-| 3   | Route table and typed client     | todo   |       |
-| 4   | OpenAPI generation and freshness | todo   |       |
-| 5   | Shared formatters                | todo   |       |
+| PR  | Scope                            | Status     | Notes |
+| --- | -------------------------------- | ---------- | ----- |
+| 1   | Primitives and enums             | done (#20) |       |
+| 2   | Entities and API shapes          | todo       |       |
+| 3   | Route table and typed client     | todo       |       |
+| 4   | OpenAPI generation and freshness | todo       |       |
+| 5   | Shared formatters                | todo       |       |
 
 ## [SPEC-05 — Database: schema, migrations, Db port, seed](../specs/SPEC-05-db-schema-migrations.md)
 

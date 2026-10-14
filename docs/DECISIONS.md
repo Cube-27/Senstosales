@@ -450,3 +450,27 @@ None.
 - Alternatives: Export the status values from `status.ts` and build the pattern from them.
 - Why: It keeps the row out of the domain's public API; the domain union changes only through an owner decision, and then the check's pattern needs the same edit.
 - Reversible: yes.
+
+### D-0050 — Wire codecs via z.codec
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 1 (#20) · Status: decided
+- Decision: `zQty`, `zMoney` and `zIsoDate` are Zod 4 codecs over the domain's parse/format functions; the output side checks the value (`Number.isSafeInteger`, or a valid date), so encoding a float or a bad date throws.
+- Alternatives: `z.string().transform(...)` (cannot encode responses); `z.custom` on the branded type (no wire string type).
+- Why: One schema serves request decoding and response encoding (C3), with no second parser.
+- Reversible: yes — internal to `packages/schemas`.
+
+### D-0051 — Ids are plain ULID strings
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 1 (#20) · Status: decided
+- Decision: `zId = z.ulid()`, unbranded, matching the domain's `string` ids (D-0033).
+- Alternatives: Per-entity branded ids.
+- Why: The most conservative reading; the domain has no id brands. SPEC-04 PR 2 can add brands if entities need them.
+- Reversible: yes.
+
+### D-0052 — C12 lint rule matches exact names
+
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 1 (#20) · Status: decided
+- Decision: Bare builtins and `playwright`/`playwright-core` go in `no-restricted-imports.paths`; the patterns keep only the prefixes `node:*`, `playwright/*`, `playwright-core/*`, `@playwright/*` and `@tauri-apps/*`.
+- Alternatives: Anchored gitignore patterns (not known to behave the same in Oxlint).
+- Why: The builtin `domain` as a pattern blocked `@senstosales/domain` in every core package. Regression test in `lint-boundaries.test.ts`.
+- Reversible: yes.
