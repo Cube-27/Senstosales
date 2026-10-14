@@ -105,11 +105,12 @@ describe("startServer", () => {
     const server = await start(await webRoot());
     (await supplierDb(join(tmp, "data", "db", "senstosales.db"))).close();
     const html = poPage({ date: "10/04/2025", items: [{ no: 10 }] });
+    const base = `http://127.0.0.1:${server.port}`;
+    const login = await fetch(`${base}/api/auth/login`, json("POST", { password: "admin", rememberMe: false }));
+    const cookie = (login.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
 
-    const res = await fetch(
-      `http://127.0.0.1:${server.port}/api/po/upload`,
-      json("POST", { files: [{ name: "a.html", html }] }),
-    );
+    const upload = json("POST", { files: [{ name: "a.html", html }] });
+    const res = await fetch(`${base}/api/po/upload`, { ...upload, headers: { ...upload.headers, cookie } });
 
     expect(await res.json()).toEqual({ results: [{ name: "a.html", status: "accepted", reason: null }] });
     expect(await readFile(join(tmp, "data", "html", "po", "4500001.html"), "utf8")).toBe(html);
