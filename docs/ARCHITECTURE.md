@@ -455,7 +455,7 @@ SQLite now, D1 later; one set of SQL migrations runs on both. Every business tab
 | `reconciliation_issue` | id, type, scope_type, scope_id, po_id, fingerprint, details_json (field, expected, actual), status (`open`/`acknowledged`), note, opened_at, acknowledged_at.                                                                                                                                     |
 | `audit_log`            | id, at, actor, action, entity_type, entity_id, before_json, after_json, job_id. One row per write batch, in that batch. Kept forever (A-26).                                                                                                                                                      |
 | `job`, `job_event`     | job: type, status, timestamps, cancel_requested, progress_json, error, summary_json; partial unique index on running. job_event: job_id, at, level, document_key, message.                                                                                                                        |
-| `schema_migration`     | version, name, applied_at, app_version; `PRAGMA user_version` mirrors it.                                                                                                                                                                                                                         |
+| `schema_migration`     | version, name, applied_at, app_version; the schema version is `max(version)` (no `PRAGMA user_version`, which D1 refuses).                                                                                                                                                                        |
 
 Not carried from legacy: numbering sequences, alerts, master tables, download preferences, lot
 `manual_override_qty`, `manual_delivered_qty`, multi-PO columns, the ledger view, triggers. The legacy ledger becomes
@@ -620,10 +620,11 @@ works in a plain browser.
 
 ### 13.3 Upgrade, backup, restore
 
-- **Upgrade**: on the first start of a new version, if `user_version < expected`: back up
-  (`backups/pre-upgrade-<version>-<ts>.db`, SQLite online backup API), apply pending migrations as one batch, stamp,
-  serve. On failure the old DB is untouched and a plain dialog explains. If `user_version > expected` the app
-  refuses to start and says so. (INV-82)
+- **Upgrade**: the schema version is `max(version)` in `schema_migration` (0 when the table is missing). On the
+  first start of a new version, if it is below the expected version: back up (`backups/pre-upgrade-<version>-<ts>.db`,
+  SQLite online backup API), apply pending migrations and their `schema_migration` rows as one batch, serve. On
+  failure the old DB is untouched and a plain dialog explains. If it is above the expected version the app refuses
+  to start and says so. (INV-82)
 - **Backups**: online backup API, on the first launch each day and before every migration; rotation keeps 14 daily
   and 12 monthly. Settings offers Backup now and Restore.
 - **Versioning**: one `VERSION` file stamped into `tauri.conf.json`, the SEA, every `package.json` and `/api/health`.
@@ -843,3 +844,4 @@ Every section of the legacy business spec, mapped to this document and `INVARIAN
 | 1.2 | 2026-10-14 | §12.3, §16: UI primitives from shadcn/ui, generated and restyled to tokens; DataTable stays custom on TanStack Table (owner, D-0015). §1, §2 C7, §12.2, A-2: the freeze covers flows and on-screen elements; minor visual changes allowed for maintenance, performance or consistency; CSV/Excel unchanged (owner, D-0016). |
 | 1.3 | 2026-10-14 | §6.11: the tolerance example is `(10, 9.999, 0) -> Delivered`, not `9.9995`, which a three-decimal `Qty` cannot hold; the rule is unchanged. INV-02, INV-62 and SPEC-02 §4.3 likewise (D-0023).                                                                                                                             |
 | 1.4 | 2026-10-14 | §2 C15: the ruff C90 mention goes, with all Python tooling; the merge guard and orchestrator tests are TypeScript (owner, D-0018). §3, §13, §16, A-4: Node 26 LTS replaces Node 24, including the SEA sidecar (owner, D-0019).                                                                                              |
+| 1.5 | 2026-10-15 | §8.2, §13.3: the schema version is `max(version)` in `schema_migration`; `PRAGMA user_version` is no longer written or read, since D1 refuses it (ADR 0002). SPEC-05 and SPEC-07 likewise (owner delegated the decision to the orchestrator; SPEC-05 PR 3).                                                                 |

@@ -1,4 +1,4 @@
-// Applied migrations; `PRAGMA user_version` mirrors the highest version (ARCHITECTURE §8.3).
+// Applied migrations; the highest version is the schema version (ARCHITECTURE §8.2, §13.3).
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import { instant } from "../types.ts";

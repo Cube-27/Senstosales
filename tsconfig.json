@@ -7,6 +7,7 @@
     { "path": "packages/db" },
     { "path": "packages/parsers" },
     { "path": "tools/checks" },
+    { "path": "tools/gen" },
     { "path": "tools/orchestrator" }
   ]
 }
