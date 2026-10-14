@@ -970,3 +970,35 @@ None.
 - Alternatives: A copy in each parser module.
 - Why: One rule for how page numbers are read and how failures are reported.
 - Reversible: yes.
+
+### D-0115 — OpenAPI freshness checked by a test, not a ci.yml step
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 4 (#31) · Status: decided
+- Decision: `tools/gen/test/openapi.test.ts` compares the committed `openapi.json` with the generator's output; it runs in `check:code`, so in the CI `check` job.
+- Alternatives: A ci.yml step running `regenerate && git diff --exit-code` (SPEC-04 §6 wording).
+- Why: A separate step breaks the CI-parity test (one check script per CI job, mirrored by `pnpm verify`); chaining it into `check:code` would rewrite a tracked file and depend on index state; the migrations generator already uses a test.
+- Reversible: yes.
+
+### D-0116 — OpenAPI security is a cookie named `session`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 4 (#31) · Status: decided
+- Decision: `components.securitySchemes.session` is an `apiKey` in a cookie named `session`; routes are secured globally and public routes set `security: []`.
+- Alternatives: An `x-` extension without a cookie name.
+- Why: OpenAPI needs a cookie name and no spec gives one; SPEC-07 can rename it and regenerate.
+- Reversible: yes.
+
+### D-0117 — Downloads documented as `application/octet-stream`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 4 (#31) · Status: decided
+- Decision: `response: "file"` routes declare a 200 response with `application/octet-stream`, named by `Content-Disposition`.
+- Alternatives: List the xlsx and csv media types per route.
+- Why: The route table does not say which format each download is (D-0105).
+- Reversible: yes.
+
+### D-0118 — OpenAPI builder on a subpath export
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 4 (#31) · Status: decided
+- Decision: `buildOpenApi` is imported from `@senstosales/schemas/openapi`, not from the package index.
+- Alternatives: Export it from the index.
+- Why: Its module-level registry would keep zod's JSON Schema converter in the web bundle.
+- Reversible: yes.

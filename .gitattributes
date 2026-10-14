@@ -11,3 +11,5 @@
 *.ps1 text eol=crlf
 # Lockfiles: no diffs in reviews, no merge attempts.
 pnpm-lock.yaml -diff linguist-generated
+# Generated from source and checked for freshness in CI; collapsed in review diffs.
+packages/schemas/generated/** linguist-generated
