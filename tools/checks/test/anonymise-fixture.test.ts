@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, onTestFinished } from "vite-plus/test";
 
 import { anonymiseHtml, run } from "../src/anonymise-fixture.ts";
 import { scanFile } from "../src/real-data-scan.ts";
@@ -27,10 +27,11 @@ describe("anonymiseHtml keeps (INV-75)", () => {
   it.each([
     ["labels and column headers", row("PURCHASE ORDER", "PO DATE", "ORD QTY", "ENTRY ALLOW DATE", "SUPP NAME M/S")],
     ["quantities, rates and values with decimals", row("10.000", "1250.50", "2.5", "1,25,000.00")],
-    ["whole-cell integers of up to four digits (item, lot, rate)", row("10", "1", "1250")],
     ["dates in the page formats", row("05/04/2023", "12-APR-24", "01/07/23", "PO DATE: 31-MAR-25")],
     ["entities and the entry-allow note", row("&nbsp;NOS&nbsp;", "PO Short Closed", "&#160;&amp;")],
-    ["presentational attributes", `<table border="1" width="100%" class="grid"><tr><td colspan="11">10</td></tr>`],
+    ["presentational attributes", `<table border="1" width="100%" class="grid"><tr><td colspan="11">10.000</td></tr>`],
+    ["the encoding declaration", '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'],
+    ["style elements", "<style>td { color: #FF0000; font-family: Arial }</style>"],
     ["the doctype and a comment's labels", `<!DOCTYPE html><!-- ${row("SRV NO", "RECVD QTY")} -->`],
   ])("%s", (_, html) => {
     expect(anonymise(html)).toBe(html);
@@ -64,8 +65,43 @@ describe("anonymiseHtml replaces (INV-75)", () => {
     expect(out).not.toMatch(/7731|Plot|14|Sector|20000000/);
   });
 
-  it("whole-cell integers of five or more digits (codes, SRV and challan numbers)", () => {
-    expect(anonymise(row("5000101"))).not.toContain("5000101");
+  // Review of #24: number-shaped identifiers that the date and number patterns used to keep whole or in part.
+  it.each([
+    ["a drawing number shaped like a date", "DRG 12-34-5678", ["12", "34", "5678"]],
+    ["a phone number shaped like a date", "Tel 22-23-4567", ["22", "23", "4567"]],
+    ["a dotted code with no real month", "11.22.3344", ["11", "22", "3344"]],
+    ["a dotted run past a decimal", "12.345.678", ["12", "345", "678"]],
+    ["a comma run past a grouped number", "98,765,43210", ["98", "765", "43210"]],
+    // /code-review of #24
+    ["a code shaped like a date with a word for the month", "12-ABC-2024", ["12", "2024"]],
+    ["a dotted landline", "0120.4567890", ["0120", "4567890"]],
+  ])("%s", (_, cell, runs) => {
+    const text = /<td>(.*)<\/td>/.exec(anonymise(row(cell)))?.[1] ?? "";
+    for (const run of runs) expect(text.split(/\D+/)).not.toContain(run);
+  });
+
+  it("names in any script, letter for letter", () => {
+    const out = anonymise(row("Müller Ćirić", "राम लाल"));
+    expect(out).toMatch(/^<tr><td>[A-Z][a-z]{5} [A-Z][a-z]{4}<\/td><td>[a-z]+ [a-z]+<\/td><\/tr>$/);
+  });
+
+  it("bare integers of any length, the same way each time (short challan and invoice numbers, C1)", () => {
+    const out = anonymise(row("17", "5000101", "17"));
+    const [first, code, last] = [...out.matchAll(/<td>(\d+)<\/td>/g)].map((m) => m[1]);
+    expect([first, code, last]).not.toContain("17");
+    expect(code).not.toBe("5000101");
+    expect(last).toBe(first);
+  });
+
+  it("two different values never share a replacement", () => {
+    const values = Array.from({ length: 30 }, (_, i) => String(10 + i));
+    const out = anonymise(row(...values));
+    expect(new Set([...out.matchAll(/<td>(\d+)<\/td>/g)].map((m) => m[1])).size).toBe(30);
+  });
+
+  it("identity in id, name and content attributes", () => {
+    const out = anonymise('<meta name="author" content="Ravi Kumar"><td id="4100000101">');
+    expect(out).not.toMatch(/author|Ravi|Kumar|4100000101/);
   });
 
   it("identifiers and e-mail addresses, leaving no GSTIN or mobile number for the scan", () => {
@@ -100,6 +136,7 @@ describe("anonymiseHtml replaces (INV-75)", () => {
 describe("run", () => {
   function setup(): { root: string; corpus: string; mapPath: string; env: Record<string, string> } {
     const base = mkdtempSync(join(tmpdir(), "anon-"));
+    onTestFinished(() => rmSync(base, { recursive: true, force: true }));
     const root = join(base, "repo");
     const corpus = join(base, "corpus");
     mkdirSync(join(root, "packages/parsers/fixtures/po"), { recursive: true });
@@ -136,6 +173,25 @@ describe("run", () => {
     const { root, env } = setup();
     expect(run({ args: ["../corpus-other/page.html", "po/x"], env, root, randomInt: seeded() })).toBe(2);
     expect(existsSync(join(root, "packages/parsers/fixtures/po/x.html"))).toBe(false);
+  });
+
+  it("refuses a page reached through a link that leaves SENSTO_CORPUS_DIR", () => {
+    const { root, corpus, env } = setup();
+    const outside = join(corpus, "..", "elsewhere");
+    mkdirSync(outside);
+    writeFileSync(join(outside, "page.html"), row("4100000101"));
+    symlinkSync(outside, join(corpus, "linked"), "junction");
+    expect(run({ args: ["linked/page.html", "po/x"], env, root, randomInt: seeded() })).toBe(2);
+    expect(existsSync(join(root, "packages/parsers/fixtures/po/x.html"))).toBe(false);
+  });
+
+  it("refuses a mapping file reached through a link into the repo", () => {
+    const { root, corpus, env } = setup();
+    const link = join(corpus, "..", "maps");
+    symlinkSync(root, link, "junction");
+    const linked = { ...env, SENSTO_ANON_MAP: join(link, "anon-map.json") };
+    expect(run({ args: ["2024/page.html", "po/x"], env: linked, root, randomInt: seeded() })).toBe(2);
+    expect(existsSync(join(root, "anon-map.json"))).toBe(false);
   });
 
   it("refuses a mapping file inside the repo", () => {

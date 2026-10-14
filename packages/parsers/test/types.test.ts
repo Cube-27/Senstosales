@@ -132,4 +132,10 @@ describe("zSrvDocument", () => {
   ])("rejects %s", (_, override) => {
     expect(zSrvDocument.safeParse({ ...SRV, ...override }).success).toBe(false);
   });
+
+  it("an SRV file holds the SRVs of one PO only", () => {
+    const second = { ...SRV, srvNumber: "5000002" };
+    expect(zSrvFile.safeParse([SRV, second]).success).toBe(true);
+    expect(zSrvFile.safeParse([SRV, { ...second, poNumber: "4100000998" }]).success).toBe(false);
+  });
 });

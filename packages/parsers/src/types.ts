@@ -85,7 +85,10 @@ export const zSrvDocument = z.strictObject({
 export type SrvDocument = z.output<typeof zSrvDocument>;
 
 /** One SRV file: every SRV of one PO (SPEC-06 §4.1). */
-export const zSrvFile = z.array(zSrvDocument).min(1);
+export const zSrvFile = z
+  .array(zSrvDocument)
+  .min(1)
+  .refine((srvs) => srvs.every((srv) => srv.poNumber === srvs[0]?.poNumber), "every SRV in a file is of one PO");
 
 /** SPEC-06 §4.4: every parse failure, with a stable code and a plain message. */
 export type ParseError = {
