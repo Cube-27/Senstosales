@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ItemQuantityInput, PoTotalsItem, Qty } from "../src/index.ts";
-import { computeItemQuantities, computePoTotals, parseQty } from "../src/index.ts";
-import { unwrap } from "./unwrap.ts";
+import { computeItemQuantities, computePoTotals } from "../src/index.ts";
+import { qty } from "./unwrap.ts";
 
-const qty = (s: string): Qty => unwrap(parseQty(s));
 const qtys = (...ss: string[]): Qty[] => ss.map(qty);
 
 const item = (over: Partial<ItemQuantityInput>): ItemQuantityInput => ({
@@ -63,9 +62,10 @@ describe("INV-07: cancelled item has balance 0 and is excluded from header total
     expect(computeItemQuantities(item({ cancelled: true })).balanceQty).toBe(0);
   });
 
-  const line = (ord: string, cancelled: boolean, dsp = "0", rcd = "0", rej = "0", balance = "0"): PoTotalsItem => ({
-    ordQty: qty(ord),
+  type Line = { ord: string; dsp?: string; rcd?: string; rej?: string; balance?: string };
+  const line = (cancelled: boolean, { ord, dsp = "0", rcd = "0", rej = "0", balance = "0" }: Line): PoTotalsItem => ({
     cancelled,
+    ordQty: qty(ord),
     dspQty: qty(dsp),
     rcdQty: qty(rcd),
     rejQty: qty(rej),
@@ -75,17 +75,20 @@ describe("INV-07: cancelled item has balance 0 and is excluded from header total
   it.each([
     [
       "ord 10 active + ord 5 cancelled -> ordered 10",
-      [line("10", false, "0", "0", "0", "10"), line("5", true, "2", "1", "1", "0")],
+      [line(false, { ord: "10", balance: "10" }), line(true, { ord: "5", dsp: "2", rcd: "1", rej: "1" })],
       { ordQty: 10000, dspQty: 0, rcdQty: 0, rejQty: 0, balanceQty: 10000 },
     ],
     [
       "two active items sum every column",
-      [line("10", false, "4", "6", "1", "4"), line("2.5", false, "1.25", "0", "0", "1.25")],
+      [
+        line(false, { ord: "10", dsp: "4", rcd: "6", rej: "1", balance: "4" }),
+        line(false, { ord: "2.5", dsp: "1.25", balance: "1.25" }),
+      ],
       { ordQty: 12500, dspQty: 5250, rcdQty: 6000, rejQty: 1000, balanceQty: 5250 },
     ],
     [
       "all cancelled -> zeros",
-      [line("5", true, "5", "5", "0", "0")],
+      [line(true, { ord: "5", dsp: "5", rcd: "5" })],
       { ordQty: 0, dspQty: 0, rcdQty: 0, rejQty: 0, balanceQty: 0 },
     ],
     ["no items -> zeros", [], { ordQty: 0, dspQty: 0, rcdQty: 0, rejQty: 0, balanceQty: 0 }],

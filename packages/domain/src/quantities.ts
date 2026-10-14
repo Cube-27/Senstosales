@@ -29,9 +29,9 @@ export function computeItemQuantities(input: ItemQuantityInput): ItemQuantities 
   return { dspQty, balanceQty, uninvoicedQty };
 }
 
-export type PoTotalsItem = { cancelled: boolean; ordQty: Qty; dspQty: Qty; rcdQty: Qty; rejQty: Qty; balanceQty: Qty };
-
 export type PoTotals = { ordQty: Qty; dspQty: Qty; rcdQty: Qty; rejQty: Qty; balanceQty: Qty };
+
+export type PoTotalsItem = PoTotals & { cancelled: boolean };
 
 /** INV-07: header totals are sums over active items; a cancelled item contributes 0. */
 export function computePoTotals(items: readonly PoTotalsItem[]): PoTotals {
