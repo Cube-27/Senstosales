@@ -1,14 +1,16 @@
 // The Db port (ARCHITECTURE §4.1, C4): one read at a time, or one all-or-nothing batch of writes. It wraps Drizzle
 // instead of exposing it, because Drizzle's own transaction() sends BEGIN and COMMIT as separate calls, which C4
 // forbids and D1 refuses (ADR 0002).
+import type { SQLWrapper } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
 /** Drizzle's statement builders, without its transaction() or batch(). Build here; run through `Db`. */
 export type QueryBuilder = Omit<BaseSQLiteDatabase<"async", unknown>, "transaction" | "batch">;
 
-/** One statement of a batch: an insert, update, delete or raw `run` built with `Db.build`. */
-export type Statement = BatchItem<"sqlite">;
+/** One statement of a batch: an insert, update, delete or raw `run` built with `Db.build`. Each one exposes its SQL,
+ * which the D1 executor binds itself. */
+export type Statement = BatchItem<"sqlite"> & SQLWrapper;
 
 export interface Db {
   readonly build: QueryBuilder;
@@ -80,20 +82,18 @@ async function mapErrors<T>(run: PromiseLike<T>): Promise<T> {
   }
 }
 
-/** A Drizzle async SQLite database whose driver has a native batch (sqlite-proxy, D1). */
-type BatchingDatabase = BaseSQLiteDatabase<"async", unknown> & {
-  batch(statements: [Statement, ...Statement[]]): Promise<unknown>;
-};
+/** Runs a non-empty batch all or nothing: the executor's native batch (sqlite-proxy, D1). */
+export type RunBatch = (statements: [Statement, ...Statement[]]) => Promise<unknown>;
 
 /** The port over an executor's Drizzle database, so every executor has the same batch semantics and errors. */
-export function wrapDrizzle(drizzleDb: BatchingDatabase): Db {
+export function wrapDrizzle(drizzleDb: BaseSQLiteDatabase<"async", unknown>, runBatch: RunBatch): Db {
   return {
     build: drizzleDb,
     query: mapErrors,
     async batch(statements) {
       if (statements.length === 0) return;
       // Drizzle types its batch as a non-empty tuple; the length check is that proof.
-      await mapErrors(drizzleDb.batch(statements as [Statement, ...Statement[]]));
+      await mapErrors(runBatch(statements as [Statement, ...Statement[]]));
     },
   };
 }

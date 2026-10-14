@@ -4,6 +4,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "devDependencies": {
+    "miniflare": "4.20260730.0",
     "yaml": "^2.9.1"
   }
 }
