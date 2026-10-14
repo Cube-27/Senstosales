@@ -146,8 +146,8 @@ SPEC-11 (an L6 API) may start as soon as SPEC-10 is in; layers describe exit mil
 Fixed by one spec, relied on by others; later readers do not re-decide them.
 
 - Toolchain: Vite+ (`vp lint` Oxlint, `vp fmt` Oxfmt, `vp test` Vitest with imports from `vite-plus/test`,
-  `vp staged` hook, `vp dev/build` for the web app), TypeScript 7, pnpm, Node 24; local gate `pnpm verify`; CI job
-  names `check`, `licenses`, `tools`, `real-data-scan`, `build`, `audit`, `e2e`, `desktop`: SPEC-00 §4.2, §4.5.
+  `vp staged` hook, `vp dev/build` for the web app), TypeScript 7, pnpm, Node 26; local gate `pnpm verify`; CI job
+  names `check`, `licenses`, `real-data-scan`, `build`, `audit`, `e2e`, `desktop`: SPEC-00 §4.2, §4.5.
 - C15 guardrails (800 lines, complexity 15, split never suppress; recurring findings become checks or regression
   tests): SPEC-00 §2, INV-109.
 - Real-data scan rules, allowlist, the local company-details file (xlsx contents not scanned): SPEC-00 §4.6.

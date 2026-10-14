@@ -37,7 +37,7 @@ TypeScript (pnpm monorepo), Hono, Drizzle over SQLite, Vite + React, Tauri 2
 
 ## Getting started
 
-You need: Node 24+, pnpm 11 and uv.
+You need: Node 26+ and pnpm 11.
 
 ```sh
 pnpm install

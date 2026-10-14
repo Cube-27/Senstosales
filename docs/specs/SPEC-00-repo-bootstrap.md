@@ -22,16 +22,15 @@ Core:
 
 - pnpm workspace per ARCHITECTURE §4: `packages/{domain,schemas,db,parsers,documents,scraper}`,
   `apps/{api,web,desktop}`, `tools/{checks,corpus,release,orchestrator}`; TypeScript strict, ESM, `tsc -b` project
-  references; TypeScript 7; Node 24 LTS; the Vite+ toolchain (`vp`: Oxlint, Oxfmt, Vitest) everywhere.
+  references; TypeScript 7; Node 26 LTS; the Vite+ toolchain (`vp`: Oxlint, Oxfmt, Vitest) everywhere.
 - Local verify gate `pnpm verify`, running what CI runs, in CI order, failing first.
 - A `vp staged` pre-commit hook on staged files (< 10 s on a one-file change), installed once per clone.
 - CI (`.github/workflows/ci.yml`): every action pinned to a full commit SHA with a version comment;
   `permissions: contents: read`; concurrency with cancel-in-progress; `pnpm install --frozen-lockfile`; no
-  release-age quarantine, `trustPolicy: no-downgrade` (D-0001). Jobs: `check`, `licenses`, `tools`,
+  release-age quarantine, `trustPolicy: no-downgrade` (D-0001). Jobs: `check`, `licenses`,
   `real-data-scan` (setup session), then `build` and `audit` (PR 2). `e2e` comes with SPEC-14, `desktop` with SPEC-20.
-- Lint guardrails (C15): Oxlint (`vp lint`) `max-lines` (800, error) and `complexity` (15, error) on all source
-  (ruff C90 for the Python orchestration tools); generated files and lockfiles excluded; the fix is a split, never
-  a suppression (an inline disable of either rule is refused by a check in `tools/checks/src/no-guardrail-disable.ts`
+- Lint guardrails (C15): Oxlint (`vp lint`) `max-lines` (800, error) and `complexity` (15, error) on all source,
+  the orchestration tools included; generated files and lockfiles excluded; the fix is a split, never a suppression (an inline disable of either rule is refused by a check in `tools/checks/src/no-guardrail-disable.ts`
   and by review). Boundaries (C2, C12, INV-85) via Oxlint `no-restricted-imports`; domain bans (C3: `parseFloat`,
   `toFixed`, `Date`) scoped to `packages/domain`.
 - Licence deny-list (AGPL, GPL, SSPL, Commons Clause, non-commercial; LGPL avoided) by whole SPDX identifier, plus a
@@ -44,7 +43,7 @@ Core:
   `.gitignore`, `.gitattributes`; `docs/ENGINEERING.md`, `docs/DECISIONS.md`, `docs/plans/{ACTIVE,RECURRING}.md`.
 - Agent orchestration: `.claude/skills/{run-plan,implement-pr,review-pr,pickup}/SKILL.md`,
   `tools/orchestrator/*`, the merge-guard PreToolUse hook in `.claude/settings.json`, and their tests in
-  `tools/tests/`.
+  `tools/orchestrator/test/`.
 
 Out of scope:
 
@@ -73,7 +72,7 @@ Out of scope:
          plans/{ACTIVE,RECURRING}.md  specs/  adr/
   packages/{domain,schemas,db,parsers,documents,scraper}/{package.json,tsconfig.json,src/index.ts}
   apps/{api,web,desktop}/...
-  tools/checks/  tools/corpus/  tools/release/  tools/orchestrator/  tools/tests/
+  tools/checks/  tools/corpus/  tools/release/  tools/orchestrator/{src,test}/
 ```
 
 Each package has one smoke test until its spec fills it. Worktrees live in a sibling directory of the main
@@ -83,7 +82,7 @@ checkout (`<main>/../SenstoSales-worktrees/spec-NN-pr-M`, branch `spec-NN/pr-M-<
 
 | Tool      | Choice                                                                                                                                                                         | Notes                                                |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Runtime   | Node 24 LTS (`engines`, `.nvmrc`)                                                                                                                                              | Type stripping runs `tools/**/*.ts` directly.        |
+| Runtime   | Node 26 LTS (`engines`, `.nvmrc`)                                                                                                                                              | Type stripping runs `tools/**/*.ts` directly.        |
 | Packages  | pnpm workspaces, `--frozen-lockfile` in CI; supply-chain settings in `pnpm-workspace.yaml`: `minimumReleaseAge: 0` (no release-age quarantine) and `trustPolicy: no-downgrade` | D-0001; no `.npmrc`                                  |
 | Language  | TypeScript 7 strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`), ESM, `tsc -b` project references                             | INV-90                                               |
 | Toolchain | Vite+ (`vp`), not version-pinned through a catalog (owner)                                                                                                                     | One config, one CLI. No ESLint or Prettier (D-0002). |
@@ -108,16 +107,15 @@ the git common dir, so every worktree has them).
 
 ### 4.5 CI jobs
 
-| Job              | Runner  | Steps                                                                                                                                                                                                                                                                                    | Added by                   |
-| ---------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `check`          | ubuntu  | install (frozen), `pnpm check:code`: `vp check` (Oxfmt, Oxlint guardrails and boundaries), the INV-90 language check (PR 2), `tsc -b`, `vp test run` (the build runs once, in `build`); generated-file freshness (`regenerate && git diff --exit-code`) once a spec adds generated files | PR 1                       |
-| `licenses`       | ubuntu  | `pnpm check:licenses`: `pnpm licenses list` → `tools/checks/src/license-check.ts` deny-list over the full dependency tree; CycloneDX SBOM uploaded with the report as the `license-report` artefact                                                                                      | PR 1                       |
-| `tools`          | ubuntu  | `ruff check` and `ruff format --check` over `tools`, `pytest tools/tests` (merge guard), `bash -n` over `tools/orchestrator/*.sh`                                                                                                                                                        | PR 1                       |
-| `real-data-scan` | ubuntu  | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install                                                                                                                                                                              | PR 1 (`mobile` rule: PR 3) |
-| `build`          | ubuntu  | `pnpm -r build`                                                                                                                                                                                                                                                                          | PR 2                       |
-| `audit`          | ubuntu  | `pnpm audit --prod` at `high`, plus the action-pin check (INV-108)                                                                                                                                                                                                                       | PR 2                       |
-| `e2e`            | windows | Playwright                                                                                                                                                                                                                                                                               | SPEC-14 PR 8               |
-| `desktop`        | windows | Tauri build and smoke                                                                                                                                                                                                                                                                    | SPEC-20 PR 4               |
+| Job              | Runner  | Steps                                                                                                                                                                                                                                                                                                                                                                    | Added by                   |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| `check`          | ubuntu  | install (frozen), `pnpm check:code`: `vp check` (Oxfmt, Oxlint guardrails and boundaries), the INV-90 language check (PR 2), `tsc -b`, `vp test run` (including the orchestration tools and `bash -n` over `tools/orchestrator/*.sh`; the build runs once, in `build`); generated-file freshness (`regenerate && git diff --exit-code`) once a spec adds generated files | PR 1                       |
+| `licenses`       | ubuntu  | `pnpm check:licenses`: `pnpm licenses list` → `tools/checks/src/license-check.ts` deny-list over the full dependency tree; CycloneDX SBOM uploaded with the report as the `license-report` artefact                                                                                                                                                                      | PR 1                       |
+| `real-data-scan` | ubuntu  | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install                                                                                                                                                                                                                                                              | PR 1 (`mobile` rule: PR 3) |
+| `build`          | ubuntu  | `pnpm -r build`                                                                                                                                                                                                                                                                                                                                                          | PR 2                       |
+| `audit`          | ubuntu  | `pnpm audit --prod` at `high`, plus the action-pin check (INV-108)                                                                                                                                                                                                                                                                                                       | PR 2                       |
+| `e2e`            | windows | Playwright                                                                                                                                                                                                                                                                                                                                                               | SPEC-14 PR 8               |
+| `desktop`        | windows | Tauri build and smoke                                                                                                                                                                                                                                                                                                                                                    | SPEC-20 PR 4               |
 
 Further steps added to `check` by later specs: D1 dialect and migration-SQL lint (SPEC-05), design validators and
 token parity (SPEC-14), bundle budget (SPEC-14), OpenAPI freshness (SPEC-04).
@@ -171,7 +169,7 @@ scanning and push protection on. The applied `gh api` commands are recorded in `
 - `implement-pr` order: claim → frame → build in verifiable units (test first) → **an explicit `/simplify` pass over
   the diff** → full local verify (`pnpm verify`) → hostile self-review against `CLAUDE.md` §2 → PR → start the
   reviewer → own until merge.
-- `tools/orchestrator/{config.sh,start_agent.sh,close_agent.sh,wait_ci.sh,merge_pr.sh,cleanup_worktree.sh,watch_agents.sh,merge_guard.py}`;
+- `tools/orchestrator/{config.sh,start_agent.sh,close_agent.sh,wait_ci.sh,merge_pr.sh,cleanup_worktree.sh,watch_agents.sh}` and `tools/orchestrator/src/merge-guard.ts` (run by `node`, no build step);
   `merge_pr.sh` is the only merge path (INV-89). The orchestration scripts are tooling, not production code, so
   INV-90 does not apply to them.
 
@@ -188,7 +186,8 @@ INV-88, INV-91, INV-92.
 ## 6. Testing strategy
 
 - Unit tests for every check in `tools/checks/src` (`tools/checks/test/`, Vitest, run in `check`) and for the
-  orchestration tools (`tools/tests/`, pytest, run in `tools`).
+  orchestration tools (`tools/orchestrator/test/`, Vitest, run in `check`, including `bash -n` over
+  `tools/orchestrator/*.sh`).
 - Planted violations, constructed at run time or added and removed within the PR: a denied-licence dev dependency
   fails `licenses`; a GSTIN-shaped string and a local data path fail `real-data-scan`; a 801-line file and a
   complexity-16 function fail `check`; a `node:fs` import from `packages/domain` fails `check`.

@@ -5,7 +5,7 @@ C12; A-4, A-25; INV-82, INV-93.
 
 ## 1. Summary
 
-Ship the app as a per-user Windows install: `apps/api` bundled with esbuild into a Node 24 single-executable
+Ship the app as a per-user Windows install: `apps/api` bundled with esbuild into a Node 26 single-executable
 sidecar that serves the embedded SPA on a random loopback port; a Tauri 2 shell (WebView2) that starts the sidecar,
 waits for `/api/health` and loads `http://127.0.0.1:<port>/` (data never over Tauri IPC); a per-user NSIS installer
 with no admin rights; an updater whose manifest is signed with the Tauri updater key; one `VERSION` stamped
