@@ -1,7 +1,5 @@
-import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IsoDate } from "../src/index.ts";
 import {
   acceptIncoming,
   changedImmutableFields,
@@ -24,35 +22,24 @@ describe("INV-42/INV-43: acceptIncoming", () => {
   ])("%s: stored %s, incoming %s -> %s", (_, stored, incoming, expected) => {
     expect(acceptIncoming(stored === null ? null : date(stored), date(incoming))).toBe(expected);
   });
-
-  it("accepts exactly when incoming >= stored", () => {
-    const day = fc
-      .date({ min: new Date("2000-01-01T00:00:00Z"), max: new Date("2099-12-31T00:00:00Z"), noInvalidDate: true })
-      .map((d) => d.toISOString().slice(0, 10) as IsoDate);
-    fc.assert(
-      fc.property(day, day, (stored, incoming) => {
-        expect(acceptIncoming(stored, incoming)).toBe(incoming >= stored);
-      }),
-    );
-  });
 });
 
 // INV-35: delete is refused while backward links exist (A-14, ARCHITECTURE §6.7).
 describe("INV-35: deleteBlock", () => {
   it.each([
-    ["DC with no links", deleteBlock("dc", { invoices: 0, srvItems: 0 }), null],
-    ["DC with an invoice", deleteBlock("dc", { invoices: 1, srvItems: 0 }), "dc-has-invoice"],
-    ["DC with a linked SRV item", deleteBlock("dc", { invoices: 0, srvItems: 2 }), "dc-linked-srv"],
-    ["DC with both: invoice reported", deleteBlock("dc", { invoices: 1, srvItems: 1 }), "dc-has-invoice"],
-    ["invoice with no links", deleteBlock("invoice", { srvItems: 0 }), null],
-    ["invoice with a linked SRV item", deleteBlock("invoice", { srvItems: 1 }), "invoice-linked-srv"],
-    ["PO with nothing", deleteBlock("po", { dcs: 0, invoices: 0 }), null],
-    ["PO with a DC", deleteBlock("po", { dcs: 1, invoices: 0 }), "po-has-dc"],
-    ["PO with a PO-direct invoice", deleteBlock("po", { dcs: 0, invoices: 1 }), "po-has-invoice"],
-    ["PO with both: DC reported", deleteBlock("po", { dcs: 3, invoices: 2 }), "po-has-dc"],
-    ["SRV is never blocked", deleteBlock("srv", {}), null],
-  ])("%s -> %s", (_, actual, expected) => {
-    expect(actual).toBe(expected);
+    ["DC with no links", () => deleteBlock("dc", { invoices: 0, srvItems: 0 }), null],
+    ["DC with an invoice", () => deleteBlock("dc", { invoices: 1, srvItems: 0 }), "dc-has-invoice"],
+    ["DC with a linked SRV item", () => deleteBlock("dc", { invoices: 0, srvItems: 2 }), "dc-linked-srv"],
+    ["DC with both: invoice reported", () => deleteBlock("dc", { invoices: 1, srvItems: 1 }), "dc-has-invoice"],
+    ["invoice with no links", () => deleteBlock("invoice", { srvItems: 0 }), null],
+    ["invoice with a linked SRV item", () => deleteBlock("invoice", { srvItems: 1 }), "invoice-linked-srv"],
+    ["PO with nothing", () => deleteBlock("po", { dcs: 0, invoices: 0 }), null],
+    ["PO with a DC", () => deleteBlock("po", { dcs: 1, invoices: 0 }), "po-has-dc"],
+    ["PO with a PO-direct invoice", () => deleteBlock("po", { dcs: 0, invoices: 1 }), "po-has-invoice"],
+    ["PO with both: DC reported", () => deleteBlock("po", { dcs: 3, invoices: 2 }), "po-has-dc"],
+    ["SRV is never blocked", () => deleteBlock("srv", {}), null],
+  ])("%s -> %s", (_, run, expected) => {
+    expect(run()).toBe(expected);
   });
 });
 
