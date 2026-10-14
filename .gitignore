@@ -66,3 +66,5 @@ RESUME.md
 /db/
 /corpus/
 business_development/
+# Company details matched by the real-data scan in the hook and local `pnpm verify` (SPEC-00 §4.6, D-0010)
+tools/checks/company-details.local.txt
