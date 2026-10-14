@@ -1,6 +1,8 @@
 export type { Result } from "./result.ts";
 export type { IsoDate } from "./dates.ts";
 export { compareIsoDate, parseIsoDate } from "./dates.ts";
+export type { ReceiptInput, SrvLine } from "./receipt.ts";
+export { computeReceipt, dateWinner } from "./receipt.ts";
 export type { Money, Qty } from "./units.ts";
 export { TOL, gtTol, gte, moneyToString, parseMoney, parseQty, qtyToString, roundMoney, sumQty } from "./units.ts";
 export type { ItemQuantities, ItemQuantityInput, PoTotals, PoTotalsItem } from "./quantities.ts";

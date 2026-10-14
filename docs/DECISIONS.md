@@ -248,3 +248,11 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Alternatives: Zero every derived value of a cancelled item.
 - Why: A-13 and INV-07 name only balance and header totals. Documents on a cancelled item stay visible and are flagged (`DOC_ON_CANCELLED_ITEM`, INV-56), so their dispatched and invoiced quantities should still show.
 - Reversible: yes.
+
+### D-0026 — Date winner from the input's SRV lines
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 3 (#9) · Status: decided
+- Decision: `computeReceipt` takes the winner from the dates of the SRV lines in its input (`dateWinner(poDate, srvLines.map(srvDate))`). Which lines count (every SRV line on the PO item) is the caller's choice in SPEC-08 `recompute`, per the §4.2 shape.
+- Alternatives: A separate PO-level SRV date list in `ReceiptInput`.
+- Why: SPEC-02 §4.2 fixes the input shape with `srvDate` on each line; adding a field would change a shape other specs consume. ARCHITECTURE §6.3 takes `MAX(srv_date)` over the same rows it sums.
+- Reversible: yes — one input field.
