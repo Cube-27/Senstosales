@@ -234,6 +234,12 @@ async function seed() {
   await recompute(PA, PB, PC, PD);
 }
 
+const LINKED_PA = {
+  dcs: [{ id: id("DA"), number: "DC-1", date: "2025-04-20", financialYear: "2025-26" }],
+  invoices: [{ id: id("NA"), number: "INV-1", date: "2025-04-21", financialYear: "2025-26" }],
+  srvs: [{ id: id("RA"), number: "SRV-1", date: "2025-05-01" }],
+};
+
 const numbers = (body: Wire) => body.items.map((r) => r.poNumber);
 
 describe("GET /api/po", () => {
@@ -381,18 +387,7 @@ describe("GET /api/po/:id", () => {
       version: 1,
     });
     const items = body.items;
-    expect(
-      items.map(({ poItemNo, dspQty, rcdQty, rejQty, balanceQty, uninvoicedQty, status, cancelledAt }) => ({
-        poItemNo,
-        dspQty,
-        rcdQty,
-        rejQty,
-        balanceQty,
-        uninvoicedQty,
-        status,
-        cancelledAt,
-      })),
-    ).toEqual([
+    expect(items).toMatchObject([
       {
         poItemNo: 10,
         dspQty: "4",
@@ -447,11 +442,7 @@ describe("GET /api/po/:id", () => {
       },
     ]);
     expect(items.slice(1).map((item) => item.lots)).toEqual([[], []]);
-    expect(body.linked).toEqual({
-      dcs: [{ id: id("DA"), number: "DC-1", date: "2025-04-20", financialYear: "2025-26" }],
-      invoices: [{ id: id("NA"), number: "INV-1", date: "2025-04-21", financialYear: "2025-26" }],
-      srvs: [{ id: id("RA"), number: "SRV-1", date: "2025-05-01" }],
-    });
+    expect(body.linked).toEqual(LINKED_PA);
     expect(body.flags).toEqual([
       {
         id: id("FA"),
@@ -489,11 +480,7 @@ describe("GET /api/po/:id/linked", () => {
   test("every DC, invoice and SRV of the PO, unpaged (INV-73)", async () => {
     expect(await get(`/api/po/${PA}/linked`)).toEqual({
       status: 200,
-      body: {
-        dcs: [{ id: id("DA"), number: "DC-1", date: "2025-04-20", financialYear: "2025-26" }],
-        invoices: [{ id: id("NA"), number: "INV-1", date: "2025-04-21", financialYear: "2025-26" }],
-        srvs: [{ id: id("RA"), number: "SRV-1", date: "2025-05-01" }],
-      },
+      body: LINKED_PA,
     });
   });
 

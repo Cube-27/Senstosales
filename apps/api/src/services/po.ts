@@ -20,8 +20,7 @@ export function poService({ db }: { db: Db }) {
   async function load(id: string) {
     const row = await findPoRow(db, id);
     if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
-    const { supplierId: _, ...rest } = row;
-    return rest;
+    return row;
   }
 
   return {
@@ -31,39 +30,34 @@ export function poService({ db }: { db: Db }) {
         db,
         page.items.map((row) => row.id),
       );
-      const uninvoiced = (poId: string) =>
+      const byPo = Map.groupBy(items, (item) => item.poId);
+      const uninvoicedQty = (poId: string) =>
         poUninvoicedQty(
-          items
-            .filter((item) => item.poId === poId)
-            .map((item) => ({ uninvoicedQty: item.uninvoicedQty, cancelled: item.cancelledAt !== null })),
+          (byPo.get(poId) ?? []).map((item) => ({
+            uninvoicedQty: item.uninvoicedQty,
+            cancelled: item.cancelledAt !== null,
+          })),
         );
-      return { ...page, items: page.items.map((row) => ({ ...row, uninvoicedQty: uninvoiced(row.id) })) };
+      return { ...page, items: page.items.map((row) => ({ ...row, uninvoicedQty: uninvoicedQty(row.id) })) };
     },
 
     stats: (filters: PoFilters) => poStats(db, filters),
 
     async detail(id: string) {
-      const po = await load(id);
-      const [items, lots, linked, flags] = await Promise.all([
+      const [po, items, lots, linked, flags] = await Promise.all([
+        load(id),
         itemsOfPo(db, id),
         lotsOfPo(db, id),
         linkedDocsOfPo(db, id),
         openFlagsOfPo(db, id),
       ]);
-      return {
-        po,
-        items: items.map(({ supplierId: _, ...item }) => ({
-          ...item,
-          lots: lots.filter(({ lot }) => lot.poItemId === item.id).map(({ lot: { supplierId: _s, ...lot } }) => lot),
-        })),
-        linked,
-        flags: flags.map(({ supplierId: _, fingerprint: _f, ...flag }) => flag),
-      };
+      const lotsOf = Map.groupBy(lots, (lot) => lot.poItemId);
+      return { po, items: items.map((item) => ({ ...item, lots: lotsOf.get(item.id) ?? [] })), linked, flags };
     },
 
     async linked(id: string) {
-      await load(id);
-      return linkedDocsOfPo(db, id);
+      const [, linked] = await Promise.all([load(id), linkedDocsOfPo(db, id)]);
+      return linked;
     },
   };
 }

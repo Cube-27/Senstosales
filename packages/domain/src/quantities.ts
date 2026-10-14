@@ -35,8 +35,7 @@ export type PoTotalsItem = PoTotals & { cancelled: boolean };
 
 /** INV-07: header totals are sums over active items; a cancelled item contributes 0. */
 export function computePoTotals(items: readonly PoTotalsItem[]): PoTotals {
-  const active = items.filter((i) => !i.cancelled);
-  const total = (key: keyof PoTotals): Qty => sumQty(active.map((i) => i[key]));
+  const total = (key: keyof PoTotals): Qty => sumActive(items, (i) => i[key]);
   return {
     ordQty: total("ordQty"),
     dspQty: total("dspQty"),
@@ -51,5 +50,10 @@ export function computePoTotals(items: readonly PoTotalsItem[]): PoTotals {
  * included (uninvoiced is displayed, never enforced).
  */
 export function poUninvoicedQty(items: readonly { uninvoicedQty: Qty; cancelled: boolean }[]): Qty {
-  return sumQty(items.filter((i) => !i.cancelled).map((i) => i.uninvoicedQty));
+  return sumActive(items, (i) => i.uninvoicedQty);
+}
+
+/** INV-07: a cancelled item contributes 0 to a PO total. */
+function sumActive<T extends { cancelled: boolean }>(items: readonly T[], qty: (item: T) => Qty): Qty {
+  return sumQty(items.filter((i) => !i.cancelled).map(qty));
 }

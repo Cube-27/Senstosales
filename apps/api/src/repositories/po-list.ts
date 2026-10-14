@@ -3,8 +3,8 @@
 import type { Db } from "@senstosales/db";
 import { dc, invoice, po, poItem, poLot, reconciliationIssue, srv } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
-import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
-import { and, asc, count, desc, eq, exists, gte, inArray, lte, not, or, sql } from "drizzle-orm";
+import type { AnyColumn, SQL, SQLWrapper, Table } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 type PoListQuery = z.output<(typeof routes)["po.list"]["query"]>;
@@ -13,15 +13,21 @@ type SortKey = NonNullable<PoListQuery["sort"]>;
 
 const countOf = (where: SQL) => sql`(SELECT COUNT(*) FROM ${where})`.mapWith(Number);
 
+/** A table's columns without `supplier_id`, which no API shape carries. */
+function apiColumns<T extends Table>(table: T) {
+  const { supplierId: _, ...columns } = getTableColumns(table);
+  return columns;
+}
+
+const openFlagsOf = sql`${reconciliationIssue} WHERE ${reconciliationIssue.poId} = ${po.id} AND ${reconciliationIssue.status} = 'open'`;
+
 /** Live counts per PO (INV-73); every document of the PO, as the legacy list counted them. */
 const links = {
   itemCount: countOf(sql`${poItem} WHERE ${poItem.poId} = ${po.id}`),
   dcCount: countOf(sql`${dc} WHERE ${dc.poId} = ${po.id}`),
   invoiceCount: countOf(sql`${invoice} WHERE ${invoice.poId} = ${po.id}`),
   srvCount: countOf(sql`${srv} WHERE ${srv.poId} = ${po.id}`),
-  openFlagCount: countOf(
-    sql`${reconciliationIssue} WHERE ${reconciliationIssue.poId} = ${po.id} AND ${reconciliationIssue.status} = 'open'`,
-  ),
+  openFlagCount: countOf(openFlagsOf),
 };
 
 /** PO numbers are digit strings, so they sort as numbers (as legacy); the text breaks ties for any that are not. */
@@ -42,20 +48,12 @@ const SORTS: Record<SortKey, readonly (AnyColumn | SQLWrapper)[]> = {
   status: [statusRank],
 };
 
-const hasOpenFlag = (db: Db) =>
-  exists(
-    db.build
-      .select({ one: sql`1` })
-      .from(reconciliationIssue)
-      .where(and(eq(reconciliationIssue.poId, po.id), eq(reconciliationIssue.status, "open"))),
-  );
-
 /** `LIKE` on the text as typed: `%` and `_` match themselves. */
 const contains = (column: SQLWrapper, text: string) =>
   sql`${column} LIKE ${`%${text.replace(/[\\%_]/g, "\\$&")}%`} ESCAPE '\\'`;
 
 /** The legacy filter panel: text in the PO or GEMC number, PO date range, value range (no value = 0). */
-function where(db: Db, f: PoFilters): SQL | undefined {
+function where(f: PoFilters): SQL | undefined {
   const value = sql`COALESCE(${po.poValue}, 0)`;
   return and(
     f.q ? or(contains(po.poNumber, f.q), contains(po.gemcNumber, f.q)) : undefined,
@@ -64,16 +62,16 @@ function where(db: Db, f: PoFilters): SQL | undefined {
     f.valueMin === undefined ? undefined : sql`${value} >= ${f.valueMin}`,
     f.valueMax === undefined ? undefined : sql`${value} <= ${f.valueMax}`,
     f.status === undefined ? undefined : eq(po.status, f.status),
-    f.flagged === undefined ? undefined : f.flagged ? hasOpenFlag(db) : not(hasOpenFlag(db)),
+    f.flagged === undefined ? undefined : sql`${f.flagged ? sql`` : sql`NOT `}EXISTS (SELECT 1 FROM ${openFlagsOf})`,
     f.gemc === undefined ? undefined : eq(po.isGemc, f.gemc),
   );
 }
 
 /** One page; newest PO date first unless a sort is given, then PO date and number descending, as legacy. */
 export async function listPos(db: Db, query: PoListQuery) {
-  const filter = where(db, query);
+  const filter = where(query);
   const dir = query.dir === "desc" ? desc : asc;
-  const chosen = query.sort === undefined ? [desc(po.poDate)] : SORTS[query.sort].map((c) => dir(c));
+  const chosen = query.sort === undefined ? [] : SORTS[query.sort].map((c) => dir(c));
   const tieBreak = [desc(po.poDate), ...byPoNumber.map((c) => desc(c)), desc(po.id)];
   const [items, totals] = await Promise.all([
     db.query(
@@ -114,7 +112,7 @@ export async function poStats(db: Db, filters: PoFilters) {
         rejQty: sql`COALESCE(SUM(${po.rejQty}), 0)`.mapWith(po.rejQty),
       })
       .from(po)
-      .where(where(db, filters)),
+      .where(where(filters)),
   );
   // An aggregate without GROUP BY always returns one row.
   const [row] = rows;
@@ -132,31 +130,34 @@ export const itemUninvoicedOf = (db: Db, poIds: readonly string[]) =>
   );
 
 export async function findPoRow(db: Db, poId: string) {
-  const rows = await db.query(db.build.select().from(po).where(eq(po.id, poId)));
+  const rows = await db.query(db.build.select(apiColumns(po)).from(po).where(eq(po.id, poId)));
   return rows[0];
 }
 
 export const itemsOfPo = (db: Db, poId: string) =>
-  db.query(db.build.select().from(poItem).where(eq(poItem.poId, poId)).orderBy(poItem.poItemNo));
+  db.query(db.build.select(apiColumns(poItem)).from(poItem).where(eq(poItem.poId, poId)).orderBy(poItem.poItemNo));
 
 export const lotsOfPo = (db: Db, poId: string) =>
   db.query(
     db.build
-      .select({ lot: poLot })
+      .select(apiColumns(poLot))
       .from(poLot)
       .innerJoin(poItem, eq(poItem.id, poLot.poItemId))
       .where(eq(poItem.poId, poId))
       .orderBy(poLot.lotNo, poLot.id),
   );
 
-export const openFlagsOfPo = (db: Db, poId: string) =>
-  db.query(
+export function openFlagsOfPo(db: Db, poId: string) {
+  // The fingerprint is storage only; `zFlag` does not carry it.
+  const { fingerprint: _, ...columns } = apiColumns(reconciliationIssue);
+  return db.query(
     db.build
-      .select()
+      .select(columns)
       .from(reconciliationIssue)
       .where(and(eq(reconciliationIssue.poId, poId), eq(reconciliationIssue.status, "open")))
       .orderBy(reconciliationIssue.openedAt, reconciliationIssue.id),
   );
+}
 
 /** Every DC, invoice and SRV of the PO, unpaged, oldest first (INV-73). */
 export async function linkedDocsOfPo(db: Db, poId: string) {
