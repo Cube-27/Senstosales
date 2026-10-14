@@ -149,7 +149,7 @@ Fixed by one spec, relied on by others; later readers do not re-decide them.
   names `check`, `licenses`, `tools`, `real-data-scan`, `build`, `audit`, `e2e`, `desktop`: SPEC-00 §4.2, §4.5.
 - C15 guardrails (800 lines, complexity 15, split never suppress; recurring findings become checks or regression
   tests): SPEC-00 §2, INV-109.
-- Real-data scan rules, allowlist, hashed denylist secret, xlsx scanning: SPEC-00 §4.6.
+- Real-data scan rules, allowlist, the local company-details file (xlsx contents not scanned): SPEC-00 §4.6.
 - Branded units and the decimal-string wire format: SPEC-02 §4.1, SPEC-04 §4.2.
 - Flag types, fingerprints and the never-auto-close diff: SPEC-03 §4.2.
 - Route table, list convention (`page`, `pageSize`, `sort`, `dir`, filters → `{ items, total }`), error body:
@@ -163,9 +163,8 @@ Fixed by one spec, relied on by others; later readers do not re-decide them.
 - DataTable contract and the `expectNoLayoutShift` e2e helper: SPEC-14 §4.2, PR 8. Shared `JobProgress`: SPEC-16.
 - ADR numbers: 0001 sidecar, 0002 DB executors, 0003 document generation (SPEC-01); 0004 `globals.css` token fixes
   (SPEC-14).
-- Human-only tasks for `docs/plans/ACTIVE.md`: H1 rulesets and secret scanning (SPEC-00 PR 4); H2 `SENSTO_DENYLIST`
-  CI secret (SPEC-00 PR 3); H3 BHEL portal credentials and OTP mailbox on the owner's machine (SPEC-01 PR 2,
-  SPEC-19 PR 6); H4 `SENSTO_CORPUS_DIR` on the build machine (SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3); H5 legacy
+- Human-only tasks for `docs/plans/ACTIVE.md`: H1 rulesets and secret scanning (SPEC-00 PR 4); H2 dropped (D-0010); H3
+  BHEL portal credentials and OTP mailbox on the owner's machine (SPEC-01 PR 2, SPEC-19 PR 6); H4 `SENSTO_CORPUS_DIR` on the build machine (SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3); H5 legacy
   app run on synthetic input for golden output (SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1); H6 Tauri updater key
   secret (SPEC-20 PR 5); H7 fresh Windows VM test (SPEC-20, SPEC-21 PR 5); H8 owner cutover and sign-off (SPEC-22).
 - SPEC-00 PR 1 is the setup session's bootstrap and is marked `done` in ACTIVE.md when it merges.

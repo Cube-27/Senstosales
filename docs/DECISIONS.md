@@ -9,6 +9,7 @@ them here in its tracker commit on `YOUR TURN`, under the IDs the orchestrator s
 - `decided`: made by an agent within its authority. Stands unless the owner overrides it.
 - `pending-owner`: a default an agent chose that the owner should confirm. Work proceeds on it.
 - `needs-owner`: blocking. Work that depends on it stops until the owner answers.
+- `decided-owner`: decided by the owner directly.
 - `confirmed` / `overridden`: the owner's answer, with the date.
 - `superseded`: replaced by a later entry. Link it.
 
@@ -120,3 +121,11 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Why: The spec does not state the tie rule; half-up is the conservative reading. SPEC-12 invoice goldens from legacy output are the arbiter; a mismatch is escalated, not silently changed (SPEC-03 Open issues).
 - Reversible: yes — one domain function and its table tests.
 - Owner answer: —
+
+### D-0010 — No hashed denylist in the real-data scan
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 3 · Status: decided-owner
+- Decision: The real-data scan drops the hashed denylist, its shingle hashing, the `denylist` rule and the CI secret `SENSTO_DENYLIST`; human task H2 is dropped. Excel files may be committed and their contents are not scanned. SPEC-00 PR 3 becomes the company-details check: a `mobile` rule for Indian mobile numbers, plus the gitignored `tools/checks/company-details.local.txt` matched case-insensitively as substrings by the hook and local `pnpm verify`, skipped silently when absent (CI, forks). Other real data is kept out by review.
+- Alternatives: Hashed token and shingle denylist held in a CI secret (SPEC-00 §4.6 as first written); scanning xlsx XML parts.
+- Why: Owner: nothing in it is sensitive, it just shouldn't be pushed, and heavy enforcement isn't worth it since an agent could bypass any check anyway; a local file costs no CI time. Templates and goldens need realistic sample data. ARCHITECTURE §14.3 (rev 1.1), INV-74, SPEC-00 §4.6 and SPEC-12 §6 updated.
+- Reversible: yes — the scan can gain a rule later.
+- Owner answer: Owner decision, 2026-10-14.

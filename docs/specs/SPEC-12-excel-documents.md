@@ -70,7 +70,7 @@ INV-36, INV-60 (no flag cell), INV-69, INV-75 (synthetic goldens), INV-18 (5-dp 
 ## 6. Testing strategy
 
 Snapshot comparisons for every document × item count × GEMC variant; a test that the committed templates contain
-only placeholders in identity cells; real-data scan over xlsx parts (SPEC-00 PR 3). Manual check once per PR that
+only placeholders in identity cells; xlsx contents are not scanned (D-0010), so review checks them. Manual check once per PR that
 the 60-item files open and print in Excel as the legacy ones do (reviewer artefact: screenshots of print preview
 from synthetic data).
 

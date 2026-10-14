@@ -111,7 +111,7 @@ the git common dir, so every worktree has them).
 | `check` | ubuntu | install (frozen), `pnpm check:code`: `vp check` (Oxfmt, Oxlint guardrails and boundaries), `tsc -b`, `vp test run`, `pnpm -r build`; generated-file freshness (`regenerate && git diff --exit-code`) once a spec adds generated files | PR 1 |
 | `licenses` | ubuntu | `pnpm check:licenses`: `pnpm licenses list` → `tools/checks/src/license-check.ts` deny-list over the full dependency tree; CycloneDX SBOM uploaded with the report as the `license-report` artefact | PR 1 |
 | `tools` | ubuntu | `ruff check` and `ruff format --check` over `tools`, `pytest tools/tests` (merge guard), `bash -n` over `tools/orchestrator/*.sh` | PR 1 |
-| `real-data-scan` | ubuntu | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install | PR 1 (hashed denylist: PR 3) |
+| `real-data-scan` | ubuntu | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install | PR 1 (`mobile` rule: PR 3) |
 | `build` | ubuntu | `pnpm -r build` | PR 2 |
 | `audit` | ubuntu | `pnpm audit --prod` at `high`, plus the action-pin check (INV-108) | PR 2 |
 | `e2e` | windows | Playwright | SPEC-14 PR 8 |
@@ -124,14 +124,20 @@ token parity (SPEC-14), bundle budget (SPEC-14), OpenAPI freshness (SPEC-04).
 
 - Input: tracked files (CI) or staged files (`--staged`). Reports `path:line` and a rule name only, never the
   matched value (public CI logs).
-- Rules: GSTIN-shaped strings (`[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]`); local data paths (a
-  `Downloads` folder path, absolute paths under a named user profile); database files (`*.db`, `*.sqlite*`, or the
-  SQLite header in any file); HTML files outside `packages/parsers/fixtures/` and `packages/scraper/fixtures/`;
-  hashed denylist (PR 3): tokens and 2–4-word shingles of each text file, normalised (case-folded, whitespace
-  collapsed), hashed with SHA-256 and compared with a list held in the CI secret `SENSTO_DENYLIST` (supplier
-  names, people's names, real document numbers). Skipped with a notice when the secret is absent (forks, local).
-- `.xlsx` files are unzipped in memory and their XML parts scanned with the same rules (PR 3), because templates
-  and goldens are xlsx (SPEC-12, SPEC-13).
+- Rules (PR 1): `gstin`, GSTIN-shaped strings (`[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]`);
+  `local-data-path`, local data paths (a `Downloads` folder path, absolute paths under a named user profile);
+  `database-file`, database files (`*.db`, `*.sqlite*`, or the SQLite header in any file);
+  `html-outside-fixtures`, any HTML file outside `packages/parsers/fixtures/` and `packages/scraper/fixtures/`
+  (only synthetic HTML fixtures live there; no other HTML); `document-outside-fixtures`, binary documents (xlsx,
+  xls, docx, pdf, zip) outside `packages/documents/{templates,test}/`.
+- Excel and other binary documents may be committed where that rule allows, and their contents are not scanned:
+  templates and goldens need realistic sample data (D-0010). Review keeps real data out of them.
+- Company-details check (PR 3): a `mobile` line rule for Indian mobile numbers (optional `+91` or `0` prefix, then
+  10 digits starting 6–9, bounded by non-digits), and the gitignored plain-text file
+  `tools/checks/company-details.local.txt` (one value per line: company name, address lines, phone numbers,
+  e-mails), matched case-insensitively as substrings. That file is read by the pre-commit hook and local
+  `pnpm verify`; when it is absent (CI, forks) that part is skipped silently. No secret, no hashing, no added CI
+  time (D-0010).
 - Allowlist `tools/checks/real-data-allow.txt`: `path:rule` entries with a one-line justification, for documented
   synthetic test literals only. Tests of the scan construct their planted values at run time (string
   concatenation), so the repo never contains them.
@@ -204,7 +210,7 @@ INV-88, INV-91, INV-92.
 |---|---|---|---|---|
 | 1 | Bootstrap (setup session) | Root docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `NOTICE`), `.claude/skills/*` with `/simplify` in `implement-pr`, `.claude/settings.json` merge guard, `tools/orchestrator/*`, `tools/tests/*`, `.github/workflows/ci.yml` (`check`, `licenses`, `tools`, `real-data-scan`), PR template, `vp staged` hook, pnpm workspace skeleton, `tsconfig.base.json`, `vite.config.ts` with Oxlint C15 guardrails and C12 boundaries, `tools/checks/src/license-check.ts`, `tools/checks/src/real-data-scan.ts` (pattern rules), `docs/{ENGINEERING,DECISIONS}.md`, `docs/plans/{ACTIVE,RECURRING}.md` | all four jobs | A trivial PR is green on the four jobs; the guard denies `gh pr merge`. Marked done in ACTIVE.md by the setup session. |
 | 2 | `build` and `audit` jobs, language and pin checks | `ci.yml` (`build`: `pnpm -r build`; `audit`: `pnpm audit --prod --audit-level high`), `tools/checks/src/action-pins.ts` (INV-108), `tools/checks/src/language.ts` (INV-90: production sources under `packages/*/src`, `apps/*/src` are `.ts`/`.tsx`), tests in `tools/checks/test/` | `build`, `audit`, `check` | An unpinned `uses:` and a `.js` file in `packages/domain/src` each fail (planted, then removed). |
-| 3 | Real-data scan: hashed denylist and xlsx parts | `tools/checks/src/real-data-scan.ts` (shingle hashing, `SENSTO_DENYLIST` secret, xlsx XML scanning), `tools/checks/real-data-allow.txt` format check, tests with run-time planted values; `ci.yml` passes the secret to the job only | `real-data-scan`, `check` | A planted denylisted token (hash supplied in the test env) fails with `path:line`; an xlsx with a GSTIN-shaped shared string fails; the job passes with the secret absent and says so. Secret creation is human task H2. |
+| 3 | Company-details check | `tools/checks/src/real-data-scan.ts` (`mobile` line rule; substring match against `tools/checks/company-details.local.txt` when present), `.gitignore` entry for that file, `tools/checks/real-data-allow.txt` format check, tests with values built at run time | `real-data-scan`, `check` | A planted value from the local file and a planted mobile number are each blocked by the staged hook; with the file absent the scan passes silently; synthetic test values are built at run time. |
 | 4 | Rulesets and repo settings | `gh api` ruleset commands applied (human H1); the applied JSON recorded as a `docs/DECISIONS.md` entry | — | A direct push to `main` is refused; a PR with a red required check cannot merge; secret scanning and push protection are on. |
 
 ## 9. Open issues
@@ -216,5 +222,5 @@ INV-88, INV-91, INV-92.
   says all production code is TypeScript. Conservative reading: the language check covers `packages/*/src` and
   `apps/{api,web}/src` and `apps/desktop/src` (TS); the generated Tauri scaffold under `src-tauri/` holds no logic
   (sidecar control lives in TS, SPEC-20). Owner to confirm (D-0008, `pending-owner`).
-- **Rule names for the scan** (`gstin`, `local-data-path`, `database-file`, `html-outside-fixtures`, and `denylist`
-  from PR 3) are an implementation detail.
+- **Rule names for the scan** (`gstin`, `local-data-path`, `database-file`, `html-outside-fixtures`,
+  `document-outside-fixtures`, and `mobile` and `company-details` from PR 3) are an implementation detail.

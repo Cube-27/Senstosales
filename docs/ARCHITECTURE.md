@@ -618,8 +618,10 @@ works in a plain browser.
   e-mail, codes, descriptions) and keeps the layout and the quantities. Output is reviewed before commit. (INV-75)
 - Fixtures cover both page eras, GEMC, multi-item, multi-lot, short-closed and amended POs, both SRV layouts,
   repeated challan numbers across FYs, and files the legacy parser failed on.
-- `real-data-scan` fails on GSTIN-shaped strings outside documented test literals, on hashed denylists of real
-  identifiers (a CI secret) and on local data paths, reporting `path:line` only. (INV-74)
+- `real-data-scan` fails on GSTIN-shaped strings outside documented test literals, local data paths, Indian
+  mobile numbers, DB files and HTML or binary documents outside the fixture folders, reporting `path:line` only.
+  Locally (hook and `pnpm verify`) it also matches the values in a gitignored company-details file. Excel contents
+  are not scanned; templates and goldens need realistic sample data. Other real data is kept out by review. (INV-74)
 
 ---
 
@@ -790,3 +792,4 @@ Every section of the legacy business spec, mapped to this document and `INVARIAN
 | Rev | Date | Change |
 |---|---|---|
 | 1 | 2026-10-14 | Initial architecture, with spec traceability (Appendix B) and all v1 questions closed (Appendix A). |
+| 1.1 | 2026-10-14 | §14.3: hashed denylist and its CI secret dropped from `real-data-scan`; a mobile-number rule and a local gitignored company-details file added; Excel contents not scanned (owner, D-0010). |

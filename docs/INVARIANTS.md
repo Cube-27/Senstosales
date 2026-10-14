@@ -139,7 +139,7 @@ test on anonymised fixtures), **API** (Hono `app.request()` against in-memory SQ
 
 | ID | Invariant | Ref | Enforced by | Status |
 |---|---|---|---|---|
-| INV-74 | No committed file contains real data: supplier names, GSTINs, addresses, people's names, real document numbers, identifying counts, DB files, real HTML or local data paths. | A-19; §2 C1, §14.3 | `tools/checks/real-data-scan`; CI + hook | specified |
+| INV-74 | No committed file contains real data: supplier names, GSTINs, addresses, people's names, real document numbers, identifying counts, DB files, real HTML or local data paths. | A-19; §2 C1, §14.3 | `tools/checks/real-data-scan` (GSTIN shapes, mobile numbers, local paths, DB files, HTML and documents outside fixtures; local company-details file in the hook); CI + hook; review for the rest, including Excel contents | specified |
 | INV-75 | Parser fixtures are anonymised with all names, numbers and IDs replaced and layout and quantities kept; DCs, invoices and export goldens are synthetic. | A-19, A-26; §14.3 | `tools/checks/anonymise-fixture`; real-data-scan + review | specified |
 | INV-76 | Private inputs are read only from env-var paths (`SENSTO_CORPUS_DIR`); the corpus test is skipped when unset and never runs in CI. | A-19; §7.4 | `tools/corpus`; CI + review | specified |
 | INV-77 | No dependency carries a denied licence (AGPL, GPL, SSPL, Commons Clause, non-commercial), matched by whole SPDX identifier; a CycloneDX SBOM is published each run. | A-19; §2 C13 | `licenses` CI job | specified |

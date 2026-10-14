@@ -26,7 +26,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 | # | Task | Needed by | Status |
 |---|---|---|---|
 | H1 | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7). | SPEC-00 PR 4 | todo |
-| H2 | Owner adds the GitHub Actions secret `SENSTO_DENYLIST` (hashed supplier names, people's names, real document numbers; SPEC-00 §4.6). | SPEC-00 PR 3 | todo |
+| H2 | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped. | — | dropped (D-0010) |
 | H3 | BHEL portal credentials and OTP mailbox, on the owner's machine only. | SPEC-01 PR 2, SPEC-19 PR 6 | todo |
 | H4 | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine. | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3 | todo |
 | H5 | Run the legacy app on synthetic input and produce the golden output, outside the repo. | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1 | todo |
@@ -46,7 +46,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 |---|---|---|---|
 | 1 | Bootstrap (setup session) | done (#1) |  |
 | 2 | `build` and `audit` jobs, language and pin checks | todo |  |
-| 3 | Real-data scan: hashed denylist and xlsx parts | todo | H2 |
+| 3 | Company-details check | todo |  |
 | 4 | Rulesets and repo settings | todo | H1 |
 
 ## [SPEC-01 — Spikes (L0.5)](../specs/SPEC-01-spikes.md)
