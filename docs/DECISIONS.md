@@ -434,3 +434,19 @@ None.
 - Alternatives: Flag on a missing set time; exempt cancelled items.
 - Why: The most literal reading of SPEC-03 §4.2 and ARCHITECTURE §6.9; the spec states no exemption (C2, C18).
 - Reversible: yes.
+
+### D-0048 — Mechanism for INV-64 CI check
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 5 (#19) · Status: decided
+- Decision: `tools/checks/src/status-source.ts`, run in `check:code`, scans production `.ts`/`.tsx` line by line outside `packages/domain/src/status.ts`. It fails on a function named for item or PO status, and on a status literal produced by `return`, `=>`, `?`/`??`/`&&`/`||`, an assignment (JS or SQL `SET`, spaces around `=`) or SQL `THEN`/`ELSE`. Comparisons, SQL `WHERE`/`AND`/`OR`/`ON`/`HAVING` filters, JSX attributes, `case` labels, arrays and maps pass.
+- Alternatives: An Oxlint rule (its built-in rules can't express "only in file X"); an AST walker (heavier, not needed yet); matching any `*status*` name (false positives on job, reconciliation and HTTP status).
+- Why: The simplest check that catches a second implementation while leaving consumers free to filter and display status (INV-64, INV-65). Multi-line declarations and statuses built from imported constants can evade it; review covers those (C2). A SQL `WHERE` on its own line before `status = '…'` is flagged; keep the keyword and the comparison on one line.
+- Reversible: yes.
+
+### D-0049 — Status value list is literal in the check
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 5 (#19) · Status: decided
+- Decision: The check spells out `Pending|Delivered|Closed|Cancelled` instead of importing a runtime list from `packages/domain`.
+- Alternatives: Export the status values from `status.ts` and build the pattern from them.
+- Why: It keeps the row out of the domain's public API; the domain union changes only through an owner decision, and then the check's pattern needs the same edit.
+- Reversible: yes.
