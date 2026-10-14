@@ -514,3 +514,27 @@ None.
 - Alternatives: Keep single-level `*`.
 - Why: A gitignore-style `*` does not cross `/`, so `node:fs/promises` and `@tauri-apps/api/core` passed the ban. Regression test in `lint-boundaries.test.ts`.
 - Reversible: yes.
+
+### D-0058 — Db wraps a Drizzle async SQLite database
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 1 (#22) · Status: decided
+- Decision: `Db` is `build` (Drizzle's builders, `transaction` and `batch` removed from the type), `query(statement)` for one read and `batch(statements)` for Drizzle batch items, all or nothing; both map failures to `DbError`. `wrapDrizzle` in `port.ts` builds it for every executor.
+- Alternatives: A Drizzle-free `{ sql, params }` statement port (loses typed row mapping and the PR 2 customTypes); exposing the Drizzle db (its `transaction()` is forbidden by ADR 0002).
+- Why: ADR 0002 (D-0017) says the port wraps Drizzle; one wrapper keeps node and D1 semantics identical.
+- Reversible: yes.
+
+### D-0059 — UniqueViolation carries the SQLite constraint target
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 1 (#22) · Status: decided
+- Decision: `UniqueViolation.target` is the target SQLite reports (`table.column, …`), not an index name.
+- Alternatives: Look up the index name in `sqlite_schema` on each violation.
+- Why: SQLite and D1 messages name the columns, not the index; the target is still unique per index, so services can map it to a plain 409 (SPEC-05 §4.3).
+- Reversible: yes.
+
+### D-0060 — Empty batch is a no-op; second commit throws
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 1 (#22) · Status: decided
+- Decision: An empty `batch` or `WriteBatch.commit()` writes nothing and succeeds; a second `commit()`, or `add()` after a commit, throws.
+- Alternatives: Reject an empty batch.
+- Why: An empty batch has nothing to make atomic; committing twice would split one use case's writes (C4).
+- Reversible: yes.

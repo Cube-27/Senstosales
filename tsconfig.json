@@ -4,6 +4,7 @@
     { "path": "tsconfig.config.json" },
     { "path": "packages/domain" },
     { "path": "packages/schemas" },
+    { "path": "packages/db" },
     { "path": "tools/checks" },
     { "path": "tools/orchestrator" }
   ]
