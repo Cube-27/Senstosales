@@ -1,18 +1,19 @@
 // SPEC-07 PR 2: the node entry. It prepares the data directory, binds 127.0.0.1 on a random port and prints it, guards
 // the Host on the real socket (C10), serves the SPA and the health route from one app, and exits when stdin closes.
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 
-import { LATEST_VERSION } from "@senstosales/db";
+import { LATEST_VERSION, supplier } from "@senstosales/db";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished } from "vite-plus/test";
 
 import { DATA_FOLDERS, resolveDataDir } from "../../src/platform/node/data-dir.ts";
 import { type RunningServer, startServer } from "../../src/platform/node/main.ts";
 import { migratedDb } from "../db.ts";
+import { poPage } from "../po-pages.ts";
 
 const MAIN = join(import.meta.dirname, "../../src/platform/node/main.ts");
 const INDEX = "<!doctype html><title>app</title><div id=root></div>";
@@ -96,6 +97,25 @@ describe("startServer", () => {
       code: "onboarding-required",
       message: "Set up the supplier details first.",
     });
+  });
+
+  it("ingests an uploaded PO page and keeps it under the data folder", async () => {
+    const server = await start(await webRoot());
+    const db = await migratedDb(join(tmp, "data", "db", "senstosales.db"));
+    await db.batch([
+      db.build.insert(supplier).values({ id: "S1", name: "Example Supplier", bankDetails: {}, invoiceDefaults: {} }),
+    ]);
+    db.close();
+    const html = poPage({ date: "10/04/2025", items: [{ no: 10 }] });
+
+    const res = await fetch(`http://127.0.0.1:${server.port}/api/po/upload`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ files: [{ name: "a.html", html }] }),
+    });
+
+    expect(await res.json()).toEqual({ results: [{ name: "a.html", status: "accepted", reason: null }] });
+    expect(await readFile(join(tmp, "data", "html", "po", "4500001.html"), "utf8")).toBe(html);
   });
 
   it("accepts localhost on its port", async () => {

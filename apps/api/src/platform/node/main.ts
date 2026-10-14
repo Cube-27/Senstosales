@@ -14,6 +14,7 @@ import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
 import { healthRoutes } from "../../routes/health.ts";
 import { apiRoutes } from "../../routes/index.ts";
+import { poUploadRoutes } from "../../routes/po-upload.ts";
 import { createServices } from "../../services/index.ts";
 import { jobWorker } from "../../services/job-worker.ts";
 import { createClock } from "./clock.ts";
@@ -21,6 +22,7 @@ import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
 import { createJobRunner } from "./job-runner.ts";
 import { upgradeGate } from "./startup.ts";
 import { spa } from "./static.ts";
+import { createFsStorage } from "./storage-fs.ts";
 
 const HOST = "127.0.0.1";
 
@@ -76,7 +78,11 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   const services = createServices({ db, clock, jobs });
   const app = createApp(
     { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
-    { ...healthRoutes({ version: options.version, db }), ...apiRoutes(services) },
+    {
+      ...healthRoutes({ version: options.version, db }),
+      ...apiRoutes(services),
+      ...poUploadRoutes({ db, storage: createFsStorage(options.dataDir), clock }),
+    },
   );
   app.get("*", spa(options.webRoot));
   server.on("request", getRequestListener(app.fetch));
