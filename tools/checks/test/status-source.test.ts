@@ -26,6 +26,7 @@ describe("statusViolations", () => {
     ['status = "Pending";', 'status value "Pending"'],
     ["  if (row.cancelled) return `Cancelled`;", 'status value "Cancelled"'],
     ["CASE WHEN rcd_qty_m >= ord_qty_m THEN 'Closed' ELSE 'Pending' END", 'status value "Closed"'],
+    ["  when rcd_qty_m >= ord_qty_m then 'Closed'", 'status value "Closed"'],
   ])("flags %s", (line, message) => {
     expect(statusViolations(SOURCE, `// header\n${line}\n`)).toEqual([`${SOURCE}:2 ${message} (INV-64)`]);
   });

@@ -7,7 +7,7 @@ import { extname } from "node:path";
 
 import { selectFiles } from "./real-data-scan.ts";
 
-const PRODUCTION_SOURCE = /^(?:packages|apps)\/[^/]+\/src\//;
+export const PRODUCTION_SOURCE = /^(?:packages|apps)\/[^/]+\/src\//;
 const ALLOWED = new Set(
   "ts tsx css json svg png jpg jpeg gif webp avif ico woff woff2 ttf otf".split(" ").map((ext) => `.${ext}`),
 );

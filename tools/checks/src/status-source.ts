@@ -3,11 +3,10 @@
 // `po_status`) or produces a status value from a decision (`return "Closed"`, `? "Delivered"`, `= "Pending"`, SQL
 // `THEN 'Closed'`). Comparing, listing or mapping the values is allowed: consumers call the domain functions.
 // Usage: node tools/checks/src/status-source.ts (from the repo root)
-import { readFileSync } from "node:fs";
-
+import { PRODUCTION_SOURCE } from "./language.ts";
 import { selectFiles } from "./real-data-scan.ts";
 
-const PRODUCTION_TS = /^(?:packages|apps)\/[^/]+\/src\/.*\.tsx?$/;
+const isProductionTs = (path: string): boolean => PRODUCTION_SOURCE.test(path) && /\.tsx?$/.test(path);
 const THE_ONE_SOURCE = "packages/domain/src/status.ts";
 const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/;
 // Function declarations, function-valued bindings and class methods; group 1 is the name.
@@ -26,7 +25,7 @@ const PRODUCED_VALUE =
 
 /** INV-64 findings for one file, as `path:line message (INV-64)`. */
 export function statusViolations(path: string, text: string): string[] {
-  if (!PRODUCTION_TS.test(path) || path === THE_ONE_SOURCE) return [];
+  if (!isProductionTs(path) || path === THE_ONE_SOURCE) return [];
   return text.split(/\r?\n/).flatMap((line, index) => {
     if (COMMENT_LINE.test(line)) return [];
     const at = `${path}:${index + 1}`;
@@ -40,8 +39,8 @@ export function statusViolations(path: string, text: string): string[] {
 }
 
 function main(): number {
-  const found = selectFiles(false).flatMap(({ path }) =>
-    PRODUCTION_TS.test(path) ? statusViolations(path, readFileSync(path, "utf8")) : [],
+  const found = selectFiles(false).flatMap(({ path, read }) =>
+    isProductionTs(path) ? statusViolations(path, read().toString("utf8")) : [],
   );
   for (const finding of found) console.error(finding);
   return found.length === 0 ? 0 : 1;
