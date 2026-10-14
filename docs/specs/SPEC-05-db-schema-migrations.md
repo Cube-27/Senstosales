@@ -109,7 +109,7 @@ supplier identity).
 | 1 | Db port and node:sqlite executor | `src/port.ts`, `src/platform/node/sqlite.ts`, tests | `check` | A failing statement rolls the whole batch back; PRAGMAs set; `backupTo` writes a readable copy. |
 | 2 | Drizzle schema and custom types | `src/schema/*.ts`, `src/types.ts`, tests | `check` | All §8.2 tables typed; customType round-trips pass; boundary lint passes (no `node:*` outside `platform/`). |
 | 3 | Migration 0001 and migrator | `migrations/0001_init.sql`, `src/migrations.generated.ts` + generator in `tools/gen/`, `src/migrator.ts`, `test/migrations/*` | `check` | Empty DB migrates and stamps `user_version`; re-run writes nothing; newer DB refused; unique-index literal cases pass. |
-| 4 | D1 executor, dialect step and SQL lint | `src/platform/d1/executor.ts`, `tools/checks/d1-dialect.ts`, `tools/checks/migration-sql-lint.ts`, `ci.yml` step | `check` | Migrations apply on local D1 in CI; a planted trigger or view fails the lint. |
+| 4 | D1 executor, dialect step and SQL lint | `src/platform/d1/executor.ts`, `tools/checks/src/d1-dialect.ts`, `tools/checks/src/migration-sql-lint.ts`, `ci.yml` step | `check` | Migrations apply on local D1 in CI; a planted trigger or view fails the lint. |
 | 5 | Version helper and seed | `src/version.ts` (`updateWithVersion`), `src/seed.ts`, tests | `check`, `real-data-scan` | A stale `version` yields `ConflictError`; seed inserts GST defaults only (see Open issues) and no identity. |
 
 ## 9. Open issues

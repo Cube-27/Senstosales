@@ -108,7 +108,7 @@ touched shared component are review artefacts.
 
 | # | Title | Scope / files | Checks | Done when |
 |---|---|---|---|---|
-| 1 | App skeleton, router and query | `apps/web/{index.html,vite.config.ts}`, `src/{main,router}.tsx`, `src/routes/**` placeholders, `src/lib/{api,query}.ts`, `tools/checks/bundle-budget.ts`, tests | `check`, `build` | `vp build` produces the SPA; all frozen routes plus `/onboarding` resolve; route test asserts no `/procurement`; budget check passes. |
+| 1 | App skeleton, router and query | `apps/web/{index.html,vite.config.ts}`, `src/{main,router}.tsx`, `src/routes/**` placeholders, `src/lib/{api,query}.ts`, `tools/checks/src/bundle-budget.ts`, tests | `check`, `build` | `vp build` produces the SPA; all frozen routes plus `/onboarding` resolve; route test asserts no `/procurement`; budget check passes. |
 | 2 | Frozen design carry-over | `src/styles/globals.css`, `@fontsource` setup, `docs/adr/0004-globals-css-token-fixes.md`, token-parity test, `docs/DESIGN.md`, `NOTICE` font entries | `check`, `real-data-scan` | Diff vs legacy `globals.css` equals the ADR list; parity test passes; DESIGN.md de-branded. |
 | 3 | Design validators | `tools/checks/validate-*.ts`, fixtures, wiring in `check` | `check` | Each validator fails its failing fixture and passes the repo. |
 | 4 | Shell components | `components/common/{AppChrome,SidebarNav,PageHeader,StatCard,DetailTabs,ListToolbar,ThemeToggle,Toast,GlobalSearchDialog}.tsx`, registry, tests | `check` | Shell renders in light and dark matching legacy screenshots; sidebar labels frozen; no sourcing entry. |

@@ -25,12 +25,12 @@ Core:
 - Local verify gate `pnpm verify`, running what CI runs, in CI order, failing first.
 - A `vp staged` pre-commit hook on staged files (< 10 s on a one-file change), installed once per clone.
 - CI (`.github/workflows/ci.yml`): every action pinned to a full commit SHA with a version comment;
-  `permissions: contents: read`; concurrency with cancel-in-progress; `pnpm install --frozen-lockfile`; `.npmrc`
-  `minimumReleaseAge`. Jobs: `check`, `licenses`, `tools`, `real-data-scan` (setup session), then `build` and
-  `audit` (PR 2). `e2e` comes with SPEC-14, `desktop` with SPEC-20.
+  `permissions: contents: read`; concurrency with cancel-in-progress; `pnpm install --frozen-lockfile`; no
+  release-age quarantine, `trustPolicy: no-downgrade` (D-0001). Jobs: `check`, `licenses`, `tools`,
+  `real-data-scan` (setup session), then `build` and `audit` (PR 2). `e2e` comes with SPEC-14, `desktop` with SPEC-20.
 - Lint guardrails (C15): Oxlint (`vp lint`) `max-lines` (800, error) and `complexity` (15, error) on all source
   (ruff C90 for the Python orchestration tools); generated files and lockfiles excluded; the fix is a split, never
-  a suppression (an inline disable of either rule is refused by a check in `tools/checks/no-guardrail-disable.ts`
+  a suppression (an inline disable of either rule is refused by a check in `tools/checks/src/no-guardrail-disable.ts`
   and by review). Boundaries (C2, C12, INV-85) via Oxlint `no-restricted-imports`; domain bans (C3: `parseFloat`,
   `toFixed`, `Date`) scoped to `packages/domain`.
 - Licence deny-list (AGPL, GPL, SSPL, Commons Clause, non-commercial; LGPL avoided) by whole SPDX identifier, plus a
@@ -63,7 +63,7 @@ Out of scope:
 ```
 /
   README.md  CLAUDE.md  AGENTS.md  CONTRIBUTING.md  NOTICE  LICENSE  VERSION
-  package.json  pnpm-workspace.yaml  pnpm-lock.yaml  .npmrc  tsconfig.base.json  tsconfig.json
+  package.json  pnpm-workspace.yaml  pnpm-lock.yaml  tsconfig.base.json  tsconfig.json
   vite.config.ts (Vite+: lint, fmt, test, staged)  .gitignore  .gitattributes
   .github/workflows/ci.yml  .github/pull_request_template.md
   .claude/settings.json  .claude/skills/{run-plan,implement-pr,review-pr,pickup}/SKILL.md
@@ -82,9 +82,9 @@ checkout (`<main>/../SenstoSales-worktrees/spec-NN-pr-M`, branch `spec-NN/pr-M-<
 | Tool | Choice | Notes |
 |---|---|---|
 | Runtime | Node 24 LTS (`engines`, `.nvmrc`) | Type stripping runs `tools/**/*.ts` directly. |
-| Packages | pnpm workspaces, `--frozen-lockfile` in CI, `.npmrc` `minimumReleaseAge` | |
+| Packages | pnpm workspaces, `--frozen-lockfile` in CI; supply-chain settings in `pnpm-workspace.yaml`: `minimumReleaseAge: 0` (no release-age quarantine) and `trustPolicy: no-downgrade` | D-0001; no `.npmrc` |
 | Language | TypeScript 7 strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`), ESM, `tsc -b` project references | INV-90 |
-| Toolchain | Vite+ (`vp`), not version-pinned through a catalog (owner) | One config, one CLI. |
+| Toolchain | Vite+ (`vp`), not version-pinned through a catalog (owner) | One config, one CLI. No ESLint or Prettier (D-0002). |
 | Lint | Oxlint via `vp lint`: `max-lines` 800 and `complexity` 15 as errors, `no-restricted-imports` boundaries | C15, C12 |
 | Format | Oxfmt via `vp fmt` | |
 | Tests | Vitest via `vp test`; tests import from `vite-plus/test` | Playwright arrives with SPEC-14. |
@@ -108,10 +108,10 @@ the git common dir, so every worktree has them).
 
 | Job | Runner | Steps | Added by |
 |---|---|---|---|
-| `check` | ubuntu | install (frozen), `vp fmt --check`, `vp lint` (guardrails, boundaries), `tsc -b`, `vp test`, generated-file freshness (`regenerate && git diff --exit-code`) | PR 1 |
-| `licenses` | ubuntu | deny-list check over the full dependency tree; CycloneDX SBOM uploaded as an artefact | PR 1 |
-| `tools` | ubuntu | `tools/tests/*` (merge guard and orchestrator script tests) | PR 1 |
-| `real-data-scan` | ubuntu | `tools/checks/real-data-scan.ts` over all tracked files | PR 1 (hashed denylist: PR 3) |
+| `check` | ubuntu | install (frozen), `pnpm check:code`: `vp check` (Oxfmt, Oxlint guardrails and boundaries), `tsc -b`, `vp test run`, `pnpm -r build`; generated-file freshness (`regenerate && git diff --exit-code`) once a spec adds generated files | PR 1 |
+| `licenses` | ubuntu | `pnpm check:licenses`: `pnpm licenses list` → `tools/checks/src/license-check.ts` deny-list over the full dependency tree; CycloneDX SBOM uploaded with the report as the `license-report` artefact | PR 1 |
+| `tools` | ubuntu | `ruff check` and `ruff format --check` over `tools`, `pytest tools/tests` (merge guard), `bash -n` over `tools/orchestrator/*.sh` | PR 1 |
+| `real-data-scan` | ubuntu | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install | PR 1 (hashed denylist: PR 3) |
 | `build` | ubuntu | `pnpm -r build` | PR 2 |
 | `audit` | ubuntu | `pnpm audit --prod` at `high`, plus the action-pin check (INV-108) | PR 2 |
 | `e2e` | windows | Playwright | SPEC-14 PR 8 |
@@ -120,7 +120,7 @@ the git common dir, so every worktree has them).
 Further steps added to `check` by later specs: D1 dialect and migration-SQL lint (SPEC-05), design validators and
 token parity (SPEC-14), bundle budget (SPEC-14), OpenAPI freshness (SPEC-04).
 
-### 4.6 Real-data scan (`tools/checks/real-data-scan.ts`)
+### 4.6 Real-data scan (`tools/checks/src/real-data-scan.ts`)
 
 - Input: tracked files (CI) or staged files (`--staged`). Reports `path:line` and a rule name only, never the
   matched value (public CI logs).
@@ -179,7 +179,8 @@ INV-88, INV-91, INV-92.
 
 ## 6. Testing strategy
 
-- Unit tests for every tool in `tools/checks` and `tools/orchestrator` (`tools/tests/`), run in the `tools` job.
+- Unit tests for every check in `tools/checks/src` (`tools/checks/test/`, Vitest, run in `check`) and for the
+  orchestration tools (`tools/tests/`, pytest, run in `tools`).
 - Planted violations, constructed at run time or added and removed within the PR: a denied-licence dev dependency
   fails `licenses`; a GSTIN-shaped string and a local data path fail `real-data-scan`; a 801-line file and a
   complexity-16 function fail `check`; a `node:fs` import from `packages/domain` fails `check`.
@@ -201,9 +202,9 @@ INV-88, INV-91, INV-92.
 
 | # | Title | Scope / files | Checks | Done when |
 |---|---|---|---|---|
-| 1 | Bootstrap (setup session) | Root docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `NOTICE`), `.claude/skills/*` with `/simplify` in `implement-pr`, `.claude/settings.json` merge guard, `tools/orchestrator/*`, `tools/tests/*`, `.github/workflows/ci.yml` (`check`, `licenses`, `tools`, `real-data-scan`), PR template, `vp staged` hook, pnpm workspace skeleton, `tsconfig.base.json`, `vite.config.ts` with Oxlint C15 guardrails and C12 boundaries, `tools/checks/license-check.ts`, `tools/checks/real-data-scan.ts` (pattern rules), `docs/{ENGINEERING,DECISIONS}.md`, `docs/plans/{ACTIVE,RECURRING}.md` | all four jobs | A trivial PR is green on the four jobs; the guard denies `gh pr merge`. Marked done in ACTIVE.md by the setup session. |
-| 2 | `build` and `audit` jobs, language and pin checks | `ci.yml` (`build`: `pnpm -r build`; `audit`: `pnpm audit --prod --audit-level high`), `tools/checks/action-pins.ts` (INV-108), `tools/checks/language.ts` (INV-90: production sources under `packages/*/src`, `apps/*/src` are `.ts`/`.tsx`), tests in `tools/tests/` | `build`, `audit`, `tools` | An unpinned `uses:` and a `.js` file in `packages/domain/src` each fail (planted, then removed). |
-| 3 | Real-data scan: hashed denylist and xlsx parts | `tools/checks/real-data-scan.ts` (shingle hashing, `SENSTO_DENYLIST` secret, xlsx XML scanning), `tools/checks/real-data-allow.txt` format check, tests with run-time planted values; `ci.yml` passes the secret to the job only | `real-data-scan`, `tools` | A planted denylisted token (hash supplied in the test env) fails with `path:line`; an xlsx with a GSTIN-shaped shared string fails; the job passes with the secret absent and says so. Secret creation is human task H2. |
+| 1 | Bootstrap (setup session) | Root docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `NOTICE`), `.claude/skills/*` with `/simplify` in `implement-pr`, `.claude/settings.json` merge guard, `tools/orchestrator/*`, `tools/tests/*`, `.github/workflows/ci.yml` (`check`, `licenses`, `tools`, `real-data-scan`), PR template, `vp staged` hook, pnpm workspace skeleton, `tsconfig.base.json`, `vite.config.ts` with Oxlint C15 guardrails and C12 boundaries, `tools/checks/src/license-check.ts`, `tools/checks/src/real-data-scan.ts` (pattern rules), `docs/{ENGINEERING,DECISIONS}.md`, `docs/plans/{ACTIVE,RECURRING}.md` | all four jobs | A trivial PR is green on the four jobs; the guard denies `gh pr merge`. Marked done in ACTIVE.md by the setup session. |
+| 2 | `build` and `audit` jobs, language and pin checks | `ci.yml` (`build`: `pnpm -r build`; `audit`: `pnpm audit --prod --audit-level high`), `tools/checks/src/action-pins.ts` (INV-108), `tools/checks/src/language.ts` (INV-90: production sources under `packages/*/src`, `apps/*/src` are `.ts`/`.tsx`), tests in `tools/checks/test/` | `build`, `audit`, `check` | An unpinned `uses:` and a `.js` file in `packages/domain/src` each fail (planted, then removed). |
+| 3 | Real-data scan: hashed denylist and xlsx parts | `tools/checks/src/real-data-scan.ts` (shingle hashing, `SENSTO_DENYLIST` secret, xlsx XML scanning), `tools/checks/real-data-allow.txt` format check, tests with run-time planted values; `ci.yml` passes the secret to the job only | `real-data-scan`, `check` | A planted denylisted token (hash supplied in the test env) fails with `path:line`; an xlsx with a GSTIN-shaped shared string fails; the job passes with the secret absent and says so. Secret creation is human task H2. |
 | 4 | Rulesets and repo settings | `gh api` ruleset commands applied (human H1); the applied JSON recorded as a `docs/DECISIONS.md` entry | — | A direct push to `main` is refused; a PR with a red required check cannot merge; secret scanning and push protection are on. |
 
 ## 9. Open issues
@@ -214,6 +215,6 @@ INV-88, INV-91, INV-92.
 - **Rust in the Tauri shell.** Tauri 2 needs a minimal Rust entry (`apps/desktop/src-tauri/src/main.rs`). INV-90
   says all production code is TypeScript. Conservative reading: the language check covers `packages/*/src` and
   `apps/{api,web}/src` and `apps/desktop/src` (TS); the generated Tauri scaffold under `src-tauri/` holds no logic
-  (sidecar control lives in TS, SPEC-20). Owner to confirm; recorded as a DECISIONS entry.
-- **Rule names for the scan** (`gstin`, `local-path`, `db-file`, `html-outside-fixtures`, `denylist`) are an
-  implementation detail.
+  (sidecar control lives in TS, SPEC-20). Owner to confirm (D-0008, `pending-owner`).
+- **Rule names for the scan** (`gstin`, `local-data-path`, `database-file`, `html-outside-fixtures`, and `denylist`
+  from PR 3) are an implementation detail.

@@ -23,7 +23,7 @@ Core:
 - SRV: skip HTML comments; the table whose header contains `SRV NO`; two column layouts mapped by header text; rows
   grouped by `(po_number, srv_number)`; item key `(po_item_no, lot_no, srv_item_no)`; duplicate keys → the file
   fails (A2-10, INV-50).
-- `tools/checks/anonymise-fixture.ts` (moved here from SPEC-00) and ~40 PO / ~30 SRV anonymised fixtures with
+- `tools/checks/src/anonymise-fixture.ts` (moved here from SPEC-00) and ~40 PO / ~30 SRV anonymised fixtures with
   expected JSON.
 - `pnpm test:corpus` (parser assertions), skipped when `SENSTO_CORPUS_DIR` is unset, never in CI.
 
@@ -62,7 +62,7 @@ page; GST-inclusive for GEMC), `rcdQty`, `rejQty | null`, `lots[]` (`lotNo`, `de
 `materialCode`, `ordQty`, `rcdQty`, `acceptedQty`, `rejQty`, `challanNo`, `challanDate`, `invoiceNo`,
 `invoiceDate`).
 
-### 4.3 Anonymiser (`tools/checks/anonymise-fixture.ts`)
+### 4.3 Anonymiser (`tools/checks/src/anonymise-fixture.ts`)
 
 Local, one-time per fixture (A-26, INV-75): replaces every name, number and identifier (PO/SRV/challan/invoice
 numbers, supplier and issuer identity, GSTIN, phone, e-mail, codes, descriptions) and keeps the markup and the
@@ -101,7 +101,7 @@ INV-19 (parser part), INV-46, INV-49, INV-50 (duplicate-key part), INV-75, INV-7
 
 | # | Title | Scope / files | Checks | Done when |
 |---|---|---|---|---|
-| 1 | Document types, anonymiser, first fixtures | `src/types.ts`, `tools/checks/anonymise-fixture.ts` + tests (synthetic HTML), first 5 PO and 5 SRV fixtures with expected JSON | `check`, `real-data-scan` | Types compile; anonymiser tests pass; fixtures pass the scan. |
+| 1 | Document types, anonymiser, first fixtures | `src/types.ts`, `tools/checks/src/anonymise-fixture.ts` + tests (synthetic HTML), first 5 PO and 5 SRV fixtures with expected JSON | `check`, `real-data-scan` | Types compile; anonymiser tests pass; fixtures pass the scan. |
 | 2 | HTML utilities, dates, PO header | `src/{html,dates}.ts`, `src/po/header.ts`, tests | `check` | All fixture PO headers match expected JSON; the three date formats pass literal tests. |
 | 3 | PO items, lots, continuation rows, GEMC | `src/po/items.ts`, `src/po/index.ts`, tests | `check` | All PO fixtures match, including entry-allow notes (INV-46) and GEMC numbers (INV-19). |
 | 4 | SRV parser | `src/srv/*.ts`, tests | `check` | All SRV fixtures match (both layouts, commented table skipped); a duplicate item key yields `duplicate-srv-item-key`. |
