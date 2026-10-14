@@ -19,3 +19,12 @@ export const invoiceLinesOfPo = (db: Db, poId: string) =>
       .where(eq(invoice.poId, poId))
       .orderBy(invoiceItem.id),
   );
+
+/** The supplier's invoice numbers and dates, which SRV invoice numbers resolve against (INV-37). */
+export const invoiceNumbersOf = (db: Db, supplierId: string) =>
+  db.query(
+    db.build
+      .select({ id: invoice.id, number: invoice.number, date: invoice.invoiceDate })
+      .from(invoice)
+      .where(eq(invoice.supplierId, supplierId)),
+  );

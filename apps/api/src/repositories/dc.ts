@@ -19,3 +19,9 @@ export const dcLinesOfPo = (db: Db, poId: string) =>
       .where(eq(dc.poId, poId))
       .orderBy(dcItem.id),
   );
+
+/** The supplier's DC numbers and dates, which SRV challan numbers resolve against (INV-37). */
+export const dcNumbersOf = (db: Db, supplierId: string) =>
+  db.query(
+    db.build.select({ id: dc.id, number: dc.number, date: dc.dcDate }).from(dc).where(eq(dc.supplierId, supplierId)),
+  );
