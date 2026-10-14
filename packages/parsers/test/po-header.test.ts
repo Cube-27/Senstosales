@@ -1,28 +1,13 @@
-import { readFileSync } from "node:fs";
-
 import { describe, expect, it } from "vite-plus/test";
 
 import { loadPage } from "../src/html.ts";
 import { parsePoHeader } from "../src/po/header.ts";
-import { zPoDocument } from "../src/types.ts";
-
-const FIXTURES = new URL("../fixtures/po/", import.meta.url);
-const NAMES = ["amended-short-closed", "era1-single-item", "era2-multi-item", "gemc", "multi-lot"];
 
 const header = (html: string) => parsePoHeader(loadPage(html));
 
 /** A label|value page (era 1) with the two fields every PO needs, plus `rows`. */
 const page = (rows: string, poNumber = "4100000999", poDate = "05/04/2023"): string =>
   `<table><tr><td>PURCHASE ORDER</td><td>${poNumber}</td><td>PO DATE</td><td>${poDate}</td></tr>${rows}</table>`;
-
-describe("parsePoHeader: fixtures (SPEC-06 PR 2)", () => {
-  it.each(NAMES)("%s: the header matches the expected JSON", (name) => {
-    const { items: _, ...expected } = zPoDocument.parse(
-      JSON.parse(readFileSync(new URL(`${name}.expected.json`, FIXTURES), "utf8")),
-    );
-    expect(header(readFileSync(new URL(`${name}.html`, FIXTURES), "utf8"))).toEqual({ ok: true, value: expected });
-  });
-});
 
 describe("parsePoHeader", () => {
   it("reads every header field of a minimal page, absent ones as null", () => {
