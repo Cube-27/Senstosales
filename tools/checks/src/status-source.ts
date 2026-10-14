@@ -11,9 +11,11 @@ const THE_ONE_SOURCE = "packages/domain/src/status.ts";
 const COMMENT_LINE = /^\s*(?:\/\/|\/\*|\*)/;
 // Function declarations, function-valued bindings and class methods; group 1 is the name.
 const DECLARATIONS = [
-  /\bfunction\s*\*?\s*([A-Za-z_$][\w$]*)\s*[<(]/,
-  /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]*)?=\s*(?:async\s+)?(?:function\b|\(|<|[A-Za-z_$][\w$]*\s*=>)/,
-  /^\s*(?:(?:public|private|protected|static|async|override)\s+)*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?::[^{;=]*)?\{\s*$/,
+  /\bfunction\b[\s*]*([\w$]+)\s*[<(]/,
+  // `[^=]*` spans any type annotation between the name and `=`.
+  /\b(?:const|let|var)\s+([\w$]+)[^=]*=\s*(?:async\s+)?(?:function\b|[(<]|[\w$]+\s*=>)/,
+  // `[^{;=]*` spans a return type; `=` keeps arrow callbacks out.
+  /^\s*(?:(?:public|private|protected|static|async|override)\s+)*([\w$]+)\s*\([^)]*\)[^{;=]*\{\s*$/,
 ];
 // `itemStatus`, `po_status`, `ItemStatus`, `getPOStatus`; not `jobStatus`, `repoStatus` or `PoStatusBadge`.
 const isStatusName = (name: string): boolean =>
