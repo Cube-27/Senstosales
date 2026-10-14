@@ -4,6 +4,7 @@
 // so it never outlives a shell that crashed.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { openNodeDb } from "@senstosales/db/node";
@@ -17,6 +18,7 @@ import { healthRoutes } from "../../routes/health.ts";
 import { createServices } from "../../services/index.ts";
 import { createClock } from "./clock.ts";
 import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
+import { upgradeGate } from "./startup.ts";
 import { spa } from "./static.ts";
 
 const HOST = "127.0.0.1";
@@ -51,7 +53,16 @@ function listen(server: Server): Promise<AddressInfo> {
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
   const db = openNodeDb(await prepareDataDir(options.dataDir));
-  // SPEC-07 PR 3 puts the upgrade gate here, before anything listens.
+  try {
+    await upgradeGate(db, {
+      backupsDir: join(options.dataDir, "backups"),
+      appVersion: options.version,
+      now: createClock().now(),
+    });
+  } catch (err) {
+    db.close();
+    throw err;
+  }
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
   // port earlier.
