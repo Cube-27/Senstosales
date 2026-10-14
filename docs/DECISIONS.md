@@ -199,3 +199,36 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Alternatives: Expose Drizzle's `transaction()` (separate BEGIN/COMMIT, which C4 forbids and D1 refuses); mandate single-row batches now (hosted D1 limits unverified); `schema_migration` as the only version source now (the §13.3 wording would change).
 - Why: Measured in the spike (ADR 0002 Results). Local D1 refuses `PRAGMA user_version`, `journal_mode`, `BEGIN` and `SAVEPOINT`, and accepts triggers and views.
 - Reversible: yes — nothing is built yet; SPEC-05 implements it.
+
+### D-0020 — Signed decimals parse
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 1 (#7) · Status: decided
+- Decision: `parseQty`/`parseMoney` accept an optional leading `-`; `-0` parses to `0`. Rejecting qty <= 0 at creation stays in the API (C6).
+- Alternatives: Reject any sign in the domain parsers.
+- Why: `uninvoiced` may be negative (INV-05), so the formatters print negatives, and the INV-01 round-trip property needs parse to accept what format prints.
+- Reversible: yes — one regex and its table rows.
+
+### D-0021 — roundMoney tie rule
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 1 (#7) · Status: decided
+- Decision: `roundMoney(m, 2 | 5)` rounds exact ties half away from zero in integer arithmetic (`848.755 -> 848.76`, `-848.755 -> -848.76`). This applies D-0009 (half-up) and fixes its meaning for negative amounts.
+- Alternatives: Half-even; half toward +infinity for negatives.
+- Why: The spec states no tie rule (SPEC-03 §9). SPEC-12 legacy goldens arbitrate, and a mismatch is escalated.
+- Reversible: yes — one domain function and its table tests.
+
+### D-0022 — Range
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 1 (#7) · Status: decided
+- Decision: A decimal whose scaled integer exceeds `Number.MAX_SAFE_INTEGER` is a parse error, never a lossy number.
+- Alternatives: `bigint` units.
+- Why: C3 requires exact values; safe integers cover far more than any quantity or amount, and `number` keeps the columns and arithmetic simple.
+- Reversible: costly — `bigint` would change every unit type.
+
+### D-0023 — INV-02 example value
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 1 (#7) · Status: decided
+- Decision: The tolerance example becomes `9.999` in INV-02, INV-62, ARCHITECTURE §6.11 (rev 1.3) and SPEC-02 §4.3. The old `9.9995` has four decimals, which a `Qty` cannot hold (INV-01), and `parseQty("9.9995")` is rejected (SPEC-02 §9). The rule is unchanged.
+- Alternatives: Keep the text and treat 9.9995 as illustrative.
+- Why: An example the types cannot express cannot be a literal test (C2).
+- Reversible: yes — a doc edit.
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.

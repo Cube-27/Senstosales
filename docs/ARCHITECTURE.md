@@ -1,6 +1,6 @@
 # SenstoSales — Architecture
 
-Status: design, rev 1.2, 2026-10-14.
+Status: design, rev 1.3, 2026-10-14.
 
 **Role of this document.** This is the single design reference. Related documents:
 
@@ -347,7 +347,7 @@ The v1 flag set is exactly these six (A-24). (INV-58)
 | Closed    | `rcd_qty >= ord_qty`                           |
 | Cancelled | the item was amended out (A-13)                |
 
-- Closed takes precedence over Delivered. `(ord 10, dsp 0, rcd 0) -> Pending`; `(10, 9.9995, 0) -> Delivered`;
+- Closed takes precedence over Delivered. `(ord 10, dsp 0, rcd 0) -> Pending`; `(10, 9.999, 0) -> Delivered`;
   `(10, 10, 10) -> Closed`. (INV-62, INV-63)
 - PO status, one implementation derived from item states, never from summed quantities (A-9): Closed when every
   active item is Closed; Delivered when every active item is Delivered or Closed; otherwise Pending. (INV-64)
@@ -841,3 +841,4 @@ Every section of the legacy business spec, mapped to this document and `INVARIAN
 | 1   | 2026-10-14 | Initial architecture, with spec traceability (Appendix B) and all v1 questions closed (Appendix A).                                                                                                                                                                                                                         |
 | 1.1 | 2026-10-14 | §14.3: hashed denylist and its CI secret dropped from `real-data-scan`; a mobile-number rule and a local gitignored company-details file added; Excel contents not scanned (owner, D-0010).                                                                                                                                 |
 | 1.2 | 2026-10-14 | §12.3, §16: UI primitives from shadcn/ui, generated and restyled to tokens; DataTable stays custom on TanStack Table (owner, D-0015). §1, §2 C7, §12.2, A-2: the freeze covers flows and on-screen elements; minor visual changes allowed for maintenance, performance or consistency; CSV/Excel unchanged (owner, D-0016). |
+| 1.3 | 2026-10-14 | §6.11: the tolerance example is `(10, 9.999, 0) -> Delivered`, not `9.9995`, which a three-decimal `Qty` cannot hold; the rule is unchanged. INV-02, INV-62 and SPEC-02 §4.3 likewise (D-0023).                                                                                                                             |

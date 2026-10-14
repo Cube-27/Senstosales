@@ -86,7 +86,7 @@ before conversion, so rounding never happens silently).
   (INV-12, INV-13), including after the last SRV is deleted. Input order never matters (INV-15, property test).
 - Accepted column = `rcd` (A2-8, INV-09): no separate accepted value is computed.
 - Item status (spec §6, INV-62): cancelled → Cancelled (INV-63); else `gte(rcd, ord)` → Closed; else `gte(dsp, ord)`
-  → Delivered; else Pending. `(10,0,0) Pending; (10,4,0) Pending; (10,9.9995,0) Delivered; (10,10,10) Closed;
+  → Delivered; else Pending. `(10,0,0) Pending; (10,4,0) Pending; (10,9.999,0) Delivered; (10,10,10) Closed;
   (10,0,10) Closed`.
 - PO status (A-9, INV-64), over active items only: all Closed → Closed; all Delivered or Closed → Delivered; else
   Pending. Items `(10, dsp 20)` and `(10, dsp 0)` → Pending. No active items → Closed (A2-13, EC-06).
