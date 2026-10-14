@@ -15,6 +15,7 @@ import { type RunningServer, startServer } from "../../src/platform/node/main.ts
 import { migratedDb } from "../db.ts";
 import { json } from "../helpers.ts";
 import { poPage } from "../po-pages.ts";
+import { srvPage } from "../srv-pages.ts";
 import { supplierDb } from "../service-deps.ts";
 
 const MAIN = join(import.meta.dirname, "../../src/platform/node/main.ts");
@@ -101,7 +102,7 @@ describe("startServer", () => {
     });
   });
 
-  it("ingests an uploaded PO page and keeps it under the data folder", async () => {
+  it("ingests uploaded PO and SRV pages and keeps them under the data folder", async () => {
     const server = await start(await webRoot());
     (await supplierDb(join(tmp, "data", "db", "senstosales.db"))).close();
     const html = poPage({ date: "10/04/2025", items: [{ no: 10 }] });
@@ -114,6 +115,13 @@ describe("startServer", () => {
 
     expect(await res.json()).toEqual({ results: [{ name: "a.html", status: "accepted", reason: null }] });
     expect(await readFile(join(tmp, "data", "html", "po", "4500001.html"), "utf8")).toBe(html);
+
+    const srvHtml = srvPage("4500001", [{ srv: "7000001", date: "01/05/2025", item: 10 }]);
+    const srvUpload = json("POST", { files: [{ name: "s.html", html: srvHtml }] });
+    const srvRes = await fetch(`${base}/api/srv/upload`, { ...srvUpload, headers: { ...srvUpload.headers, cookie } });
+
+    expect(await srvRes.json()).toEqual({ results: [{ name: "s.html", status: "accepted", reason: null }] });
+    expect(await readFile(join(tmp, "data", "html", "srv", "4500001.html"), "utf8")).toBe(srvHtml);
   });
 
   it("accepts localhost on its port", async () => {

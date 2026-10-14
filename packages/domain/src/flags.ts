@@ -104,9 +104,10 @@ function itemFlags(item: SnapshotItem, add: AddFlag): void {
 
 /** INV-52, INV-53: flags on one SRV line. */
 function srvLineFlags(line: SnapshotSrvLine, items: ReadonlyMap<string, SnapshotItem>, add: AddFlag): void {
-  // An unmatched line (EC-12) has no PO quantity to compare with.
+  // An unmatched line (EC-12) has no PO quantity to compare with; an SRV ord_qty of 0 is one the page lacked, and
+  // legacy compares only a positive one (EC-31).
   const item = line.poItemId === null ? undefined : items.get(line.poItemId);
-  if (item && (gtTol(line.ordQty, item.ordQty) || gtTol(item.ordQty, line.ordQty))) {
+  if (item && line.ordQty > 0 && (gtTol(line.ordQty, item.ordQty) || gtTol(item.ordQty, line.ordQty))) {
     const [expected, actual] = [qtyToString(item.ordQty), qtyToString(line.ordQty)];
     add("QTY_MISMATCH", "srv_item", line.id, { field: "ord_qty", expected, actual, docIds: [] });
   }

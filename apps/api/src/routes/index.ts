@@ -8,6 +8,7 @@ import { onboardingRoutes } from "./onboarding.ts";
 import { poRoutes } from "./po.ts";
 import { poUploadRoutes } from "./po-upload.ts";
 import { settingsRoutes } from "./settings.ts";
+import { srvUploadRoutes } from "./srv-upload.ts";
 import { supplierRoutes } from "./supplier.ts";
 
 export function apiRoutes(services: Services): Handlers {
@@ -20,5 +21,6 @@ export function apiRoutes(services: Services): Handlers {
     ...jobsRoutes(services.jobs),
     ...poRoutes(services.po),
     ...poUploadRoutes(services.poIngest),
+    ...srvUploadRoutes(services.srvIngest),
   };
 }
