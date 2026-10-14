@@ -65,11 +65,14 @@ Cloudflare account (owner only) and are not needed until K1 is admitted.
   Nothing changes for SPEC-05 now.
 - Batch statement shape (single-row or chunked multi-row `VALUES`) is left to SPEC-05. Single-row is measured and
   fast enough on node; chunk sizes for D1 wait on hosted limits (K1).
-- Restore (SPEC-21) closes every connection before replacing the DB file. On Windows an open connection blocks
-  deleting it.
 
-Open for SPEC-05, not tested here: the table-rebuild pattern usually wraps `PRAGMA foreign_keys=OFF`, which has no
-effect inside a transaction (SQLite documents this). Setting it on D1 was not probed.
+Open items:
+
+- SPEC-05: the table-rebuild pattern usually wraps `PRAGMA foreign_keys=OFF`, which has no effect inside a
+  transaction (SQLite documents this). `PRAGMA defer_foreign_keys=ON` is the candidate to try inside the batch;
+  neither was probed on D1.
+- Observed while cleaning up the tests: on Windows an open connection blocks deleting the DB file. SPEC-21 restores
+  through the backup API into the live DB, so this does not affect it as specified.
 
 ## Reproduce
 
