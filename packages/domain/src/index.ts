@@ -13,3 +13,5 @@ export type { DocKey, Fy } from "./fy.ts";
 export { docKey, fyOf } from "./fy.ts";
 export { defaultGc } from "./gc.ts";
 export { matchSrvItem, resolveDocLink } from "./links.ts";
+export type { GstPct, LineTax, LineTaxInput } from "./tax.ts";
+export { invoiceLineTax, invoiceTotals, parsePct } from "./tax.ts";

@@ -50,11 +50,18 @@ export const gte = (a: Qty, b: Qty): boolean => a >= b - TOL;
 /** INV-02: `a > b + 0.001`. */
 export const gtTol = (a: Qty, b: Qty): boolean => a > b + TOL;
 
-/** Rounds to 2 or 5 decimal places (A2-4), half away from zero on exact ties (SPEC-03 §9). */
-export function roundMoney(m: Money, dp: 2 | 5): Money {
-  const step = 10 ** (MONEY_DP - dp);
-  const abs = Math.abs(m);
-  const rest = abs % step;
-  const rounded = abs - rest + (rest * 2 >= step ? step : 0);
-  return (m < 0 && rounded !== 0 ? -rounded : rounded) as Money;
+/**
+ * Rounds the exact value `n × 10^-exp` to `dp` decimal places, half away from zero on exact ties (D-0021), and
+ * returns it as Money. `n` is a bigint so products of two units never pass through a lossy float; a result past
+ * 2^53 units throws rather than lose precision (D-0022).
+ */
+export function roundToMoney(n: bigint, exp: number, dp: 2 | 5): Money {
+  const step = 10n ** BigInt(exp - dp);
+  const abs = n < 0n ? -n : n;
+  const rounded = (abs / step + ((abs % step) * 2n >= step ? 1n : 0n)) * 10n ** BigInt(MONEY_DP - dp);
+  if (rounded > BigInt(Number.MAX_SAFE_INTEGER)) throw new RangeError(`Amount out of range: ${n}e-${exp}`);
+  return (n < 0n && rounded !== 0n ? -Number(rounded) : Number(rounded)) as Money;
 }
+
+/** Rounds to 2 or 5 decimal places (A2-4), half away from zero on exact ties (SPEC-03 §9). */
+export const roundMoney = (m: Money, dp: 2 | 5): Money => roundToMoney(BigInt(m), MONEY_DP, dp);
