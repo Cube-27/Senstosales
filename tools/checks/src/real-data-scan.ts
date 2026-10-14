@@ -6,6 +6,7 @@
 // Exceptions live in tools/checks/real-data-allow.txt as `path:rule  # justification`; there is no inline marker.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export type Finding = { path: string; line: number; rule: string };
 
@@ -97,6 +98,12 @@ export function scanFile(path: string, content: Buffer, companyDetails: readonly
   return findings;
 }
 
+/** The values of `<root>/tools/checks/company-details.local.txt`, or none when the file is absent (CI, forks). */
+export function readCompanyDetails(root: string): string[] {
+  const path = join(root, COMPANY_DETAILS_PATH);
+  return existsSync(path) ? parseCompanyDetails(readFileSync(path, "utf8")) : [];
+}
+
 export function applyAllowlist(findings: Finding[], allow: ReadonlySet<string>): Finding[] {
   return findings.filter((f) => !allow.has(`${f.path}:${f.rule}`));
 }
@@ -115,9 +122,7 @@ export function selectFiles(staged: boolean): Array<{ path: string; read: () => 
 
 function main(argv: string[]): number {
   const allow = parseAllowlist(readFileSync(ALLOWLIST_PATH, "utf8"));
-  const companyDetails = existsSync(COMPANY_DETAILS_PATH)
-    ? parseCompanyDetails(readFileSync(COMPANY_DETAILS_PATH, "utf8"))
-    : [];
+  const companyDetails = readCompanyDetails(".");
   const findings = applyAllowlist(
     selectFiles(argv.includes("--staged")).flatMap((f) => scanFile(f.path, f.read(), companyDetails)),
     allow,
