@@ -54,15 +54,16 @@ export type SrvTable = { header: string[]; columns: Partial<Record<Column, numbe
 /** Every table whose first row has an SRV-number header. */
 export const srvTables = (page: Page): SrvTable[] =>
   page.flatMap(([header, ...rows]) => {
-    const columns = header ? mapColumnsByHeader(header, HEADERS) : {};
-    return header && columns.srvNumber !== undefined ? [{ header, columns, rows }] : [];
+    if (!header) return [];
+    const columns = mapColumnsByHeader(header, HEADERS);
+    return columns.srvNumber === undefined ? [] : [{ header, columns, rows }];
   });
 
 export type SrvItem = SrvDocument["items"][number];
 export type SrvRow = Pick<SrvDocument, "poNumber" | "srvNumber" | "srvDate"> & { item: SrvItem };
 
 /** The column header as printed, or its name when the table lacks it. */
-export function columnLabel(table: SrvTable, column: Column): string {
+function columnLabel(table: SrvTable, column: Column): string {
   const index = table.columns[column];
   return (index === undefined ? undefined : table.header[index]) ?? NAMES[column];
 }
@@ -74,9 +75,10 @@ const cellsOf = (table: SrvTable, row: string[], rowNo: number) => ({
     const index = table.columns[column];
     return index === undefined ? "" : (row[index] ?? "");
   },
-  label: (column: Column): string => columnLabel(table, column),
-  fail(code: ParseError["code"], column: Column, message: string): ParseResult<never> {
-    return { ok: false, error: { code, message, location: `row ${rowNo}, ${columnLabel(table, column)}` } };
+  /** An error at this row and column; the message reads "<column> <detail>". */
+  fail(code: ParseError["code"], column: Column, detail: string): ParseResult<never> {
+    const label = columnLabel(table, column);
+    return { ok: false, error: { code, message: `${label} ${detail}`, location: `row ${rowNo}, ${label}` } };
   },
 });
 type Cells = ReturnType<typeof cellsOf>;
@@ -85,9 +87,10 @@ type Cells = ReturnType<typeof cellsOf>;
 export const isDataRow = (table: SrvTable, row: string[]): boolean =>
   row.length >= 5 && /\d/.test(row[table.columns.srvNumber ?? -1] ?? "");
 
-export function readRow(table: SrvTable, row: string[], rowNo: number): ParseResult<SrvRow> {
+/** One data row; `filePo` is the PO number of the file's earlier rows, which this row must share. */
+export function readRow(table: SrvTable, row: string[], rowNo: number, filePo?: string): ParseResult<SrvRow> {
   const cells = cellsOf(table, row, rowNo);
-  const ids = readIds(cells);
+  const ids = readIds(cells, filePo);
   if (!ids.ok) return ids;
   const keys = readKeys(cells);
   if (!keys.ok) return keys;
@@ -109,17 +112,20 @@ export function readRow(table: SrvTable, row: string[], rowNo: number): ParseRes
   return { ok: true, value: { ...ids.value, item } };
 }
 
-function readIds(cells: Cells): ParseResult<Omit<SrvRow, "item">> {
+function readIds(cells: Cells, filePo: string | undefined): ParseResult<Omit<SrvRow, "item">> {
   const number = cells.text("poNumber");
-  if (number === "") return cells.fail("missing-field", "poNumber", `${cells.label("poNumber")} is empty`);
+  if (number === "") return cells.fail("missing-field", "poNumber", `is empty`);
   const poNumber = zPoId.safeParse(number);
   if (!poNumber.success) {
-    return cells.fail("bad-po-number", "poNumber", `${cells.label("poNumber")} is not a PO number: "${number}"`);
+    return cells.fail("bad-po-number", "poNumber", `is not a PO number: "${number}"`);
+  }
+  if (filePo !== undefined && poNumber.data !== filePo) {
+    return cells.fail("mixed-po-numbers", "poNumber", `is ${number}, but the file is of PO ${filePo}`);
   }
   const date = cells.text("srvDate");
-  if (date === "") return cells.fail("missing-field", "srvDate", `${cells.label("srvDate")} is empty`);
+  if (date === "") return cells.fail("missing-field", "srvDate", `is empty`);
   const srvDate = parsePageDate(date);
-  if (!srvDate.ok) return cells.fail("bad-date", "srvDate", `${cells.label("srvDate")} is not a date: "${date}"`);
+  if (!srvDate.ok) return cells.fail("bad-date", "srvDate", `is not a date: "${date}"`);
   return { ok: true, value: { poNumber: poNumber.data, srvNumber: cells.text("srvNumber"), srvDate: srvDate.value } };
 }
 
@@ -135,11 +141,9 @@ function readKeys(cells: Cells): ParseResult<Pick<SrvItem, "poItemNo" | "lotNo" 
 
 function itemNo(cells: Cells, column: "poItemNo" | "lotNo" | "srvItemNo"): ParseResult<number> {
   const text = cells.text(column);
-  if (text === "") return cells.fail("missing-field", column, `${cells.label(column)} is empty`);
+  if (text === "") return cells.fail("missing-field", column, `is empty`);
   const value = /^\d+$/.test(text) ? Number(text) : 0;
-  return value > 0
-    ? { ok: true, value }
-    : cells.fail("bad-number", column, `${cells.label(column)} is not an item number: "${text}"`);
+  return value > 0 ? { ok: true, value } : cells.fail("bad-number", column, `is not an item number: "${text}"`);
 }
 
 /** Received and rejected read an empty cell as 0, ordered and accepted as null (legacy). */
@@ -170,14 +174,12 @@ function quantity(cells: Cells, column: "ordQty" | "rcdQty" | "acceptedQty" | "r
   const text = cells.text(column);
   if (text === "") return { ok: true, value: null };
   const qty = parseQty(text.replaceAll(",", ""));
-  return qty.ok && qty.value >= 0
-    ? qty
-    : cells.fail("bad-quantity", column, `${cells.label(column)} is not a quantity: "${text}"`);
+  return qty.ok && qty.value >= 0 ? qty : cells.fail("bad-quantity", column, `is not a quantity: "${text}"`);
 }
 
 function optionalDate(cells: Cells, column: "challanDate" | "invoiceDate"): ParseResult<IsoDate | null> {
   const text = cells.text(column);
   if (text === "") return { ok: true, value: null };
   const date = parsePageDate(text);
-  return date.ok ? date : cells.fail("bad-date", column, `${cells.label(column)} is not a date: "${text}"`);
+  return date.ok ? date : cells.fail("bad-date", column, `is not a date: "${text}"`);
 }

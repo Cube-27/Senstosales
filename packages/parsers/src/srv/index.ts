@@ -2,7 +2,7 @@
 // `(po_item_no, lot_no, srv_item_no)` seen twice in one SRV fails the whole file (A2-10, INV-50).
 import { loadPage } from "../html.ts";
 import type { ParseResult, SrvDocument } from "../types.ts";
-import { columnLabel, isDataRow, readRow, srvTables } from "./table.ts";
+import { isDataRow, readRow, srvTables } from "./table.ts";
 import type { SrvTable } from "./table.ts";
 
 type Group = { srv: SrvDocument; keys: Set<string> };
@@ -23,23 +23,14 @@ function addRows(table: SrvTable, groups: Map<string, Group>): ParseResult<void>
   for (const [index, row] of table.rows.entries()) {
     if (!isDataRow(table, row)) continue;
     const rowNo = index + 2;
-    const read = readRow(table, row, rowNo);
+    const read = readRow(table, row, rowNo, groups.values().next().value?.srv.poNumber);
     if (!read.ok) return read;
     const { item, ...ids } = read.value;
-    const first = groups.values().next().value?.srv;
-    if (first && first.poNumber !== ids.poNumber) {
-      const message = `The file mixes PO ${first.poNumber} and PO ${ids.poNumber}`;
-      return {
-        ok: false,
-        error: {
-          code: "mixed-po-numbers",
-          message,
-          location: `row ${rowNo}, ${columnLabel(table, "poNumber")}`,
-        },
-      };
+    let group = groups.get(ids.srvNumber);
+    if (!group) {
+      group = newGroup(table, row, ids);
+      groups.set(ids.srvNumber, group);
     }
-    const group = groups.get(ids.srvNumber) ?? newGroup(table, row, ids);
-    groups.set(ids.srvNumber, group);
     const key = `${item.poItemNo}/${item.lotNo}/${item.srvItemNo}`;
     if (group.keys.has(key)) {
       const message = `SRV ${ids.srvNumber} has item ${item.poItemNo}, lot ${item.lotNo}, SRV item ${item.srvItemNo} more than once`;
