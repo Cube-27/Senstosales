@@ -6,7 +6,7 @@ import { zPoId } from "@senstosales/schemas";
 
 import { parsePageDate } from "../dates.ts";
 import { findByLabel } from "../html.ts";
-import type { Page } from "../html.ts";
+import type { LabelHit, Page } from "../html.ts";
 import type { ParseError, ParseResult, PoDocument } from "../types.ts";
 
 /** Canonical name -> label pattern. The name is the error location when the label is not on the page. */
@@ -48,16 +48,13 @@ const PATTERNS = Object.values(LABELS);
 const isLabel = (text: string): boolean => PATTERNS.some((pattern) => pattern.test(text));
 
 type PoHeader = Omit<PoDocument, "items">;
-type Found = Map<Field, { label: string; value: string }>;
+type Found = Map<Field, LabelHit>;
 
 export function parsePoHeader(page: Page): ParseResult<PoHeader> {
   const found: Found = new Map();
-  const rawHeader: Record<string, string> = {};
   for (const [field, pattern] of Object.entries(LABELS) as [Field, RegExp][]) {
     const hit = findByLabel(page, pattern, isLabel);
-    if (!hit) continue;
-    found.set(field, hit);
-    rawHeader[hit.label] = hit.value;
+    if (hit) found.set(field, hit);
   }
   const ids = readIds(found);
   if (!ids.ok) return ids;
@@ -80,7 +77,7 @@ export function parsePoHeader(page: Page): ParseResult<PoHeader> {
       currency: text(found, "CURRENCY"),
       remarks,
       gemcNumber: remarks === null ? null : extractGemcNumber(remarks),
-      rawHeader,
+      rawHeader: Object.fromEntries([...found.values()].map((hit) => [hit.label, hit.value])),
     },
   };
 }

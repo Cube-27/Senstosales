@@ -11,23 +11,22 @@ const NAMED = /^(\d{1,2})-([A-Z]{3})-(\d{2})$/i;
 
 const pad = (n: string): string => n.padStart(2, "0");
 
-/** Splits `text` into year, month and day; a two-digit year is 20YY, as the legacy parser read it (SPEC-06 §9). */
+/** Day, month number and year as printed; a month name becomes its number. */
 function dateParts(text: string): [string, string, string] | undefined {
   const numeric = NUMERIC.exec(text);
-  if (numeric) {
-    const [, day = "", month = "", year = ""] = numeric;
-    return [year.length === 2 ? `20${year}` : year, pad(month), pad(day)];
-  }
+  if (numeric) return [numeric[1] ?? "", numeric[2] ?? "", numeric[3] ?? ""];
   const named = NAMED.exec(text);
-  if (!named) return undefined;
-  const [, day = "", name = "", year = ""] = named;
-  const month = MONTHS.indexOf(name.toUpperCase()) + 1;
-  return month === 0 ? undefined : [`20${year}`, pad(String(month)), pad(day)];
+  const month = named ? MONTHS.indexOf((named[2] ?? "").toUpperCase()) + 1 : 0;
+  return named && month > 0 ? [named[1] ?? "", String(month), named[3] ?? ""] : undefined;
 }
 
-/** A page date as an `IsoDate`; anything else, including a date that does not exist, is an error. */
+/**
+ * A page date as an `IsoDate`; anything else, including a date that does not exist, is an error. A two-digit year
+ * is 20YY, as the legacy parser read it (SPEC-06 §9).
+ */
 export function parsePageDate(text: string): Result<IsoDate> {
   const parts = dateParts(text.trim());
-  const iso = parts && parseIsoDate(parts.join("-"));
+  const iso =
+    parts && parseIsoDate(`${parts[2].length === 2 ? "20" : ""}${parts[2]}-${pad(parts[1])}-${pad(parts[0])}`);
   return iso?.ok ? iso : { ok: false, error: `Not a page date: "${text}"` };
 }

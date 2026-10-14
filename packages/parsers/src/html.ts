@@ -2,24 +2,23 @@
 // in it is evaluated or fetched (C17). Everything else in the parser works on that text.
 import { load } from "cheerio";
 
-/** Each `<table>` of a page (nested ones as their own entries), as its rows of cleaned cell text. */
+/** Each `<table>` of a page (nested ones as their own entries), as its rows of cleaned cell text; comments dropped. */
 export type Page = string[][][];
+
+/** A label as printed and the value read for it. */
+export type LabelHit = { label: string; value: string };
 
 /** UTF-8, with U+FFFD for bytes that are not; never throws. */
 export const decodePage = (bytes: Uint8Array): string => new TextDecoder("utf-8").decode(bytes);
 
-/** `&nbsp;` is a space; runs of whitespace become one space; trimmed. */
-const clean = (text: string): string => text.replaceAll(" ", " ").replace(/\s+/g, " ").trim();
+/** Runs of whitespace, `&nbsp;` included (`\s` matches U+00A0), become one space; trimmed. */
+const clean = (text: string): string => text.replace(/\s+/g, " ").trim();
 
 export function loadPage(html: string): Page {
   const $ = load(html);
+  // Comments need no stripping: a commented-out table is not an element, and `text()` skips comment nodes.
+  // Script and style text it does include.
   $("script, style").remove();
-  $.root()
-    .find("*")
-    .addBack()
-    .contents()
-    .filter((_, node) => node.type === "comment")
-    .remove();
   return $("table")
     .toArray()
     .map((table) =>
@@ -40,12 +39,8 @@ export function loadPage(html: string): Page {
  * The value of the first cell whose whole text matches `label`: the cell to its right unless that is itself a label,
  * otherwise the cell below. An occurrence with a value wins over an earlier empty one.
  */
-export function findByLabel(
-  page: Page,
-  label: RegExp,
-  isLabel: (text: string) => boolean,
-): { label: string; value: string } | undefined {
-  let empty: { label: string; value: string } | undefined;
+export function findByLabel(page: Page, label: RegExp, isLabel: (text: string) => boolean): LabelHit | undefined {
+  let empty: LabelHit | undefined;
   for (const rows of page) {
     for (const [r, row] of rows.entries()) {
       for (const [c, text] of row.entries()) {
