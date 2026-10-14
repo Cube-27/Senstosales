@@ -1266,3 +1266,27 @@ None.
 - Alternatives: A fixed format without the iteration count.
 - Why: The OWASP figure for PBKDF2-SHA256; storing the count lets it rise without invalidating stored hashes.
 - Reversible: yes.
+
+### D-0152 — A new, empty database is backed up before migration 0001
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 3 (#39) · Status: decided
+- Decision: Startup treats a version-0 database like any older one: it writes `pre-upgrade-0-<ts>.db` before applying 0001, so every first launch leaves one small backup.
+- Alternatives: Skip the backup at version 0, since there is nothing to keep.
+- Why: C9 says "always after a backup", and SPEC-07 §4.2 and ARCHITECTURE §13.3 back up on any `<` with no exception. One special case fewer.
+- Reversible: yes.
+
+### D-0153 — Backup file stamp `YYYYMMDDTHHMMSSZ` (UTC)
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 3 (#39) · Status: decided
+- Decision: The `<ts>` in `pre-upgrade-<version>-<ts>.db` is `Clock.now()` without separators or milliseconds, for example `20250401T053000Z`.
+- Alternatives: The ISO instant with `:` replaced; IST local time.
+- Why: The spec sets no format. `:` is not allowed in Windows file names. This form sorts by time, and UTC matches `applied_at`.
+- Reversible: yes.
+
+### D-0154 — A failed backup stops the upgrade
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 3 (#39) · Status: decided
+- Decision: If `backupTo` fails, no migration runs, and startup exits with "SenstoSales could not back up its data, so it did not upgrade it. Nothing was changed."
+- Alternatives: Migrate without a backup.
+- Why: C9 allows the upgrade only after a backup.
+- Reversible: yes.

@@ -17,6 +17,7 @@ import { healthRoutes } from "../../routes/health.ts";
 import { createServices } from "../../services/index.ts";
 import { createClock } from "./clock.ts";
 import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
+import { upgradeGate } from "./startup.ts";
 import { spa } from "./static.ts";
 
 const HOST = "127.0.0.1";
@@ -50,14 +51,25 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const db = openNodeDb(await prepareDataDir(options.dataDir));
-  // SPEC-07 PR 3 puts the upgrade gate here, before anything listens.
+  const paths = await prepareDataDir(options.dataDir);
+  const clock = createClock();
+  const db = openNodeDb(paths.db);
+  try {
+    await upgradeGate(db, {
+      backupsDir: paths.backups,
+      appVersion: options.version,
+      now: clock.now(),
+    });
+  } catch (err) {
+    db.close();
+    throw err;
+  }
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  const { auth } = createServices({ db, clock: createClock() });
+  const { auth } = createServices({ db, clock });
   const app = createApp(
     { port: address.port, logger: stderrLogger, signedIn: auth.signedIn },
     { ...healthRoutes({ version: options.version, db }), ...authRoutes(auth) },
