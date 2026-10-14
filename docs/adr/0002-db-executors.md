@@ -63,6 +63,8 @@ Cloudflare account (owner only) and are not needed until K1 is admitted.
 - The node build keeps the §13.3 version check on `user_version`, mirrored from `schema_migration` in the same
   batch. D1 refuses `PRAGMA user_version`, so a D1 executor (K1) must read the version from `schema_migration`.
   Nothing changes for SPEC-05 now.
+  _Superseded 2026-10-15 (ARCHITECTURE revision 1.5):_ both builds read the version from `schema_migration` only;
+  `user_version` is not written.
 - Batch statement shape (single-row or chunked multi-row `VALUES`) is left to SPEC-05. Single-row is measured and
   fast enough on node; chunk sizes for D1 wait on hosted limits (K1).
 

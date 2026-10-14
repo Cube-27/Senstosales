@@ -22,8 +22,8 @@ Core:
   financial_year)`; `dc(supplier_id, gc_number, financial_year)`; `invoice(supplier_id, number, financial_year)`;
   `invoice(dc_id)` unique; `srv(supplier_id, po_number, srv_number)`; `reconciliation_issue(fingerprint)`; partial
   unique index on `job(status) WHERE status = 'running'`.
-- Migration `0001_init.sql` (drizzle-kit generated, reviewed); migrator with `schema_migration` and
-  `PRAGMA user_version`; refusal when the DB is newer than the app.
+- Migration `0001_init.sql` (drizzle-kit generated, reviewed); migrator whose schema version is `max(version)` in
+  `schema_migration` (no `PRAGMA user_version`, which D1 refuses; ADR 0002); refusal when the DB is newer than the app.
 - D1 executor (`db.batch`) and a CI step applying every migration on a local D1; a static check that migration SQL
   uses only `CREATE TABLE`, `CREATE INDEX`, `ALTER TABLE ADD COLUMN` and the table-rebuild pattern, and no
   `TRIGGER` or `VIEW` (§8.3, INV-84).
@@ -46,18 +46,18 @@ Out of scope:
 
 ### 4.1 Modules (`packages/db/`)
 
-| Path                          | Responsibility                                                                                                                                           |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/port.ts`                 | `Db` (`query`, `batch(statements)`), `WriteBatch` (append statements, `commit()` once), `ConflictError` on version mismatch                              |
-| `src/schema/*.ts`             | one file per table group (supplier/settings/secret/buyer, auth, po, dc, invoice, srv, flags, audit, jobs, migration)                                     |
-| `src/types.ts`                | Drizzle `customType`s: `qtyM`, `moneyU5`, `isoDate`, `instant`, `ulid`                                                                                   |
-| `src/migrations.generated.ts` | migration SQL embedded as strings (generated from `migrations/*.sql`, freshness-checked) so the migrator needs no filesystem (C12)                       |
-| `src/migrator.ts`             | `planMigrations(userVersion)`, `applyMigrations(db, plan)` (one batch, stamps `schema_migration` and `user_version`), `checkVersion` (newer DB → refuse) |
-| `src/platform/node/sqlite.ts` | node:sqlite executor, PRAGMAs, `backupTo(path)` (online backup API)                                                                                      |
-| `src/platform/d1/executor.ts` | D1 executor (`db.batch`)                                                                                                                                 |
-| `src/seed.ts`                 | seed statements (no supplier identity; INV-78)                                                                                                           |
-| `migrations/0001_init.sql`    | initial schema                                                                                                                                           |
-| `test/migrations/`            | migration tests; a synthetic previous-version snapshot harness (first used by `0002`)                                                                    |
+| Path                          | Responsibility                                                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/port.ts`                 | `Db` (`query`, `batch(statements)`), `WriteBatch` (append statements, `commit()` once), `ConflictError` on version mismatch                  |
+| `src/schema/*.ts`             | one file per table group (supplier/settings/secret/buyer, auth, po, dc, invoice, srv, flags, audit, jobs, migration)                         |
+| `src/types.ts`                | Drizzle `customType`s: `qtyM`, `moneyU5`, `isoDate`, `instant`, `ulid`                                                                       |
+| `src/migrations.generated.ts` | migration SQL embedded as strings (generated from `migrations/*.sql`, freshness-checked) so the migrator needs no filesystem (C12)           |
+| `src/migrator.ts`             | `readSchemaVersion` (max `schema_migration.version`), `planMigrations(version)` (newer DB → refuse), `applyMigrations(db, plan)` (one batch) |
+| `src/platform/node/sqlite.ts` | node:sqlite executor, PRAGMAs, `backupTo(path)` (online backup API)                                                                          |
+| `src/platform/d1/executor.ts` | D1 executor (`db.batch`)                                                                                                                     |
+| `src/seed.ts`                 | seed statements (no supplier identity; INV-78)                                                                                               |
+| `migrations/0001_init.sql`    | initial schema                                                                                                                               |
+| `test/migrations/`            | migration tests; a synthetic previous-version snapshot harness (first used by `0002`)                                                        |
 
 Every write in a batch carries the audit row written by the service (one per batch; §8.2 `audit_log`).
 
@@ -88,8 +88,8 @@ supplier identity).
 ## 6. Testing strategy
 
 - Executor: a batch whose third statement fails leaves no row from the first two; PRAGMAs read back as set.
-- Migrator: empty DB migrates to the expected `user_version`; a second run is a no-op with no writes; a DB with a
-  higher `user_version` is refused.
+- Migrator: empty DB migrates to the expected schema version; a second run is a no-op with no writes; a DB with a
+  higher schema version is refused.
 - Unique indexes: literal cases (DC 100 in FY 2024-25 and 2025-26 both insert; a second DC 100 in 2025-26 fails;
   DC 344 and invoice 344 in one FY both insert).
 - customTypes: round-trip of `Qty`/`Money`/`IsoDate` literals.
@@ -106,13 +106,13 @@ supplier identity).
 
 ## 8. PR plan
 
-| #   | Title                                  | Scope / files                                                                                                                 | Checks                    | Done when                                                                                                              |
-| --- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 1   | Db port and node:sqlite executor       | `src/port.ts`, `src/platform/node/sqlite.ts`, tests                                                                           | `check`                   | A failing statement rolls the whole batch back; PRAGMAs set; `backupTo` writes a readable copy.                        |
-| 2   | Drizzle schema and custom types        | `src/schema/*.ts`, `src/types.ts`, tests                                                                                      | `check`                   | All §8.2 tables typed; customType round-trips pass; boundary lint passes (no `node:*` outside `platform/`).            |
-| 3   | Migration 0001 and migrator            | `migrations/0001_init.sql`, `src/migrations.generated.ts` + generator in `tools/gen/`, `src/migrator.ts`, `test/migrations/*` | `check`                   | Empty DB migrates and stamps `user_version`; re-run writes nothing; newer DB refused; unique-index literal cases pass. |
-| 4   | D1 executor, dialect step and SQL lint | `src/platform/d1/executor.ts`, `tools/checks/src/d1-dialect.ts`, `tools/checks/src/migration-sql-lint.ts`, `ci.yml` step      | `check`                   | Migrations apply on local D1 in CI; a planted trigger or view fails the lint.                                          |
-| 5   | Version helper and seed                | `src/version.ts` (`updateWithVersion`), `src/seed.ts`, tests                                                                  | `check`, `real-data-scan` | A stale `version` yields `ConflictError`; seed inserts GST defaults only (see Open issues) and no identity.            |
+| #   | Title                                  | Scope / files                                                                                                                 | Checks                    | Done when                                                                                                                       |
+| --- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Db port and node:sqlite executor       | `src/port.ts`, `src/platform/node/sqlite.ts`, tests                                                                           | `check`                   | A failing statement rolls the whole batch back; PRAGMAs set; `backupTo` writes a readable copy.                                 |
+| 2   | Drizzle schema and custom types        | `src/schema/*.ts`, `src/types.ts`, tests                                                                                      | `check`                   | All §8.2 tables typed; customType round-trips pass; boundary lint passes (no `node:*` outside `platform/`).                     |
+| 3   | Migration 0001 and migrator            | `migrations/0001_init.sql`, `src/migrations.generated.ts` + generator in `tools/gen/`, `src/migrator.ts`, `test/migrations/*` | `check`                   | Empty DB migrates to version 1 in `schema_migration`; re-run writes nothing; newer DB refused; unique-index literal cases pass. |
+| 4   | D1 executor, dialect step and SQL lint | `src/platform/d1/executor.ts`, `tools/checks/src/d1-dialect.ts`, `tools/checks/src/migration-sql-lint.ts`, `ci.yml` step      | `check`                   | Migrations apply on local D1 in CI; a planted trigger or view fails the lint.                                                   |
+| 5   | Version helper and seed                | `src/version.ts` (`updateWithVersion`), `src/seed.ts`, tests                                                                  | `check`, `real-data-scan` | A stale `version` yields `ConflictError`; seed inserts GST defaults only (see Open issues) and no identity.                     |
 
 ## 9. Open issues
 

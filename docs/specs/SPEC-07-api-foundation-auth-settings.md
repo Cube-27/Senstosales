@@ -26,8 +26,8 @@ Core:
 - Node entry: data dir `%LOCALAPPDATA%\SenstoSales\{db,logs,backups,exports,html}` + `config.json` (INV-82); bind
   `127.0.0.1` on a random free port; report the port to the shell; serve the built SPA from the same app (§9);
   `/api/health` (version, schema version, job state; INV-105).
-- Startup (C9, INV-82): open DB; `user_version == expected` → no writes; `<` → backup
-  `backups/pre-upgrade-<version>-<ts>.db`, apply pending migrations as one batch, stamp, serve; failure leaves the
+- Startup (C9, INV-82): open DB; schema version (`readSchemaVersion`, SPEC-05) `== expected` → no writes; `<` →
+  backup `backups/pre-upgrade-<version>-<ts>.db`, apply pending migrations as one batch, serve; failure leaves the
   DB untouched and exits with a plain message for the shell; `>` → refuse to start with a plain message.
 - Auth (A-17, A-26, INV-80): fixed user `admin`, password hashed PBKDF2-SHA256 via WebCrypto; login with "remember
   me" as legacy (A2-11); logout; session; change password; reset-to-defaults with the legacy confirmation phrase
@@ -73,7 +73,7 @@ Out of scope:
 ### 4.2 Startup sequence (`platform/node/startup.ts`)
 
 ```
-resolve data dir → open DB → read user_version
+resolve data dir → open DB → readSchemaVersion (max version in schema_migration)
   == expected : serve (no writes)
   <  expected : backupTo(backups/pre-upgrade-<version>-<ts>.db) → applyMigrations (one batch) → serve
   >  expected : exit with "This data was saved by a newer version of SenstoSales" (shell shows it)
@@ -100,7 +100,7 @@ Specific cases: non-loopback `Host` → 400; a `text/plain` POST → 415/400; an
 `GET /api/po` → redirect-signal (409 `onboarding-required`) and onboarding works; login, remember-me cookie,
 logout, change password ends other sessions; reset needs the phrase (and the current password once changed);
 BHEL password set → status "saved", never in any response, log line or audit row (log capture asserts absence);
-startup: up-to-date DB has zero writes (file hash and `user_version` unchanged), older DB gets a backup file before
+startup: up-to-date DB has zero writes (file hash and schema version unchanged), older DB gets a backup file before
 the first migration statement, newer DB refuses; storage keys `../x` and absolute paths are rejected.
 
 ## 7. Acceptance criteria
