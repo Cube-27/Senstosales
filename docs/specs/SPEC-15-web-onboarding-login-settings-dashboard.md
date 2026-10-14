@@ -6,8 +6,8 @@ Layer: L5. Architecture refs: §10.1–§10.3, §12.2, §12.3 (settings, forms),
 
 The screens around the session and the supplier profile: first-run onboarding (the one new screen, A-6), the login
 page, settings with the existing Save button made accessible and usable (A-18), the dashboard, and the global
-search dialog. Layouts, labels and flows match legacy (A-2); fixes are limited to bugs, accessibility, usability and
-consistency. Plain language and fewest steps throughout (C11).
+search dialog. Flows, on-screen elements and labels match legacy (A-2); minor visual differences are
+allowed where they reduce maintenance, improve performance or increase consistency (D-0016). Plain language and fewest steps throughout (C11).
 
 ## 2. Scope
 
@@ -65,7 +65,8 @@ section headers (bounding boxes).
 - [ ] Settings saves only via Save, with dirty tracking, inline validation, a disabled reason and an unsaved prompt.
 - [ ] No interaction on these screens moves or resizes surrounding layout; loading/empty/error keep the same
       footprint.
-- [ ] Light and dark screenshots match legacy for login, settings and dashboard (review artefacts).
+- [ ] Light and dark screenshots of login, settings and dashboard show the legacy screens' elements and labels
+      (review artefacts).
 - [ ] `pnpm verify` and every CI job green, including `e2e`.
 
 ## 8. PR plan

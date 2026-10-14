@@ -13,8 +13,8 @@ Rules every spec follows:
   `A2-n`) or an invariant (`INV-NN`). Under-specified mechanics take the most conservative reading, are marked
   "implementation detail" and are listed in Open issues (and DECISIONS.md when implemented). Uncovered business
   edge cases go to `EDGE_CASES.md` with the spec's behaviour (C18).
-- **Frozen output, free mechanism.** The UI/UX and the CSV/Excel formats must match legacy visible output (golden
-  tests, screenshots); how they are built is new and the simplest efficient way (A-2, A-26, C16).
+- **Frozen output, free mechanism.** The UI/UX flows and on-screen elements must match legacy (minor visual
+  changes allowed, D-0016) and the CSV/Excel formats match cell for cell (golden tests, screenshots); how they are built is new and the simplest efficient way (A-2, A-26, C16).
 - **No layout shift** (A-23, C8) is an acceptance criterion of every frontend spec.
 - **No candidates.** MCP, Telegram, finance, the supplier switcher, Cloudflare hosting, hosted auth, code signing,
   scraping fallbacks and encrypted secrets (ARCHITECTURE §17, K1–K9) have no spec.
