@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build:sidecar": "node build-sidecar.mjs",
-    "build:ui": "esbuild shell/ui/main.ts --bundle --format=esm --outfile=shell/ui/dist/main.js && node -e \"require('fs').copyFileSync('shell/ui/index.html','shell/ui/dist/index.html')\"",
+    "build:ui": "esbuild shell/ui/main.ts --bundle --format=esm --outfile=shell/ui/dist/main.js && node shell/ui/write-index.mjs",
     "tauri": "tauri"
   },
   "dependencies": {
