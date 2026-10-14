@@ -15,6 +15,10 @@ const RUNTIME_MODULES = [
   "@playwright/*",
   "@tauri-apps/*",
 ];
+const NO_RUNTIME_IMPORTS = [
+  "error",
+  { patterns: [{ group: RUNTIME_MODULES, message: "C12: core packages import ports, not runtime modules." }] },
+];
 
 export default defineConfig({
   lint: {
@@ -37,21 +41,21 @@ export default defineConfig({
     },
     overrides: [
       {
-        // C12: core packages depend on ports; runtime adapters live in packages/platform-* and apps/desktop.
+        // C12: core packages depend on ports. apps/* (including apps/desktop) are not covered.
         files: ["packages/*/src/**"],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            {
-              patterns: [{ group: RUNTIME_MODULES, message: "C12: core packages import ports, not runtime modules." }],
-            },
-          ],
-        },
+        rules: { "no-restricted-imports": NO_RUNTIME_IMPORTS },
+      },
+      {
+        // C12: a package's port adapters (node:sqlite for Db, Playwright for Scraper) live in its src/platform/.
+        files: ["packages/*/src/platform/**"],
+        rules: { "no-restricted-imports": "off" },
       },
       {
         // C3: integer milli-units and 1e-5 money, YYYY-MM-DD strings; no floats or Date in the domain.
         files: ["packages/domain/src/**"],
         rules: {
+          // The domain has no I/O and so no adapters: the C12 ban holds in all of it, src/platform/ included.
+          "no-restricted-imports": NO_RUNTIME_IMPORTS,
           "no-restricted-globals": [
             "error",
             { name: "Date", message: "C3: dates are YYYY-MM-DD strings in the domain." },
