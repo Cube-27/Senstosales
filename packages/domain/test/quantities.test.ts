@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ItemQuantityInput, PoTotalsItem, Qty } from "../src/index.ts";
-import { computeItemQuantities, computePoTotals } from "../src/index.ts";
+import { computeItemQuantities, computePoTotals, poUninvoicedQty } from "../src/index.ts";
 import { qty } from "./unwrap.ts";
 
 const qtys = (...ss: string[]): Qty[] => ss.map(qty);
@@ -104,5 +104,30 @@ describe("INV-08: manual dispatched qty adds to dsp and so to balance; never cha
       balanceQty: 6000,
       uninvoicedQty: 10000,
     });
+  });
+});
+
+describe("INV-05, INV-07: PO uninvoiced = sum of active items' uninvoiced, negatives included", () => {
+  it.each([
+    [
+      "10 + (-2) active, 5 cancelled -> 8",
+      [
+        { uninvoicedQty: qty("10"), cancelled: false },
+        { uninvoicedQty: qty("-2"), cancelled: false },
+        { uninvoicedQty: qty("5"), cancelled: true },
+      ],
+      8000,
+    ],
+    [
+      "0.25 + 0.5 -> 0.75",
+      [
+        { uninvoicedQty: qty("0.25"), cancelled: false },
+        { uninvoicedQty: qty("0.5"), cancelled: false },
+      ],
+      750,
+    ],
+    ["no items -> 0", [], 0],
+  ])("%s", (_, items, expected) => {
+    expect(poUninvoicedQty(items)).toBe(expected);
   });
 });

@@ -45,3 +45,11 @@ export function computePoTotals(items: readonly PoTotalsItem[]): PoTotals {
     balanceQty: total("balanceQty"),
   };
 }
+
+/**
+ * INV-05, INV-07: the PO's uninvoiced quantity shown on the PO list; the sum over active items, negative items
+ * included (uninvoiced is displayed, never enforced).
+ */
+export function poUninvoicedQty(items: readonly { uninvoicedQty: Qty; cancelled: boolean }[]): Qty {
+  return sumQty(items.filter((i) => !i.cancelled).map((i) => i.uninvoicedQty));
+}
