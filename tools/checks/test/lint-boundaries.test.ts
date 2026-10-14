@@ -64,6 +64,19 @@ describe("lint boundaries (C12, C3)", () => {
     ]);
   }, 60_000);
 
+  it("rejects runtime subpaths more than one level deep", () => {
+    const deep = [
+      "node:fs/promises",
+      "playwright-core/lib/server",
+      "@playwright/test/reporter",
+      "@tauri-apps/api/core",
+    ];
+    const source = deep.map((m) => `import "${m}";\n`).join("");
+    expect(lint({ "packages/schemas/src/a.ts": source })).toEqual(
+      deep.map(() => "packages/schemas/src/a.ts no-restricted-imports"),
+    );
+  }, 60_000);
+
   it("rejects Date and parseFloat in the domain only", () => {
     const source = "export const t = (): number => Date.now() + parseFloat('1');\n";
     expect(lint({ "packages/domain/src/t.ts": source, "packages/schemas/src/t.ts": source })).toEqual([
