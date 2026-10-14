@@ -19,7 +19,7 @@ describe("checkWorkflow", () => {
     [`      - uses: docker://alpine@sha256:${"a".repeat(64)}`],
     [`    uses: octo/repo/.github/workflows/ci.yml@${SHA}`],
     [`      - { name: x, uses: "a/b@${SHA}" }`],
-    ["      - run: echo uses: a/b@v1"],
+    ['      - run: "echo uses: a/b@v1"'],
   ])("accepts %s", (line) => {
     expect(checkWorkflow(workflow(line))).toEqual([]);
   });
@@ -34,6 +34,8 @@ describe("checkWorkflow", () => {
     ["a quoted tag", "      - uses: 'actions/checkout@v7'"],
     ["a flow-style step", "      - { uses: actions/checkout@v7 }"],
     ["a flow-style step after another key", "      - { name: x, uses: 'actions/checkout@v7' }"],
+    ["a space before the colon", "      - uses : actions/checkout@v7"],
+    ["a quoted key", '      - "uses": actions/checkout@v7'],
   ])("rejects %s with its line number", (_case, line) => {
     expect(checkWorkflow(workflow("      - run: true", line))).toEqual([{ line: 8, rule: "action-not-pinned" }]);
   });
@@ -51,8 +53,17 @@ describe("checkWorkflow", () => {
     ["nothing (an empty block)", "permissions:\n"],
     ["write after a blank line", "permissions:\n  contents: read\n\n  pull-requests: write\n"],
     ["write after a comment line", "permissions:\n  contents: read\n# note\n  pull-requests: write\n"],
+    ["write in an inline map", "permissions: { contents: read, pull-requests: write }\n"],
   ])("rejects top-level permissions granting %s", (_case, block) => {
     expect(checkWorkflow(`name: ci\n${block}jobs: {}\n`)).toEqual([{ line: 2, rule: "permissions-not-read" }]);
+  });
+
+  it.each([["{ contents: read }"], ["{}"]])("accepts the inline map permissions: %s", (map) => {
+    expect(checkWorkflow(`permissions: ${map}\njobs: {}\n`)).toEqual([]);
+  });
+
+  it("rejects a workflow that is not valid YAML, at the error's line", () => {
+    expect(checkWorkflow("permissions:\n  contents: read\njobs: [\n")).toEqual([{ line: 4, rule: "invalid-yaml" }]);
   });
 
   it("accepts read and none entries at the top level", () => {
