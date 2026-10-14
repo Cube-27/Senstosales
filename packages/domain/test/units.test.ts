@@ -123,8 +123,6 @@ describe("INV-02: tolerance 0.001", () => {
     expect(TOL).toBe(1);
   });
 
-  // INV-02's example `gte(9.9995, 10)` is not a representable Qty (parseQty rejects four decimals); 9.999 is the
-  // nearest value inside the tolerance.
   it.each([
     ["9.999", "10", true],
     ["9.998", "10", false],
