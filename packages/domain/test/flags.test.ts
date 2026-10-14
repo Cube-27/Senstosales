@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DesiredFlag, PoFlagSnapshot, Qty } from "../src/index.ts";
-import { FLAG_TYPES, detectFlags, diffFlags, fingerprint } from "../src/index.ts";
+import { FLAG_SCOPES, FLAG_TYPES, detectFlags, diffFlags, fingerprint } from "../src/index.ts";
 import { date, qty } from "./unwrap.ts";
 
 type ItemInput = PoFlagSnapshot["items"][number];
@@ -39,13 +39,9 @@ function srvLine(over: Partial<SrvLineInput> = {}): SrvLineInput {
   };
 }
 
-const snapshot = (items: ItemInput[], srvLines: SrvLineInput[] = []): PoFlagSnapshot => ({
-  poId: "po-1",
-  items,
-  srvLines,
-});
+const detect = (items: ItemInput[], srvLines: SrvLineInput[] = []) => detectFlags({ poId: "po-1", items, srvLines });
 
-const detect = (items: ItemInput[], srvLines: SrvLineInput[] = []) => detectFlags(snapshot(items, srvLines));
+const stored = (flag: DesiredFlag) => ({ fingerprint: fingerprint(flag) });
 
 // INV-58: the v1 flag set is exactly these six (A-24); candidates such as RECEIVED_EXCEEDS_DISPATCHED are not in it.
 describe("INV-58: FLAG_TYPES", () => {
@@ -58,6 +54,10 @@ describe("INV-58: FLAG_TYPES", () => {
       "DOC_ON_CANCELLED_ITEM",
       "MANUAL_ADJUSTMENT_OVERLAP",
     ]);
+  });
+
+  it("has the four scopes a flag can be about", () => {
+    expect(FLAG_SCOPES).toEqual(["srv_item", "po_item", "dc_item", "invoice_item"]);
   });
 
   it("flags nothing on a clean PO", () => {
@@ -74,8 +74,7 @@ describe("INV-52: QTY_MISMATCH", () => {
         scopeType: "srv_item",
         scopeId: "srv-line-1",
         poId: "po-1",
-        details: { field: "ord_qty", expected: "100", actual: "95" },
-        docIds: [],
+        details: { field: "ord_qty", expected: "100", actual: "95", docIds: [] },
       },
     ]);
   });
@@ -108,22 +107,17 @@ describe("INV-53: DOC_NUMBER_CONFLICT", () => {
         scopeType: "srv_item",
         scopeId: "srv-line-1",
         poId: "po-1",
-        details: { field: "challan_no", expected: null, actual: "12" },
-        docIds: [],
+        details: { field: "challan_no", expected: null, actual: "12", docIds: [] },
       },
     ]);
   });
 
-  it("flags an unresolved invoice number", () => {
-    const flags = detect([item()], [srvLine({ invoiceNo: " INV-7 " })]);
+  it("flags each unresolved number on the line, trimmed", () => {
+    const flags = detect([item()], [srvLine({ challanNo: "12", invoiceNo: " INV-7 " })]);
     expect(flags.map((f) => [f.type, f.details])).toEqual([
-      ["DOC_NUMBER_CONFLICT", { field: "invoice_no", expected: null, actual: "INV-7" }],
+      ["DOC_NUMBER_CONFLICT", { field: "challan_no", expected: null, actual: "12", docIds: [] }],
+      ["DOC_NUMBER_CONFLICT", { field: "invoice_no", expected: null, actual: "INV-7", docIds: [] }],
     ]);
-  });
-
-  it("flags each unresolved number on the line", () => {
-    const flags = detect([item()], [srvLine({ challanNo: "12", invoiceNo: "34" })]);
-    expect(flags.map((f) => f.details.field)).toEqual(["challan_no", "invoice_no"]);
   });
 
   it.each([
@@ -151,8 +145,7 @@ describe("INV-54: OVER_DISPATCH", () => {
         scopeType: "po_item",
         scopeId: "item-1",
         poId: "po-1",
-        details: { field: "dsp_qty", expected: "10", actual: "10.002" },
-        docIds: [],
+        details: { field: "dsp_qty", expected: "10", actual: "10.002", docIds: [] },
       },
     ]);
   });
@@ -165,7 +158,7 @@ describe("INV-54: OVER_DISPATCH", () => {
   it("flags an amendment to ord 6 after DCs of 8 (EC-02)", () => {
     const flags = detect([item({ ordQty: qty("6"), dspQty: qty("8") })]);
     expect(flags.map((f) => [f.type, f.details])).toEqual([
-      ["OVER_DISPATCH", { field: "dsp_qty", expected: "6", actual: "8" }],
+      ["OVER_DISPATCH", { field: "dsp_qty", expected: "6", actual: "8", docIds: [] }],
     ]);
   });
 });
@@ -179,8 +172,7 @@ describe("INV-55: OVER_INVOICE", () => {
         scopeType: "po_item",
         scopeId: "item-1",
         poId: "po-1",
-        details: { field: "invoiced_qty", expected: "10", actual: "10.002" },
-        docIds: [],
+        details: { field: "invoiced_qty", expected: "10", actual: "10.002", docIds: [] },
       },
     ]);
   });
@@ -206,16 +198,14 @@ describe("INV-56: DOC_ON_CANCELLED_ITEM", () => {
         scopeType: "dc_item",
         scopeId: "dc-line-1",
         poId: "po-1",
-        details: { field: "status", expected: null, actual: "Cancelled" },
-        docIds: ["dc-1"],
+        details: { field: "status", expected: null, actual: "Cancelled", docIds: ["dc-1"] },
       },
       {
         type: "DOC_ON_CANCELLED_ITEM",
         scopeType: "invoice_item",
         scopeId: "inv-line-1",
         poId: "po-1",
-        details: { field: "status", expected: null, actual: "Cancelled" },
-        docIds: ["inv-1"],
+        details: { field: "status", expected: null, actual: "Cancelled", docIds: ["inv-1"] },
       },
     ]);
   });
@@ -257,8 +247,7 @@ describe("INV-57: MANUAL_ADJUSTMENT_OVERLAP", () => {
         scopeType: "po_item",
         scopeId: "item-1",
         poId: "po-1",
-        details: { field: "manual_dispatched_qty", expected: null, actual: "4" },
-        docIds: ["dc-1", "dc-2"],
+        details: { field: "manual_dispatched_qty", expected: null, actual: "4", docIds: ["dc-1", "dc-2"] },
       },
     ]);
   });
@@ -317,8 +306,7 @@ const overDispatch = (dsp: string, scopeId = "item-1"): DesiredFlag => ({
   scopeType: "po_item",
   scopeId,
   poId: "po-1",
-  details: { field: "dsp_qty", expected: "10", actual: dsp },
-  docIds: [],
+  details: { field: "dsp_qty", expected: "10", actual: dsp, docIds: [] },
 });
 
 // §6.9: fingerprint = type + scope + quantities + document ids.
@@ -330,8 +318,7 @@ describe("fingerprint", () => {
       scopeType: "dc_item",
       scopeId: "dc-line-1",
       poId: "po-1",
-      details: { field: "status", expected: null, actual: "Cancelled" },
-      docIds: ["dc-1"],
+      details: { field: "status", expected: null, actual: "Cancelled", docIds: ["dc-1"] },
     };
     expect(fingerprint(cancelled)).toBe(
       '["DOC_ON_CANCELLED_ITEM","dc_item","dc-line-1","status",null,"Cancelled",["dc-1"]]',
@@ -341,7 +328,7 @@ describe("fingerprint", () => {
   it.each([
     ["the quantity", overDispatch("13")],
     ["the scope", overDispatch("12", "item-2")],
-    ["the document ids", { ...overDispatch("12"), docIds: ["dc-1"] }],
+    ["the document ids", { ...overDispatch("12"), details: { ...overDispatch("12").details, docIds: ["dc-1"] } }],
     ["the type", { ...overDispatch("12"), type: "OVER_INVOICE" as const }],
   ])("changes with %s", (_, other) => {
     expect(fingerprint(other)).not.toBe(fingerprint(overDispatch("12")));
@@ -354,8 +341,7 @@ describe("fingerprint", () => {
       scopeType: "srv_item",
       scopeId,
       poId: "po-1",
-      details: { field: "challan_no", expected: null, actual },
-      docIds: [],
+      details: { field: "challan_no", expected: null, actual, docIds: [] },
     });
     expect(fingerprint(conflict("1|2", "a"))).not.toBe(fingerprint(conflict("2", "a|1")));
   });
@@ -363,31 +349,24 @@ describe("fingerprint", () => {
 
 // INV-59: re-detection never duplicates a flag, and nothing is ever closed by detection (EC-05).
 describe("INV-59: diffFlags", () => {
-  const stored = (flag: DesiredFlag) => ({ fingerprint: fingerprint(flag) });
+  const fp12 = '["OVER_DISPATCH","po_item","item-1","dsp_qty","10","12",[]]';
 
   it("returns new flags only", () => {
-    expect(diffFlags([overDispatch("12"), overDispatch("13")], [stored(overDispatch("12"))])).toEqual([
-      overDispatch("13"),
+    expect(diffFlags([overDispatch("12"), overDispatch("13")], [{ fingerprint: fp12 }])).toEqual([
+      { ...overDispatch("13"), fingerprint: '["OVER_DISPATCH","po_item","item-1","dsp_qty","10","13",[]]' },
     ]);
   });
 
-  it("is empty when the desired flags are already stored", () => {
-    const desired = detect(
-      [item({ dspQty: qty("12"), invoicedQty: qty("11") })],
-      [srvLine({ ordQty: qty("9"), challanNo: "1" })],
-    );
-    expect(desired).toHaveLength(4);
-    expect(diffFlags(desired, desired.map(stored))).toEqual([]);
-  });
-
   it("returns a repeated desired flag once", () => {
-    expect(diffFlags([overDispatch("12"), overDispatch("12")], [])).toEqual([overDispatch("12")]);
+    expect(diffFlags([overDispatch("12"), overDispatch("12")], [])).toEqual([
+      { ...overDispatch("12"), fingerprint: fp12 },
+    ]);
   });
 
   // EC-05: OVER_DISPATCH on ord 10 / dsp 12; the user deletes a DC of 2. The stored flag waits for the user.
   it("returns nothing to close when a condition disappears (EC-05)", () => {
     const before = detect([item({ dspQty: qty("12") })]);
-    expect(diffFlags(before, [])).toEqual([overDispatch("12")]);
+    expect(diffFlags(before, [])).toEqual([{ ...overDispatch("12"), fingerprint: fp12 }]);
     const after = detect([item({ dspQty: qty("10") })]);
     expect(diffFlags(after, before.map(stored))).toEqual([]);
   });
@@ -442,12 +421,7 @@ describe("properties", () => {
     fc.assert(
       fc.property(poSnapshot, (s) => {
         const desired = detectFlags(s);
-        expect(
-          diffFlags(
-            desired,
-            desired.map((flag) => ({ fingerprint: fingerprint(flag) })),
-          ),
-        ).toEqual([]);
+        expect(diffFlags(desired, desired.map(stored))).toEqual([]);
       }),
     );
   });

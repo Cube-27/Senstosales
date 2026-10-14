@@ -1,6 +1,7 @@
 // Reconciliation flags (ARCHITECTURE §6.9, spec §8, A-7, A-13, A-15, A-24): accept data, flag deviation, don't reject.
 // Detection is pure; the recompute service (SPEC-08) stores what `diffFlags` returns.
 import type { IsoDate } from "./dates.ts";
+import type { ItemStatus } from "./status.ts";
 import type { Qty } from "./units.ts";
 import { gtTol, qtyToString } from "./units.ts";
 
@@ -16,8 +17,10 @@ export const FLAG_TYPES = [
 
 export type FlagType = (typeof FLAG_TYPES)[number];
 
-/** The row a flag is about (`reconciliation_issue.scope_type`, ARCHITECTURE §6.9). */
-export type FlagScope = "srv_item" | "po_item" | "dc_item" | "invoice_item";
+/** The rows a flag can be about (`reconciliation_issue.scope_type`, ARCHITECTURE §6.9). */
+export const FLAG_SCOPES = ["srv_item", "po_item", "dc_item", "invoice_item"] as const;
+
+export type FlagScope = (typeof FLAG_SCOPES)[number];
 
 /** One PO with its items, documents and SRV lines, as stored (SPEC-03 §4.3). Instants are ISO-8601 UTC text. */
 export type PoFlagSnapshot = {
@@ -48,44 +51,39 @@ export type PoFlagSnapshot = {
 type SnapshotItem = PoFlagSnapshot["items"][number];
 type SnapshotSrvLine = PoFlagSnapshot["srvLines"][number];
 
-/**
- * A flag the snapshot calls for. `details` is the stored `details_json` (field, expected, actual), quantities as exact
- * decimal strings; `docIds` are the DCs or invoices the flag cites.
- */
-export type DesiredFlag = {
-  type: FlagType;
-  scopeType: FlagScope;
-  scopeId: string;
-  poId: string;
-  details: { field: string; expected: string | null; actual: string };
-  docIds: readonly string[];
-};
+/** The stored `details_json`: quantities as exact decimal strings, and the DCs or invoices the flag cites. */
+export type FlagDetails = { field: string; expected: string | null; actual: string; docIds: readonly string[] };
 
-type Flag = Omit<DesiredFlag, "poId">;
+/** A flag the snapshot calls for, shaped as a `reconciliation_issue` row without its id, fingerprint and status. */
+export type DesiredFlag = { type: FlagType; scopeType: FlagScope; scopeId: string; poId: string; details: FlagDetails };
+
+type AddFlag = (type: FlagType, scopeType: FlagScope, scopeId: string, details: FlagDetails) => void;
 
 /** INV-54, INV-55, INV-56, INV-57: flags on one PO item. */
-function itemFlags(item: SnapshotItem): Flag[] {
-  const flags: Flag[] = [];
-  const poItem = (type: FlagType, field: string, expected: Qty | null, actual: Qty, docIds: string[] = []): Flag => ({
-    type,
-    scopeType: "po_item",
-    scopeId: item.id,
-    details: { field, expected: expected === null ? null : qtyToString(expected), actual: qtyToString(actual) },
-    docIds,
-  });
-  if (gtTol(item.dspQty, item.ordQty)) flags.push(poItem("OVER_DISPATCH", "dsp_qty", item.ordQty, item.dspQty));
-  if (gtTol(item.invoicedQty, item.ordQty))
-    flags.push(poItem("OVER_INVOICE", "invoiced_qty", item.ordQty, item.invoicedQty));
+function itemFlags(item: SnapshotItem, add: AddFlag): void {
+  const expected = qtyToString(item.ordQty);
+  if (gtTol(item.dspQty, item.ordQty)) {
+    add("OVER_DISPATCH", "po_item", item.id, {
+      field: "dsp_qty",
+      expected,
+      actual: qtyToString(item.dspQty),
+      docIds: [],
+    });
+  }
+  if (gtTol(item.invoicedQty, item.ordQty)) {
+    const actual = qtyToString(item.invoicedQty);
+    add("OVER_INVOICE", "po_item", item.id, { field: "invoiced_qty", expected, actual, docIds: [] });
+  }
   if (item.cancelled) {
-    const onCancelled = (scopeType: FlagScope, scopeId: string, docId: string): Flag => ({
-      type: "DOC_ON_CANCELLED_ITEM",
-      scopeType,
-      scopeId,
-      details: { field: "status", expected: null, actual: "Cancelled" },
+    const details = (docId: string): FlagDetails => ({
+      field: "status",
+      expected: null,
+      actual: "Cancelled" satisfies ItemStatus,
       docIds: [docId],
     });
-    for (const line of item.dcLines) flags.push(onCancelled("dc_item", line.id, line.dcId));
-    for (const line of item.invoiceLines) flags.push(onCancelled("invoice_item", line.id, line.invoiceId));
+    for (const line of item.dcLines) add("DOC_ON_CANCELLED_ITEM", "dc_item", line.id, details(line.dcId));
+    for (const line of item.invoiceLines)
+      add("DOC_ON_CANCELLED_ITEM", "invoice_item", line.id, details(line.invoiceId));
   }
   // A-15: only a real DC overlaps the manual quantity; PO-direct invoices never do (EC-10). Without a set time there
   // is no "after", so nothing is flagged.
@@ -93,40 +91,23 @@ function itemFlags(item: SnapshotItem): Flag[] {
   if (item.manualDispatchedQty > 0 && manualSetAt !== null) {
     const later = item.dcLines.filter((line) => line.createdAt > manualSetAt).map((line) => line.dcId);
     if (later.length > 0) {
-      flags.push(
-        poItem(
-          "MANUAL_ADJUSTMENT_OVERLAP",
-          "manual_dispatched_qty",
-          null,
-          item.manualDispatchedQty,
-          [...new Set(later)].sort(),
-        ),
-      );
+      add("MANUAL_ADJUSTMENT_OVERLAP", "po_item", item.id, {
+        field: "manual_dispatched_qty",
+        expected: null,
+        actual: qtyToString(item.manualDispatchedQty),
+        docIds: [...new Set(later)].sort(),
+      });
     }
   }
-  return flags;
 }
 
 /** INV-52, INV-53: flags on one SRV line. */
-function srvLineFlags(line: SnapshotSrvLine, items: ReadonlyMap<string, SnapshotItem>): Flag[] {
-  const flags: Flag[] = [];
-  const srvItem = (type: FlagType, details: Flag["details"]): Flag => ({
-    type,
-    scopeType: "srv_item",
-    scopeId: line.id,
-    details,
-    docIds: [],
-  });
+function srvLineFlags(line: SnapshotSrvLine, items: ReadonlyMap<string, SnapshotItem>, add: AddFlag): void {
   // An unmatched line (EC-12) has no PO quantity to compare with.
   const item = line.poItemId === null ? undefined : items.get(line.poItemId);
   if (item && (gtTol(line.ordQty, item.ordQty) || gtTol(item.ordQty, line.ordQty))) {
-    flags.push(
-      srvItem("QTY_MISMATCH", {
-        field: "ord_qty",
-        expected: qtyToString(item.ordQty),
-        actual: qtyToString(line.ordQty),
-      }),
-    );
+    const [expected, actual] = [qtyToString(item.ordQty), qtyToString(line.ordQty)];
+    add("QTY_MISMATCH", "srv_item", line.id, { field: "ord_qty", expected, actual, docIds: [] });
   }
   // The link was resolved in the SRV date's FY (INV-37); a cited number left unresolved conflicts (A-10, EC-03).
   const references = [
@@ -135,42 +116,43 @@ function srvLineFlags(line: SnapshotSrvLine, items: ReadonlyMap<string, Snapshot
   ] as const;
   for (const [field, raw, resolvedId] of references) {
     const cited = raw?.trim();
-    if (cited && resolvedId === null)
-      flags.push(srvItem("DOC_NUMBER_CONFLICT", { field, expected: null, actual: cited }));
+    if (cited && resolvedId === null) {
+      add("DOC_NUMBER_CONFLICT", "srv_item", line.id, { field, expected: null, actual: cited, docIds: [] });
+    }
   }
-  return flags;
 }
 
 /** INV-52..INV-57: the flags the snapshot calls for, item by item, then SRV line by SRV line. */
 export function detectFlags(snapshot: PoFlagSnapshot): DesiredFlag[] {
+  const flags: DesiredFlag[] = [];
+  const add: AddFlag = (type, scopeType, scopeId, details) =>
+    flags.push({ type, scopeType, scopeId, poId: snapshot.poId, details });
+  for (const item of snapshot.items) itemFlags(item, add);
   const items = new Map(snapshot.items.map((item) => [item.id, item]));
-  return [...snapshot.items.flatMap(itemFlags), ...snapshot.srvLines.flatMap((line) => srvLineFlags(line, items))].map(
-    (flag) => ({ ...flag, poId: snapshot.poId }),
-  );
+  for (const line of snapshot.srvLines) srvLineFlags(line, items, add);
+  return flags;
 }
 
 /** §6.9: type, scope, quantities and document ids. JSON keeps fields apart whatever characters they hold. */
-export const fingerprint = (flag: DesiredFlag): string =>
-  JSON.stringify([
-    flag.type,
-    flag.scopeType,
-    flag.scopeId,
-    flag.details.field,
-    flag.details.expected,
-    flag.details.actual,
-    flag.docIds,
-  ]);
+export const fingerprint = ({ type, scopeType, scopeId, details }: DesiredFlag): string =>
+  JSON.stringify([type, scopeType, scopeId, details.field, details.expected, details.actual, details.docIds]);
 
 /**
- * INV-59: the desired flags to insert. A fingerprint already stored, open or acknowledged, is never inserted again,
- * and stored flags missing from `desired` are left as they are (EC-05): detection never closes a flag.
+ * INV-59: the desired flags to insert, each with its fingerprint. A fingerprint already stored, open or acknowledged,
+ * is never inserted again, and stored flags missing from `desired` are left as they are (EC-05): detection never
+ * closes a flag.
  */
-export function diffFlags(desired: readonly DesiredFlag[], stored: readonly { fingerprint: string }[]): DesiredFlag[] {
+export function diffFlags(
+  desired: readonly DesiredFlag[],
+  stored: readonly { fingerprint: string }[],
+): (DesiredFlag & { fingerprint: string })[] {
   const seen = new Set(stored.map((flag) => flag.fingerprint));
-  return desired.filter((flag) => {
+  const inserts: (DesiredFlag & { fingerprint: string })[] = [];
+  for (const flag of desired) {
     const key = fingerprint(flag);
-    if (seen.has(key)) return false;
+    if (seen.has(key)) continue;
     seen.add(key);
-    return true;
-  });
+    inserts.push({ ...flag, fingerprint: key });
+  }
+  return inserts;
 }
