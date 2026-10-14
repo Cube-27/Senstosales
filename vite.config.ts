@@ -2,9 +2,19 @@
 // hook. Contract C15 (docs/ARCHITECTURE.md §2): files <= 800 lines and functions <= complexity 15 are hard errors;
 // the fix is a split, never a suppression. C12/C2/C3: core packages import no runtime-specific modules, and the
 // domain uses no floats or Date.
+import { builtinModules } from "node:module";
+
 import { defineConfig } from "vite-plus";
 
-const RUNTIME_MODULES = ["node:*", "playwright", "playwright-core", "@playwright/*", "@tauri-apps/*"];
+// Bare builtins too (`fs`, `fs/promises`), not only the `node:` form.
+const RUNTIME_MODULES = [
+  "node:*",
+  ...builtinModules,
+  "playwright",
+  "playwright-core",
+  "@playwright/*",
+  "@tauri-apps/*",
+];
 
 export default defineConfig({
   lint: {
