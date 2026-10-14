@@ -272,3 +272,19 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Alternatives: Callers filter to active items first.
 - Why: INV-64 derives PO status over active items; filtering inside `poStatus` keeps that rule in one place instead of in every caller.
 - Reversible: yes.
+
+### D-0029 — Fy and docKey branded strings
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 1 (#12) · Status: decided
+- Decision: `Fy` is a branded `"YYYY-YY"` string (`fyOf`); `docKey(number, fy)` returns a branded string `${fy}|${number.trim()}` used as a `Map` key. The FY prefix is fixed-width, so keys are unambiguous; DC, invoice and GC numbers each use their own key space (INV-23).
+- Alternatives: Tuple or object keys (not usable as `Map` keys by value); a document-kind parameter in `docKey`.
+- Why: SPEC-03 §4.1 fixes `docKey(number, fy)`, and `"2024-25"` is the legacy FY format. Trimming only surrounding whitespace follows legacy SRV linking (SPEC-03 §4.2, EC-16).
+- Reversible: yes — a domain-internal representation.
+
+### D-0030 — defaultGc blank GC number
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 1 (#12) · Status: decided
+- Decision: `defaultGc` treats a GC number as blank when it is missing, `null`, empty or whitespace-only; a non-blank GC number is returned as typed, not trimmed. Only a missing or `null` GC date is blank (`IsoDate` cannot be whitespace).
+- Alternatives: Trim the given GC number.
+- Why: The spec is silent on storing the number; legacy GC defaulting checks `strip() == ""` and keeps a given value unchanged. Comparisons go through `docKey`, which trims.
+- Reversible: yes.
