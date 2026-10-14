@@ -1546,3 +1546,59 @@ None.
 - Alternatives: Build the ingest deps in `main.ts`.
 - Why: Routes call use cases through `createServices` (SPEC-07 §4.1), and SRV ingest and the import jobs need the same storage.
 - Reversible: yes.
+
+### D-0187 — Uploaded SRV pages are stored once parsed
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: An SRV upload stores its raw page after `parseSrv` succeeds, keyed by the file's PO number, as PO uploads do (EC-29 now names SRV pages too).
+- Alternatives: Store it under another key before parsing.
+- Why: The key is the PO number (INV-107, C17), and an upload only knows it after parsing.
+- Reversible: yes.
+
+### D-0188 — A replaced SRV keeps its ids
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: Re-ingesting an SRV keeps its `srv.id`, and each item keeps its `srv_item.id` when its `(po_item_no, lot_no, srv_item_no)` key is unchanged. Items whose key is gone are deleted.
+- Alternatives: Delete everything and insert with new ids.
+- Why: Flag fingerprints cite the `srv_item` id; new ids would add a second copy of every open SRV flag on each re-upload (INV-59).
+- Reversible: yes.
+
+### D-0189 — A missing SRV ORD QTY is stored as 0, and 0 raises no QTY_MISMATCH
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: A page without an ORD QTY column (one real layout) or with an empty cell stores `ord_qty` 0, and `detectFlags` compares only a positive SRV `ord_qty` (EC-31).
+- Alternatives: Make `srv_item.ord_qty_m` nullable (a migration on a table other specs read; D-0071 chose NOT NULL); fail such files.
+- Why: The spec does not cover it; legacy stores 0 and skips the check when the SRV ord qty is <= 0 (C18).
+- Reversible: yes.
+
+### D-0190 — SRV numbers resolve against all of the supplier's DCs and invoices
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: Challan and invoice numbers resolve against every DC and invoice of the supplier, not only those on the SRV's PO, unattached SRVs included.
+- Alternatives: Restrict candidates to the SRV's PO.
+- Why: INV-37 and ARCHITECTURE §6.10 name only the number and the FY; restricting by PO would add a rule.
+- Reversible: yes.
+
+### D-0191 — Per-file SRV upload results
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: A file is `skipped` only when every SRV in it is older than the stored one. Otherwise it is `accepted`, and `reason` names any skipped SRVs and a missing PO ("PO not found"). A failure says nothing from the file was saved.
+- Alternatives: One result per SRV, which the frozen response shape does not allow.
+- Why: The response has one result per file.
+- Reversible: yes.
+
+### D-0192 — One audit row per SRV written
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: Each SRV a file writes gets one audit row: `srv.ingest`, entity `srv`, with the before and after date.
+- Alternatives: One row per file.
+- Why: Each SRV is the entity that changes, and a file can hold several SRVs.
+- Reversible: yes.
+
+### D-0193 — An SRV file's document date
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 4 (#43) · Status: decided
+- Decision: `source_document.doc_date` for an SRV file is its newest SRV date.
+- Alternatives: `null`.
+- Why: A file holds every SRV of one PO.
+- Reversible: yes.
