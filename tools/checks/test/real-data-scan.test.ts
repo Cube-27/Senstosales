@@ -23,6 +23,20 @@ describe("scanFile", () => {
     expect(scanFile("a.ts", text(value))).toEqual([{ path: "a.ts", line: 1, rule: "gstin" }]);
   });
 
+  it("reports every rule that matches a line, so allowlisting one can't hide another", () => {
+    const line = cat("C:", "\\", "Users\\someone\\", GSTIN, ".txt");
+    expect(scanFile("a.md", text(line))).toEqual([
+      { path: "a.md", line: 1, rule: "gstin" },
+      { path: "a.md", line: 1, rule: "local-data-path" },
+    ]);
+  });
+
+  it("flags the owner's private data folder", () => {
+    expect(scanFile("a.md", text(cat("see ../Sensto", "Sales-private/x")))).toEqual([
+      { path: "a.md", line: 1, rule: "private-repo-path" },
+    ]);
+  });
+
   it("does not flag a GSTIN-shaped run inside a longer alphanumeric token", () => {
     expect(scanFile("a.ts", text(`A${GSTIN}9`))).toEqual([]);
   });

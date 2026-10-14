@@ -15,6 +15,8 @@ const LINE_RULES: ReadonlyArray<{ rule: string; pattern: RegExp }> = [
   { rule: "local-data-path", pattern: /\b[A-Za-z]:[\\/]+(?:Users[\\/]+[^\\/\s"'`]+|[^\\/\s"'`]*Downloads\b)/i },
   { rule: "local-data-path", pattern: /(?:^|[\s"'`(=])\/(?:home|Users)\/[^/\s"'`]+\//i },
   { rule: "local-data-path", pattern: /\bbusiness\.db\b|\bbusiness_development\b/i },
+  // The owner's private data folder beside this repo; only CLAUDE.md names it, to forbid reading it.
+  { rule: "private-repo-path", pattern: /\bSenstoSales-private\b/i },
 ];
 // Same extensions as the database block in .gitignore; this catches files force-added past it.
 const DATABASE_FILE = /\.(?:db|sqlite3?|db-wal|db-shm)$/i;
@@ -61,8 +63,9 @@ export function scanFile(path: string, content: Buffer): Finding[] {
   if (decoded === undefined) return [];
   const findings: Finding[] = [];
   decoded.split(/\r?\n/).forEach((text, index) => {
-    const hit = LINE_RULES.find(({ pattern }) => pattern.test(text));
-    if (hit) findings.push({ path, line: index + 1, rule: hit.rule });
+    // Every distinct rule on the line, so allowlisting one rule for a file can't hide another on the same line.
+    const rules = new Set(LINE_RULES.filter(({ pattern }) => pattern.test(text)).map(({ rule }) => rule));
+    for (const rule of rules) findings.push({ path, line: index + 1, rule });
   });
   return findings;
 }
