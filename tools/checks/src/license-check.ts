@@ -7,10 +7,14 @@ import { readFileSync } from "node:fs";
 const DENIED = new Set(
   [
     "AGPL-1.0",
+    "AGPL-1.0-only",
+    "AGPL-1.0-or-later",
     "AGPL-3.0",
     "AGPL-3.0-only",
     "AGPL-3.0-or-later",
     "GPL-1.0",
+    "GPL-1.0-only",
+    "GPL-1.0-or-later",
     "GPL-2.0",
     "GPL-2.0-only",
     "GPL-2.0-or-later",
