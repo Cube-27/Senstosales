@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
-import { zId, zIsoDate, zMoney, zPoId, zQty } from "../src/index.ts";
+import { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zPoId, zQty } from "../src/index.ts";
 
 describe("zQty: decimal string on the wire <-> milli-units (C3)", () => {
   it.each([
@@ -48,6 +48,25 @@ describe("zMoney: decimal string on the wire <-> 1e-5 units (C3)", () => {
   });
 });
 
+describe("zGstPct: decimal string on the wire <-> 1e-5 units", () => {
+  it.each([
+    ["9", 900000],
+    ["2.5", 250000],
+    ["0", 0],
+  ])("%j <-> %i", (wire, value) => {
+    expect(z.decode(zGstPct, wire)).toBe(value);
+    expect(z.encode(zGstPct, z.decode(zGstPct, wire))).toBe(wire);
+  });
+
+  it.each(["", "9%", "-9", "9.000001"])("rejects %j", (wire) => {
+    expect(zGstPct.safeParse(wire).success).toBe(false);
+  });
+
+  it.each([9.5, -900000])("refuses to encode %j", (value) => {
+    expect(() => z.encode(zGstPct, value as never)).toThrow();
+  });
+});
+
 describe("zIsoDate: YYYY-MM-DD calendar dates", () => {
   it.each(["2024-02-29", "2025-04-30"])("accepts %j unchanged both ways", (wire) => {
     expect(z.decode(zIsoDate, wire)).toBe(wire);
@@ -60,6 +79,26 @@ describe("zIsoDate: YYYY-MM-DD calendar dates", () => {
 
   it("refuses to encode a non-date", () => {
     expect(() => z.encode(zIsoDate, "2025-02-30" as never)).toThrow();
+  });
+});
+
+describe("zInstant: ISO-8601 UTC", () => {
+  it.each(["2026-10-14T17:21:06Z", "2026-10-14T17:21:06.123Z"])("accepts %j", (wire) => {
+    expect(zInstant.parse(wire)).toBe(wire);
+  });
+
+  it.each(["2026-10-14", "2026-10-14T17:21:06", "2026-10-14T22:51:06+05:30", ""])("rejects %j", (wire) => {
+    expect(zInstant.safeParse(wire).success).toBe(false);
+  });
+});
+
+describe("zFy: financial year label", () => {
+  it("accepts the domain's label", () => {
+    expect(zFy.parse("2024-25")).toBe("2024-25");
+  });
+
+  it.each(["2024-26", "2024", "2024-2025", "24-25", ""])("rejects %j", (wire) => {
+    expect(zFy.safeParse(wire).success).toBe(false);
   });
 });
 

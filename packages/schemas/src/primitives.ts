@@ -1,7 +1,16 @@
 // Wire codecs for the domain's exact units (SPEC-04 §4.2). Quantities and money cross the wire as decimal strings
 // so no float ever touches them (C3); decoding and encoding go through the domain's parsers, never a second copy.
-import type { IsoDate, Money, Qty, Result } from "@senstosales/domain";
-import { moneyToString, parseIsoDate, parseMoney, parseQty, qtyToString } from "@senstosales/domain";
+import type { Fy, GstPct, IsoDate, Money, Qty, Result } from "@senstosales/domain";
+import {
+  moneyToString,
+  parseFy,
+  parseIsoDate,
+  parseMoney,
+  parsePct,
+  parseQty,
+  pctToString,
+  qtyToString,
+} from "@senstosales/domain";
 import { z } from "zod";
 
 /** A wire string decoded by a domain parser; `isValue` guards what may be encoded back. */
@@ -29,12 +38,28 @@ export const zQty = stringCodec<Qty>(parseQty, qtyToString, isUnits);
 /** `"848.75"` <-> `84875000` 1e-5 units (INV-01). */
 export const zMoney = stringCodec<Money>(parseMoney, moneyToString, isUnits);
 
+/** `"9"` <-> `900000` 1e-5 units; never negative (SPEC-03 §9). */
+export const zGstPct = stringCodec<GstPct>(parsePct, pctToString, (v) => isUnits(v) && (v as number) >= 0);
+
 /** A real `YYYY-MM-DD` calendar date, the same string on both sides (C3). */
 export const zIsoDate = stringCodec<IsoDate>(
   parseIsoDate,
   (d) => d,
   (v) => typeof v === "string" && parseIsoDate(v).ok,
 );
+
+/** An instant (`*_at` columns), ISO-8601 UTC (ARCHITECTURE §8.1). */
+export const zInstant = z.iso.datetime();
+
+/** A financial-year label such as `"2024-25"`, the same string on both sides; computed only by the domain (C2). */
+export const zFy = stringCodec<Fy>(
+  parseFy,
+  (fy) => fy,
+  (v) => typeof v === "string" && parseFy(v).ok,
+);
+
+/** Label -> text pairs: a page's raw header, onboarding's bank and invoice defaults. */
+export const zTextMap = z.record(z.string(), z.string());
 
 /** Surrogate ids are ULIDs generated in services (C4). */
 export const zId = z.ulid();

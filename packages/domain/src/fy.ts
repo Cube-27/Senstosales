@@ -1,5 +1,6 @@
 // Financial year and document keys (ARCHITECTURE §6.6, A-10).
 import type { IsoDate } from "./dates.ts";
+import type { Result } from "./result.ts";
 
 /** An April–March financial year, named `"2024-25"`. */
 export type Fy = string & { readonly __brand: "Fy" };
@@ -12,6 +13,15 @@ export function fyOf(date: IsoDate): Fy {
   const year = Number(date.slice(0, 4));
   const start = Number(date.slice(5, 7)) >= 4 ? year : year - 1;
   return `${start}-${String((start + 1) % 100).padStart(2, "0")}` as Fy;
+}
+
+const FY_LABEL = /^(\d{4})-(\d{2})$/;
+
+/** Accepts only a label `fyOf` can write: `"2024-25"` yes, `"2024-26"` no. */
+export function parseFy(s: string): Result<Fy> {
+  const m = FY_LABEL.exec(s);
+  if (!m || (Number(m[1]) + 1) % 100 !== Number(m[2])) return { ok: false, error: `Not a financial year: "${s}"` };
+  return { ok: true, value: s as Fy };
 }
 
 /**

@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
-import { docKey, fyOf } from "../src/index.ts";
+import { docKey, fyOf, parseFy } from "../src/index.ts";
 import { date } from "./unwrap.ts";
 
 // INV-21: the financial year runs April to March and is named "YYYY-YY".
@@ -50,5 +50,15 @@ describe("INV-22/INV-24: docKey", () => {
     ["1 00", "2025-04-01", "100", "2025-04-01", false],
   ])("number %j dated %s and number %j dated %s share a key: %s", (n1, d1, n2, d2, same) => {
     expect(docKey(n1, fyOf(date(d1))) === docKey(n2, fyOf(date(d2)))).toBe(same);
+  });
+});
+
+describe("INV-21: parseFy accepts only the label fyOf writes", () => {
+  it.each(["2024-25", "1999-00", "2009-10"])("accepts %j", (s) => {
+    expect(parseFy(s)).toEqual({ ok: true, value: s });
+  });
+
+  it.each(["2024-26", "2024", "2024-2025", "24-25", "", " 2024-25", "2024-25\n"])("rejects %j", (s) => {
+    expect(parseFy(s).ok).toBe(false);
   });
 });

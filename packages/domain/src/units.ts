@@ -51,6 +51,9 @@ export const qtyToString = (q: Qty): string => scaledToString(q, QTY_DP);
 
 export const moneyToString = (m: Money): string => scaledToString(m, MONEY_DP);
 
+/** SPEC-03 §9: `900000` -> `"9"`. */
+export const pctToString = (p: GstPct): string => scaledToString(p, PCT_DP);
+
 /** INV-01: exact integer sum; `0.1 + 0.2` -> `300`. */
 export const sumQty = (qs: readonly Qty[]): Qty => qs.reduce((total, q) => total + q, 0) as Qty;
 
