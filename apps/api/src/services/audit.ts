@@ -6,7 +6,7 @@ import type { SQL } from "drizzle-orm";
 import { newId } from "../ids.ts";
 import { insertAudit } from "../repositories/audit.ts";
 
-export const ACTOR = "admin";
+const ACTOR = "admin";
 
 export interface AuditEntry {
   readonly action: string;

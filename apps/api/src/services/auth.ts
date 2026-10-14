@@ -6,8 +6,8 @@ import type { SQL } from "drizzle-orm";
 
 import { AuthError, ValidationError } from "../errors.ts";
 import { newId } from "../ids.ts";
-import { insertAudit } from "../repositories/audit.ts";
 import * as repo from "../repositories/auth.ts";
+import { audit as auditEntry } from "./audit.ts";
 import type { ServiceDeps } from "./index.ts";
 import { hashPassword, hashToken, newToken, verifyPassword } from "./password.ts";
 
@@ -44,7 +44,7 @@ const addSeconds = (at: Instant, seconds: number): Instant =>
 
 export function createAuthService({ db, clock }: ServiceDeps) {
   const audit = (action: Action, userId: string | SQL<string>, at: Instant): Statement =>
-    insertAudit(db, { id: newId(), at, actor: USERNAME, action, entityType: "app_user", entityId: userId });
+    auditEntry(db, at, { action, entityType: "app_user", entityId: userId });
 
   async function signedIn(token: string | undefined): Promise<boolean> {
     return token !== undefined && repo.hasSession(db, await hashToken(token), clock.now());

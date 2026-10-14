@@ -3,14 +3,13 @@
 // left the API (INV-81). Synthetic values only (C1).
 import { auditLog } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
-import type { GstPct } from "@senstosales/domain";
 import { createClient } from "@senstosales/schemas";
 
 import { apiRoutes } from "../src/routes/index.ts";
 import { createServices } from "../src/services/index.ts";
 import { migratedDb } from "./db.ts";
 import { fixedClock } from "./service-deps.ts";
-import { testApp } from "./helpers.ts";
+import { json, testApp } from "./helpers.ts";
 
 export const SUPPLIER_WIRE = {
   name: "Example Supplier",
@@ -26,12 +25,11 @@ export const SUPPLIER_WIRE = {
 };
 
 export const ONBOARDING_WIRE = { ...SUPPLIER_WIRE, cgstPct: "6", sgstPct: "6" };
-export const ONBOARDING_BODY = { ...SUPPLIER_WIRE, cgstPct: 600000 as GstPct, sgstPct: 600000 as GstPct };
 
 const open: NodeDb[] = [];
 
 /** A new app; `closeApiApps` closes every database opened since the last call. */
-export async function apiApp(): Promise<ReturnType<typeof build>> {
+export async function apiApp() {
   const db = await migratedDb();
   open.push(db);
   return build(db);
@@ -42,9 +40,9 @@ export function closeApiApps(): void {
 }
 
 /** An app that has completed onboarding. */
-export async function onboardedApp(): Promise<ReturnType<typeof build>> {
+export async function onboardedApp() {
   const app = await apiApp();
-  await app.client.request("onboarding.complete", { body: ONBOARDING_BODY });
+  await app.send("/api/onboarding", json("POST", ONBOARDING_WIRE));
   return app;
 }
 

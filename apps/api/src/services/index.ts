@@ -10,7 +10,7 @@ import { jobsService } from "./jobs.ts";
 import { createOnboardingService } from "./onboarding.ts";
 import { createSecretsService } from "./secrets.ts";
 import { createSettingsService } from "./settings.ts";
-import { createSupplierService } from "./supplier.ts";
+import { createSupplierService, supplierRef, type SupplierRef } from "./supplier.ts";
 
 export interface ServiceDeps {
   readonly db: Db;
@@ -18,14 +18,20 @@ export interface ServiceDeps {
   readonly jobs: Jobs;
 }
 
+/** What the services of the supplier's data take: one shared supplier id. */
+export interface SupplierDeps extends ServiceDeps {
+  readonly supplierId: SupplierRef;
+}
+
 export function createServices(deps: ServiceDeps) {
+  const withSupplier: SupplierDeps = { ...deps, supplierId: supplierRef(deps.db) };
   return {
     auth: createAuthService(deps),
-    onboarding: createOnboardingService(deps),
-    supplier: createSupplierService(deps),
-    settings: createSettingsService(deps),
-    buyers: createBuyersService(deps),
-    secrets: createSecretsService(deps),
+    onboarding: createOnboardingService(withSupplier),
+    supplier: createSupplierService(withSupplier),
+    settings: createSettingsService(withSupplier),
+    buyers: createBuyersService(withSupplier),
+    secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
   };
 }

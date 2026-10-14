@@ -1,6 +1,6 @@
 // The supplier row, its settings rows and its secret (ARCHITECTURE §8.2): reads return plain rows, writes return
 // statements for the service's batch.
-import { secret, settings, supplier, type Db, type Statement } from "@senstosales/db";
+import { DbError, secret, settings, supplier, type Db, type Statement } from "@senstosales/db";
 import { and, eq, sql } from "drizzle-orm";
 
 export type Supplier = typeof supplier.$inferSelect;
@@ -10,6 +10,11 @@ export type SettingRow = typeof settings.$inferSelect;
 export async function findSupplier(db: Db): Promise<Supplier | null> {
   const rows = await db.query(db.build.select().from(supplier).limit(1));
   return rows[0] ?? null;
+}
+
+export async function findSupplierId(db: Db): Promise<string | null> {
+  const rows = await db.query(db.build.select({ id: supplier.id }).from(supplier).limit(1));
+  return rows[0]?.id ?? null;
 }
 
 export const insertSupplier = (db: Db, row: Supplier): Statement => db.build.insert(supplier).values(row);
@@ -23,6 +28,10 @@ export const assertOneSupplier = (db: Db): Statement =>
     .update(supplier)
     .set({ name: sql`NULL` })
     .where(sql`(SELECT count(*) FROM ${supplier}) > 1`);
+
+/** Whether `err` is the failure `assertOneSupplier` causes. */
+export const isSecondSupplier = (err: unknown): boolean =>
+  err instanceof DbError && err.message.includes("NOT NULL constraint failed: supplier.name");
 
 export const updateSupplier = (db: Db, row: Supplier): Statement =>
   db.build.update(supplier).set(row).where(eq(supplier.id, row.id));

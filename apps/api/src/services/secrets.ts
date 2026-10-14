@@ -6,26 +6,23 @@ import { WriteBatch } from "@senstosales/db";
 import type { SecretName, Secrets } from "../ports/secrets.ts";
 import * as repo from "../repositories/supplier.ts";
 import { audit } from "./audit.ts";
-import type { ServiceDeps } from "./index.ts";
-import { requireSupplier } from "./supplier.ts";
+import type { SupplierDeps } from "./index.ts";
 
-export function createSecretsService({ db, clock }: ServiceDeps): Secrets {
+export function createSecretsService({ db, clock, supplierId }: SupplierDeps): Secrets {
   return {
     async get(name: SecretName): Promise<string | null> {
-      return repo.findSecret(db, (await requireSupplier(db)).id, name);
+      return repo.findSecret(db, await supplierId.require(), name);
     },
 
     async set(name: SecretName, value: string | null): Promise<void> {
-      const { id } = await requireSupplier(db);
+      const id = await supplierId.require();
+      const [write, action] =
+        value === null
+          ? [repo.deleteSecret(db, id, name), `clear-${name}`]
+          : [repo.upsertSecret(db, id, name, value), `set-${name}`];
       await new WriteBatch(db)
-        .add(value === null ? repo.deleteSecret(db, id, name) : repo.upsertSecret(db, id, name, value))
-        .add(
-          audit(db, clock.now(), {
-            action: value === null ? `clear-${name}` : `set-${name}`,
-            entityType: "secret",
-            entityId: id,
-          }),
-        )
+        .add(write)
+        .add(audit(db, clock.now(), { action, entityType: "secret", entityId: id }))
         .commit();
     },
   };

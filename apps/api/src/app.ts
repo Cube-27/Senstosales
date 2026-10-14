@@ -7,12 +7,11 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { AppError, ValidationError } from "./errors.ts";
+import { AppError, onboardingRequired, ValidationError } from "./errors.ts";
 import { requireSession } from "./middleware/auth.ts";
 import { bodyLimit } from "./middleware/body-limit.ts";
 import { hostGuard } from "./middleware/host-guard.ts";
 import { jsonOnly } from "./middleware/json-only.ts";
-import { requireOnboarded } from "./middleware/onboarding.ts";
 import type { Logger } from "./ports/logger.ts";
 
 export interface AppDeps {
@@ -53,8 +52,10 @@ export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   const app = new Hono();
   app.use(hostGuard(deps.port), jsonOnly, bodyLimit);
   const requireSignedIn = requireSession(deps.signedIn);
+  // Until the supplier exists only public routes answer (INV-78): the onboarding check runs before the session
+  // check, since first run has nobody signed in.
   const guard = async (c: Context) => {
-    await requireOnboarded(deps.onboarded);
+    if (!(await deps.onboarded())) throw onboardingRequired();
     await requireSignedIn(c);
   };
   // In the table's order, not the caller's: Hono matches in registration order, and the table lists fixed segments
