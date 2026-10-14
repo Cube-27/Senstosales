@@ -1002,3 +1002,43 @@ None.
 - Alternatives: Export it from the index.
 - Why: Its module-level registry would keep zod's JSON Schema converter in the web bundle.
 - Reversible: yes.
+
+### D-0119 — D1 executor builds the batch itself
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 4 (#33) · Status: decided
+- Decision: `openD1Db` renders each statement with `SQLiteAsyncDialect.sqlToQuery(statement.getSQL())` and sends one `binding.batch()`; Drizzle's own D1 batch is not used.
+- Alternatives: Drizzle's `db.batch`; a pnpm patch to drizzle-orm's `d1/session.js`.
+- Why: drizzle-orm 0.45.4's D1 batch throws on a raw `run(sql)` with parameters (it binds a statement it never prepared). The port's batch returns no rows, so nothing is lost; a patch would be carried across upgrades. Covered by `packages/db/test/d1.test.ts`.
+- Reversible: yes.
+
+### D-0120 — `wrapDrizzle` takes `runBatch`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 4 (#33) · Status: decided
+- Decision: Each executor passes its native batch to `wrapDrizzle(drizzleDb, runBatch)`; the port keeps the empty-batch no-op and the error mapping. `Statement` is `BatchItem<"sqlite"> & SQLWrapper`.
+- Alternatives: A `BatchingDatabase` type that assumes Drizzle's batch works on every driver.
+- Why: The smallest seam that lets D1 use its own batch (D-0119).
+- Reversible: yes.
+
+### D-0121 — Local D1 is miniflare in-memory
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 4 (#33) · Status: decided
+- Decision: The D1 tests and dialect step use `miniflare` 4.20260730.0 (MIT), a dev dependency of `tools/checks` and `packages/db`. The override `miniflare>sharp: "-"` removes sharp (loaded lazily, only for the Images binding) and its LGPL libvips packages (C13); workerd's install script is not run.
+- Alternatives: `wrangler d1 execute --local` with a config file and a persisted directory, as in the spike (pulls in sharp the same way).
+- Why: No account, config file or persisted state, and it runs the real migrator and D1 executor.
+- Reversible: yes.
+
+### D-0122 — D1 dialect step inside `check:code`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 4 (#33) · Status: decided
+- Decision: The migration SQL lint and the D1 dialect step run in the `check:code` script (CI `check` job), not a new job.
+- Alternatives: A separate `d1-dialect` CI job.
+- Why: No new required check for the ruleset (H1), and `pnpm verify` stays the sum of the jobs.
+- Reversible: yes.
+
+### D-0123 — Migration SQL lint scope
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 4 (#33) · Status: decided
+- Decision: Beyond the §8.3 allowlist the lint refuses every `PRAGMA` (including drizzle-kit's `foreign_keys=OFF/ON` around rebuilds), `DROP TABLE` outside a rebuild, a `RENAME` other than `__new_x` → `x` or before its `DROP`, a rebuild left unrenamed, and more than one statement between breakpoints (a `;` inside a string literal too).
+- Alternatives: Allowlist statement prefixes only.
+- Why: A prefix-only allowlist lets a trigger hide after an allowed statement and lets an arbitrary `DROP` through. FK handling during a rebuild stays the ADR 0002 open item, settled with the first rebuild migration.
+- Reversible: yes.
