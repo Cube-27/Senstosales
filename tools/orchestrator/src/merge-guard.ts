@@ -81,19 +81,15 @@ function readQuoted(text: string, start: number, lexer: Lexer): number {
 function tokenize(command: string): string[] {
   const text = withoutLiteralBodies(command);
   const lexer: Lexer = { tokens: [], token: "", quoted: false };
-  let inSeparators = false;
   for (let i = 0; i < text.length;) {
     const char = text[i]!;
     if (SEPARATORS.has(char)) {
-      if (!inSeparators) endToken(lexer);
-      inSeparators = true;
-      lexer.token += char;
-      i++;
-      continue;
-    }
-    if (inSeparators) endToken(lexer);
-    inSeparators = false;
-    if (WHITESPACE.has(char)) {
+      endToken(lexer);
+      let end = i;
+      while (end < text.length && SEPARATORS.has(text[end]!)) end++;
+      lexer.tokens.push(text.slice(i, end));
+      i = end;
+    } else if (WHITESPACE.has(char)) {
       endToken(lexer);
       i++;
     } else if (char === "'" || char === '"') {

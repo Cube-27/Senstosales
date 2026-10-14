@@ -35,6 +35,7 @@ json_field() {
 const values = process.argv.slice(1).map((path) => path.split(".").reduce((value, key) => value?.[key], data));
 for (const value of values) console.log(value ?? "");
 process.exitCode = values.includes(undefined) ? 1 : 0;' "$@"
+  return $?
 }
 
 # Free physical memory in MB, or nothing when it can't be read. Windows (Git Bash), Linux, macOS.

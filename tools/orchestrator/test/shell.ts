@@ -8,12 +8,15 @@ import { fileURLToPath } from "node:url";
 export const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export const ORCHESTRATOR = join(REPO, "tools", "orchestrator");
 
-/** The absolute path of bash (Git Bash on Windows, never WSL's), or undefined when there is none. */
-export const BASH: string | undefined = (() => {
+/** The absolute paths of NAME on PATH, in PATH order. */
+function which(name: string): string[] {
   const finder = process.platform === "win32" ? "where" : "which";
-  const found = spawnSync(finder, ["bash"], { encoding: "utf8" }).stdout ?? "";
-  return found.split(/\r?\n/).find((path) => path && !/[\\/]System32[\\/]/i.test(path));
-})();
+  return (spawnSync(finder, [name], { encoding: "utf8" }).stdout ?? "").split(/\r?\n/).filter(Boolean);
+}
+
+/** The absolute path of bash (Git Bash on Windows, never WSL's), or undefined when there is none. */
+export const BASH: string | undefined = which("bash").find((path) => !/[\\/]System32[\\/]/i.test(path));
+const GIT = which("git")[0];
 
 /** Writes each stub as an executable `#!/bin/bash` script into DIR/bin and returns that folder. */
 export function stubBin(dir: string, stubs: Record<string, string>): string {
@@ -39,5 +42,7 @@ export function run(
   return result;
 }
 
-export const git = (cwd: string, ...args: string[]): string =>
-  execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+export function git(cwd: string, ...args: string[]): string {
+  if (GIT === undefined) throw new Error("git is not on PATH");
+  return execFileSync(GIT, args, { cwd, encoding: "utf8" }).trim();
+}
