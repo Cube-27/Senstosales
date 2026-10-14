@@ -17,6 +17,43 @@ describe("scanFile", () => {
   });
 
   it.each([
+    ["lowercase", GSTIN.toLowerCase()],
+    ["glued to underscores", `id_${GSTIN}_x`],
+  ])("flags a GSTIN %s", (_case, value) => {
+    expect(scanFile("a.ts", text(value))).toEqual([{ path: "a.ts", line: 1, rule: "gstin" }]);
+  });
+
+  it("does not flag a GSTIN-shaped run inside a longer alphanumeric token", () => {
+    expect(scanFile("a.ts", text(`A${GSTIN}9`))).toEqual([]);
+  });
+
+  it("scans UTF-16 text with a byte-order mark", () => {
+    const body = Buffer.from(`a,b\n1,${GSTIN}\n`, "utf16le");
+    const le = Buffer.concat([Buffer.from([0xff, 0xfe]), body]);
+    const be = Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(body).swap16()]);
+    expect(scanFile("le.csv", le)).toEqual([{ path: "le.csv", line: 2, rule: "gstin" }]);
+    expect(scanFile("be.csv", be)).toEqual([{ path: "be.csv", line: 2, rule: "gstin" }]);
+    expect(scanFile("odd.csv", Buffer.concat([be, Buffer.from([0x41])]))).toEqual([
+      { path: "odd.csv", line: 2, rule: "gstin" },
+    ]);
+  });
+
+  const zip = Buffer.from([0x50, 0x4b, 3, 4, 0]);
+  it.each(["exports/report.xlsx", "docs/po.pdf", "a.zip", "Book.XLS", "letter.docx"])(
+    "flags the document file %s outside the template and golden folders",
+    (path) => {
+      expect(scanFile(path, zip)).toEqual([{ path, line: 0, rule: "document-outside-fixtures" }]);
+    },
+  );
+
+  it.each(["packages/documents/templates/dc.xlsx", "packages/documents/test/reports/ledger.xlsx"])(
+    "accepts the document file %s in the template and golden folders",
+    (path) => {
+      expect(scanFile(path, zip)).toEqual([]);
+    },
+  );
+
+  it.each([
     cat("C:", "\\", "Downloads\\po.html"),
     cat("D:/", "Downloads/srv.html"),
     cat("C:", "\\", "Users\\someone\\notes.txt"),

@@ -1,6 +1,7 @@
 // Contract C1 (docs/ARCHITECTURE.md §2, §14.3; SPEC-00 §4.6): no real data in this public repo. Scans tracked files
-// (default) or staged files (`--staged`) and fails on GSTIN-shaped strings, local data paths, database files and HTML
-// outside the fixture folders. Reports `path:line rule` only, never the matched text, so CI logs don't leak it.
+// (default) or staged files (`--staged`) and fails on GSTIN-shaped strings, local data paths, database files, and
+// HTML or binary documents outside their fixture folders. Reports `path:line rule` only, never the matched text, so
+// CI logs don't leak it.
 // Exceptions live in tools/checks/real-data-allow.txt as `path:rule  # justification`; there is no inline marker.
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -8,7 +9,8 @@ import { readFileSync } from "node:fs";
 export type Finding = { path: string; line: number; rule: string };
 
 const LINE_RULES: ReadonlyArray<{ rule: string; pattern: RegExp }> = [
-  { rule: "gstin", pattern: /\b\d{2}[A-Z]{5}\d{4}[A-Z][0-9A-Z]Z[0-9A-Z]\b/ },
+  // Any case, and bounded by non-alphanumerics rather than \b, so `id_<GSTIN>` and lowercase copies are caught.
+  { rule: "gstin", pattern: /(?<![0-9A-Z])\d{2}[A-Z]{5}\d{4}[A-Z][0-9A-Z]Z[0-9A-Z](?![0-9A-Z])/i },
   // A Downloads folder, or any absolute path under a named user profile (Windows, Linux, macOS).
   { rule: "local-data-path", pattern: /\b[A-Za-z]:[\\/]+(?:Users[\\/]+[^\\/\s"'`]+|[^\\/\s"'`]*Downloads\b)/i },
   { rule: "local-data-path", pattern: /(?:^|[\s"'`(=])\/(?:home|Users)\/[^/\s"'`]+\//i },
@@ -19,6 +21,10 @@ const DATABASE_FILE = /\.(?:db|sqlite3?|db-wal|db-shm)$/i;
 const SQLITE_HEADER = Buffer.from("SQLite format 3\0", "latin1");
 const HTML_FILE = /\.html?$/i;
 const HTML_FIXTURE_DIRS = /^packages\/(?:parsers|scraper)\/fixtures\//;
+// Binary documents can't be line-scanned, so they are allowed only where the de-branded templates and export goldens
+// live (SPEC-12, SPEC-13); PR 3 adds scanning of the xlsx XML parts there.
+const DOCUMENT_FILE = /\.(?:xlsx|xlsm|xls|docx|doc|pdf|zip)$/i;
+const DOCUMENT_DIRS = /^packages\/documents\/(?:templates|test)\//;
 const ALLOWLIST_PATH = "tools/checks/real-data-allow.txt";
 
 /** Parses `path:rule  # justification` lines; blank lines and comment lines are ignored. */
@@ -33,24 +39,31 @@ export function parseAllowlist(text: string): ReadonlySet<string> {
 function pathRule(path: string, head: Buffer): string | undefined {
   if (DATABASE_FILE.test(path) || head.subarray(0, SQLITE_HEADER.length).equals(SQLITE_HEADER)) return "database-file";
   if (HTML_FILE.test(path) && !HTML_FIXTURE_DIRS.test(path)) return "html-outside-fixtures";
+  if (DOCUMENT_FILE.test(path) && !DOCUMENT_DIRS.test(path)) return "document-outside-fixtures";
   return undefined;
 }
 
-const isBinary = (content: Buffer): boolean => content.subarray(0, 8000).includes(0);
+/** The file as text (UTF-8, or UTF-16 with a byte-order mark, as Excel saves CSV), or undefined when binary. */
+function decode(content: Buffer): string | undefined {
+  if (content[0] === 0xff && content[1] === 0xfe) return content.subarray(2).toString("utf16le");
+  if (content[0] === 0xfe && content[1] === 0xff)
+    return Buffer.from(content.subarray(2, content.length - (content.length % 2)))
+      .swap16()
+      .toString("utf16le");
+  return content.subarray(0, 8000).includes(0) ? undefined : content.toString("utf8");
+}
 
 /** Findings for one file, before the allowlist is applied. */
 export function scanFile(path: string, content: Buffer): Finding[] {
   const rule = pathRule(path, content);
   if (rule) return [{ path, line: 0, rule }];
-  if (isBinary(content)) return [];
+  const decoded = decode(content);
+  if (decoded === undefined) return [];
   const findings: Finding[] = [];
-  content
-    .toString("utf8")
-    .split(/\r?\n/)
-    .forEach((text, index) => {
-      const hit = LINE_RULES.find(({ pattern }) => pattern.test(text));
-      if (hit) findings.push({ path, line: index + 1, rule: hit.rule });
-    });
+  decoded.split(/\r?\n/).forEach((text, index) => {
+    const hit = LINE_RULES.find(({ pattern }) => pattern.test(text));
+    if (hit) findings.push({ path, line: index + 1, rule: hit.rule });
+  });
   return findings;
 }
 
