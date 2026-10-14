@@ -29,7 +29,7 @@ function initRepo(dir: string): string {
 function runScript(dir: string, script: string, args: string[], stubs: Record<string, string>, env = {}, cwd?: string) {
   const PATH = `${stubBin(dir, stubs)}${delimiter}${process.env["PATH"]}`;
   const options = { cwd: cwd ?? initRepo(dir), env: { ...process.env, ...env, PATH } };
-  return run(BASH!, [join(ORCHESTRATOR, script), ...args], options);
+  return run(BASH, [join(ORCHESTRATOR, script), ...args], options);
 }
 
 // `gh pr view` as wait_ci.sh asks for it: the head line, then one line per check run.
@@ -37,7 +37,7 @@ const ghChecks = (...checks: string[]): string =>
   `printf "%s\\n" ${[`${HEAD} MERGEABLE CLEAN`, ...checks].map((line) => `"${line}"`).join(" ")}`;
 const GH_GREEN = ghChecks("check COMPLETED SUCCESS");
 
-describe.skipIf(BASH === undefined)("wait_ci.sh", SLOW, () => {
+describe("wait_ci.sh", SLOW, () => {
   it.each([HEAD.slice(0, 7), HEAD.slice(0, 12), HEAD])("accepts the head by any prefix length: %s", (sha) => {
     const result = runScript(tempDir(), "wait_ci.sh", ["1", sha, "1"], { gh: GH_GREEN }, { WAIT_CI_POLL_S: "1" });
 
@@ -68,7 +68,15 @@ describe.skipIf(BASH === undefined)("wait_ci.sh", SLOW, () => {
   });
 });
 
-type MergeCase = { branch?: string; files?: string[]; merged?: boolean; mergeExit?: number; after?: string };
+type MergeCase = {
+  branch?: string;
+  files?: string[];
+  merged?: boolean;
+  stateFails?: boolean;
+  sha?: string;
+  mergeExit?: number;
+  after?: string;
+};
 
 /** A `gh` stub for merge_pr.sh: CI green on HEAD, the PR's changed files, `pr merge` exiting MERGEEXIT (calls counted
  * in gh-merges), and the PR state "<state> <head> <branch>": MERGED at HEAD when MERGED, else OPEN until a merge call,
@@ -83,7 +91,7 @@ function ghForMerge(dir: string, c: MergeCase): string {
     `  *statusCheckRollup*) ${GH_GREEN} ;;`,
     `  "pr diff"*) printf "%s\\n" ${files.map((f) => `"${f}"`).join(" ")} ;;`,
     `  "pr merge"*) echo merge >> "${merges}"; echo "GraphQL: Something went wrong" >&2; exit ${c.mergeExit ?? 0} ;;`,
-    `  *state,headRefOid,headRefName*) [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch}" || echo "${before}" ;;`,
+    `  *state,headRefOid,headRefName*) ${c.stateFails ? "exit 1;" : ""} [[ -e "${merges}" ]] && echo "${c.after ?? `MERGED ${HEAD}`} ${branch}" || echo "${before}" ;;`,
     `  *headRefOid*) echo "${HEAD}" ;;`,
     "  *) exit 1 ;;",
     "esac",
@@ -93,11 +101,11 @@ function ghForMerge(dir: string, c: MergeCase): string {
 function mergePr(c: MergeCase) {
   const dir = tempDir();
   const env = { WAIT_CI_POLL_S: "1", MERGE_CONFIRM_S: "0" };
-  const result = runScript(dir, "merge_pr.sh", ["7", HEAD.slice(0, 7)], { gh: ghForMerge(dir, c) }, env);
+  const result = runScript(dir, "merge_pr.sh", ["7", c.sha ?? HEAD.slice(0, 7)], { gh: ghForMerge(dir, c) }, env);
   return { ...result, merges: read(join(dir, "gh-merges")).split("\n").filter(Boolean).length };
 }
 
-describe.skipIf(BASH === undefined)("merge_pr.sh", SLOW, () => {
+describe("merge_pr.sh", SLOW, () => {
   it("merges a green spec PR that carries its tracker commit", () => {
     expect(mergePr({})).toMatchObject({ status: 0, merges: 1 });
   });
@@ -134,6 +142,20 @@ describe.skipIf(BASH === undefined)("merge_pr.sh", SLOW, () => {
     );
   });
 
+  it.each(["", "0123"])("rejects a SHA7 that cannot identify a commit, even on a merged PR: %j", (sha) => {
+    const result = mergePr({ merged: true, sha });
+
+    expect(result).toMatchObject({ status: 1, merges: 0, stdout: "" });
+    expect(result.stderr).toContain("usage: merge_pr.sh PR SHA7");
+  });
+
+  it("refuses to merge when the PR state cannot be read", () => {
+    const result = mergePr({ stateFails: true });
+
+    expect(result).toMatchObject({ status: 1, merges: 0 });
+    expect(result.stderr).toBe("ERROR cannot read the state of PR #7\n");
+  });
+
   it("merges a non-spec PR without a tracker change", () => {
     expect(mergePr({ branch: "chore/ts-tooling", files: ["src/a.ts"] })).toMatchObject({ status: 0, merges: 1 });
   });
@@ -166,7 +188,7 @@ const AGENT_A = agents(["impl-a", "working", "w1"]);
 const NO_AGENTS = agents();
 const WATCH_ENV = { INTERVAL: "0", MIN_FREE_MB: "0", HERDR_WORKSPACE_ID: "w1" };
 
-describe.skipIf(BASH === undefined)("watch_agents.sh", SLOW, () => {
+describe("watch_agents.sh", SLOW, () => {
   it("ignores agents of other workspaces", () => {
     const dir = tempDir();
     const other: [string, string, string] = ["uat-tester2", "idle", "w14"];
@@ -235,7 +257,7 @@ const branches = (main: string, origin: string): string[] => [
   git(origin, "branch", "--list", "spec-01/pr-1-x"),
 ];
 
-describe.skipIf(BASH === undefined)("cleanup_worktree.sh", SLOW, () => {
+describe("cleanup_worktree.sh", SLOW, () => {
   it("removes a merged worktree and its branches", () => {
     const dir = tempDir();
     const { main, origin } = mergedWorktree(dir);
@@ -338,7 +360,7 @@ function startAgent(dir: string, listing: string, env: Record<string, string> = 
   return runScript(dir, "start_agent.sh", ["impl-x", "spec-09-pr-1", "go", "0"], stubs, fullEnv);
 }
 
-describe.skipIf(BASH === undefined)("start_agent.sh", SLOW, () => {
+describe("start_agent.sh", SLOW, () => {
   it("counts workers of its own workspace only", () => {
     const others = [0, 1, 2].map((n): [string, string, string] => [`impl-${n}`, "working", "w14"]);
     const result = startAgent(
@@ -366,7 +388,7 @@ describe.skipIf(BASH === undefined)("start_agent.sh", SLOW, () => {
   });
 });
 
-describe.skipIf(BASH === undefined)("close_agent.sh", SLOW, () => {
+describe("close_agent.sh", SLOW, () => {
   it.each([
     ["w1", "closed impl-a w1:p1\n", "w1:p1"],
     ["w14", "gone impl-a\n", ""],

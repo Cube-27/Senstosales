@@ -8,7 +8,8 @@
 # re-read for MERGE_CONFIRM_S seconds (default 30): exits 0 if the PR is MERGED at the expected head, else 1.
 set -eu
 source "$(dirname "$0")/config.sh"
-pr=$1; sha=$2
+pr=${1:-}; sha=${2:-}
+[[ $pr =~ ^[0-9]+$ && $sha =~ ^[0-9a-f]{7,40}$ ]] || err "usage: merge_pr.sh PR SHA7 (SHA7: 7-40 hex digits)"
 tracker=docs/plans/ACTIVE.md
 
 # "<state> <head sha> <branch>" of the PR, or nothing when gh fails.
@@ -17,16 +18,18 @@ pr_state() { gh pr view "$pr" --json state,headRefOid,headRefName --jq '"\(.stat
 # Recurring: GitHub answered a merge with a GraphQL error although the merge went through, and a retry then added an
 # empty duplicate commit. Trust the PR state, never the exit code alone.
 read -r state head branch <<< "$(pr_state)"
+[[ -n $branch ]] || err "cannot read the state of PR #$pr"
 if [[ $state == MERGED && $head == "$sha"* ]]; then echo "already merged: PR #$pr at $head"; exit 0; fi
-
-# Recurring: a spec PR was merged without the YOUR TURN tracker commit. A failed `gh pr diff` also refuses.
-if [[ $branch =~ ^spec-[0-9]+/ ]] && ! gh pr diff "$pr" --name-only | grep -qxF "$tracker"; then
-  err "PR #$pr ($branch) does not touch $tracker: the tracker commit is missing. Send YOUR TURN and wait for READY before merging."
-fi
 
 bash "$(dirname "$0")/wait_ci.sh" "$pr" "$sha"
 full=$(gh pr view "$pr" --json headRefOid --jq .headRefOid)
 if [[ $full != "$sha"* ]]; then err "head is $full, not $sha"; fi
+
+# Recurring: a spec PR was merged without the YOUR TURN tracker commit. A failed `gh pr diff` also refuses. Checked
+# once the head is verified, so it reads the diff that gets merged.
+if [[ $branch =~ ^spec-[0-9]+/ ]] && ! gh pr diff "$pr" --name-only | grep -qxF "$tracker"; then
+  err "PR #$pr ($branch) does not touch $tracker: the tracker commit is missing. Send YOUR TURN and wait for READY before merging."
+fi
 if gh pr merge "$pr" --squash --match-head-commit "$full"; then exit 0; fi
 
 end=$(( $(date +%s) + ${MERGE_CONFIRM_S:-30} ))
