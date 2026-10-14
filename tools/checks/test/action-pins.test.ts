@@ -45,12 +45,18 @@ describe("checkWorkflow", () => {
     ["write-all", "permissions: write-all\n"],
     ["read-all", "permissions: read-all\n"],
     ["nothing (an empty block)", "permissions:\n"],
+    ["write after a blank line", "permissions:\n  contents: read\n\n  pull-requests: write\n"],
+    ["write after a comment line", "permissions:\n  contents: read\n# note\n  pull-requests: write\n"],
   ])("rejects top-level permissions granting %s", (_case, block) => {
     expect(checkWorkflow(`name: ci\n${block}jobs: {}\n`)).toEqual([{ line: 2, rule: "permissions-not-read" }]);
   });
 
   it("accepts read and none entries at the top level", () => {
     expect(checkWorkflow("permissions:\n  contents: read\n  id-token: none\njobs: {}\n")).toEqual([]);
+  });
+
+  it("accepts an indented comment and a blank line inside the block", () => {
+    expect(checkWorkflow("permissions:\n  # read only\n\n  contents: read\njobs: {}\n")).toEqual([]);
   });
 });
 

@@ -32,7 +32,9 @@ function checkPermissions(text: string): Finding[] {
   const grants = [];
   if (inline) grants.push(inline === "{}" ? "none" : inline);
   for (const line of lines.slice(at + 1)) {
-    if (!/^\s+\S/.test(line)) break;
+    // Blank and comment-only lines don't end the block in YAML; the next non-indented key does.
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    if (!/^\s/.test(line)) break;
     grants.push(line.replace(/#.*/, "").split(":")[1]?.trim() ?? "");
   }
   const readOnly = grants.length > 0 && grants.every((grant) => grant === "read" || grant === "none");
