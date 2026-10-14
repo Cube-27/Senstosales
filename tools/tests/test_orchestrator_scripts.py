@@ -218,6 +218,29 @@ def test_cleanup_refuses_a_directory_that_is_not_a_registered_worktree(tmp_path:
     assert branches(main, origin) == ("+ spec-01/pr-1-x", "spec-01/pr-1-x")
 
 
+def test_cleanup_refuses_a_name_that_is_not_the_worktree_of_the_branch(tmp_path: Path) -> None:
+    main, origin = merged_worktree(tmp_path)
+    result = run_cleanup(main, tmp_path, worktree="spec-01-pr1")  # a typo: no such directory
+
+    assert result.returncode == 2
+    assert "is checked out in" in result.stderr
+    assert (tmp_path / "app-worktrees" / "spec-01-pr-1").is_dir()
+    assert branches(main, origin) == ("+ spec-01/pr-1-x", "spec-01/pr-1-x")
+
+
+def test_cleanup_refuses_another_branchs_worktree_after_its_own_is_gone(tmp_path: Path) -> None:
+    main, origin = merged_worktree(tmp_path)
+    git(main, "worktree", "remove", str(tmp_path / "app-worktrees" / "spec-01-pr-1"))
+    other = tmp_path / "app-worktrees" / "spec-02-pr-1"
+    git(main, "worktree", "add", "-q", "-b", "spec-02/pr-1-y", str(other))
+    result = run_cleanup(main, tmp_path, worktree="spec-02-pr-1")
+
+    assert result.returncode == 2
+    assert "is not the worktree of" in result.stderr
+    assert other.is_dir()
+    assert branches(main, origin) == ("spec-01/pr-1-x", "spec-01/pr-1-x")
+
+
 def test_cleanup_warns_when_docker_cannot_list_containers(tmp_path: Path) -> None:
     main, _ = merged_worktree(tmp_path)
     result = run_cleanup(main, tmp_path, docker="exit 1")
