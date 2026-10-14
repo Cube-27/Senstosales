@@ -12,7 +12,10 @@ import { getRequestListener } from "@hono/node-server";
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
+import { authRoutes } from "../../routes/auth.ts";
 import { healthRoutes } from "../../routes/health.ts";
+import { createServices } from "../../services/index.ts";
+import { createClock } from "./clock.ts";
 import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
 import { spa } from "./static.ts";
 
@@ -54,7 +57,11 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  const app = createApp({ port: address.port, logger: stderrLogger }, healthRoutes({ version: options.version, db }));
+  const { auth } = createServices({ db, clock: createClock() });
+  const app = createApp(
+    { port: address.port, logger: stderrLogger, signedIn: auth.signedIn },
+    { ...healthRoutes({ version: options.version, db }), ...authRoutes(auth) },
+  );
   app.get("*", spa(options.webRoot));
   server.on("request", getRequestListener(app.fetch));
 

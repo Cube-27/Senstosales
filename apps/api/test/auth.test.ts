@@ -1,12 +1,13 @@
 // SPEC-07 PR 4: the simple `admin` login (INV-80, A-17, A2-11): login, remember-me, logout, session, change
 // password and reset-to-defaults (EC-08). No backoff and no complexity rule (C11).
-import { applyMigrations, appUser, auditLog, MIGRATIONS, session, type Instant } from "@senstosales/db";
-import { openNodeDb, type NodeDb } from "@senstosales/db/node";
+import { appUser, auditLog, session, type Instant } from "@senstosales/db";
+import type { NodeDb } from "@senstosales/db/node";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import type { Clock } from "../src/ports/clock.ts";
 import { authRoutes } from "../src/routes/auth.ts";
 import { createServices } from "../src/services/index.ts";
+import { migratedDb } from "./db.ts";
 import { json, testApp } from "./helpers.ts";
 
 const START = "2025-04-01T05:30:00.000Z";
@@ -24,9 +25,8 @@ afterEach(() => {
 
 /** An app over a migrated in-memory DB with no supplier and no user row, as on first run; `clock.at` moves time. */
 async function setup() {
-  const db = openNodeDb(":memory:");
+  const db = await migratedDb();
   open.push(db);
-  await applyMigrations(db, MIGRATIONS, { appVersion: "0.1.0", appliedAt: START as Instant });
   const clock: Clock & { at: string } = {
     at: START,
     now: () => clock.at as Instant,
