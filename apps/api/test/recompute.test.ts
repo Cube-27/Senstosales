@@ -355,6 +355,20 @@ describe("recomputePo", () => {
     expect((await flags()).filter((f) => f.poId === "P2")).toEqual([]);
   });
 
+  test("two recomputes built before either commits both commit, and each flag is stored once (INV-59)", async () => {
+    await seed();
+    // Both batches diff against the same stored flags (none), so both carry the same five inserts.
+    const [first, second] = [new WriteBatch(db), new WriteBatch(db)];
+    for (const batch of [first, second]) {
+      for (const statement of await recomputePo({ db, clock: fixedClock }, "P1")) batch.add(statement);
+    }
+    await first.commit();
+    await second.commit();
+
+    expect(await flags()).toEqual(EXPECTED_FLAGS);
+    expect(await items()).toEqual(EXPECTED_ITEMS);
+  });
+
   test("an unknown PO id is a NotFoundError", async () => {
     await expect(recomputePo({ db, clock: fixedClock }, "NOPE")).rejects.toThrow(NotFoundError);
   });
