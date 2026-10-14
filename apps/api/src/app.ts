@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { AppError, ValidationError } from "./errors.ts";
+import { requireSession } from "./middleware/auth.ts";
 import { bodyLimit } from "./middleware/body-limit.ts";
 import { hostGuard } from "./middleware/host-guard.ts";
 import { jsonOnly } from "./middleware/json-only.ts";
@@ -17,6 +18,8 @@ export interface AppDeps {
   /** The port the server listens on; the Host guard accepts only this port (C10). */
   readonly port: number;
   readonly logger: Logger;
+  /** Whether a session token is live; routes the table does not mark public need one (§10.1). */
+  readonly signedIn: (token: string | undefined) => Promise<boolean>;
 }
 
 type Def<N extends RouteName> = (typeof routes)[N];
@@ -46,12 +49,13 @@ const NOT_FOUND = { code: "not-found", message: "This page or item was not found
 export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   const app = new Hono();
   app.use(hostGuard(deps.port), jsonOnly, bodyLimit);
+  const requireSignedIn = requireSession(deps.signedIn);
   // In the table's order, not the caller's: Hono matches in registration order, and the table lists fixed segments
   // (`/api/po/stats`) before ids (`/api/po/:id`).
-  for (const [name, def] of Object.entries(routes)) {
+  for (const [name, def] of Object.entries<RouteDef>(routes)) {
     // `Handlers` pairs each route name with its handler type; indexing by a string loses that pairing.
     const handler = handlers[name as RouteName] as AnyHandler | undefined;
-    if (handler) mount(app, def, handler);
+    if (handler) mount(app, def, handler, def.public ? undefined : requireSignedIn);
   }
   app.notFound((c) => c.json(NOT_FOUND, 404));
   app.onError((err, c) => {
@@ -65,8 +69,10 @@ export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   return app;
 }
 
-function mount(app: Hono, def: RouteDef, handler: AnyHandler): void {
+/** Mounts one route; `guard` runs inside the route's own handler, so it can never apply to a different route. */
+function mount(app: Hono, def: RouteDef, handler: AnyHandler, guard: ((c: Context) => Promise<void>) | undefined) {
   app.on(def.method, def.path, async (c) => {
+    await guard?.(c);
     const input = {
       params: def.params && decode("params", def.params, c.req.param()),
       query: def.query && decode("query", def.query, readQuery(c)),
