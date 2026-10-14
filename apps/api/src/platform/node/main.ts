@@ -52,12 +52,13 @@ function listen(server: Server): Promise<AddressInfo> {
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
   const paths = await prepareDataDir(options.dataDir);
+  const clock = createClock();
   const db = openNodeDb(paths.db);
   try {
     await upgradeGate(db, {
       backupsDir: paths.backups,
       appVersion: options.version,
-      now: createClock().now(),
+      now: clock.now(),
     });
   } catch (err) {
     db.close();
@@ -68,7 +69,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  const { auth } = createServices({ db, clock: createClock() });
+  const { auth } = createServices({ db, clock });
   const app = createApp(
     { port: address.port, logger: stderrLogger, signedIn: auth.signedIn },
     { ...healthRoutes({ version: options.version, db }), ...authRoutes(auth) },
