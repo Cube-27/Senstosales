@@ -1674,3 +1674,19 @@ None.
 - Alternatives: `srv.delete`.
 - Why: Matches the `delete-buyer` naming.
 - Reversible: yes.
+
+### D-0203 — Retarget stacked PRs to the merged PR's base
+
+- Date: 2026-10-15 · Spec/PR: orchestrator tools (#48) · Status: decided
+- Decision: Before merging, `merge_pr.sh` retargets each open PR based on the PR's branch to that PR's own base, not a hard-coded `main`.
+- Alternatives: Always retarget to `main`.
+- Why: GitHub deletes a merged PR's branch and closes the PRs based on it (#43 on #42). The PR's base is `main` in the usual case, keeps a longer stack intact, and needs no config value.
+- Reversible: yes.
+
+### D-0204 — Retarget before the merge, refuse on failure
+
+- Date: 2026-10-15 · Spec/PR: orchestrator tools (#48) · Status: decided
+- Decision: The retarget runs before `gh pr merge`; a failed list or retarget refuses the merge.
+- Alternatives: Retarget after the merge, or warn and merge anyway.
+- Why: After the merge the stacked PRs are already closed. If the merge then fails, the retargeted PRs only point at the base they would need anyway.
+- Reversible: yes.
