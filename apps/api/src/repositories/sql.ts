@@ -9,5 +9,7 @@ export function apiColumns<T extends Table>(table: T) {
 }
 
 /** `LIKE` on the text as typed: `%` and `_` match themselves. */
-export const contains = (column: SQLWrapper, text: string) =>
-  sql`${column} LIKE ${`%${text.replace(/[\\%_]/g, "\\$&")}%`} ESCAPE '\\'`;
+export function contains(column: SQLWrapper, text: string) {
+  const pattern = "%" + text.replace(/[\\%_]/g, String.raw`\$&`) + "%";
+  return sql`${column} LIKE ${pattern} ESCAPE ${sql.raw(String.raw`'\'`)}`;
+}

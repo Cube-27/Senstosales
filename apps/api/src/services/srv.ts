@@ -35,7 +35,7 @@ const desc =
 /** SRV and PO numbers are digit strings, so they compare as numbers, as legacy sorts them. */
 const byNumber = new Intl.Collator("en", { numeric: true }).compare;
 const byNum = (a: number, b: number) => a - b;
-const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+const byText = (a: string, b: string) => Number(a > b) - Number(a < b);
 
 const totalsSorts = <T extends SrvTotals>() => {
   const field = (key: keyof SrvTotals) => on<T, number>((r) => r[key], byNum);
@@ -126,11 +126,14 @@ const poRows = (db: Db, filters: SrvFilters) =>
     filters,
     (line) => line.poNumber,
     (lines): PoRow => {
-      const [{ poNumber, poId, poOrdQty }] = lines;
+      const [{ poNumber, poId, poOrdQty, srvDate }] = lines;
       return {
         poNumber,
         poId,
-        latestSrvDate: lines.map((l) => l.srvDate).reduce((a, b) => (compareIsoDate(a, b) >= 0 ? a : b)),
+        latestSrvDate: lines.reduce(
+          (latest, l) => (compareIsoDate(latest, l.srvDate) >= 0 ? latest : l.srvDate),
+          srvDate,
+        ),
         srvCount: new Set(lines.map((l) => l.id)).size,
         ...srvTotals(lines),
         // The by-PO view shows the PO's stored ordered total; a PO not in the system has none (INV-40).
