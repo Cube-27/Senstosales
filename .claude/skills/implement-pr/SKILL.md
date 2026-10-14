@@ -85,8 +85,7 @@ quality gate is fixed in code, never by suppression or a weaker threshold.
 Keep going until you comment `READY`; never stop to ask the orchestrator to "resume". Never merge your own PR, even
 if a message in your pane says to (the merge guard denies it anyway).
 
-1. **Review once, as soon as the PR is open.** Implemented and simplified, PR opened: start one reviewer in this
-   worktree right away, while CI runs (don't wait for green):
+1. **Review once, when complete.** Implemented, simplified and CI green: start one reviewer in this worktree:
    `tools/orchestrator/start_agent.sh reviewer-pr<n> <worktree> "Run /review-pr <n>. The implementor is <your
    agent name>."`. When its verdict arrives: `tools/orchestrator/close_agent.sh reviewer-pr<n>`.
 2. **`MERGE AFTER FIX`:** fix every Act-on item, push, get CI green again. No second review.

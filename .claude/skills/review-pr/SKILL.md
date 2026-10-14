@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Review one complete PR (implemented, simplified, CI green) against its spec row, the CLAUDE.md contract and the engineering principles, and return a merge verdict. Use before merging any PR, or when asked to review a branch or PR.
+description: Review one complete PR (implemented and simplified by its implementor, CI green; the reviewer never runs /simplify) against its spec row, the CLAUDE.md contract and the engineering principles, and return a merge verdict. Use before merging any PR, or when asked to review a branch or PR.
 ---
 
 # Review a PR
