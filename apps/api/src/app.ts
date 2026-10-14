@@ -12,6 +12,7 @@ import { requireSession } from "./middleware/auth.ts";
 import { bodyLimit } from "./middleware/body-limit.ts";
 import { hostGuard } from "./middleware/host-guard.ts";
 import { jsonOnly } from "./middleware/json-only.ts";
+import { requireOnboarded } from "./middleware/onboarding.ts";
 import type { Logger } from "./ports/logger.ts";
 
 export interface AppDeps {
@@ -20,6 +21,8 @@ export interface AppDeps {
   readonly logger: Logger;
   /** Whether a session token is live; routes the table does not mark public need one (§10.1). */
   readonly signedIn: (token: string | undefined) => Promise<boolean>;
+  /** Whether the supplier exists; until it does, only public routes answer (INV-78). */
+  readonly onboarded: () => Promise<boolean>;
 }
 
 type Def<N extends RouteName> = (typeof routes)[N];
@@ -50,12 +53,16 @@ export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   const app = new Hono();
   app.use(hostGuard(deps.port), jsonOnly, bodyLimit);
   const requireSignedIn = requireSession(deps.signedIn);
+  const guard = async (c: Context) => {
+    await requireOnboarded(deps.onboarded);
+    await requireSignedIn(c);
+  };
   // In the table's order, not the caller's: Hono matches in registration order, and the table lists fixed segments
   // (`/api/po/stats`) before ids (`/api/po/:id`).
   for (const [name, def] of Object.entries<RouteDef>(routes)) {
     // `Handlers` pairs each route name with its handler type; indexing by a string loses that pairing.
     const handler = handlers[name as RouteName] as AnyHandler | undefined;
-    if (handler) mount(app, def, handler, def.public ? undefined : requireSignedIn);
+    if (handler) mount(app, def, handler, def.public ? undefined : guard);
   }
   app.notFound((c) => c.json(NOT_FOUND, 404));
   app.onError((err, c) => {

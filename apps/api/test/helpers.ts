@@ -27,11 +27,16 @@ export function memoryLogger(): Logger & { lines: LogLine[] } {
 
 /**
  * An app on the test port with `handlers`; `send` adds the loopback Host unless the test sets one, and `client` is
- * the typed web client over `send`, as the SPA calls it. Every request is signed in unless `signedIn` says otherwise.
+ * the typed web client over `send`, as the SPA calls it. Every request is signed in, and onboarding done, unless
+ * `signedIn` or `onboarded` says otherwise.
  */
-export function testApp(handlers: Handlers = {}, signedIn: AppDeps["signedIn"] = () => Promise.resolve(true)) {
+export function testApp(
+  handlers: Handlers = {},
+  signedIn: AppDeps["signedIn"] = () => Promise.resolve(true),
+  onboarded: AppDeps["onboarded"] = () => Promise.resolve(true),
+) {
   const logger = memoryLogger();
-  const app = createApp({ port: PORT, logger, signedIn }, handlers);
+  const app = createApp({ port: PORT, logger, signedIn, onboarded }, handlers);
   const send = async (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (!headers.has("host")) headers.set("host", HOST);
