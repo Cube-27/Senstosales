@@ -1,0 +1,6 @@
+node_modules/
+dist/
+shell/ui/dist/
+shell/src-tauri/target/
+shell/src-tauri/gen/
+shell/src-tauri/binaries/*.exe

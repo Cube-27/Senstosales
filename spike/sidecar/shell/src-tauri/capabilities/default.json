@@ -1,0 +1,9 @@
+{
+  "identifier": "default",
+  "description": "Only the bundled shell page may start the sidecar; the loopback app origin gets no capability.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    { "identifier": "shell:allow-spawn", "allow": [{ "name": "binaries/sensto-sidecar", "sidecar": true }] }
+  ]
+}
