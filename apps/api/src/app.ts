@@ -46,9 +46,12 @@ const NOT_FOUND = { code: "not-found", message: "This page or item was not found
 export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   const app = new Hono();
   app.use(hostGuard(deps.port), jsonOnly, bodyLimit);
-  for (const [name, handler] of Object.entries(handlers)) {
-    // `Object.entries` loses the pairing of each name with its handler type; `Handlers` guarantees it.
-    mount(app, routes[name as RouteName], handler as AnyHandler);
+  // In the table's order, not the caller's: Hono matches in registration order, and the table lists fixed segments
+  // (`/api/po/stats`) before ids (`/api/po/:id`).
+  for (const [name, def] of Object.entries(routes)) {
+    // `Handlers` pairs each route name with its handler type; indexing by a string loses that pairing.
+    const handler = handlers[name as RouteName] as AnyHandler | undefined;
+    if (handler) mount(app, def, handler);
   }
   app.notFound((c) => c.json(NOT_FOUND, 404));
   app.onError((err, c) => {
