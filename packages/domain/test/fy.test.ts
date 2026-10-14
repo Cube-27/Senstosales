@@ -53,7 +53,7 @@ describe("INV-22/INV-24: docKey", () => {
   });
 });
 
-describe("parseFy: the label fyOf writes", () => {
+describe("INV-21: parseFy accepts only the label fyOf writes", () => {
   it.each(["2024-25", "1999-00", "2009-10"])("accepts %j", (s) => {
     expect(parseFy(s)).toEqual({ ok: true, value: s });
   });

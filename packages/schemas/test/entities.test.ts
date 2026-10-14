@@ -349,10 +349,12 @@ describe("entities: §8.2 rows on the wire", () => {
     expect(z.encode(schema as z.ZodType, value)).toEqual(wire);
   });
 
-  it.each(CASES)("$name rejects a missing field", ({ schema, wire }) => {
-    const [first] = Object.keys(wire);
-    const { [first as string]: _dropped, ...rest } = wire as Record<string, unknown>;
-    expect(schema.safeParse(rest).success).toBe(false);
+  // Every field is required (nullable ones are sent as `null`), so dropping any one of them fails.
+  it.each(CASES)("$name rejects each missing field", ({ schema, wire }) => {
+    for (const key of Object.keys(wire)) {
+      const { [key]: _dropped, ...rest } = wire as Record<string, unknown>;
+      expect(schema.safeParse(rest).success, key).toBe(false);
+    }
   });
 
   // No float type appears in any quantity or money schema (SPEC-04 §7): on the wire, the only numbers are integers.
