@@ -1,0 +1,24 @@
+{
+  "name": "senstosales",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "hooks": "vp config --hooks --no-agent",
+    "format": "vp fmt --write",
+    "check:code": "vp check && tsc -b && vp test run && pnpm -r --if-present build",
+    "check:real-data": "node tools/checks/src/real-data-scan.ts",
+    "check:licenses": "node -e \"require('fs').mkdirSync('license-report',{recursive:true})\" && pnpm licenses list --json --recursive > license-report/licenses.json && node tools/checks/src/license-check.ts license-report/licenses.json",
+    "check:tools": "bash tools/check-tools.sh",
+    "verify": "pnpm check:code && pnpm check:real-data && pnpm check:licenses && pnpm check:tools"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.1.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.22.0"
+}

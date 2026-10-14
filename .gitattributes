@@ -1,0 +1,14 @@
+# Text is LF in the repo and in every checkout: Oxfmt rejects CRLF, so a Windows checkout would fail `vp check`.
+* text=auto eol=lf
+# Shell scripts run under bash, which fails on CRLF line endings (Git Bash on Windows included).
+*.sh text eol=lf
+# Hook and CI configs are read by tools that expect LF.
+*.yml text eol=lf
+*.yaml text eol=lf
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+# Lockfiles: no diffs in reviews, no merge attempts.
+pnpm-lock.yaml -diff linguist-generated
+uv.lock -diff linguist-generated
