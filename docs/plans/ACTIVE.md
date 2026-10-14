@@ -36,7 +36,8 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-- In flight: SPEC-00 PR 2, SPEC-01 PR 1 and PR 3 (paused for memory).
+- In flight: SPEC-00 PR 2 (#4), SPEC-01 PR 1, SPEC-02 PR 1.
+- Next: tooling PR (TS merge guard, no Python, Node 26).
 - Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
@@ -50,13 +51,13 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## [SPEC-01 — Spikes (L0.5)](../specs/SPEC-01-spikes.md)
 
-| PR  | Scope                                     | Status | Notes |
-| --- | ----------------------------------------- | ------ | ----- |
-| 1   | Spike: sidecar lifecycle                  | todo   |       |
-| 2   | Spike: Edge login with captcha and OTP    | todo   | H3    |
-| 3   | Spike: node:sqlite + Drizzle batch + D1   | todo   |       |
-| 4   | Spike: exceljs output fidelity 1/20/21/60 | todo   | H5    |
-| 5   | Spike: parser feasibility                 | todo   | H4    |
+| PR  | Scope                                     | Status    | Notes |
+| --- | ----------------------------------------- | --------- | ----- |
+| 1   | Spike: sidecar lifecycle                  | todo      |       |
+| 2   | Spike: Edge login with captcha and OTP    | todo      | H3    |
+| 3   | Spike: node:sqlite + Drizzle batch + D1   | done (#5) |       |
+| 4   | Spike: exceljs output fidelity 1/20/21/60 | todo      | H5    |
+| 5   | Spike: parser feasibility                 | todo      | H4    |
 
 ## [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md)
 
