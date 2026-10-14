@@ -14,6 +14,7 @@ export {
   parseMoney,
   parsePct,
   parseQty,
+  pctToString,
   qtyToString,
   roundMoney,
   sumMoney,

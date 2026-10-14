@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { GstPct, LineTax, Money, Qty } from "../src/index.ts";
-import { invoiceLineTax, invoiceTotals, moneyToString, parsePct } from "../src/index.ts";
+import { invoiceLineTax, invoiceTotals, moneyToString, parsePct, pctToString } from "../src/index.ts";
 import { money, qty, unwrap } from "./unwrap.ts";
 
 const pct = (s: string) => unwrap(parsePct(s));
@@ -28,6 +28,15 @@ describe("parsePct: GST percentages in 1e-5 units (SPEC-03 §9)", () => {
 
   it.each(["", "9%", "9.000001", "nine", "-9", "-0.00001"])("parsePct(%j) is an error", (s) => {
     expect(parsePct(s).ok).toBe(false);
+  });
+
+  it.each([
+    [900000, "9"],
+    [250000, "2.5"],
+    [0, "0"],
+    [1400001, "14.00001"],
+  ])("pctToString(%i) -> %j", (n, expected) => {
+    expect(pctToString(n as GstPct)).toBe(expected);
   });
 });
 
