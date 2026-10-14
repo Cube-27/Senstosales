@@ -36,8 +36,8 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-- In flight: SPEC-03 PR 1 (#12), SPEC-01 PR 1, tooling PR (#10).
-- Next: SPEC-03 PR 2-6, SPEC-02 PR 5.
+- In flight: SPEC-03 PR 2-3, SPEC-01 PR 1, tooling PR (#10).
+- Next: SPEC-03 PR 4-6, SPEC-02 PR 5.
 - Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
@@ -71,14 +71,14 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md)
 
-| PR  | Scope                             | Status | Notes |
-| --- | --------------------------------- | ------ | ----- |
-| 1   | FY, document keys and GC defaults | todo   |       |
-| 2   | GEMC                              | todo   |       |
-| 3   | Tax                               | todo   |       |
-| 4   | Links and item matching           | todo   |       |
-| 5   | Guards and line validation        | todo   |       |
-| 6   | Flag detection and diff           | todo   |       |
+| PR  | Scope                             | Status     | Notes |
+| --- | --------------------------------- | ---------- | ----- |
+| 1   | FY, document keys and GC defaults | done (#12) |       |
+| 2   | GEMC                              | todo       |       |
+| 3   | Tax                               | todo       |       |
+| 4   | Links and item matching           | todo       |       |
+| 5   | Guards and line validation        | todo       |       |
+| 6   | Flag detection and diff           | todo       |       |
 
 ## [SPEC-04 — Schemas, route table and formatters](../specs/SPEC-04-schemas-routes-formatters.md)
 

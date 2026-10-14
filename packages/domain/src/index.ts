@@ -9,3 +9,6 @@ export type { ItemQuantities, ItemQuantityInput, PoTotals, PoTotalsItem } from "
 export { computeItemQuantities, computePoTotals } from "./quantities.ts";
 export type { ItemStatus, ItemStatusInput, PoStatus } from "./status.ts";
 export { itemStatus, poStatus } from "./status.ts";
+export type { DocKey, Fy } from "./fy.ts";
+export { docKey, fyOf } from "./fy.ts";
+export { defaultGc } from "./gc.ts";
