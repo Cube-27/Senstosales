@@ -4,7 +4,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { afterAll, describe, expect, expectTypeOf, test } from "vite-plus/test";
 
 import { WriteBatch, type Db } from "../src/index.ts";
@@ -131,6 +132,24 @@ describe("WriteBatch", () => {
 });
 
 describe("query", () => {
+  test("maps typed builder rows for all() and get()", async () => {
+    const parent = sqliteTable("parent", { id: text().primaryKey(), k: integer().notNull() });
+    const db = await withTables("query-typed");
+    await db.batch([
+      db.build.insert(parent).values([
+        { id: "P1", k: 7 },
+        { id: "P2", k: 8 },
+      ]),
+    ]);
+    const rows = await db.query(db.build.select().from(parent).orderBy(parent.k));
+    expect(rows).toEqual([
+      { id: "P1", k: 7 },
+      { id: "P2", k: 8 },
+    ]);
+    expect(await db.query(db.build.select().from(parent).where(eq(parent.k, 8)).get())).toEqual({ id: "P2", k: 8 });
+    expect(await db.query(db.build.select().from(parent).where(eq(parent.k, 9)).get())).toBeUndefined();
+  });
+
   test("returns the rows of one statement", async () => {
     const db = await withTables("query");
     await db.batch([insertParent(db, "P1", 7)]);
