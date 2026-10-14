@@ -7,6 +7,9 @@
 # branch (local and remote) is the head of a MERGED PR or an ancestor of origin/main. Deleting the remote branch of
 # an open PR makes GitHub close that PR. On refusal, or when GitHub can't be read, it exits 1 with an ERROR on stderr
 # and keeps the worktree, the branches and the containers.
+# WORKTREE is a name under $WORKTREE_ROOT, never a path: a path, or a name whose directory exists but is not a
+# registered worktree, exits 2 before anything is checked or removed (otherwise the worktree is "already gone" and
+# only the branches would be deleted).
 # Removes only containers named $CONTAINER_PREFIX-<worktree>* (config.sh), with their anonymous volumes; never
 # another project's. With PRUNE_DOCKER_CACHE=1 it also prunes all build cache and dangling images.
 set -u
@@ -14,6 +17,15 @@ source "$(dirname "$0")/config.sh"
 if [[ $# -ne 2 ]]; then echo "usage: cleanup_worktree.sh WORKTREE BRANCH" >&2; exit 2; fi
 wt=$1; branch=$2
 dir="$WORKTREE_ROOT/$wt"
+if [[ $wt == */* || $wt == *\\* ]]; then
+  echo "ERROR WORKTREE must be a name under $WORKTREE_ROOT, not a path: $wt; removed nothing" >&2
+  exit 2
+fi
+registered() { git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"; }
+if [[ -e $dir ]] && ! registered; then
+  echo "ERROR $dir is not a registered worktree; removed nothing" >&2
+  exit 2
+fi
 short=${wt//-/}   # spec-03-pr-8 -> spec03pr8
 remote_tip=""     # origin/$branch as require_merged checked it
 
@@ -53,7 +65,6 @@ if command -v docker >/dev/null 2>&1; then
   fi
 fi
 # The branches go only once the worktree is gone: a worktree still held by a process keeps its branch.
-registered() { git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"; }
 for _ in 1 2 3 4 5 6; do
   registered || break
   git -C "$main" worktree remove --force "$dir" 2>/dev/null && break

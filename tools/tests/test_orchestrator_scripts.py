@@ -157,10 +157,12 @@ def merged_worktree(tmp_path: Path) -> tuple[Path, Path]:
     return main, origin
 
 
-def run_cleanup(main: Path, tmp_path: Path, docker: str = "exit 0") -> subprocess.CompletedProcess[str]:
+def run_cleanup(
+    main: Path, tmp_path: Path, docker: str = "exit 0", worktree: str = "spec-01-pr-1"
+) -> subprocess.CompletedProcess[str]:
     path = f"{stub_bin(tmp_path, {'gh': 'exit 0', 'docker': docker})}{os.pathsep}{os.environ['PATH']}"
     return subprocess.run(
-        [BASH, str(ORCHESTRATOR / "cleanup_worktree.sh"), "spec-01-pr-1", "spec-01/pr-1-x"],
+        [BASH, str(ORCHESTRATOR / "cleanup_worktree.sh"), worktree, "spec-01/pr-1-x"],
         cwd=main,
         env={**os.environ, "PATH": path, "CLEANUP_RETRY_S": "0"},
         capture_output=True,
@@ -190,6 +192,29 @@ def test_cleanup_keeps_the_branches_when_the_worktree_cannot_be_removed(tmp_path
 
     assert result.returncode == 1
     assert "could not remove the worktree spec-01-pr-1" in result.stderr
+    assert branches(main, origin) == ("+ spec-01/pr-1-x", "spec-01/pr-1-x")
+
+
+@pytest.mark.parametrize("separator", ["/", "\\"])
+def test_cleanup_refuses_a_worktree_path_and_removes_nothing(tmp_path: Path, separator: str) -> None:
+    main, origin = merged_worktree(tmp_path)
+    result = run_cleanup(main, tmp_path, worktree=separator.join(["..", "app-worktrees", "spec-01-pr-1"]))
+
+    assert result.returncode == 2
+    assert "not a path" in result.stderr
+    assert (tmp_path / "app-worktrees" / "spec-01-pr-1").is_dir()
+    assert branches(main, origin) == ("+ spec-01/pr-1-x", "spec-01/pr-1-x")
+
+
+@pytest.mark.parametrize("worktree", ["spec-02-pr-1", ".", ".."])
+def test_cleanup_refuses_a_directory_that_is_not_a_registered_worktree(tmp_path: Path, worktree: str) -> None:
+    main, origin = merged_worktree(tmp_path)
+    (tmp_path / "app-worktrees" / "spec-02-pr-1").mkdir()
+    result = run_cleanup(main, tmp_path, worktree=worktree)
+
+    assert result.returncode == 2
+    assert "is not a registered worktree" in result.stderr
+    assert (tmp_path / "app-worktrees" / "spec-02-pr-1").is_dir()
     assert branches(main, origin) == ("+ spec-01/pr-1-x", "spec-01/pr-1-x")
 
 
