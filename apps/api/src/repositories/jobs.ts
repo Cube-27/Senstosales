@@ -97,7 +97,13 @@ export function insertEvent(db: Db, event: JobEventRow): Statement {
 export function finishJob(
   db: Db,
   id: string,
-  end: { status: "done" | "failed" | "cancelled"; finishedAt: Instant; progress: JobProgress; error: string | null },
+  end: {
+    status: "done" | "failed" | "cancelled";
+    finishedAt: Instant;
+    progress: JobProgress;
+    error: string | null;
+    summary?: JobRow["summary"];
+  },
 ): Statement {
   return db.build.update(job).set(end).where(eq(job.id, id));
 }
