@@ -8,13 +8,13 @@ import { zJob, zPaged } from "@senstosales/schemas";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import type { Clock } from "../src/ports/clock.ts";
-import type { DocumentResult, JobHandlers } from "../src/ports/jobs.ts";
+import type { DocumentResult, JobDocument, JobHandlers } from "../src/ports/jobs.ts";
 import { createJobRunner, type JobRunner } from "../src/platform/node/job-runner.ts";
 import { jobsRoutes } from "../src/routes/jobs.ts";
 import { jobWorker } from "../src/services/job-worker.ts";
 import { jobsService } from "../src/services/jobs.ts";
 import { migratedDb } from "./db.ts";
-import { ID, json, memoryLogger, testApp } from "./helpers.ts";
+import { gate, ID, json, memoryLogger, testApp } from "./helpers.ts";
 
 /** A clock that moves one second per call, so jobs created one after another sort by `createdAt`. */
 function tickingClock(): Clock {
@@ -25,12 +25,8 @@ function tickingClock(): Clock {
   };
 }
 
-/** A promise the test resolves, to hold a handler inside a document. */
-function gate() {
-  let open!: () => void;
-  const opened = new Promise<void>((resolve) => (open = resolve));
-  return { open, opened };
-}
+/** Documents whose key is their label. */
+const docs = (...keys: string[]): JobDocument[] => keys.map((key) => ({ key, label: key }));
 
 const START = json("POST", { type: "recompute-all" });
 const RUNNING = { code: "job-running", message: "Another job is running. Wait for it to finish, or cancel it." };
@@ -56,7 +52,7 @@ beforeEach(async () => {
   hold = {};
   handlers = {
     "recompute-all": {
-      documents: async () => ["a", "b", "c"],
+      documents: async () => docs("a", "b", "c"),
       process: async (doc) => {
         await hold[doc];
         processed.push(doc);
@@ -96,6 +92,7 @@ describe("start and run", () => {
         startedAt: "2025-04-01T05:30:01.000Z",
         finishedAt: "2025-04-01T05:30:02.000Z",
         progress: { total: 3, done: 3, skipped: 0, failed: 0, current: null },
+        summary: { total: 3, done: 3, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [] },
       },
       events: [],
     });
@@ -105,7 +102,7 @@ describe("start and run", () => {
     const { client } = setup();
     const seen: unknown[] = [];
     handlers["recompute-all"] = {
-      documents: async () => ["a", "b", "c"],
+      documents: async () => docs("a", "b", "c"),
       process: async (_doc, _start, jobId) => {
         seen.push((await client.request("jobs.detail", { params: { id: jobId } })).job.progress);
         return { outcome: "done" };
@@ -142,9 +139,9 @@ describe("start and run", () => {
   it("marks the job failed with its error when a handler throws, and logs it", async () => {
     const { client, logger } = setup();
     handlers["recompute-all"] = {
-      documents: async () => ["a", "b"],
-      process: async (doc) => {
-        if (doc === "b") throw new Error("Storage is not reachable.");
+      documents: async () => docs("a", "b"),
+      process: async (key) => {
+        if (key === "b") throw new Error("Storage is not reachable.");
         return { outcome: "done" };
       },
     };
@@ -324,5 +321,104 @@ describe("list and detail", () => {
     const res = await send(`/api/jobs/${ID}`);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ code: "job-not-found", message: "This job was not found." });
+  });
+});
+
+describe("documents and summary", () => {
+  it("processes each document by its key and shows its label as current, on events and in the summary", async () => {
+    const { client } = setup();
+    const seen: unknown[] = [];
+    handlers["recompute-all"] = {
+      documents: async () => [
+        { key: "k1", label: "one.html" },
+        { key: "k2", label: "two.html" },
+      ],
+      process: async (key, _start, jobId) => {
+        seen.push([key, (await client.request("jobs.detail", { params: { id: jobId } })).job.progress.current]);
+        return key === "k2" ? { outcome: "skipped", reason: "Older." } : { outcome: "done" };
+      },
+    };
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    const detail = await client.request("jobs.detail", { params: { id } });
+    expect(seen).toEqual([
+      ["k1", "one.html"],
+      ["k2", "two.html"],
+    ]);
+    expect(detail.events.map((e) => [e.documentKey, e.message])).toEqual([["two.html", "Older."]]);
+    expect(detail.job.summary).toEqual({
+      total: 2,
+      done: 1,
+      skipped: 1,
+      failed: 0,
+      skippedDocuments: [{ document: "two.html", reason: "Older." }],
+      failedDocuments: [],
+    });
+  });
+
+  it("adds what the handler's finish returns, which runs after every event and count is written", async () => {
+    const { client } = setup();
+    results = { b: { outcome: "failed", reason: "The page has no items table." } };
+    handlers["recompute-all"]!.finish = async (_start, jobId) => {
+      const { job: seen, events } = await client.request("jobs.detail", { params: { id: jobId } });
+      return { seenFailed: seen.progress.failed, seenEvents: events.length };
+    };
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    const { job: done } = await client.request("jobs.detail", { params: { id } });
+    expect([done.status, done.summary]).toEqual([
+      "done",
+      {
+        total: 3,
+        done: 2,
+        skipped: 0,
+        failed: 1,
+        skippedDocuments: [],
+        failedDocuments: [{ document: "b", reason: "The page has no items table." }],
+        seenFailed: 1,
+        seenEvents: 1,
+      },
+    ]);
+  });
+
+  it("runs finish when the job fails too, keeping the counts its batches reached", async () => {
+    const { client } = setup();
+    handlers["recompute-all"] = {
+      documents: async () => docs("a", "b"),
+      process: async (key) =>
+        key === "b" ? Promise.reject(new Error("Storage is not reachable.")) : { outcome: "done" },
+      finish: async () => ({ cleaned: true }),
+    };
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    const { job: failed } = await client.request("jobs.detail", { params: { id } });
+    expect([failed.status, failed.error, failed.summary]).toEqual([
+      "failed",
+      "Storage is not reachable.",
+      { total: 2, done: 1, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [], cleaned: true },
+    ]);
+  });
+
+  it("leaves finish's part out when it throws, keeps the job as it ended, and logs it", async () => {
+    const { client, logger } = setup();
+    handlers["recompute-all"]!.finish = async () => Promise.reject(new Error("Storage is not reachable."));
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    const { job: done } = await client.request("jobs.detail", { params: { id } });
+    expect([done.status, done.error, done.summary]).toEqual([
+      "done",
+      null,
+      { total: 3, done: 3, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [] },
+    ]);
+    expect(logger.lines.map((l) => [l.level, l.message, l.fields["error"]])).toEqual([
+      ["error", "job summary failed", "Storage is not reachable."],
+    ]);
+  });
+
+  it("keeps no summary for a job whose type has no handler", async () => {
+    const { client } = setup();
+    const { id } = await client.request("jobs.start", { body: { type: "backup" } });
+    await runner.idle();
+    expect((await client.request("jobs.detail", { params: { id } })).job.summary).toBeNull();
   });
 });
