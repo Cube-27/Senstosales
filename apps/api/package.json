@@ -1,0 +1,14 @@
+{
+  "name": "@senstosales/api",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": "./src/app.ts",
+  "dependencies": {
+    "@senstosales/db": "workspace:*",
+    "@senstosales/domain": "workspace:*",
+    "@senstosales/schemas": "workspace:*",
+    "hono": "^4.13.13",
+    "zod": "^4.6.7"
+  }
+}
