@@ -1,0 +1,89 @@
+// Display formatters shared by screens and exports, so the two never disagree (ARCHITECTURE §11.2). Output matches
+// the legacy frontend's visible strings (SPEC-04 §4.4, A-2); all arithmetic stays on the branded integers (C3).
+import type { Fy, IsoDate, Money, Qty } from "@senstosales/domain";
+import { MONEY_DP, QTY_DP, moneyToString, roundMoney } from "@senstosales/domain";
+
+const RUPEE = "₹";
+const ONE_UNIT = 10 ** QTY_DP;
+/** Money units in one rupee, a lakh and a crore. */
+const ONE_RUPEE = 10 ** MONEY_DP;
+const LAKH = 100_000 * ONE_RUPEE;
+const CRORE = 10_000_000 * ONE_RUPEE;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Indian grouping: `"12345678"` -> `"1,23,45,678"` (the last three digits, then pairs). */
+function groupIndian(digits: string): string {
+  if (digits.length <= 3) return digits;
+  return `${digits.slice(0, -3).replace(/\B(?=(\d{2})+$)/g, ",")},${digits.slice(-3)}`;
+}
+
+/** `n / unit` rounded half toward +infinity, as legacy `Math.round` does, in exact integer arithmetic. */
+function roundDiv(n: number, unit: number): number {
+  const shifted = n + unit / 2;
+  return (shifted - (((shifted % unit) + unit) % unit)) / unit;
+}
+
+/** A count of records or items: `1234567` -> `"12,34,567"`. */
+export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-n))}` : groupIndian(String(n)));
+
+/** A quantity in whole units, as legacy shows every quantity: `2.5` -> `"3"` (EC-21). */
+export const fmtQty = (q: Qty): string => fmtCount(roundDiv(q, ONE_UNIT));
+
+/** GEMC amounts and rates show up to 5 dp, others up to 2 (A-12). */
+interface Precision {
+  readonly gemc: boolean;
+}
+
+/** A unit rate without the rupee sign (legacy rate cells draw it apart): `1234.50` -> `"1,234.5"`. */
+export function fmtRate(m: Money, { gemc }: Precision): string {
+  const [int = "", frac] = moneyToString(gemc ? m : roundMoney(m, 2)).split(".");
+  const sign = int.startsWith("-") ? "-" : "";
+  return sign + groupIndian(int.slice(sign.length)) + (frac === undefined ? "" : `.${frac}`);
+}
+
+/** A full-precision amount: `-848.755` -> `"-₹848.76"`; GEMC `719.27966` -> `"₹719.27966"`. */
+export function fmtMoney(m: Money, precision: Precision): string {
+  const rate = fmtRate(m, precision);
+  return rate.startsWith("-") ? `-${RUPEE}${rate.slice(1)}` : RUPEE + rate;
+}
+
+/** `abs / unit` to two decimals, half up: `12345670` lakh units -> `"12.35"`. */
+function hundredths(abs: number, unit: number): string {
+  const h = roundDiv(abs, unit / 100);
+  return `${(h - (h % 100)) / 100}.${String(h % 100).padStart(2, "0")}`;
+}
+
+/** Renders a magnitude in money units as whole rupees below a lakh, else lakh or crore to two decimals. */
+function compact(negative: boolean, abs: number, gap: string): string {
+  let body: string;
+  if (abs >= CRORE) body = `${hundredths(abs, CRORE)}${gap}Cr`;
+  else if (abs >= LAKH) body = `${hundredths(abs, LAKH)}${gap}L`;
+  else body = groupIndian(String(roundDiv(abs, ONE_RUPEE)));
+  return `${negative ? `-${gap}` : ""}${RUPEE}${body}`;
+}
+
+/** A compact amount, rounded to whole rupees first: `150000` -> `"₹1.50L"`, `99999.5` -> `"₹1.00L"`. */
+export function fmtMoneyCompact(m: Money): string {
+  const rupees = roundDiv(m, ONE_RUPEE);
+  return compact(rupees < 0, Math.abs(rupees) * ONE_RUPEE, "");
+}
+
+/**
+ * The delivery tracker's compact amount, which legacy rounds on the magnitude and only below a lakh:
+ * `-150000` -> `"- ₹1.50 L"`, `99999.5` -> `"₹1,00,000"`.
+ */
+export function fmtMoneyCompactSpaced(m: Money): string {
+  const abs = Math.abs(m);
+  return compact(m < 0 && abs >= ONE_RUPEE / 2, abs, " ");
+}
+
+/** `2025-01-05` -> `"05/01/2025"`; no date -> `"—"`. */
+export const fmtDate = (d: IsoDate | null): string =>
+  d === null ? "—" : `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
+
+/** The PO delivery and deviation screens' format: `2025-01-05` -> `"05 Jan 2025"`; no date -> `"-"`. */
+export const fmtDateMonthName = (d: IsoDate | null): string =>
+  d === null ? "-" : `${d.slice(8, 10)} ${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}`;
+
+/** `2024-25` -> `"FY 2024-25"`. */
+export const fmtFy = (fy: Fy): string => `FY ${fy}`;

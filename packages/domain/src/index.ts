@@ -5,6 +5,8 @@ export type { ReceiptInput, SrvLine } from "./receipt.ts";
 export { computeReceipt, dateWinner } from "./receipt.ts";
 export type { GstPct, Money, Qty } from "./units.ts";
 export {
+  MONEY_DP,
+  QTY_DP,
   TOL,
   gtTol,
   gte,
