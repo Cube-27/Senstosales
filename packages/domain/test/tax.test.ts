@@ -26,7 +26,7 @@ describe("parsePct: GST percentages in 1e-5 units (SPEC-03 §9)", () => {
     expect(parsePct(s)).toEqual({ ok: true, value: expected });
   });
 
-  it.each(["", "9%", "9.000001", "nine"])("parsePct(%j) is an error", (s) => {
+  it.each(["", "9%", "9.000001", "nine", "-9", "-0.00001"])("parsePct(%j) is an error", (s) => {
     expect(parsePct(s).ok).toBe(false);
   });
 });

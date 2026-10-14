@@ -40,8 +40,12 @@ export const parseQty = (s: string): Result<Qty> => parseScaled(s, QTY_DP) as Re
 /** INV-01: `"848.75"` -> `84875000`. */
 export const parseMoney = (s: string): Result<Money> => parseScaled(s, MONEY_DP) as Result<Money>;
 
-/** SPEC-03 §9: `"9"` -> `900000`. */
-export const parsePct = (s: string): Result<GstPct> => parseScaled(s, PCT_DP) as Result<GstPct>;
+/** SPEC-03 §9: `"9"` -> `900000`. A GST rate is never negative, so `"-9"` is malformed input. */
+export function parsePct(s: string): Result<GstPct> {
+  const r = parseScaled(s, PCT_DP);
+  if (r.ok && r.value < 0) return { ok: false, error: `Negative percentage: "${s}"` };
+  return r as Result<GstPct>;
+}
 
 export const qtyToString = (q: Qty): string => scaledToString(q, QTY_DP);
 
