@@ -13,6 +13,7 @@ screens; the folder-import controls live where the legacy sync/upload controls w
 ## 2. Scope
 
 Core:
+
 - `/po`: DataTable with the legacy columns, quantity columns first (Pending, Dispatched, Received, Accepted,
   Rejected; INV-65), status badge and filter, flag badge column, linked DC/SRV/invoice counts with popovers
   (INV-73), supply progress ring = max(dispatched, accepted) progress (spec §3, INV-73), URL-synced paging/sort/
@@ -29,6 +30,7 @@ Core:
   failed files and reasons and flags by type (§7.4). `JobProgress` is a shared component reused by SPEC-19.
 
 Out of scope:
+
 - BHEL sync wizard on `/po/ingest-bhel` (SPEC-19); DC/invoice screens (SPEC-18); deviations screen (SPEC-17).
 
 ## 3. Dependencies
@@ -72,13 +74,13 @@ cancelled marker).
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | PO list | `routes/po/index.tsx`, `POList`, `LinkedDocsPopover`, upload modal wiring, e2e | `check`, `e2e` | Paging/sort/filter no-shift e2e passes; counts and popovers show live linked documents. |
-| 2 | PO detail and manual dispatched qty | `routes/po/$id.tsx`, `PODetail`, `PODetailItems`, `ManualQtyCell`, e2e | `check`, `e2e` | Quantities, lots (entry-allow note), cancelled items, flag highlights and overlap highlight render; manual qty round-trips; delete disabled with reason. |
-| 3 | PO create and edit | `routes/po/create.tsx`, `POForm`, e2e | `check`, `e2e` | Manual PO created and edited; GEMC inclusive rate stored with derived net (INV-20). |
-| 4 | SRV list and detail | `routes/srv/*`, `SRVList`, `SRVDetail`, e2e | `check`, `e2e` | Flat and by-PO views; "PO not found"; resolved links clickable; delete works. |
-| 5 | Folder import and job progress | `FolderImport`, `JobProgress`, placement on the legacy sync/upload controls, e2e | `check`, `e2e` | Synthetic PO then SRV folders import with progress, cancel and summary; panel keeps its footprint while polling. |
+| #   | Title                               | Scope / files                                                                    | Checks         | Done when                                                                                                                                                |
+| --- | ----------------------------------- | -------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | PO list                             | `routes/po/index.tsx`, `POList`, `LinkedDocsPopover`, upload modal wiring, e2e   | `check`, `e2e` | Paging/sort/filter no-shift e2e passes; counts and popovers show live linked documents.                                                                  |
+| 2   | PO detail and manual dispatched qty | `routes/po/$id.tsx`, `PODetail`, `PODetailItems`, `ManualQtyCell`, e2e           | `check`, `e2e` | Quantities, lots (entry-allow note), cancelled items, flag highlights and overlap highlight render; manual qty round-trips; delete disabled with reason. |
+| 3   | PO create and edit                  | `routes/po/create.tsx`, `POForm`, e2e                                            | `check`, `e2e` | Manual PO created and edited; GEMC inclusive rate stored with derived net (INV-20).                                                                      |
+| 4   | SRV list and detail                 | `routes/srv/*`, `SRVList`, `SRVDetail`, e2e                                      | `check`, `e2e` | Flat and by-PO views; "PO not found"; resolved links clickable; delete works.                                                                            |
+| 5   | Folder import and job progress      | `FolderImport`, `JobProgress`, placement on the legacy sync/upload controls, e2e | `check`, `e2e` | Synthetic PO then SRV folders import with progress, cancel and summary; panel keeps its footprint while polling.                                         |
 
 ## 9. Open issues
 

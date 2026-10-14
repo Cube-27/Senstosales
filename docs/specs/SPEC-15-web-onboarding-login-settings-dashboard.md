@@ -12,6 +12,7 @@ consistency. Plain language and fewest steps throughout (C11).
 ## 2. Scope
 
 Core:
+
 - `/auth/login`: legacy layout; password with the fixed `admin` user; "remember me"; the legacy default-password
   notice; plain error text; redirect back after login.
 - `/onboarding`: shown when no supplier exists (INV-78); supplier profile and GST rates in the existing settings
@@ -25,6 +26,7 @@ Core:
 - Global search dialog: legacy trigger and results; FY shown with DC/invoice numbers (INV-24).
 
 Out of scope:
+
 - Lists and details (SPEC-16..18); backup UI (SPEC-21); BHEL sync wizard (SPEC-19).
 
 ## 3. Dependencies
@@ -68,13 +70,13 @@ section headers (bounding boxes).
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Login and session handling | `routes/auth/login.tsx`, `components/modules/auth/*`, session guard, e2e | `check`, `e2e` | Login, remember me, logout and 401 redirect work; default-password notice shown as legacy. |
-| 2 | Onboarding | `routes/onboarding.tsx`, `components/modules/onboarding/*`, e2e | `check`, `e2e` | Fresh install → onboarding → login → dashboard e2e passes. |
-| 3 | Settings | `routes/settings.tsx`, `components/modules/settings/*`, e2e | `check`, `e2e` | INV-72 behaviours and BHEL password status pass e2e; no layout shift on validation or section toggles. |
-| 4 | Dashboard | `routes/index.tsx`, `components/modules/dashboard/*`, tests | `check`, `e2e` | Stat cards and activity show synthetic values equal to legacy for the same data; open-flag count shown. |
-| 5 | Global search | `components/common/GlobalSearchDialog.tsx` wiring, `components/modules/search/*`, e2e | `check`, `e2e` | Search finds PO, DC, invoice and SRV numbers with FY on DC/invoice hits; dialog keeps its size while results load. |
+| #   | Title                      | Scope / files                                                                         | Checks         | Done when                                                                                                          |
+| --- | -------------------------- | ------------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1   | Login and session handling | `routes/auth/login.tsx`, `components/modules/auth/*`, session guard, e2e              | `check`, `e2e` | Login, remember me, logout and 401 redirect work; default-password notice shown as legacy.                         |
+| 2   | Onboarding                 | `routes/onboarding.tsx`, `components/modules/onboarding/*`, e2e                       | `check`, `e2e` | Fresh install → onboarding → login → dashboard e2e passes.                                                         |
+| 3   | Settings                   | `routes/settings.tsx`, `components/modules/settings/*`, e2e                           | `check`, `e2e` | INV-72 behaviours and BHEL password status pass e2e; no layout shift on validation or section toggles.             |
+| 4   | Dashboard                  | `routes/index.tsx`, `components/modules/dashboard/*`, tests                           | `check`, `e2e` | Stat cards and activity show synthetic values equal to legacy for the same data; open-flag count shown.            |
+| 5   | Global search              | `components/common/GlobalSearchDialog.tsx` wiring, `components/modules/search/*`, e2e | `check`, `e2e` | Search finds PO, DC, invoice and SRV numbers with FY on DC/invoice hits; dialog keeps its size while results load. |
 
 ## 9. Open issues
 

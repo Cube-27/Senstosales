@@ -14,6 +14,7 @@ the frozen screens show (A-2); quantity columns lead and status is a badge and f
 ## 2. Scope
 
 Core:
+
 - PO: list (filters: status, flag presence, text; sorts on the visible columns), stats, detail (header, items with
   `ord/dsp/rcd/rej/balance/uninvoiced`, Accepted = `rcd` (INV-09), status, cancelled marker, lots with entry-allow
   note, open flags per item, linked DC/invoice/SRV counts and popover lists bypassing pagination; INV-73).
@@ -35,6 +36,7 @@ Core:
 - Delivery tracker: paged list and stats for the screen (export in SPEC-13).
 
 Out of scope:
+
 - DC and invoice endpoints (SPEC-11); exports and reports (SPEC-13); screens (SPEC-15..18).
 
 ## 3. Dependencies
@@ -70,6 +72,7 @@ INV-83, INV-87, INV-95.
 ## 6. Testing strategy
 
 API tests per endpoint (happy, 400, 401, 404, 409) on synthetic data built through the ingestion services:
+
 - Manual qty `(ord 10, manual 4) -> dsp 4, balance 6`, audit row with before/after; `-1` → 400.
 - Delete PO with a DC → 409 with reason; without → gone.
 - Delete the last SRV → `rcd/rej` back to the PO document's values.
@@ -85,14 +88,14 @@ API tests per endpoint (happy, 400, 401, 404, 409) on synthetic data built throu
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | PO list, stats and detail | `routes/po.ts` (reads), `services/po.ts`, `repositories/po-list.ts`, tests | `check` | List convention, filters and sorts tested; detail returns quantities, lots, flags and linked-document counts/lists. |
-| 2 | PO manual create, edit and delete | `services/po.ts` (writes), routes, tests | `check` | GEMC inclusive-rate case (INV-20); version conflict 409; delete blocked by documents (INV-35). |
-| 3 | Manual dispatched quantity | `services/po-manual-qty.ts`, route, tests | `check` | INV-08 literal case and audit before/after; negative rejected; OVER_DISPATCH raised when it passes ord. |
-| 4 | SRV list, by-PO list, detail and delete | `routes/srv.ts`, `services/srv.ts`, `repositories/srv-list.ts`, tests | `check` | "PO not found" listed (INV-40); delete restores PO-winner values (INV-13). |
-| 5 | Flags and audit | `routes/{flags,audit}.ts`, services, repositories, tests | `check` | Acknowledge changes nothing else (INV-59); audit is read-only (INV-83). |
-| 6 | Dashboard, search and delivery tracker data | `routes/{dashboard,search,delivery-tracker}.ts`, services, repositories, tests | `check` | Fields match the legacy screens' visible values for a synthetic dataset; insights/forecast absent. |
+| #   | Title                                       | Scope / files                                                                  | Checks  | Done when                                                                                                           |
+| --- | ------------------------------------------- | ------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| 1   | PO list, stats and detail                   | `routes/po.ts` (reads), `services/po.ts`, `repositories/po-list.ts`, tests     | `check` | List convention, filters and sorts tested; detail returns quantities, lots, flags and linked-document counts/lists. |
+| 2   | PO manual create, edit and delete           | `services/po.ts` (writes), routes, tests                                       | `check` | GEMC inclusive-rate case (INV-20); version conflict 409; delete blocked by documents (INV-35).                      |
+| 3   | Manual dispatched quantity                  | `services/po-manual-qty.ts`, route, tests                                      | `check` | INV-08 literal case and audit before/after; negative rejected; OVER_DISPATCH raised when it passes ord.             |
+| 4   | SRV list, by-PO list, detail and delete     | `routes/srv.ts`, `services/srv.ts`, `repositories/srv-list.ts`, tests          | `check` | "PO not found" listed (INV-40); delete restores PO-winner values (INV-13).                                          |
+| 5   | Flags and audit                             | `routes/{flags,audit}.ts`, services, repositories, tests                       | `check` | Acknowledge changes nothing else (INV-59); audit is read-only (INV-83).                                             |
+| 6   | Dashboard, search and delivery tracker data | `routes/{dashboard,search,delivery-tracker}.ts`, services, repositories, tests | `check` | Fields match the legacy screens' visible values for a synthetic dataset; insights/forecast absent.                  |
 
 ## 9. Open issues
 

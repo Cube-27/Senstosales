@@ -15,6 +15,7 @@ derived columns and flags; DC/invoice/manual-quantity services (SPEC-10, -11) re
 ## 2. Scope
 
 Core:
+
 - `Jobs` port and in-process worker over `job`/`job_event`: enqueue, claim, progress (`total, done, skipped, failed,
   current`) per document, cancel between documents, single active job (partial unique index + in-process lock; a
   second start is 409 with a plain message; INV-98). Job API: start, list, detail with events, cancel.
@@ -38,6 +39,7 @@ Core:
 - `recompute-all` job: rebuilds derived columns and flags from stored rows; never at startup (§7.3, C9).
 
 Out of scope:
+
 - Scrape jobs and the scraper (SPEC-19); `backup` job (SPEC-21); the import UI (SPEC-16).
 - The local corpus import runner and report (SPEC-09).
 - `RECEIVED_EXCEEDS_DISPATCHED` and other candidate flags (A-24).
@@ -51,17 +53,17 @@ Out of scope:
 
 ### 4.1 Modules (`apps/api/src/`)
 
-| Path | Responsibility |
-|---|---|
-| `ports/jobs.ts` | `Jobs` port: `enqueue(type, params)`, `claim()`, `progress()`, `isCancelRequested()`, `finish()` |
-| `platform/node/job-runner.ts` | in-process worker loop, single-flight lock |
-| `services/jobs.ts`, `routes/jobs.ts` | start/list/detail/cancel; staging upload for folder import |
-| `services/source-documents.ts` | store raw HTML, `source_document` rows |
-| `services/recompute.ts` | `recomputePo(poId): Statement[]`; `recomputeAll()` |
-| `services/po-ingest.ts` | `ingestPoFile(html, ctx): FileResult` |
-| `services/srv-ingest.ts` | `ingestSrvFile(html, ctx): FileResult` |
-| `routes/{po-upload,srv-upload}.ts` | upload endpoints |
-| `repositories/{po,srv,dc,invoice,flags,jobs}.ts` | rows for snapshots and statements |
+| Path                                             | Responsibility                                                                                   |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `ports/jobs.ts`                                  | `Jobs` port: `enqueue(type, params)`, `claim()`, `progress()`, `isCancelRequested()`, `finish()` |
+| `platform/node/job-runner.ts`                    | in-process worker loop, single-flight lock                                                       |
+| `services/jobs.ts`, `routes/jobs.ts`             | start/list/detail/cancel; staging upload for folder import                                       |
+| `services/source-documents.ts`                   | store raw HTML, `source_document` rows                                                           |
+| `services/recompute.ts`                          | `recomputePo(poId): Statement[]`; `recomputeAll()`                                               |
+| `services/po-ingest.ts`                          | `ingestPoFile(html, ctx): FileResult`                                                            |
+| `services/srv-ingest.ts`                         | `ingestSrvFile(html, ctx): FileResult`                                                           |
+| `routes/{po-upload,srv-upload}.ts`               | upload endpoints                                                                                 |
+| `repositories/{po,srv,dc,invoice,flags,jobs}.ts` | rows for snapshots and statements                                                                |
 
 ### 4.2 Batches
 
@@ -92,6 +94,7 @@ INV-98 (new), INV-107 (new).
 ## 6. Testing strategy
 
 API tests with in-memory node:sqlite and the anonymised parser fixtures plus synthetic HTML built in tests:
+
 - Older PO skipped, no flag, job event recorded (INV-42, INV-44); same-date re-ingest leaves `dsp_qty` unchanged
   (INV-47).
 - SRV then PO gives the same quantities as PO then SRV (INV-15); SRV delete back to PO values (INV-13 via SPEC-10
@@ -114,14 +117,14 @@ API tests with in-memory node:sqlite and the anonymised parser fixtures plus syn
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Jobs port, worker and job API | `ports/jobs.ts`, `platform/node/job-runner.ts`, `services/jobs.ts`, `routes/jobs.ts`, `repositories/jobs.ts`, tests | `check` | Second start → 409; cancel honoured between documents; progress written per document. |
-| 2 | Source documents and recompute service | `services/{source-documents,recompute}.ts`, repositories, tests | `check` | Raw HTML stored before parse; `recomputePo` writes derived columns, PO totals/status and new flags from a seeded synthetic PO, idempotently. |
-| 3 | PO ingest service and upload | `services/po-ingest.ts`, `routes/po-upload.ts`, tests | `check` | INV-42, -44, -45, -47, -48 API tests pass; GEMC source/net stored; one batch per file. |
-| 4 | SRV ingest service and upload | `services/srv-ingest.ts`, `routes/srv-upload.ts`, tests | `check` | INV-37..INV-40, INV-43, INV-50, INV-52, INV-53 API tests pass. |
-| 5 | Folder import jobs | staging upload route, `po.import-folder` / `srv.import-folder` handlers, job summary, tests | `check` | A synthetic folder of good, older and broken files yields the right summary; other files still commit. |
-| 6 | `recompute-all` job | handler in `services/recompute.ts`, tests | `check` | After corrupting derived columns in a test DB, the job restores them and adds no duplicate flags; never runs at startup. |
+| #   | Title                                  | Scope / files                                                                                                       | Checks  | Done when                                                                                                                                    |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Jobs port, worker and job API          | `ports/jobs.ts`, `platform/node/job-runner.ts`, `services/jobs.ts`, `routes/jobs.ts`, `repositories/jobs.ts`, tests | `check` | Second start → 409; cancel honoured between documents; progress written per document.                                                        |
+| 2   | Source documents and recompute service | `services/{source-documents,recompute}.ts`, repositories, tests                                                     | `check` | Raw HTML stored before parse; `recomputePo` writes derived columns, PO totals/status and new flags from a seeded synthetic PO, idempotently. |
+| 3   | PO ingest service and upload           | `services/po-ingest.ts`, `routes/po-upload.ts`, tests                                                               | `check` | INV-42, -44, -45, -47, -48 API tests pass; GEMC source/net stored; one batch per file.                                                       |
+| 4   | SRV ingest service and upload          | `services/srv-ingest.ts`, `routes/srv-upload.ts`, tests                                                             | `check` | INV-37..INV-40, INV-43, INV-50, INV-52, INV-53 API tests pass.                                                                               |
+| 5   | Folder import jobs                     | staging upload route, `po.import-folder` / `srv.import-folder` handlers, job summary, tests                         | `check` | A synthetic folder of good, older and broken files yields the right summary; other files still commit.                                       |
+| 6   | `recompute-all` job                    | handler in `services/recompute.ts`, tests                                                                           | `check` | After corrupting derived columns in a test DB, the job restores them and adds no duplicate flags; never runs at startup.                     |
 
 ## 9. Open issues
 

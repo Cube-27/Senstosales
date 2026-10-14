@@ -13,6 +13,7 @@ nothing else computes quantities or status (C2).
 ## 2. Scope
 
 Core:
+
 - `Qty` (integer milli-units), `Money` (integer 1e-5 units), `IsoDate` (`YYYY-MM-DD`) branded types; exact decimal
   string conversion; sums; tolerance helpers `gte`, `gtTol` (INV-01, INV-02).
 - `dsp_qty`, `balance_qty`, `uninvoiced_qty`, PO header totals over active items (INV-03..INV-08).
@@ -20,6 +21,7 @@ Core:
 - Item status and PO status (INV-62..INV-64; A2-13).
 
 Out of scope:
+
 - FY, GEMC, tax, links, guards, flags: SPEC-03.
 - Persistence of derived values and recompute triggers: SPEC-08 (`recompute` service).
 - Display formatting: SPEC-04 formatters.
@@ -33,31 +35,36 @@ Out of scope:
 
 ### 4.1 Modules (`packages/domain/src/`)
 
-| File | Exports |
-|---|---|
-| `units.ts` | `Qty`, `Money`, `parseQty(s)`, `parseMoney(s)`, `qtyToString`, `moneyToString`, `sumQty`, `gte`, `gtTol`, `TOL` (= 1 milli-unit), `roundMoney(m, dp: 2 \| 5)` |
-| `dates.ts` | `IsoDate`, `parseIsoDate(s)` (validates calendar date), `compareIsoDate` |
-| `quantities.ts` | `computeItemQuantities(input): ItemQuantities`, `computePoTotals(items)` |
-| `receipt.ts` | `dateWinner(poDate, srvDates): 'po' \| 'srv'`, `computeReceipt(input): { rcd, rej, winner }` |
-| `status.ts` | `itemStatus(input): ItemStatus`, `poStatus(itemStatuses): PoStatus` |
-| `index.ts` | public surface |
+| File            | Exports                                                                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `units.ts`      | `Qty`, `Money`, `parseQty(s)`, `parseMoney(s)`, `qtyToString`, `moneyToString`, `sumQty`, `gte`, `gtTol`, `TOL` (= 1 milli-unit), `roundMoney(m, dp: 2 \| 5)` |
+| `dates.ts`      | `IsoDate`, `parseIsoDate(s)` (validates calendar date), `compareIsoDate`                                                                                      |
+| `quantities.ts` | `computeItemQuantities(input): ItemQuantities`, `computePoTotals(items)`                                                                                      |
+| `receipt.ts`    | `dateWinner(poDate, srvDates): 'po' \| 'srv'`, `computeReceipt(input): { rcd, rej, winner }`                                                                  |
+| `status.ts`     | `itemStatus(input): ItemStatus`, `poStatus(itemStatuses): PoStatus`                                                                                           |
+| `index.ts`      | public surface                                                                                                                                                |
 
 ### 4.2 Types
 
 ```ts
 type ItemQuantityInput = {
-  ordQty: Qty; cancelled: boolean;
-  dcDispatch: Qty[];            // every DC line on the item
-  directInvoiceQty: Qty[];      // PO-direct invoice lines on the item
-  dcInvoiceQty: Qty[];          // DC-sourced invoice lines on the item (not added to dsp; INV-03)
-  manualDispatchedQty: Qty;     // A-15, default 0
-  rcdQty: Qty;                  // from receipt.ts
+  ordQty: Qty;
+  cancelled: boolean;
+  dcDispatch: Qty[]; // every DC line on the item
+  directInvoiceQty: Qty[]; // PO-direct invoice lines on the item
+  dcInvoiceQty: Qty[]; // DC-sourced invoice lines on the item (not added to dsp; INV-03)
+  manualDispatchedQty: Qty; // A-15, default 0
+  rcdQty: Qty; // from receipt.ts
 };
-type ItemQuantities = { dspQty: Qty; balanceQty: Qty; uninvoicedQty: Qty };   // uninvoiced may be negative (INV-05)
-type ReceiptInput = { poDate: IsoDate; poRcdQty: Qty; poRejQty: Qty | null;
-  srvLines: { srvDate: IsoDate; rcdQty: Qty | null; acceptedQty: Qty | null; rejQty: Qty | null }[] };
-type ItemStatus = 'Pending' | 'Delivered' | 'Closed' | 'Cancelled';
-type PoStatus = 'Pending' | 'Delivered' | 'Closed';
+type ItemQuantities = { dspQty: Qty; balanceQty: Qty; uninvoicedQty: Qty }; // uninvoiced may be negative (INV-05)
+type ReceiptInput = {
+  poDate: IsoDate;
+  poRcdQty: Qty;
+  poRejQty: Qty | null;
+  srvLines: { srvDate: IsoDate; rcdQty: Qty | null; acceptedQty: Qty | null; rejQty: Qty | null }[];
+};
+type ItemStatus = "Pending" | "Delivered" | "Closed" | "Cancelled";
+type PoStatus = "Pending" | "Delivered" | "Closed";
 ```
 
 Conversion is by string scaling, never through a float: `"2.5" -> 2500`, `"848.75" -> 84875000`; more fractional
@@ -109,12 +116,12 @@ order; status monotone in `dsp` and `rcd`.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Units, dates and tolerance | `packages/domain/src/{units,dates}.ts`, `units.test.ts`, `dates.test.ts` | `check` | INV-01, INV-02 literal and property tests pass; invalid decimals and dates are rejected. |
-| 2 | Quantities | `src/quantities.ts`, `quantities.test.ts` | `check` | INV-03..INV-08 tables pass, including cancelled-item header totals and negative uninvoiced. |
-| 3 | Received and rejected (date winner) | `src/receipt.ts`, `receipt.test.ts` | `check` | INV-10..INV-13 tables and the order-independence property (INV-15) pass, including the last-SRV-deleted case. |
-| 4 | Item and PO status | `src/status.ts`, `status.test.ts` | `check` | INV-62..INV-64 tables pass, including the mixed-item PO and the all-cancelled PO (A2-13). |
+| #   | Title                               | Scope / files                                                            | Checks  | Done when                                                                                                     |
+| --- | ----------------------------------- | ------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | Units, dates and tolerance          | `packages/domain/src/{units,dates}.ts`, `units.test.ts`, `dates.test.ts` | `check` | INV-01, INV-02 literal and property tests pass; invalid decimals and dates are rejected.                      |
+| 2   | Quantities                          | `src/quantities.ts`, `quantities.test.ts`                                | `check` | INV-03..INV-08 tables pass, including cancelled-item header totals and negative uninvoiced.                   |
+| 3   | Received and rejected (date winner) | `src/receipt.ts`, `receipt.test.ts`                                      | `check` | INV-10..INV-13 tables and the order-independence property (INV-15) pass, including the last-SRV-deleted case. |
+| 4   | Item and PO status                  | `src/status.ts`, `status.test.ts`                                        | `check` | INV-62..INV-64 tables pass, including the mixed-item PO and the all-cancelled PO (A2-13).                     |
 
 ## 9. Open issues
 

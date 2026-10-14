@@ -14,6 +14,7 @@ synthetic DCs and invoices only (A-19).
 ## 2. Scope
 
 Core:
+
 - DC: dispatchable items of a PO (item quantities and balances for the create form), create (lines on items of one
   PO, any `qty > 0`; INV-32), header edit (header fields only; INV-33), delete (blocked by an invoice or a linked SRV
   item; INV-35), list, stats, detail (lines, linked invoice, linked SRV items, flags). GC number/date default to the DC
@@ -31,6 +32,7 @@ Core:
 - Optimistic `version` on `dc` and `invoice` (INV-95).
 
 Out of scope:
+
 - Excel generation and downloads (SPEC-12); registers and exports (SPEC-13); screens (SPEC-18).
 - Cancel state (A-14, INV-34); multi-PO invoices (A-16); IGST (A2-4, EC-07); number suggestions (A2-6).
 
@@ -74,6 +76,7 @@ INV-34, INV-35, INV-37, INV-41, INV-51, INV-54, INV-55, INV-56, INV-57, INV-95.
 ## 6. Testing strategy
 
 The §14.1 API flows with synthetic data:
+
 - DC over pending saves and raises `OVER_DISPATCH`; `qty 0` → 400.
 - DC-sourced invoice with another qty or rate → 400, nothing written; a second invoice on the DC → 409.
 - Manual dispatched qty, then a real DC → `MANUAL_ADJUSTMENT_OVERLAP`; a PO-direct invoice instead → no overlap
@@ -96,14 +99,14 @@ The §14.1 API flows with synthetic data:
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | DC create and dispatchable items | `services/dc.ts` (create), `services/links.ts`, `routes/dc.ts`, `repositories/dc.ts`, tests | `check` | OVER_DISPATCH, DOC_ON_CANCELLED_ITEM, overlap and GC default/uniqueness tests pass; `(number, FY)` collision 409. |
-| 2 | DC header edit, delete, list, stats, detail | `services/dc.ts`, routes, repositories, tests | `check` | Immutable lines (INV-33); FY recompute and re-link (INV-25, EC-14); delete guard (INV-35); version 409. |
-| 3 | DC-sourced invoice | `services/invoice.ts` (DC mode), `routes/invoice.ts`, `repositories/invoice.ts`, tests | `check` | INV-28, INV-29 and the tax example pass; GST rates and buyer copied onto the invoice. |
-| 4 | PO-direct invoice and previews | `services/invoice.ts` (direct mode), `services/invoice-preview.ts`, routes, tests | `check` | INV-30, INV-31, OVER_INVOICE, EC-13 pass; previews show uninvoiced without capping. |
-| 5 | Invoice header edit, delete, list, stats, detail | `services/invoice.ts`, routes, repositories, tests | `check` | Immutability, FY recompute and re-link, delete guard, version 409. |
-| 6 | Cross-flow API suite | `test/flows/documents.flow.test.ts` | `check` | Every §14.1 DC/invoice flow listed in §6 passes end to end on one synthetic dataset. |
+| #   | Title                                            | Scope / files                                                                               | Checks  | Done when                                                                                                         |
+| --- | ------------------------------------------------ | ------------------------------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1   | DC create and dispatchable items                 | `services/dc.ts` (create), `services/links.ts`, `routes/dc.ts`, `repositories/dc.ts`, tests | `check` | OVER_DISPATCH, DOC_ON_CANCELLED_ITEM, overlap and GC default/uniqueness tests pass; `(number, FY)` collision 409. |
+| 2   | DC header edit, delete, list, stats, detail      | `services/dc.ts`, routes, repositories, tests                                               | `check` | Immutable lines (INV-33); FY recompute and re-link (INV-25, EC-14); delete guard (INV-35); version 409.           |
+| 3   | DC-sourced invoice                               | `services/invoice.ts` (DC mode), `routes/invoice.ts`, `repositories/invoice.ts`, tests      | `check` | INV-28, INV-29 and the tax example pass; GST rates and buyer copied onto the invoice.                             |
+| 4   | PO-direct invoice and previews                   | `services/invoice.ts` (direct mode), `services/invoice-preview.ts`, routes, tests           | `check` | INV-30, INV-31, OVER_INVOICE, EC-13 pass; previews show uninvoiced without capping.                               |
+| 5   | Invoice header edit, delete, list, stats, detail | `services/invoice.ts`, routes, repositories, tests                                          | `check` | Immutability, FY recompute and re-link, delete guard, version 409.                                                |
+| 6   | Cross-flow API suite                             | `test/flows/documents.flow.test.ts`                                                         | `check` | Every §14.1 DC/invoice flow listed in §6 passes end to end on one synthetic dataset.                              |
 
 ## 9. Open issues
 

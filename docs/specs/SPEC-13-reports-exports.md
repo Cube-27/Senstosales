@@ -15,17 +15,17 @@ Daily-dispatch is dropped (A-16, INV-87). Formatters come from `packages/schemas
 
 Core — the kept exports (§11.2), each pinned by a golden:
 
-| Export | Legacy visible output to match |
-|---|---|
-| PO register | xlsx, landscape |
-| DC register | xlsx |
-| Invoice register | xlsx |
-| Pending items | xlsx (date-range file name variant) |
-| Reconciliation report (all, or one PO) | xlsx, landscape |
-| Export-selected (selected POs' reconciliation rows) | xlsx |
-| Guarantee-certificate report | the GC workbook of SPEC-12 for the chosen DC |
-| Delivery tracker | xlsx, with the screen's filters |
-| DC list and invoice list exports from the list screens | CSV (see Open issues) |
+| Export                                                 | Legacy visible output to match               |
+| ------------------------------------------------------ | -------------------------------------------- |
+| PO register                                            | xlsx, landscape                              |
+| DC register                                            | xlsx                                         |
+| Invoice register                                       | xlsx                                         |
+| Pending items                                          | xlsx (date-range file name variant)          |
+| Reconciliation report (all, or one PO)                 | xlsx, landscape                              |
+| Export-selected (selected POs' reconciliation rows)    | xlsx                                         |
+| Guarantee-certificate report                           | the GC workbook of SPEC-12 for the chosen DC |
+| Delivery tracker                                       | xlsx, with the screen's filters              |
+| DC list and invoice list exports from the list screens | CSV (see Open issues)                        |
 
 - Inventory first: for each export, the exact columns, header text, order, formats, sheet setup and file name are
   recorded in `packages/documents/src/reports/catalog.ts` from the legacy visible output (A-2, C16).
@@ -37,6 +37,7 @@ Core — the kept exports (§11.2), each pinned by a golden:
 - Accepted column = `rcd_qty` (A2-8, INV-09).
 
 Out of scope:
+
 - Daily-dispatch, procurement/analytics (A-16); new columns or formats (A-2); flag columns (A-2).
 - The `/reports` and `/delivery-tracker` screens (SPEC-17).
 
@@ -49,14 +50,14 @@ Out of scope:
 
 ### 4.1 Modules
 
-| Path | Responsibility |
-|---|---|
-| `packages/documents/src/reports/catalog.ts` | one definition per export: columns (key, header, width, format), sheet setup, file name, type |
-| `packages/documents/src/stream/{xlsx,csv}.ts` | streaming writers over an async row iterator; cell safety |
-| `apps/api/src/repositories/keyset.ts` | keyset paging over a stable sort key |
-| `apps/api/src/{routes,services}/reports.ts` | report lists and exports |
-| `apps/api/src/{routes,services}/delivery-tracker.ts` | export (list/stats in SPEC-10) |
-| `packages/documents/test/reports/*` | synthetic dataset, goldens (snapshot JSON for xlsx, text for CSV) |
+| Path                                                 | Responsibility                                                                                |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `packages/documents/src/reports/catalog.ts`          | one definition per export: columns (key, header, width, format), sheet setup, file name, type |
+| `packages/documents/src/stream/{xlsx,csv}.ts`        | streaming writers over an async row iterator; cell safety                                     |
+| `apps/api/src/repositories/keyset.ts`                | keyset paging over a stable sort key                                                          |
+| `apps/api/src/{routes,services}/reports.ts`          | report lists and exports                                                                      |
+| `apps/api/src/{routes,services}/delivery-tracker.ts` | export (list/stats in SPEC-10)                                                                |
+| `packages/documents/test/reports/*`                  | synthetic dataset, goldens (snapshot JSON for xlsx, text for CSV)                             |
 
 ### 4.2 Streaming
 
@@ -88,13 +89,13 @@ report list endpoints return the same rows as the exports for the same filters.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Export inventory and goldens | `reports/catalog.ts` (definitions), synthetic dataset, goldens from H5 | `check`, `real-data-scan` | Every export in §2 has a catalog entry and a golden; reviewer confirms they match the legacy visible output. |
-| 2 | Streaming writers and keyset paging | `stream/{xlsx,csv}.ts`, `repositories/keyset.ts`, tests | `check` | 10k-row synthetic export streams with flat memory; cell-safety tests pass (INV-94, INV-99). |
-| 3 | Registers and list CSVs | PO/DC/invoice registers, DC list CSV, invoice list CSV: services, routes, tests | `check` | Goldens pass for all five. |
-| 4 | Pending, reconciliation, export-selected, GC report | services, routes, tests | `check` | Goldens pass; Accepted = rcd (INV-09); balance clamped only. |
-| 5 | Report lists and delivery-tracker export | report list endpoints, `delivery-tracker` export, tests | `check` | List rows equal export rows for the same filters; tracker golden passes. |
+| #   | Title                                               | Scope / files                                                                   | Checks                    | Done when                                                                                                    |
+| --- | --------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1   | Export inventory and goldens                        | `reports/catalog.ts` (definitions), synthetic dataset, goldens from H5          | `check`, `real-data-scan` | Every export in §2 has a catalog entry and a golden; reviewer confirms they match the legacy visible output. |
+| 2   | Streaming writers and keyset paging                 | `stream/{xlsx,csv}.ts`, `repositories/keyset.ts`, tests                         | `check`                   | 10k-row synthetic export streams with flat memory; cell-safety tests pass (INV-94, INV-99).                  |
+| 3   | Registers and list CSVs                             | PO/DC/invoice registers, DC list CSV, invoice list CSV: services, routes, tests | `check`                   | Goldens pass for all five.                                                                                   |
+| 4   | Pending, reconciliation, export-selected, GC report | services, routes, tests                                                         | `check`                   | Goldens pass; Accepted = rcd (INV-09); balance clamped only.                                                 |
+| 5   | Report lists and delivery-tracker export            | report list endpoints, `delivery-tracker` export, tests                         | `check`                   | List rows equal export rows for the same filters; tracker golden passes.                                     |
 
 ## 9. Open issues
 

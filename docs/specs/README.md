@@ -8,6 +8,7 @@ it does not: the point is listed in its Open issues and escalated, and only an o
 changes it.
 
 Rules every spec follows:
+
 - **No invented business rules.** Every rule cites the legacy business spec (`spec §n`), an owner decision (`A-n`,
   `A2-n`) or an invariant (`INV-NN`). Under-specified mechanics take the most conservative reading, are marked
   "implementation detail" and are listed in Open issues (and DECISIONS.md when implemented). Uncovered business
@@ -22,31 +23,31 @@ Rules every spec follows:
 
 ## Index
 
-| # | Spec | Architecture sections | Depends on | Layer | PRs |
-|---|---|---|---|---|---|
-| 00 | [Repo bootstrap and engineering foundations](SPEC-00-repo-bootstrap.md) | §2, §4, §14.2, §14.3, §16 | — | L0 | 4 |
-| 01 | [Spikes](SPEC-01-spikes.md) | §15 L0.5, §4.1, §7, §11.1, §13.1 | 00 | L0.5 | 5 |
-| 02 | [Domain: units, quantities, received/rejected, status](SPEC-02-domain-quantities-receipt-status.md) | §5, §6.1–§6.3, §6.8, §6.11 | 00 | L1 | 4 |
-| 03 | [Domain: FY, GEMC, tax, links, guards, flags](SPEC-03-domain-fy-gemc-tax-links-flags.md) | §6.4–§6.7, §6.9, §6.10, §7.2 | 02 | L1 | 6 |
-| 04 | [Schemas, route table and formatters](SPEC-04-schemas-routes-formatters.md) | §4, §9, §11.2, §12.1 | 02, 03 | L1–L2 | 5 |
-| 05 | [Database: schema, migrations, Db port, seed](SPEC-05-db-schema-migrations.md) | §4.1, §8 | 04, (01) | L2 | 5 |
-| 06 | [BHEL parsers, fixtures, corpus test](SPEC-06-bhel-parsers-fixtures.md) | §7.1, §14.3 | 03, 04, (01) | L3 | 6 |
-| 07 | [API foundation, startup, auth, onboarding, settings](SPEC-07-api-foundation-auth-settings.md) | §3, §4, §9, §10, §13.2, §13.3 | 04, 05 | L4 | 6 |
-| 08 | [Ingestion services and jobs](SPEC-08-ingestion-jobs.md) | §4.1, §6.9, §6.10, §7.2–§7.4 | 03, 05, 06, 07 | L4 | 6 |
-| 09 | [Corpus import and report (local)](SPEC-09-corpus-import-report.md) | §7.4, §14.1 | 08 | L4 | 3 |
-| 10 | [PO, SRV, flags, audit, dashboard, search APIs](SPEC-10-po-srv-flags-read-api.md) | §6.8, §6.9, §6.11, §9, §12.2 | 07, 08 | L4 | 6 |
-| 11 | [DC and invoice services and APIs](SPEC-11-dc-invoice-services.md) | §6.5–§6.7, §6.9, §6.10, §9 | 07, 08, 10 | L6 | 6 |
-| 12 | [DC, invoice and GC Excel documents](SPEC-12-excel-documents.md) | §6.7, §11.1 | 04, 07, 11, (01) | L6 | 6 |
-| 13 | [Reports and exports](SPEC-13-reports-exports.md) | §10.4, §11.2 | 04, 10, 11, 12 | L6 | 5 |
-| 14 | [Web shell, design system, DataTable, platform](SPEC-14-web-shell-design-datatable.md) | §12.1–§12.4, §14.2 | 04, 07 | L5 | 8 |
-| 15 | [Web: onboarding, login, settings, dashboard, search](SPEC-15-web-onboarding-login-settings-dashboard.md) | §10.1–§10.3, §12.2, §12.3 | 07, 10, 14 | L5 | 5 |
-| 16 | [Web: PO and SRV screens, uploads, folder import](SPEC-16-web-po-srv-import.md) | §6.8, §7.4, §12.2, §12.3 | 08, 10, 14 | L5 | 5 |
-| 17 | [Web: deviations, ledger, delivery tracker, reports](SPEC-17-web-deviations-ledger-tracker-reports.md) | §6.9, §11.2, §12.2 | 10, 13, 14 | L5–L6 | 4 |
-| 18 | [Web: DC and invoice screens](SPEC-18-web-dc-invoice.md) | §6.5–§6.7, §11.1, §12 | 11, 12, 13, 14, 16 | L6 | 5 |
-| 19 | [BHEL scraper and sync](SPEC-19-bhel-scraper-sync.md) | §4.1, §7.5, §10.2, §12.4 | 07, 08, 14, 16, (01) | L7 | 6 |
-| 20 | [Desktop packaging and release](SPEC-20-desktop-packaging-release.md) | §3, §13.1–§13.3 | 07, 14, (01) | L8 | 5 |
-| 21 | [Operations: backups, restore, logs, guide](SPEC-21-operations-backup-logs.md) | §8.3, §10.4, §13.2, §13.3 | 05, 07, 08, 15, 20 | L8 | 5 |
-| 22 | [Cutover](SPEC-22-cutover.md) | §15 L9, §7.4 | 09, 13, 17, 18, 19, 20, 21 | L9 | 3 |
+| #   | Spec                                                                                                      | Architecture sections            | Depends on                 | Layer | PRs |
+| --- | --------------------------------------------------------------------------------------------------------- | -------------------------------- | -------------------------- | ----- | --- |
+| 00  | [Repo bootstrap and engineering foundations](SPEC-00-repo-bootstrap.md)                                   | §2, §4, §14.2, §14.3, §16        | —                          | L0    | 4   |
+| 01  | [Spikes](SPEC-01-spikes.md)                                                                               | §15 L0.5, §4.1, §7, §11.1, §13.1 | 00                         | L0.5  | 5   |
+| 02  | [Domain: units, quantities, received/rejected, status](SPEC-02-domain-quantities-receipt-status.md)       | §5, §6.1–§6.3, §6.8, §6.11       | 00                         | L1    | 4   |
+| 03  | [Domain: FY, GEMC, tax, links, guards, flags](SPEC-03-domain-fy-gemc-tax-links-flags.md)                  | §6.4–§6.7, §6.9, §6.10, §7.2     | 02                         | L1    | 6   |
+| 04  | [Schemas, route table and formatters](SPEC-04-schemas-routes-formatters.md)                               | §4, §9, §11.2, §12.1             | 02, 03                     | L1–L2 | 5   |
+| 05  | [Database: schema, migrations, Db port, seed](SPEC-05-db-schema-migrations.md)                            | §4.1, §8                         | 04, (01)                   | L2    | 5   |
+| 06  | [BHEL parsers, fixtures, corpus test](SPEC-06-bhel-parsers-fixtures.md)                                   | §7.1, §14.3                      | 03, 04, (01)               | L3    | 6   |
+| 07  | [API foundation, startup, auth, onboarding, settings](SPEC-07-api-foundation-auth-settings.md)            | §3, §4, §9, §10, §13.2, §13.3    | 04, 05                     | L4    | 6   |
+| 08  | [Ingestion services and jobs](SPEC-08-ingestion-jobs.md)                                                  | §4.1, §6.9, §6.10, §7.2–§7.4     | 03, 05, 06, 07             | L4    | 6   |
+| 09  | [Corpus import and report (local)](SPEC-09-corpus-import-report.md)                                       | §7.4, §14.1                      | 08                         | L4    | 3   |
+| 10  | [PO, SRV, flags, audit, dashboard, search APIs](SPEC-10-po-srv-flags-read-api.md)                         | §6.8, §6.9, §6.11, §9, §12.2     | 07, 08                     | L4    | 6   |
+| 11  | [DC and invoice services and APIs](SPEC-11-dc-invoice-services.md)                                        | §6.5–§6.7, §6.9, §6.10, §9       | 07, 08, 10                 | L6    | 6   |
+| 12  | [DC, invoice and GC Excel documents](SPEC-12-excel-documents.md)                                          | §6.7, §11.1                      | 04, 07, 11, (01)           | L6    | 6   |
+| 13  | [Reports and exports](SPEC-13-reports-exports.md)                                                         | §10.4, §11.2                     | 04, 10, 11, 12             | L6    | 5   |
+| 14  | [Web shell, design system, DataTable, platform](SPEC-14-web-shell-design-datatable.md)                    | §12.1–§12.4, §14.2               | 04, 07                     | L5    | 8   |
+| 15  | [Web: onboarding, login, settings, dashboard, search](SPEC-15-web-onboarding-login-settings-dashboard.md) | §10.1–§10.3, §12.2, §12.3        | 07, 10, 14                 | L5    | 5   |
+| 16  | [Web: PO and SRV screens, uploads, folder import](SPEC-16-web-po-srv-import.md)                           | §6.8, §7.4, §12.2, §12.3         | 08, 10, 14                 | L5    | 5   |
+| 17  | [Web: deviations, ledger, delivery tracker, reports](SPEC-17-web-deviations-ledger-tracker-reports.md)    | §6.9, §11.2, §12.2               | 10, 13, 14                 | L5–L6 | 4   |
+| 18  | [Web: DC and invoice screens](SPEC-18-web-dc-invoice.md)                                                  | §6.5–§6.7, §11.1, §12            | 11, 12, 13, 14, 16         | L6    | 5   |
+| 19  | [BHEL scraper and sync](SPEC-19-bhel-scraper-sync.md)                                                     | §4.1, §7.5, §10.2, §12.4         | 07, 08, 14, 16, (01)       | L7    | 6   |
+| 20  | [Desktop packaging and release](SPEC-20-desktop-packaging-release.md)                                     | §3, §13.1–§13.3                  | 07, 14, (01)               | L8    | 5   |
+| 21  | [Operations: backups, restore, logs, guide](SPEC-21-operations-backup-logs.md)                            | §8.3, §10.4, §13.2, §13.3        | 05, 07, 08, 15, 20         | L8    | 5   |
+| 22  | [Cutover](SPEC-22-cutover.md)                                                                             | §15 L9, §7.4                     | 09, 13, 17, 18, 19, 20, 21 | L9    | 3   |
 
 Total: 119 PR-plan rows. `(01)` means the spike's recorded decision is read first; it does not block rows whose
 mechanism the spike does not touch.

@@ -13,6 +13,7 @@ delete disabled with a plain reason while links exist (A-14), and Excel/GC downl
 ## 2. Scope
 
 Core:
+
 - `/dc`: list (legacy columns, flag badge column), list CSV export (SPEC-13), per-row Excel download.
 - `/dc/:id`: header and lines, GC number/date, linked invoice and SRV items, header edit dialog (lines read-only;
   INV-33), delete disabled with reason (INV-35), DC Excel and GC downloads.
@@ -26,6 +27,7 @@ Core:
   implementation re-exported through `packages/schemas` (C2, INV-41), never stored.
 
 Out of scope:
+
 - Cancel state (A-14); number suggestion (A2-6); multi-PO invoices (A-16).
 
 ## 3. Dependencies
@@ -60,13 +62,13 @@ create forms grows only the item list, never shifts the header fields or the tot
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | DC list and detail | `routes/dc/{index,$id}.tsx`, `components/modules/dc/{DCList,DCDetail,DCHeaderEdit}.tsx`, e2e | `check`, `e2e` | Header edit, delete reason, Excel and GC downloads work. |
-| 2 | DC create | `routes/dc/create.tsx`, `components/modules/dc/DCForm.tsx`, e2e | `check`, `e2e` | DC over pending saves and shows the flag on the PO; collision message in place. |
-| 3 | Invoice list and detail | `routes/invoice/{index,$id}.tsx`, `components/modules/invoice/{InvoiceList,InvoiceDetail,InvoiceHeaderEdit}.tsx`, e2e | `check`, `e2e` | Header edit, delete reason and Excel download work. |
-| 4 | Invoice create (both modes) | `routes/invoice/create.tsx`, `components/modules/invoice/InvoiceForm.tsx`, e2e | `check`, `e2e` | DC-sourced lines locked; PO-direct accepts any `qty > 0`; totals equal the API's stored totals. |
-| 5 | Document flow e2e | `apps/web/e2e/documents.spec.ts` | `e2e` | PO → DC → invoice → downloads → SRV import linking the DC runs end to end on synthetic data. |
+| #   | Title                       | Scope / files                                                                                                         | Checks         | Done when                                                                                       |
+| --- | --------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | DC list and detail          | `routes/dc/{index,$id}.tsx`, `components/modules/dc/{DCList,DCDetail,DCHeaderEdit}.tsx`, e2e                          | `check`, `e2e` | Header edit, delete reason, Excel and GC downloads work.                                        |
+| 2   | DC create                   | `routes/dc/create.tsx`, `components/modules/dc/DCForm.tsx`, e2e                                                       | `check`, `e2e` | DC over pending saves and shows the flag on the PO; collision message in place.                 |
+| 3   | Invoice list and detail     | `routes/invoice/{index,$id}.tsx`, `components/modules/invoice/{InvoiceList,InvoiceDetail,InvoiceHeaderEdit}.tsx`, e2e | `check`, `e2e` | Header edit, delete reason and Excel download work.                                             |
+| 4   | Invoice create (both modes) | `routes/invoice/create.tsx`, `components/modules/invoice/InvoiceForm.tsx`, e2e                                        | `check`, `e2e` | DC-sourced lines locked; PO-direct accepts any `qty > 0`; totals equal the API's stored totals. |
+| 5   | Document flow e2e           | `apps/web/e2e/documents.spec.ts`                                                                                      | `e2e`          | PO → DC → invoice → downloads → SRV import linking the DC runs end to end on synthetic data.    |
 
 ## 9. Open issues
 

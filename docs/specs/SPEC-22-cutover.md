@@ -12,12 +12,14 @@ or invoices to carry over (owner decision); none are migrated.
 ## 2. Scope
 
 Core:
+
 - A "Moving from the previous app" section in `docs/OPERATIONS.md`: the steps above, in plain language.
 - Fresh corpus import on the owner's machine with the release build; the SPEC-09 report reviewed by the owner
   (kept private).
 - Sign-off and retirement recorded in DECISIONS (no real data).
 
 Out of scope:
+
 - Reading or diffing the legacy database (A-6); parallel-run diff tooling.
 
 ## 3. Dependencies
@@ -44,11 +46,11 @@ The procedure is rehearsed on a VM with the anonymised fixture folders before th
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Cutover procedure | "Moving from the previous app" section in `docs/OPERATIONS.md` | `real-data-scan` | Rehearsed on a VM with fixture folders. |
-| 2 | Fresh import and review (human) | DECISIONS entry (outcome only) | — | Owner imports the corpus with the release build and accepts the private report. |
-| 3 | Sign-off and retirement (human) | DECISIONS entry | — | Owner works in the new app; legacy retired. |
+| #   | Title                           | Scope / files                                                  | Checks           | Done when                                                                       |
+| --- | ------------------------------- | -------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------- |
+| 1   | Cutover procedure               | "Moving from the previous app" section in `docs/OPERATIONS.md` | `real-data-scan` | Rehearsed on a VM with fixture folders.                                         |
+| 2   | Fresh import and review (human) | DECISIONS entry (outcome only)                                 | —                | Owner imports the corpus with the release build and accepts the private report. |
+| 3   | Sign-off and retirement (human) | DECISIONS entry                                                | —                | Owner works in the new app; legacy retired.                                     |
 
 ## 9. Open issues
 

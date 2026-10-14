@@ -14,6 +14,7 @@ everywhere. v1 artefacts are unsigned, with the one-time SmartScreen step docume
 ## 2. Scope
 
 Core:
+
 - Sidecar build: esbuild bundle of `apps/api/src/platform/node/main.ts` with the built SPA embedded; Node SEA
   config; the `node.exe` + bundle fallback (§13.1) behind a build flag; port handoff per the SPEC-01 ADR.
 - Tauri shell (`apps/desktop`): start the sidecar, wait for health, show the startup error dialog in plain words
@@ -30,6 +31,7 @@ Core:
   manifest (INV-93).
 
 Out of scope:
+
 - Code signing (K6, A-25); Cloudflare deployment (K1); backups and restore (SPEC-21); `docs/OPERATIONS.md`
   content beyond the SmartScreen section (SPEC-21).
 
@@ -43,14 +45,14 @@ Out of scope:
 
 ### 4.1 Modules
 
-| Path | Responsibility |
-|---|---|
-| `tools/release/build-sidecar.ts` | esbuild bundle, SPA embedding, SEA blob and injection, fallback layout |
-| `tools/release/stamp-version.ts` | `VERSION` → all targets; `--check` mode in CI |
-| `apps/desktop/src/{main,sidecar,health}.ts` | sidecar spawn, port read, health wait, error dialog, navigation |
-| `apps/desktop/src-tauri/{tauri.conf.json,capabilities/*.json,Cargo.toml,src/main.rs}` | shell config (minimal Rust scaffold) |
-| `apps/desktop/test/smoke.ts` | installed-app smoke test |
-| `.github/workflows/{ci.yml (desktop job),release.yml}` | builds and release |
+| Path                                                                                  | Responsibility                                                         |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `tools/release/build-sidecar.ts`                                                      | esbuild bundle, SPA embedding, SEA blob and injection, fallback layout |
+| `tools/release/stamp-version.ts`                                                      | `VERSION` → all targets; `--check` mode in CI                          |
+| `apps/desktop/src/{main,sidecar,health}.ts`                                           | sidecar spawn, port read, health wait, error dialog, navigation        |
+| `apps/desktop/src-tauri/{tauri.conf.json,capabilities/*.json,Cargo.toml,src/main.rs}` | shell config (minimal Rust scaffold)                                   |
+| `apps/desktop/test/smoke.ts`                                                          | installed-app smoke test                                               |
+| `.github/workflows/{ci.yml (desktop job),release.yml}`                                | builds and release                                                     |
 
 ### 4.2 Error handling
 
@@ -77,13 +79,13 @@ INV-82, INV-93, INV-105 (new).
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Sidecar build | `tools/release/build-sidecar.ts`, tests | `build` | The SEA (and fallback) starts, prints its port and serves the SPA and `/api/health` on 127.0.0.1. |
-| 2 | Tauri shell and sidecar lifecycle | `apps/desktop/src/*`, `src-tauri/*` | `build` | Shell starts the sidecar, waits for health, loads the UI; close stops the sidecar; single-instance focus; startup errors shown plainly. |
-| 3 | Plugin capabilities and tray | `src-tauri/capabilities/*`, tray menu in `apps/desktop/src/main.ts` | `build`, `e2e` | `platform/tauri.ts` pickers, Save-as, notifications and tray status work in the shell; web mode unaffected. |
-| 4 | NSIS installer and `desktop` job | `tauri.conf.json` bundler config, `apps/desktop/test/smoke.ts`, `ci.yml` `desktop` job | `desktop` | The job builds the installer and the smoke test passes; the job joins the required checks. |
-| 5 | Versioning, updater and release workflow | `tools/release/stamp-version.ts`, `release.yml`, updater config, SmartScreen section of `docs/OPERATIONS.md` | `check`, `release` (tag) | A tag produces an unsigned installer and a signed manifest; versions match everywhere. |
+| #   | Title                                    | Scope / files                                                                                                | Checks                   | Done when                                                                                                                               |
+| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Sidecar build                            | `tools/release/build-sidecar.ts`, tests                                                                      | `build`                  | The SEA (and fallback) starts, prints its port and serves the SPA and `/api/health` on 127.0.0.1.                                       |
+| 2   | Tauri shell and sidecar lifecycle        | `apps/desktop/src/*`, `src-tauri/*`                                                                          | `build`                  | Shell starts the sidecar, waits for health, loads the UI; close stops the sidecar; single-instance focus; startup errors shown plainly. |
+| 3   | Plugin capabilities and tray             | `src-tauri/capabilities/*`, tray menu in `apps/desktop/src/main.ts`                                          | `build`, `e2e`           | `platform/tauri.ts` pickers, Save-as, notifications and tray status work in the shell; web mode unaffected.                             |
+| 4   | NSIS installer and `desktop` job         | `tauri.conf.json` bundler config, `apps/desktop/test/smoke.ts`, `ci.yml` `desktop` job                       | `desktop`                | The job builds the installer and the smoke test passes; the job joins the required checks.                                              |
+| 5   | Versioning, updater and release workflow | `tools/release/stamp-version.ts`, `release.yml`, updater config, SmartScreen section of `docs/OPERATIONS.md` | `check`, `release` (tag) | A tag produces an unsigned installer and a signed manifest; versions match everywhere.                                                  |
 
 ## 9. Open issues
 

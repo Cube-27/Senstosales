@@ -26,7 +26,7 @@ reported without its n is not a result.
 ## Changing code
 
 **Fix root causes.** Reproduce first. Ask "why" until you reach the cause, and fix it there. Never add a guard that
-silences a symptom. If a workaround needs a paragraph of comment to justify it, the code is wrong. Fix the *class*
+silences a symptom. If a workaround needs a paragraph of comment to justify it, the code is wrong. Fix the _class_
 of failure, not just the instance.
 
 **Attack the premise.** When two fixes resting on the same assumption fail the same check, stop fixing. Write the

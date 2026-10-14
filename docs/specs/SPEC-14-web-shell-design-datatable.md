@@ -14,6 +14,7 @@ and behave as the legacy ones (C16), with only bug, accessibility, usability and
 ## 2. Scope
 
 Core:
+
 - App skeleton: router with every frozen route (`/`, `/po`, `/po/:id`, `/po/create`, `/po/ingest-bhel`, `/dc`,
   `/dc/:id`, `/dc/create`, `/invoice`, `/invoice/:id`, `/invoice/create`, `/srv`, `/srv/:id`, `/delivery-tracker`,
   `/reports`, `/deviations`, `/system/ledger`, `/settings`, `/auth/login`) plus `/onboarding`, without
@@ -48,6 +49,7 @@ Core:
   component tests for DataTable.
 
 Out of scope:
+
 - Screens (SPEC-15..18, SPEC-19 PR 5); new screens other than `/onboarding` (A-2).
 - Any visual redesign or new token without an ADR (C7).
 
@@ -67,13 +69,30 @@ Out of scope:
 ### 4.2 DataTable contract
 
 ```ts
-type Column<Row> = { key: string; header: string; width: string /* required */; align?: 'left'|'right';
-  sortable?: boolean; render?: (row: Row) => ReactNode; title?: (row: Row) => string };
-type DataTableProps<Row> = { columns: Column<Row>[]; rows: Row[] | undefined; total: number;
-  page: number; pageSize: number; sort?: { key: string; dir: 'asc'|'desc' };
-  state: 'loading' | 'ready' | 'error'; error?: string; emptyText: string;
-  onPage(p: number): void; onPageSize(n: number): void; onSort(key: string): void;
-  rowHighlight?: (row: Row) => boolean };
+type Column<Row> = {
+  key: string;
+  header: string;
+  width: string /* required */;
+  align?: "left" | "right";
+  sortable?: boolean;
+  render?: (row: Row) => ReactNode;
+  title?: (row: Row) => string;
+};
+type DataTableProps<Row> = {
+  columns: Column<Row>[];
+  rows: Row[] | undefined;
+  total: number;
+  page: number;
+  pageSize: number;
+  sort?: { key: string; dir: "asc" | "desc" };
+  state: "loading" | "ready" | "error";
+  error?: string;
+  emptyText: string;
+  onPage(p: number): void;
+  onPageSize(n: number): void;
+  onSort(key: string): void;
+  rowHighlight?: (row: Row) => boolean;
+};
 ```
 
 ### 4.3 Error handling
@@ -106,16 +125,16 @@ touched shared component are review artefacts.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | App skeleton, router and query | `apps/web/{index.html,vite.config.ts}`, `src/{main,router}.tsx`, `src/routes/**` placeholders, `src/lib/{api,query}.ts`, `tools/checks/src/bundle-budget.ts`, tests | `check`, `build` | `vp build` produces the SPA; all frozen routes plus `/onboarding` resolve; route test asserts no `/procurement`; budget check passes. |
-| 2 | Frozen design carry-over | `src/styles/globals.css`, `@fontsource` setup, `docs/adr/0004-globals-css-token-fixes.md`, token-parity test, `docs/DESIGN.md`, `NOTICE` font entries | `check`, `real-data-scan` | Diff vs legacy `globals.css` equals the ADR list; parity test passes; DESIGN.md de-branded. |
-| 3 | Design validators | `tools/checks/validate-*.ts`, fixtures, wiring in `check` | `check` | Each validator fails its failing fixture and passes the repo. |
-| 4 | Shell components | `components/common/{AppChrome,SidebarNav,PageHeader,StatCard,DetailTabs,ListToolbar,ThemeToggle,Toast,GlobalSearchDialog}.tsx`, registry, tests | `check` | Shell renders in light and dark matching legacy screenshots; sidebar labels frozen; no sourcing entry. |
-| 5 | Primitives and FormField | `components/common/*` primitives, tests | `check` | Labels/help/errors associated; icon-only buttons named; `validate-components` passes. |
-| 6 | DataTable, Pagination and list search | `components/common/{DataTable,Pagination}.tsx`, `hooks/useListSearch.ts`, Vitest tests | `check` | Filler rows, in-body states, mounted pager, fixed slots, `aria-sort` covered by unit tests. |
-| 7 | Platform adapter | `src/platform/{index,tauri,web}.ts`, tests | `check` | Web variant downloads via blob and picks folders via `webkitdirectory`; Tauri variant compiles against plugin APIs and is selected only inside the shell. |
-| 8 | Playwright harness and `e2e` job | `apps/web/e2e/*`, `apps/web/ct/*`, `expectNoLayoutShift` helper, `ci.yml` `e2e` (windows) | `e2e` | DataTable component tests prove equal bounding boxes across pages, sorts, page sizes and loading/empty/error; the `e2e` job is green and added to required checks. |
+| #   | Title                                 | Scope / files                                                                                                                                                       | Checks                    | Done when                                                                                                                                                          |
+| --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | App skeleton, router and query        | `apps/web/{index.html,vite.config.ts}`, `src/{main,router}.tsx`, `src/routes/**` placeholders, `src/lib/{api,query}.ts`, `tools/checks/src/bundle-budget.ts`, tests | `check`, `build`          | `vp build` produces the SPA; all frozen routes plus `/onboarding` resolve; route test asserts no `/procurement`; budget check passes.                              |
+| 2   | Frozen design carry-over              | `src/styles/globals.css`, `@fontsource` setup, `docs/adr/0004-globals-css-token-fixes.md`, token-parity test, `docs/DESIGN.md`, `NOTICE` font entries               | `check`, `real-data-scan` | Diff vs legacy `globals.css` equals the ADR list; parity test passes; DESIGN.md de-branded.                                                                        |
+| 3   | Design validators                     | `tools/checks/validate-*.ts`, fixtures, wiring in `check`                                                                                                           | `check`                   | Each validator fails its failing fixture and passes the repo.                                                                                                      |
+| 4   | Shell components                      | `components/common/{AppChrome,SidebarNav,PageHeader,StatCard,DetailTabs,ListToolbar,ThemeToggle,Toast,GlobalSearchDialog}.tsx`, registry, tests                     | `check`                   | Shell renders in light and dark matching legacy screenshots; sidebar labels frozen; no sourcing entry.                                                             |
+| 5   | Primitives and FormField              | `components/common/*` primitives, tests                                                                                                                             | `check`                   | Labels/help/errors associated; icon-only buttons named; `validate-components` passes.                                                                              |
+| 6   | DataTable, Pagination and list search | `components/common/{DataTable,Pagination}.tsx`, `hooks/useListSearch.ts`, Vitest tests                                                                              | `check`                   | Filler rows, in-body states, mounted pager, fixed slots, `aria-sort` covered by unit tests.                                                                        |
+| 7   | Platform adapter                      | `src/platform/{index,tauri,web}.ts`, tests                                                                                                                          | `check`                   | Web variant downloads via blob and picks folders via `webkitdirectory`; Tauri variant compiles against plugin APIs and is selected only inside the shell.          |
+| 8   | Playwright harness and `e2e` job      | `apps/web/e2e/*`, `apps/web/ct/*`, `expectNoLayoutShift` helper, `ci.yml` `e2e` (windows)                                                                           | `e2e`                     | DataTable component tests prove equal bounding boxes across pages, sorts, page sizes and loading/empty/error; the `e2e` job is green and added to required checks. |
 
 ## 9. Open issues
 

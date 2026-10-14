@@ -15,6 +15,7 @@ filled from the supplier profile.
 ## 2. Scope
 
 Core:
+
 - De-branded templates `packages/documents/templates/{dc,invoice,gc}.xlsx` (identity cells → placeholders), made
   locally from the legacy templates and reviewed; only the de-branded copies are committed (C1).
 - `xlsx-snapshot` test tool: workbook → JSON (cell values and types, styles, merges, number formats, column
@@ -29,6 +30,7 @@ Core:
   shell offers Save-as (SPEC-14 platform adapter).
 
 Out of scope:
+
 - Report exports (SPEC-13); download buttons (SPEC-18).
 - Any new document field or layout change (A-2).
 
@@ -42,14 +44,14 @@ Out of scope:
 
 ### 4.1 Modules (`packages/documents/`)
 
-| Path | Responsibility |
-|---|---|
-| `src/templates.ts` | load the embedded de-branded templates (bytes embedded at build; no `node:fs`, C12) |
-| `src/dc.ts`, `src/invoice.ts`, `src/gc.ts` | builders |
-| `src/layout.ts` | shared row/page-break helpers implementing the legacy pagination as observed in the goldens |
-| `test/xlsx-snapshot.ts` | snapshot tool (test-only) |
-| `test/inputs/*.json`, `test/golden/*.snapshot.json` | synthetic inputs and legacy-derived snapshots |
-| `apps/api/src/routes/documents.ts`, `services/documents.ts` | load data → build → Storage → download |
+| Path                                                        | Responsibility                                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `src/templates.ts`                                          | load the embedded de-branded templates (bytes embedded at build; no `node:fs`, C12)         |
+| `src/dc.ts`, `src/invoice.ts`, `src/gc.ts`                  | builders                                                                                    |
+| `src/layout.ts`                                             | shared row/page-break helpers implementing the legacy pagination as observed in the goldens |
+| `test/xlsx-snapshot.ts`                                     | snapshot tool (test-only)                                                                   |
+| `test/inputs/*.json`, `test/golden/*.snapshot.json`         | synthetic inputs and legacy-derived snapshots                                               |
+| `apps/api/src/routes/documents.ts`, `services/documents.ts` | load data → build → Storage → download                                                      |
 
 ### 4.2 Golden procedure
 
@@ -83,14 +85,14 @@ from synthetic data).
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | De-branded templates and snapshot tool | `templates/*.xlsx`, `src/templates.ts`, `test/xlsx-snapshot.ts` + tests | `check`, `real-data-scan` | Snapshot tool round-trips a synthetic workbook; templates have placeholders only in identity cells and pass the scan. |
-| 2 | Golden inputs and legacy snapshots | `test/inputs/*.json`, `test/golden/*.snapshot.json` (from H5) | `real-data-scan` | Snapshots exist for every document × count × variant; reviewer confirms no real data. |
-| 3 | DC workbook | `src/{dc,layout}.ts`, tests | `check` | DC 1/20/21/60 goldens pass, GC footer line present (INV-36). |
-| 4 | Invoice workbook | `src/invoice.ts`, tests | `check` | Invoice goldens pass for GEMC (5 dp) and non-GEMC (2 dp). |
-| 5 | GC workbook | `src/gc.ts`, tests | `check` | GC goldens pass. |
-| 6 | Download routes | `apps/api/src/{routes,services}/documents.ts`, tests | `check` | Each download returns the right file name and content type; the file is stored under `exports/`; 404/409 cases. |
+| #   | Title                                  | Scope / files                                                           | Checks                    | Done when                                                                                                             |
+| --- | -------------------------------------- | ----------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | De-branded templates and snapshot tool | `templates/*.xlsx`, `src/templates.ts`, `test/xlsx-snapshot.ts` + tests | `check`, `real-data-scan` | Snapshot tool round-trips a synthetic workbook; templates have placeholders only in identity cells and pass the scan. |
+| 2   | Golden inputs and legacy snapshots     | `test/inputs/*.json`, `test/golden/*.snapshot.json` (from H5)           | `real-data-scan`          | Snapshots exist for every document × count × variant; reviewer confirms no real data.                                 |
+| 3   | DC workbook                            | `src/{dc,layout}.ts`, tests                                             | `check`                   | DC 1/20/21/60 goldens pass, GC footer line present (INV-36).                                                          |
+| 4   | Invoice workbook                       | `src/invoice.ts`, tests                                                 | `check`                   | Invoice goldens pass for GEMC (5 dp) and non-GEMC (2 dp).                                                             |
+| 5   | GC workbook                            | `src/gc.ts`, tests                                                      | `check`                   | GC goldens pass.                                                                                                      |
+| 6   | Download routes                        | `apps/api/src/{routes,services}/documents.ts`, tests                    | `check`                   | Each download returns the right file name and content type; the file is stored under `exports/`; 404/409 cases.       |
 
 ## 9. Open issues
 

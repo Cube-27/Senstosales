@@ -14,6 +14,7 @@ BHEL-password endpoints. Simplicity beats security for UX (A-17): every guard is
 ## 2. Scope
 
 Core:
+
 - `createApp(deps)`, `createServices(deps)`; layering `routes → services → repositories` enforced by Oxlint import
   boundaries (§4).
 - Errors: `ValidationError` 400, `AuthError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409;
@@ -42,6 +43,7 @@ Core:
   delete route (INV-83); dropped endpoints absent (INV-87).
 
 Out of scope:
+
 - PO/SRV/DC/invoice/flags/jobs endpoints (SPEC-08, -10, -11, -13, -19).
 - Backup rotation, daily backups, restore, log rotation details (SPEC-21). Packaging (SPEC-20).
 - Hosted auth (K2), encrypted BHEL password (K9).
@@ -56,17 +58,17 @@ Out of scope:
 
 ### 4.1 Modules (`apps/api/src/`)
 
-| Path | Responsibility |
-|---|---|
-| `app.ts` | `createApp(deps)`: middleware, mounts routes from the route table, `onError` |
-| `services/index.ts` | `createServices(deps)` (the seam for later adapters) |
-| `errors.ts` | `AppError` hierarchy and mapping |
-| `middleware/{host-guard,json-only,body-limit,auth}.ts` | guards |
-| `ports/{storage,secrets,clock,logger}.ts` | interfaces only |
-| `routes/{auth,onboarding,supplier,settings,buyers,health}.ts` | validate with Zod, call one service, no SQL |
-| `services/{auth,onboarding,supplier,settings,buyers,secrets}.ts` | load → domain → one `WriteBatch` (+ audit) → commit |
-| `repositories/*.ts` | plain rows; no business values |
-| `platform/node/{main,data-dir,storage-fs,clock,startup,static}.ts` | node entry and adapters |
+| Path                                                               | Responsibility                                                               |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `app.ts`                                                           | `createApp(deps)`: middleware, mounts routes from the route table, `onError` |
+| `services/index.ts`                                                | `createServices(deps)` (the seam for later adapters)                         |
+| `errors.ts`                                                        | `AppError` hierarchy and mapping                                             |
+| `middleware/{host-guard,json-only,body-limit,auth}.ts`             | guards                                                                       |
+| `ports/{storage,secrets,clock,logger}.ts`                          | interfaces only                                                              |
+| `routes/{auth,onboarding,supplier,settings,buyers,health}.ts`      | validate with Zod, call one service, no SQL                                  |
+| `services/{auth,onboarding,supplier,settings,buyers,secrets}.ts`   | load → domain → one `WriteBatch` (+ audit) → commit                          |
+| `repositories/*.ts`                                                | plain rows; no business values                                               |
+| `platform/node/{main,data-dir,storage-fs,clock,startup,static}.ts` | node entry and adapters                                                      |
 
 ### 4.2 Startup sequence (`platform/node/startup.ts`)
 
@@ -111,14 +113,14 @@ the first migration statement, newer DB refuses; storage keys `../x` and absolut
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | App factory, errors and guards | `app.ts`, `errors.ts`, `services/index.ts`, `middleware/*`, `ports/*`, tests | `check` | Non-loopback Host → 400; non-JSON mutation rejected; oversize body → 413; errors use the body shape. |
-| 2 | Node platform entry and adapters | `platform/node/{main,data-dir,storage-fs,clock,static}.ts`, `routes/health.ts`, tests | `check` | Binds 127.0.0.1 on a random port and prints it; serves a placeholder SPA; storage keys cannot escape; health reports version, schema version, job state. |
-| 3 | Startup upgrade gate | `platform/node/startup.ts`, tests with temp data dirs | `check` | Up-to-date DB: zero writes; older DB: backup exists before migration and migration is one batch; failed migration leaves the DB untouched; newer DB refused with a plain message. |
-| 4 | Simple login | `services/auth.ts`, `routes/auth.ts`, `middleware/auth.ts`, `repositories/auth.ts`, tests | `check` | Login/logout/session/remember-me as legacy; change password and reset end other sessions; no backoff or complexity rule exists. |
-| 5 | Onboarding, supplier, settings, buyers, BHEL password | `services/{onboarding,supplier,settings,buyers,secrets}.ts`, routes, repositories, tests | `check` | Onboarding gate works; writes carry one audit row; the BHEL password never appears in responses, logs or audit values. |
-| 6 | Route conformance | `test/route-conformance.test.ts` | `check` | Mounted routes equal the route table; no audit delete; dropped legacy endpoints absent. |
+| #   | Title                                                 | Scope / files                                                                             | Checks  | Done when                                                                                                                                                                         |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | App factory, errors and guards                        | `app.ts`, `errors.ts`, `services/index.ts`, `middleware/*`, `ports/*`, tests              | `check` | Non-loopback Host → 400; non-JSON mutation rejected; oversize body → 413; errors use the body shape.                                                                              |
+| 2   | Node platform entry and adapters                      | `platform/node/{main,data-dir,storage-fs,clock,static}.ts`, `routes/health.ts`, tests     | `check` | Binds 127.0.0.1 on a random port and prints it; serves a placeholder SPA; storage keys cannot escape; health reports version, schema version, job state.                          |
+| 3   | Startup upgrade gate                                  | `platform/node/startup.ts`, tests with temp data dirs                                     | `check` | Up-to-date DB: zero writes; older DB: backup exists before migration and migration is one batch; failed migration leaves the DB untouched; newer DB refused with a plain message. |
+| 4   | Simple login                                          | `services/auth.ts`, `routes/auth.ts`, `middleware/auth.ts`, `repositories/auth.ts`, tests | `check` | Login/logout/session/remember-me as legacy; change password and reset end other sessions; no backoff or complexity rule exists.                                                   |
+| 5   | Onboarding, supplier, settings, buyers, BHEL password | `services/{onboarding,supplier,settings,buyers,secrets}.ts`, routes, repositories, tests  | `check` | Onboarding gate works; writes carry one audit row; the BHEL password never appears in responses, logs or audit values.                                                            |
+| 6   | Route conformance                                     | `test/route-conformance.test.ts`                                                          | `check` | Mounted routes equal the route table; no audit delete; dropped legacy endpoints absent.                                                                                           |
 
 ## 9. Open issues
 

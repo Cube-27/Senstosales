@@ -13,6 +13,7 @@ the platform adapter (Save-as in the desktop shell, a browser download otherwise
 ## 2. Scope
 
 Core:
+
 - `/deviations`: flags list (type, status, PO filters), the six v1 types with plain labels (INV-58), acknowledge
   with an optional note (INV-59), links to the PO and SRV.
 - `/system/ledger`: audit list with filters; read-only; no delete or prune control (INV-83).
@@ -21,6 +22,7 @@ Core:
   export buttons and export-selected (SPEC-13); GC report for a chosen DC.
 
 Out of scope:
+
 - New report columns or exports (A-2); a flag column in any export (INV-60).
 
 ## 3. Dependencies
@@ -52,12 +54,12 @@ ledger shows the audit rows of earlier actions.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Deviations screen | `routes/deviations.tsx`, `components/modules/deviations/*`, e2e | `check`, `e2e` | Acknowledge e2e passes; filters keep layout. |
-| 2 | Ledger screen | `routes/system/ledger.tsx`, `components/modules/ledger/*`, e2e | `check`, `e2e` | Audit rows listed and filterable; no delete control. |
-| 3 | Delivery tracker | `routes/delivery-tracker.tsx`, `components/modules/delivery-tracker/*`, e2e | `check`, `e2e` | Chips and stats work without shift; export downloads the tracker file. |
-| 4 | Reports | `routes/reports.tsx`, `components/modules/reports/*`, e2e | `check`, `e2e` | Each tab lists and exports; export-selected and GC report download; no daily-dispatch tab. |
+| #   | Title             | Scope / files                                                               | Checks         | Done when                                                                                  |
+| --- | ----------------- | --------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------ |
+| 1   | Deviations screen | `routes/deviations.tsx`, `components/modules/deviations/*`, e2e             | `check`, `e2e` | Acknowledge e2e passes; filters keep layout.                                               |
+| 2   | Ledger screen     | `routes/system/ledger.tsx`, `components/modules/ledger/*`, e2e              | `check`, `e2e` | Audit rows listed and filterable; no delete control.                                       |
+| 3   | Delivery tracker  | `routes/delivery-tracker.tsx`, `components/modules/delivery-tracker/*`, e2e | `check`, `e2e` | Chips and stats work without shift; export downloads the tracker file.                     |
+| 4   | Reports           | `routes/reports.tsx`, `components/modules/reports/*`, e2e                   | `check`, `e2e` | Each tab lists and exports; export-selected and GC report download; no daily-dispatch tab. |
 
 ## 9. Open issues
 

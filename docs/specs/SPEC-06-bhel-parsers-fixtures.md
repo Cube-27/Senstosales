@@ -13,6 +13,7 @@ from the same pages (field by field); the code is new (C16).
 ## 2. Scope
 
 Core:
+
 - HTML utilities: UTF-8 decode with replacement, comment stripping, `&nbsp;` normalisation, label-based field
   lookup, header-text column mapping.
 - Date parsing: `DD/MM/YYYY`, `DD-MON-YY`, `DD/MM/YY` → `IsoDate`.
@@ -28,6 +29,7 @@ Core:
 - `pnpm test:corpus` (parser assertions), skipped when `SENSTO_CORPUS_DIR` is unset, never in CI.
 
 Out of scope:
+
 - Persisting or guarding documents (SPEC-08); fetching pages (SPEC-19); Excel PO input (A2-2: HTML only).
 
 ## 3. Dependencies
@@ -40,14 +42,14 @@ Out of scope:
 
 ### 4.1 Modules (`packages/parsers/src/`)
 
-| File | Responsibility |
-|---|---|
-| `types.ts` | `PoDocument`, `SrvDocument` Zod schemas; `ParseError` (`code`, `message`, `location?`) |
-| `html.ts` | decode, strip comments, normalise whitespace/`&nbsp;`, `findByLabel`, `mapColumnsByHeader` |
-| `dates.ts` | the three date formats → `IsoDate` |
-| `po/header.ts`, `po/items.ts`, `po/index.ts` | `parsePo(html): Result<PoDocument, ParseError>` |
-| `srv/table.ts`, `srv/index.ts` | `parseSrv(html): Result<SrvDocument[], ParseError>` (one file holds every SRV of one PO) |
-| `index.ts` | public surface |
+| File                                         | Responsibility                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `types.ts`                                   | `PoDocument`, `SrvDocument` Zod schemas; `ParseError` (`code`, `message`, `location?`)     |
+| `html.ts`                                    | decode, strip comments, normalise whitespace/`&nbsp;`, `findByLabel`, `mapColumnsByHeader` |
+| `dates.ts`                                   | the three date formats → `IsoDate`                                                         |
+| `po/header.ts`, `po/items.ts`, `po/index.ts` | `parsePo(html): Result<PoDocument, ParseError>`                                            |
+| `srv/table.ts`, `srv/index.ts`               | `parseSrv(html): Result<SrvDocument[], ParseError>` (one file holds every SRV of one PO)   |
+| `index.ts`                                   | public surface                                                                             |
 
 Fixtures: `packages/parsers/fixtures/{po,srv}/<name>.html` with `<name>.expected.json`. cheerio parses; nothing
 from the page is evaluated or fetched.
@@ -99,14 +101,14 @@ INV-19 (parser part), INV-46, INV-49, INV-50 (duplicate-key part), INV-75, INV-7
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Document types, anonymiser, first fixtures | `src/types.ts`, `tools/checks/src/anonymise-fixture.ts` + tests (synthetic HTML), first 5 PO and 5 SRV fixtures with expected JSON | `check`, `real-data-scan` | Types compile; anonymiser tests pass; fixtures pass the scan. |
-| 2 | HTML utilities, dates, PO header | `src/{html,dates}.ts`, `src/po/header.ts`, tests | `check` | All fixture PO headers match expected JSON; the three date formats pass literal tests. |
-| 3 | PO items, lots, continuation rows, GEMC | `src/po/items.ts`, `src/po/index.ts`, tests | `check` | All PO fixtures match, including entry-allow notes (INV-46) and GEMC numbers (INV-19). |
-| 4 | SRV parser | `src/srv/*.ts`, tests | `check` | All SRV fixtures match (both layouts, commented table skipped); a duplicate item key yields `duplicate-srv-item-key`. |
-| 5 | Fixture completion and golden runner | remaining fixtures to ~40/~30 per §6 coverage list, `test/golden.test.ts`, never-throws property test | `check`, `real-data-scan` | Every coverage category has at least one fixture; all goldens pass. |
-| 6 | Corpus test | `tools/corpus/parsers.corpus.test.ts`, `pnpm test:corpus` script | local | Skipped without `SENSTO_CORPUS_DIR`; on the owner's machine all assertions hold; failures listed by file-path hash only. |
+| #   | Title                                      | Scope / files                                                                                                                      | Checks                    | Done when                                                                                                                |
+| --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Document types, anonymiser, first fixtures | `src/types.ts`, `tools/checks/src/anonymise-fixture.ts` + tests (synthetic HTML), first 5 PO and 5 SRV fixtures with expected JSON | `check`, `real-data-scan` | Types compile; anonymiser tests pass; fixtures pass the scan.                                                            |
+| 2   | HTML utilities, dates, PO header           | `src/{html,dates}.ts`, `src/po/header.ts`, tests                                                                                   | `check`                   | All fixture PO headers match expected JSON; the three date formats pass literal tests.                                   |
+| 3   | PO items, lots, continuation rows, GEMC    | `src/po/items.ts`, `src/po/index.ts`, tests                                                                                        | `check`                   | All PO fixtures match, including entry-allow notes (INV-46) and GEMC numbers (INV-19).                                   |
+| 4   | SRV parser                                 | `src/srv/*.ts`, tests                                                                                                              | `check`                   | All SRV fixtures match (both layouts, commented table skipped); a duplicate item key yields `duplicate-srv-item-key`.    |
+| 5   | Fixture completion and golden runner       | remaining fixtures to ~40/~30 per §6 coverage list, `test/golden.test.ts`, never-throws property test                              | `check`, `real-data-scan` | Every coverage category has at least one fixture; all goldens pass.                                                      |
+| 6   | Corpus test                                | `tools/corpus/parsers.corpus.test.ts`, `pnpm test:corpus` script                                                                   | local                     | Skipped without `SENSTO_CORPUS_DIR`; on the owner's machine all assertions hold; failures listed by file-path hash only. |
 
 ## 9. Open issues
 

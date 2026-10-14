@@ -19,6 +19,7 @@ need them (§9 of this spec lists where each went).
 ## 2. Scope
 
 Core:
+
 - pnpm workspace per ARCHITECTURE §4: `packages/{domain,schemas,db,parsers,documents,scraper}`,
   `apps/{api,web,desktop}`, `tools/{checks,corpus,release,orchestrator}`; TypeScript strict, ESM, `tsc -b` project
   references; TypeScript 7; Node 24 LTS; the Vite+ toolchain (`vp`: Oxlint, Oxfmt, Vitest) everywhere.
@@ -46,6 +47,7 @@ Core:
   `tools/tests/`.
 
 Out of scope:
+
 - Product behaviour (SPEC-01 onward).
 - Coverage-percentage or ratchet gates; any size gate other than C15's two.
 - Candidates (ARCHITECTURE §17): nothing in CI or layout anticipates them beyond the ports.
@@ -79,16 +81,16 @@ checkout (`<main>/../SenstoSales-worktrees/spec-NN-pr-M`, branch `spec-NN/pr-M-<
 
 ### 4.2 Toolchain
 
-| Tool | Choice | Notes |
-|---|---|---|
-| Runtime | Node 24 LTS (`engines`, `.nvmrc`) | Type stripping runs `tools/**/*.ts` directly. |
-| Packages | pnpm workspaces, `--frozen-lockfile` in CI; supply-chain settings in `pnpm-workspace.yaml`: `minimumReleaseAge: 0` (no release-age quarantine) and `trustPolicy: no-downgrade` | D-0001; no `.npmrc` |
-| Language | TypeScript 7 strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`), ESM, `tsc -b` project references | INV-90 |
-| Toolchain | Vite+ (`vp`), not version-pinned through a catalog (owner) | One config, one CLI. No ESLint or Prettier (D-0002). |
-| Lint | Oxlint via `vp lint`: `max-lines` 800 and `complexity` 15 as errors, `no-restricted-imports` boundaries | C15, C12 |
-| Format | Oxfmt via `vp fmt` | |
-| Tests | Vitest via `vp test`; tests import from `vite-plus/test` | Playwright arrives with SPEC-14. |
-| Hooks | `vp staged` | Part of Vite+; no separate hook manager. |
+| Tool      | Choice                                                                                                                                                                         | Notes                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Runtime   | Node 24 LTS (`engines`, `.nvmrc`)                                                                                                                                              | Type stripping runs `tools/**/*.ts` directly.        |
+| Packages  | pnpm workspaces, `--frozen-lockfile` in CI; supply-chain settings in `pnpm-workspace.yaml`: `minimumReleaseAge: 0` (no release-age quarantine) and `trustPolicy: no-downgrade` | D-0001; no `.npmrc`                                  |
+| Language  | TypeScript 7 strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`), ESM, `tsc -b` project references                             | INV-90                                               |
+| Toolchain | Vite+ (`vp`), not version-pinned through a catalog (owner)                                                                                                                     | One config, one CLI. No ESLint or Prettier (D-0002). |
+| Lint      | Oxlint via `vp lint`: `max-lines` 800 and `complexity` 15 as errors, `no-restricted-imports` boundaries                                                                        | C15, C12                                             |
+| Format    | Oxfmt via `vp fmt`                                                                                                                                                             |                                                      |
+| Tests     | Vitest via `vp test`; tests import from `vite-plus/test`                                                                                                                       | Playwright arrives with SPEC-14.                     |
+| Hooks     | `vp staged`                                                                                                                                                                    | Part of Vite+; no separate hook manager.             |
 
 Exact versions are fixed when the lockfile is created; every dependency passes the deny-list.
 
@@ -106,16 +108,16 @@ the git common dir, so every worktree has them).
 
 ### 4.5 CI jobs
 
-| Job | Runner | Steps | Added by |
-|---|---|---|---|
-| `check` | ubuntu | install (frozen), `pnpm check:code`: `vp check` (Oxfmt, Oxlint guardrails and boundaries), `tsc -b`, `vp test run`, `pnpm -r build`; generated-file freshness (`regenerate && git diff --exit-code`) once a spec adds generated files | PR 1 |
-| `licenses` | ubuntu | `pnpm check:licenses`: `pnpm licenses list` → `tools/checks/src/license-check.ts` deny-list over the full dependency tree; CycloneDX SBOM uploaded with the report as the `license-report` artefact | PR 1 |
-| `tools` | ubuntu | `ruff check` and `ruff format --check` over `tools`, `pytest tools/tests` (merge guard), `bash -n` over `tools/orchestrator/*.sh` | PR 1 |
-| `real-data-scan` | ubuntu | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install | PR 1 (`mobile` rule: PR 3) |
-| `build` | ubuntu | `pnpm -r build` | PR 2 |
-| `audit` | ubuntu | `pnpm audit --prod` at `high`, plus the action-pin check (INV-108) | PR 2 |
-| `e2e` | windows | Playwright | SPEC-14 PR 8 |
-| `desktop` | windows | Tauri build and smoke | SPEC-20 PR 4 |
+| Job              | Runner  | Steps                                                                                                                                                                                                                                 | Added by                   |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `check`          | ubuntu  | install (frozen), `pnpm check:code`: `vp check` (Oxfmt, Oxlint guardrails and boundaries), `tsc -b`, `vp test run`, `pnpm -r build`; generated-file freshness (`regenerate && git diff --exit-code`) once a spec adds generated files | PR 1                       |
+| `licenses`       | ubuntu  | `pnpm check:licenses`: `pnpm licenses list` → `tools/checks/src/license-check.ts` deny-list over the full dependency tree; CycloneDX SBOM uploaded with the report as the `license-report` artefact                                   | PR 1                       |
+| `tools`          | ubuntu  | `ruff check` and `ruff format --check` over `tools`, `pytest tools/tests` (merge guard), `bash -n` over `tools/orchestrator/*.sh`                                                                                                     | PR 1                       |
+| `real-data-scan` | ubuntu  | `node tools/checks/src/real-data-scan.ts` (`pnpm check:real-data`) over all tracked files; needs no install                                                                                                                           | PR 1 (`mobile` rule: PR 3) |
+| `build`          | ubuntu  | `pnpm -r build`                                                                                                                                                                                                                       | PR 2                       |
+| `audit`          | ubuntu  | `pnpm audit --prod` at `high`, plus the action-pin check (INV-108)                                                                                                                                                                    | PR 2                       |
+| `e2e`            | windows | Playwright                                                                                                                                                                                                                            | SPEC-14 PR 8               |
+| `desktop`        | windows | Tauri build and smoke                                                                                                                                                                                                                 | SPEC-20 PR 4               |
 
 Further steps added to `check` by later specs: D1 dialect and migration-SQL lint (SPEC-05), design validators and
 token parity (SPEC-14), bundle budget (SPEC-14), OpenAPI freshness (SPEC-04).
@@ -206,12 +208,12 @@ INV-88, INV-91, INV-92.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Bootstrap (setup session) | Root docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `NOTICE`), `.claude/skills/*` with `/simplify` in `implement-pr`, `.claude/settings.json` merge guard, `tools/orchestrator/*`, `tools/tests/*`, `.github/workflows/ci.yml` (`check`, `licenses`, `tools`, `real-data-scan`), PR template, `vp staged` hook, pnpm workspace skeleton, `tsconfig.base.json`, `vite.config.ts` with Oxlint C15 guardrails and C12 boundaries, `tools/checks/src/license-check.ts`, `tools/checks/src/real-data-scan.ts` (pattern rules), `docs/{ENGINEERING,DECISIONS}.md`, `docs/plans/{ACTIVE,RECURRING}.md` | all four jobs | A trivial PR is green on the four jobs; the guard denies `gh pr merge`. Marked done in ACTIVE.md by the setup session. |
-| 2 | `build` and `audit` jobs, language and pin checks | `ci.yml` (`build`: `pnpm -r build`; `audit`: `pnpm audit --prod --audit-level high`), `tools/checks/src/action-pins.ts` (INV-108), `tools/checks/src/language.ts` (INV-90: production sources under `packages/*/src`, `apps/*/src` are `.ts`/`.tsx`), tests in `tools/checks/test/` | `build`, `audit`, `check` | An unpinned `uses:` and a `.js` file in `packages/domain/src` each fail (planted, then removed). |
-| 3 | Company-details check | `tools/checks/src/real-data-scan.ts` (`mobile` line rule; substring match against `tools/checks/company-details.local.txt` when present), `.gitignore` entry for that file, `tools/checks/real-data-allow.txt` format check, tests with values built at run time | `real-data-scan`, `check` | A planted value from the local file and a planted mobile number are each blocked by the staged hook; with the file absent the scan passes silently; synthetic test values are built at run time. |
-| 4 | Rulesets and repo settings | `gh api` ruleset commands applied (human H1); the applied JSON recorded as a `docs/DECISIONS.md` entry | — | A direct push to `main` is refused; a PR with a red required check cannot merge; secret scanning and push protection are on. |
+| #   | Title                                             | Scope / files                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Checks                    | Done when                                                                                                                                                                                        |
+| --- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Bootstrap (setup session)                         | Root docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `NOTICE`), `.claude/skills/*` with `/simplify` in `implement-pr`, `.claude/settings.json` merge guard, `tools/orchestrator/*`, `tools/tests/*`, `.github/workflows/ci.yml` (`check`, `licenses`, `tools`, `real-data-scan`), PR template, `vp staged` hook, pnpm workspace skeleton, `tsconfig.base.json`, `vite.config.ts` with Oxlint C15 guardrails and C12 boundaries, `tools/checks/src/license-check.ts`, `tools/checks/src/real-data-scan.ts` (pattern rules), `docs/{ENGINEERING,DECISIONS}.md`, `docs/plans/{ACTIVE,RECURRING}.md` | all four jobs             | A trivial PR is green on the four jobs; the guard denies `gh pr merge`. Marked done in ACTIVE.md by the setup session.                                                                           |
+| 2   | `build` and `audit` jobs, language and pin checks | `ci.yml` (`build`: `pnpm -r build`; `audit`: `pnpm audit --prod --audit-level high`), `tools/checks/src/action-pins.ts` (INV-108), `tools/checks/src/language.ts` (INV-90: production sources under `packages/*/src`, `apps/*/src` are `.ts`/`.tsx`), tests in `tools/checks/test/`                                                                                                                                                                                                                                                                                                                              | `build`, `audit`, `check` | An unpinned `uses:` and a `.js` file in `packages/domain/src` each fail (planted, then removed).                                                                                                 |
+| 3   | Company-details check                             | `tools/checks/src/real-data-scan.ts` (`mobile` line rule; substring match against `tools/checks/company-details.local.txt` when present), `.gitignore` entry for that file, `tools/checks/real-data-allow.txt` format check, tests with values built at run time                                                                                                                                                                                                                                                                                                                                                 | `real-data-scan`, `check` | A planted value from the local file and a planted mobile number are each blocked by the staged hook; with the file absent the scan passes silently; synthetic test values are built at run time. |
+| 4   | Rulesets and repo settings                        | `gh api` ruleset commands applied (human H1); the applied JSON recorded as a `docs/DECISIONS.md` entry                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | —                         | A direct push to `main` is refused; a PR with a red required check cannot merge; secret scanning and push protection are on.                                                                     |
 
 ## 9. Open issues
 

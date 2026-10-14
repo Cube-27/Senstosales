@@ -13,6 +13,7 @@ decision of 2026-10-14). It runs only where `SENSTO_CORPUS_DIR` is set and never
 ## 2. Scope
 
 Core:
+
 - `pnpm import:corpus`: creates a temporary data dir outside the repo, migrates an empty DB, runs onboarding with a
   synthetic profile, enqueues `po.import-folder` then `srv.import-folder` over the corpus files (via the same
   staging path as the UI), waits for completion, then writes the report.
@@ -25,6 +26,7 @@ Core:
   exception; idempotency holds.
 
 Out of scope:
+
 - Reading the legacy DB (A-6, INV-49); carrying legacy DCs/invoices (live data has none; owner decision).
 - The cutover itself (SPEC-22).
 
@@ -37,12 +39,12 @@ Out of scope:
 
 ### 4.1 Modules
 
-| Path | Responsibility |
-|---|---|
-| `tools/corpus/import.ts` | the runner (uses `createServices` with node platform adapters on a temp data dir) |
-| `tools/corpus/report.ts` | `buildReport(jobSummaries, db): ImportReport`; markdown and JSON renderers |
-| `tools/corpus/ingest.corpus.test.ts` | local assertions, skipped without `SENSTO_CORPUS_DIR` |
-| `tools/corpus/report.test.ts` | CI test of `buildReport` on a synthetic fixture folder |
+| Path                                 | Responsibility                                                                    |
+| ------------------------------------ | --------------------------------------------------------------------------------- |
+| `tools/corpus/import.ts`             | the runner (uses `createServices` with node platform adapters on a temp data dir) |
+| `tools/corpus/report.ts`             | `buildReport(jobSummaries, db): ImportReport`; markdown and JSON renderers        |
+| `tools/corpus/ingest.corpus.test.ts` | local assertions, skipped without `SENSTO_CORPUS_DIR`                             |
+| `tools/corpus/report.test.ts`        | CI test of `buildReport` on a synthetic fixture folder                            |
 
 ### 4.2 Privacy
 
@@ -67,11 +69,11 @@ literal report content. Local: the corpus test with the owner's corpus.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Corpus import runner | `tools/corpus/import.ts`, `pnpm import:corpus` script, test over fixtures in a temp dir | `check` | The runner imports the fixture folder through jobs into a temp data dir and exits 0. |
-| 2 | Import report | `tools/corpus/report.ts`, `report.test.ts` | `check` | The synthetic report matches literal expected markdown and JSON. |
-| 3 | Corpus ingestion assertions and idempotency | `tools/corpus/ingest.corpus.test.ts` | local | On the owner's machine the full corpus imports; a second run changes nothing; skipped without the env var. |
+| #   | Title                                       | Scope / files                                                                           | Checks  | Done when                                                                                                  |
+| --- | ------------------------------------------- | --------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | Corpus import runner                        | `tools/corpus/import.ts`, `pnpm import:corpus` script, test over fixtures in a temp dir | `check` | The runner imports the fixture folder through jobs into a temp data dir and exits 0.                       |
+| 2   | Import report                               | `tools/corpus/report.ts`, `report.test.ts`                                              | `check` | The synthetic report matches literal expected markdown and JSON.                                           |
+| 3   | Corpus ingestion assertions and idempotency | `tools/corpus/ingest.corpus.test.ts`                                                    | local   | On the owner's machine the full corpus imports; a second run changes nothing; skipped without the env var. |
 
 ## 9. Open issues
 

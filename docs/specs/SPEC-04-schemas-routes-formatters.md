@@ -12,6 +12,7 @@ formats values that the domain computes (C2).
 ## 2. Scope
 
 Core:
+
 - Zod codecs for `Qty`, `Money`, `IsoDate`, ULID ids; enums (item/PO status, flag type, flag status, job type and
   status, invoice kind).
 - Entity and API shapes for every §9 resource; list query (`page`, `pageSize`, `sort`, `dir`, typed filters) and
@@ -22,6 +23,7 @@ Core:
 - Formatters (quantities, money 2/5 dp, dates, FY) with legacy-identical output.
 
 Out of scope:
+
 - Route handlers (SPEC-07, -08, -10, -11, -13, -19); report column definitions (SPEC-13).
 - Dropped endpoints (INV-87): procurement/analytics, dashboard insights and forecast, daily-dispatch, HTTP
   reconcile-all, audit delete, health aliases, download-folder preferences.
@@ -35,16 +37,16 @@ Out of scope:
 
 ### 4.1 Modules (`packages/schemas/src/`)
 
-| File | Content |
-|---|---|
+| File            | Content                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `primitives.ts` | `zQty`, `zMoney` (decimal strings on the wire ↔ branded integers), `zIsoDate`, `zId` (ULID), `zPoId` (`^\d{1,10}$`, C17) |
-| `enums.ts` | status, flag, job, invoice-kind enums (flag enum = `FlagType`, INV-58) |
-| `entities/*.ts` | supplier, settings, buyer, po, poItem, lot, dc, dcItem, invoice, invoiceItem, srv, srvItem, flag, audit, job, jobEvent |
-| `api/*.ts` | request/response shapes per resource; `zListQuery`, `zPaged(item)`, `zErrorBody` |
-| `routes.ts` | the route table (`as const`), one entry per endpoint |
-| `client.ts` | `createClient(fetchImpl)` typed by the route table (no code generation) |
-| `formatters.ts` | `fmtQty`, `fmtMoney(m, { gemc })`, `fmtRate`, `fmtDate`, `fmtFy` |
-| `openapi.ts` | `buildOpenApi(routes)` |
+| `enums.ts`      | status, flag, job, invoice-kind enums (flag enum = `FlagType`, INV-58)                                                   |
+| `entities/*.ts` | supplier, settings, buyer, po, poItem, lot, dc, dcItem, invoice, invoiceItem, srv, srvItem, flag, audit, job, jobEvent   |
+| `api/*.ts`      | request/response shapes per resource; `zListQuery`, `zPaged(item)`, `zErrorBody`                                         |
+| `routes.ts`     | the route table (`as const`), one entry per endpoint                                                                     |
+| `client.ts`     | `createClient(fetchImpl)` typed by the route table (no code generation)                                                  |
+| `formatters.ts` | `fmtQty`, `fmtMoney(m, { gemc })`, `fmtRate`, `fmtDate`, `fmtFy`                                                         |
+| `openapi.ts`    | `buildOpenApi(routes)`                                                                                                   |
 
 Generated, committed: `packages/schemas/generated/openapi.json` (by `tools/gen/openapi.ts`).
 
@@ -94,13 +96,13 @@ OpenAPI fresh), INV-09 (report shapes carry Accepted = `rcd_qty`).
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Primitives and enums | `src/{primitives,enums}.ts`, tests | `check` | Codec round-trips pass; `FlagType` enum has six members. |
-| 2 | Entities and API shapes | `src/entities/*.ts`, `src/api/*.ts` (list query, paged, error body), tests | `check` | Shapes cover every §8.2 entity used by the API; error body shape fixed. |
-| 3 | Route table and typed client | `src/routes.ts`, `src/client.ts`, `routes.test.ts` | `check` | All §9 resources present; dropped endpoints absent (INV-87); client calls are typed by the table. |
-| 4 | OpenAPI generation and freshness | `src/openapi.ts`, `tools/gen/openapi.ts`, `generated/openapi.json`, `ci.yml` freshness step | `check` | A stale file fails CI; regenerating is deterministic. |
-| 5 | Shared formatters | `src/formatters.ts`, `formatters.test.ts` | `check` | Literal tables of legacy display strings pass for qty, money (2/5 dp), rate, date, FY. |
+| #   | Title                            | Scope / files                                                                               | Checks  | Done when                                                                                         |
+| --- | -------------------------------- | ------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| 1   | Primitives and enums             | `src/{primitives,enums}.ts`, tests                                                          | `check` | Codec round-trips pass; `FlagType` enum has six members.                                          |
+| 2   | Entities and API shapes          | `src/entities/*.ts`, `src/api/*.ts` (list query, paged, error body), tests                  | `check` | Shapes cover every §8.2 entity used by the API; error body shape fixed.                           |
+| 3   | Route table and typed client     | `src/routes.ts`, `src/client.ts`, `routes.test.ts`                                          | `check` | All §9 resources present; dropped endpoints absent (INV-87); client calls are typed by the table. |
+| 4   | OpenAPI generation and freshness | `src/openapi.ts`, `tools/gen/openapi.ts`, `generated/openapi.json`, `ci.yml` freshness step | `check` | A stale file fails CI; regenerating is deterministic.                                             |
+| 5   | Shared formatters                | `src/formatters.ts`, `formatters.test.ts`                                                   | `check` | Literal tables of legacy display strings pass for qty, money (2/5 dp), rate, date, FY.            |
 
 ## 9. Open issues
 

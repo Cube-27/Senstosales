@@ -15,6 +15,7 @@ and the OTP (A-17).
 ## 2. Scope
 
 Core:
+
 - Port (§4.1): `openSession()` → `prepareLogin()` (captcha PNG), `submitCaptcha(code, password, captcha)`,
   `submitOtp(otp)`, `listPoIds()`, `fetchPoHtml(id)`, `fetchSrvHtml(id)`, `close()`. In-memory fake for tests.
 - Sessions in a map keyed by job id; closed on job end, app exit or 15 minutes idle (INV-100).
@@ -33,6 +34,7 @@ Core:
   password status with a link to Settings, plain messages; tray status through the platform adapter.
 
 Out of scope:
+
 - Fallback browsers (K8), Browser Rendering (K1), encrypted password (K9).
 
 ## 3. Dependencies
@@ -45,15 +47,15 @@ Out of scope:
 
 ### 4.1 Modules
 
-| Path | Responsibility |
-|---|---|
-| `packages/scraper/src/port.ts` | `Scraper`, `ScraperSession`, error types |
-| `packages/scraper/src/fake.ts` | scripted fake (captcha, OTP, ids, pages from fixtures) |
-| `packages/scraper/src/sessions.ts` | session map, idle timer via the `Clock` port |
-| `packages/scraper/src/platform/playwright/{launch,login,selectors,http-session}.ts` | the adapter |
-| `packages/scraper/fixtures/*.html` | synthetic portal-shaped pages for selector tests |
-| `apps/api/src/{routes,services}/bhel-sync.ts` | wizard endpoints; scrape job handlers |
-| `apps/web/src/routes/po/ingest-bhel.tsx`, `components/modules/bhel-sync/*` | the wizard UI |
+| Path                                                                                | Responsibility                                         |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `packages/scraper/src/port.ts`                                                      | `Scraper`, `ScraperSession`, error types               |
+| `packages/scraper/src/fake.ts`                                                      | scripted fake (captcha, OTP, ids, pages from fixtures) |
+| `packages/scraper/src/sessions.ts`                                                  | session map, idle timer via the `Clock` port           |
+| `packages/scraper/src/platform/playwright/{launch,login,selectors,http-session}.ts` | the adapter                                            |
+| `packages/scraper/fixtures/*.html`                                                  | synthetic portal-shaped pages for selector tests       |
+| `apps/api/src/{routes,services}/bhel-sync.ts`                                       | wizard endpoints; scrape job handlers                  |
+| `apps/web/src/routes/po/ingest-bhel.tsx`, `components/modules/bhel-sync/*`          | the wizard UI                                          |
 
 ### 4.2 Error handling
 
@@ -84,14 +86,14 @@ INV-81, INV-86, INV-97 (new), INV-100 (new), INV-98 (single job), INV-106.
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Scraper port, fake and sessions | `packages/scraper/src/{port,fake,sessions}.ts`, tests | `check` | Fake drives a full flow in tests; idle close at 15 min with a fake clock; invalid PO ids rejected. |
-| 2 | Playwright adapter: launch and login | `src/platform/playwright/{launch,login,selectors}.ts`, fixtures, tests | `check` | Launch options snapshot has only channel, headless and UA; selector tests pass on fixtures; `EdgeUnavailable` mapped. |
-| 3 | HTTP session listing and fetch | `src/platform/playwright/http-session.ts`, tests with a local stub server | `check` | Cookies reused; portal origin constant; pages returned as strings; ids validated. |
-| 4 | Scrape jobs and wizard API | `apps/api/src/{routes,services}/bhel-sync.ts`, job handlers, tests | `check` | Fake-backed wizard and scrape jobs pass; partial failures keep other documents; cancel works. |
-| 5 | Sync wizard UI and tray status | `apps/web/src/routes/po/ingest-bhel.tsx`, `components/modules/bhel-sync/*`, e2e | `check`, `e2e` | Captcha → OTP → progress → summary e2e passes with the fake; no layout shift between steps. |
-| 6 | Live sync acceptance (human) | DECISIONS entry with the outcome (no real data) | — | The owner runs a live sync (H3) and new documents appear. |
+| #   | Title                                | Scope / files                                                                   | Checks         | Done when                                                                                                             |
+| --- | ------------------------------------ | ------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | Scraper port, fake and sessions      | `packages/scraper/src/{port,fake,sessions}.ts`, tests                           | `check`        | Fake drives a full flow in tests; idle close at 15 min with a fake clock; invalid PO ids rejected.                    |
+| 2   | Playwright adapter: launch and login | `src/platform/playwright/{launch,login,selectors}.ts`, fixtures, tests          | `check`        | Launch options snapshot has only channel, headless and UA; selector tests pass on fixtures; `EdgeUnavailable` mapped. |
+| 3   | HTTP session listing and fetch       | `src/platform/playwright/http-session.ts`, tests with a local stub server       | `check`        | Cookies reused; portal origin constant; pages returned as strings; ids validated.                                     |
+| 4   | Scrape jobs and wizard API           | `apps/api/src/{routes,services}/bhel-sync.ts`, job handlers, tests              | `check`        | Fake-backed wizard and scrape jobs pass; partial failures keep other documents; cancel works.                         |
+| 5   | Sync wizard UI and tray status       | `apps/web/src/routes/po/ingest-bhel.tsx`, `components/modules/bhel-sync/*`, e2e | `check`, `e2e` | Captcha → OTP → progress → summary e2e passes with the fake; no layout shift between steps.                           |
+| 6   | Live sync acceptance (human)         | DECISIONS entry with the outcome (no real data)                                 | —              | The owner runs a live sync (H3) and new documents appear.                                                             |
 
 ## 9. Open issues
 

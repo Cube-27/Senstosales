@@ -13,6 +13,7 @@ job events, flags and stored HTML are kept (A-26, INV-83).
 ## 2. Scope
 
 Core:
+
 - `backup` job: online backup to `backups/daily-<date>.db` on the first launch of each day (enqueued after start;
   not a startup write, C9) and on Backup now; pre-upgrade backups (SPEC-07) use their own names and are not
   rotated away by daily rotation.
@@ -28,6 +29,7 @@ Core:
   failure dialog, Edge missing (EC-09), where data and logs live, uninstall keeps data.
 
 Out of scope:
+
 - Prune jobs of any kind for business data (A-26); cloud backups (K1).
 
 ## 3. Dependencies
@@ -37,14 +39,14 @@ Out of scope:
 
 ## 4. Design
 
-| Path | Responsibility |
-|---|---|
-| `apps/api/src/services/backup.ts` | backup job handler, rotation plan (pure function of file names and today) |
-| `apps/api/src/platform/node/backup-fs.ts` | file operations under `backups/` via the data dir |
-| `apps/api/src/{routes,services}/restore.ts` | list and restore |
-| `apps/api/src/platform/node/logger.ts` | pino with rotation and redaction |
-| `apps/web/src/components/modules/settings/BackupPanel.tsx` | Backup now / Restore |
-| `docs/OPERATIONS.md` | the guide |
+| Path                                                       | Responsibility                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `apps/api/src/services/backup.ts`                          | backup job handler, rotation plan (pure function of file names and today) |
+| `apps/api/src/platform/node/backup-fs.ts`                  | file operations under `backups/` via the data dir                         |
+| `apps/api/src/{routes,services}/restore.ts`                | list and restore                                                          |
+| `apps/api/src/platform/node/logger.ts`                     | pino with rotation and redaction                                          |
+| `apps/web/src/components/modules/settings/BackupPanel.tsx` | Backup now / Restore                                                      |
+| `docs/OPERATIONS.md`                                       | the guide                                                                 |
 
 Error handling: restore refused while a job runs (409, plain message); a failed restore leaves the safety backup and
 says where it is.
@@ -69,13 +71,13 @@ no password, cookie or HTML body appears; e2e (web mode) Backup now → list sho
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | Backup job and rotation | `services/backup.ts`, `platform/node/backup-fs.ts`, tests | `check` | Rotation table passes; first-launch-of-day and manual backups produce valid DB files. |
-| 2 | Restore | `routes/restore.ts`, `services/restore.ts`, tests | `check` | Round-trip restore passes; refused while a job runs; safety backup taken first. |
-| 3 | Settings backup panel | `BackupPanel.tsx`, e2e | `check`, `e2e` | Backup now and Restore work in web mode without layout shift. |
-| 4 | Logs | `platform/node/logger.ts`, tests | `check` | Rotation configured to 14 days; redaction tests pass. |
-| 5 | Operations guide | `docs/OPERATIONS.md` (screenshots from a synthetic install) | `real-data-scan` | Each procedure tried once on a VM (H7); no real data in text or images. |
+| #   | Title                   | Scope / files                                               | Checks           | Done when                                                                             |
+| --- | ----------------------- | ----------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------- |
+| 1   | Backup job and rotation | `services/backup.ts`, `platform/node/backup-fs.ts`, tests   | `check`          | Rotation table passes; first-launch-of-day and manual backups produce valid DB files. |
+| 2   | Restore                 | `routes/restore.ts`, `services/restore.ts`, tests           | `check`          | Round-trip restore passes; refused while a job runs; safety backup taken first.       |
+| 3   | Settings backup panel   | `BackupPanel.tsx`, e2e                                      | `check`, `e2e`   | Backup now and Restore work in web mode without layout shift.                         |
+| 4   | Logs                    | `platform/node/logger.ts`, tests                            | `check`          | Rotation configured to 14 days; redaction tests pass.                                 |
+| 5   | Operations guide        | `docs/OPERATIONS.md` (screenshots from a synthetic install) | `real-data-scan` | Each procedure tried once on a VM (H7); no real data in text or images.               |
 
 ## 9. Open issues
 

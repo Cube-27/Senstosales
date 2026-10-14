@@ -12,6 +12,7 @@ write batches from these results; no other package computes FY, GEMC rates, tax 
 ## 2. Scope
 
 Core:
+
 - FY (INV-21), document keys (INV-22..INV-25 domain parts), GC defaults (INV-26).
 - GEMC number extraction and net rate from the GST-inclusive source rate (INV-16, INV-17, INV-19).
 - Invoice line tax and header sums (INV-18, INV-41).
@@ -21,6 +22,7 @@ Core:
 - Flag detection, fingerprints and the desired-vs-stored diff (INV-52..INV-59).
 
 Out of scope:
+
 - Persisting flags, running detection inside batches: SPEC-08 (`recompute`).
 - Candidate flags `RECEIVED_EXCEEDS_DISPATCHED`, `AMENDMENT_BELOW_DISPATCHED` (A-24; EC-01, EC-02).
 - IGST selection: v1 computes CGST + SGST only (A2-4, EC-07).
@@ -34,15 +36,15 @@ Out of scope:
 
 ### 4.1 Modules (`packages/domain/src/`)
 
-| File | Exports |
-|---|---|
-| `fy.ts` | `Fy` (`"2024-25"`), `fyOf(date)`, `docKey(number, fy)` |
-| `gc.ts` | `defaultGc({ dcNumber, dcDate, gcNumber?, gcDate? })` |
-| `gemc.ts` | `extractGemcNumber(remarks): string \| null`, `gemcNetRate(sourceRate: Money): Money` |
-| `tax.ts` | `invoiceLineTax({ qty, rate, cgstPct, sgstPct, gemc })`, `invoiceTotals(lines)` |
-| `links.ts` | `resolveDocLink(raw, srvDate, candidates)`, `matchSrvItem({ materialCode, poItemNo }, poItems)` |
+| File        | Exports                                                                                                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `fy.ts`     | `Fy` (`"2024-25"`), `fyOf(date)`, `docKey(number, fy)`                                                                                                                                     |
+| `gc.ts`     | `defaultGc({ dcNumber, dcDate, gcNumber?, gcDate? })`                                                                                                                                      |
+| `gemc.ts`   | `extractGemcNumber(remarks): string \| null`, `gemcNetRate(sourceRate: Money): Money`                                                                                                      |
+| `tax.ts`    | `invoiceLineTax({ qty, rate, cgstPct, sgstPct, gemc })`, `invoiceTotals(lines)`                                                                                                            |
+| `links.ts`  | `resolveDocLink(raw, srvDate, candidates)`, `matchSrvItem({ materialCode, poItemNo }, poItems)`                                                                                            |
 | `guards.ts` | `acceptIncoming(storedDate, incomingDate)`, `deleteBlock(kind, links)`, `validateDcLines`, `validateDcInvoiceLines`, `validateDirectInvoiceLines`, `changedImmutableFields(before, after)` |
-| `flags.ts` | `FlagType`, `detectFlags(snapshot): DesiredFlag[]`, `fingerprint(flag)`, `diffFlags(desired, stored)` |
+| `flags.ts`  | `FlagType`, `detectFlags(snapshot): DesiredFlag[]`, `fingerprint(flag)`, `diffFlags(desired, stored)`                                                                                      |
 
 ### 4.2 Rules
 
@@ -71,31 +73,45 @@ Out of scope:
   the service rejects them (A-14, INV-33).
 - **Flags** (spec §8, A-7, A-13, A-15, A-24): exactly six types (INV-58).
 
-| Type | Detected when (tol 0.001) | INV |
-|---|---|---|
-| `QTY_MISMATCH` | SRV line `ord_qty` differs from its PO item's `ord_qty` | INV-52 |
-| `DOC_NUMBER_CONFLICT` | SRV line cites a challan/invoice number with no DC/invoice of that number in the SRV date's FY | INV-53 |
-| `OVER_DISPATCH` | `gtTol(dsp, ord)`: `10.002` vs `10` flags, `10.001` not | INV-54 |
-| `OVER_INVOICE` | `gtTol(sum(all invoice qty), ord)` | INV-55 |
-| `DOC_ON_CANCELLED_ITEM` | a DC or invoice line exists on a cancelled item | INV-56 |
-| `MANUAL_ADJUSTMENT_OVERLAP` | `manual > 0` and a DC line on the item was created after `manual_set_at` | INV-57 |
+| Type                        | Detected when (tol 0.001)                                                                      | INV    |
+| --------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
+| `QTY_MISMATCH`              | SRV line `ord_qty` differs from its PO item's `ord_qty`                                        | INV-52 |
+| `DOC_NUMBER_CONFLICT`       | SRV line cites a challan/invoice number with no DC/invoice of that number in the SRV date's FY | INV-53 |
+| `OVER_DISPATCH`             | `gtTol(dsp, ord)`: `10.002` vs `10` flags, `10.001` not                                        | INV-54 |
+| `OVER_INVOICE`              | `gtTol(sum(all invoice qty), ord)`                                                             | INV-55 |
+| `DOC_ON_CANCELLED_ITEM`     | a DC or invoice line exists on a cancelled item                                                | INV-56 |
+| `MANUAL_ADJUSTMENT_OVERLAP` | `manual > 0` and a DC line on the item was created after `manual_set_at`                       | INV-57 |
 
-  `fingerprint` = type + scope + quantities + document ids (§6.9). `diffFlags(desired, stored)` returns only flags
-  to insert: a stored fingerprint is never duplicated, and a stored open flag whose condition disappeared is kept
-  open (spec §8, INV-59, EC-05). PO-direct invoices never raise `MANUAL_ADJUSTMENT_OVERLAP` (A-15, EC-10).
+`fingerprint` = type + scope + quantities + document ids (§6.9). `diffFlags(desired, stored)` returns only flags
+to insert: a stored fingerprint is never duplicated, and a stored open flag whose condition disappeared is kept
+open (spec §8, INV-59, EC-05). PO-direct invoices never raise `MANUAL_ADJUSTMENT_OVERLAP` (A-15, EC-10).
 
 ### 4.3 Snapshot input for flags
 
 ```ts
 type PoFlagSnapshot = {
   poId: string;
-  items: { id: string; ordQty: Qty; cancelled: boolean; dspQty: Qty; invoicedQty: Qty;
-           manualDispatchedQty: Qty; manualSetAt: string | null;
-           dcLines: { id: string; dcId: string; createdAt: string }[];
-           invoiceLines: { id: string; invoiceId: string }[] }[];
-  srvLines: { id: string; poItemId: string | null; ordQty: Qty; srvDate: IsoDate;
-              challanNo: string | null; invoiceNo: string | null;
-              resolvedDcId: string | null; resolvedInvoiceId: string | null }[];
+  items: {
+    id: string;
+    ordQty: Qty;
+    cancelled: boolean;
+    dspQty: Qty;
+    invoicedQty: Qty;
+    manualDispatchedQty: Qty;
+    manualSetAt: string | null;
+    dcLines: { id: string; dcId: string; createdAt: string }[];
+    invoiceLines: { id: string; invoiceId: string }[];
+  }[];
+  srvLines: {
+    id: string;
+    poItemId: string | null;
+    ordQty: Qty;
+    srvDate: IsoDate;
+    challanNo: string | null;
+    invoiceNo: string | null;
+    resolvedDcId: string | null;
+    resolvedInvoiceId: string | null;
+  }[];
 };
 ```
 
@@ -124,14 +140,14 @@ is constant within April–March; `gemcNetRate` never reads its own output (type
 
 ## 8. PR plan
 
-| # | Title | Scope / files | Checks | Done when |
-|---|---|---|---|---|
-| 1 | FY, document keys and GC defaults | `src/{fy,gc}.ts`, tests | `check` | INV-21 boundaries pass; `docKey` distinguishes FYs; GC defaults (INV-26) pass. |
-| 2 | GEMC | `src/gemc.ts`, tests | `check` | `848.75 -> 719.27966`, `118 -> 100`; regex cases pass (INV-16, INV-19); source-rate branding makes double division impossible (INV-17). |
-| 3 | Tax | `src/tax.ts`, tests | `check` | INV-41 example and 2-dp/5-dp cases pass; header equals the sum of lines (INV-18). |
-| 4 | Links and item matching | `src/links.ts`, tests | `check` | INV-37 (incl. EC-03 cross-FY) and INV-39 (incl. duplicate material code and EC-12 no match) pass. |
-| 5 | Guards and line validation | `src/guards.ts`, tests | `check` | INV-29, -31, -32, -33, -35, -42, -43 tables pass, each with a negative case. |
-| 6 | Flag detection and diff | `src/flags.ts`, tests | `check` | Each of the six types has a positive and negative case (incl. the `10.002`/`10.001` boundary, EC-05, EC-10); `diffFlags` never duplicates and never closes. |
+| #   | Title                             | Scope / files           | Checks  | Done when                                                                                                                                                   |
+| --- | --------------------------------- | ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | FY, document keys and GC defaults | `src/{fy,gc}.ts`, tests | `check` | INV-21 boundaries pass; `docKey` distinguishes FYs; GC defaults (INV-26) pass.                                                                              |
+| 2   | GEMC                              | `src/gemc.ts`, tests    | `check` | `848.75 -> 719.27966`, `118 -> 100`; regex cases pass (INV-16, INV-19); source-rate branding makes double division impossible (INV-17).                     |
+| 3   | Tax                               | `src/tax.ts`, tests     | `check` | INV-41 example and 2-dp/5-dp cases pass; header equals the sum of lines (INV-18).                                                                           |
+| 4   | Links and item matching           | `src/links.ts`, tests   | `check` | INV-37 (incl. EC-03 cross-FY) and INV-39 (incl. duplicate material code and EC-12 no match) pass.                                                           |
+| 5   | Guards and line validation        | `src/guards.ts`, tests  | `check` | INV-29, -31, -32, -33, -35, -42, -43 tables pass, each with a negative case.                                                                                |
+| 6   | Flag detection and diff           | `src/flags.ts`, tests   | `check` | Each of the six types has a positive and negative case (incl. the `10.002`/`10.001` boundary, EC-05, EC-10); `diffFlags` never duplicates and never closes. |
 
 ## 9. Open issues
 

@@ -6,6 +6,7 @@ ARCHITECTURE Appendix A; open owner questions belong in OPEN_QUESTIONS.md. What 
 them here in its tracker commit on `YOUR TURN`, under the IDs the orchestrator sends (`CLAUDE.md` §3).
 
 **Statuses:**
+
 - `decided`: made by an agent within its authority. Stands unless the owner overrides it.
 - `pending-owner`: a default an agent chose that the owner should confirm. Work proceeds on it.
 - `needs-owner`: blocking. Work that depends on it stops until the owner answers.
@@ -14,6 +15,7 @@ them here in its tracker commit on `YOUR TURN`, under the IDs the orchestrator s
 - `superseded`: replaced by a later entry. Link it.
 
 **Rules:**
+
 - Entries are append-only. To change a decision, add a new entry and mark the old one `superseded`.
 - Keep each entry under about ten lines. Don't log trivial choices.
 - No customer names and no secrets.
@@ -36,21 +38,22 @@ them here in its tracker commit on `YOUR TURN`, under the IDs the orchestrator s
 
 Items with status `needs-owner` or `pending-owner`. Keep this list current.
 
-| ID | Title | Status |
-|---|---|---|
-| D-0003 | BHEL buyer seed: none | pending-owner |
-| D-0004 | Initial password `admin`, no forced change | pending-owner |
-| D-0005 | Cell safety applies to text cells only | pending-owner |
-| D-0006 | DC and invoice list exports named `.csv` | pending-owner |
-| D-0007 | Downloads are not logged | pending-owner |
+| ID     | Title                                                  | Status        |
+| ------ | ------------------------------------------------------ | ------------- |
+| D-0003 | BHEL buyer seed: none                                  | pending-owner |
+| D-0004 | Initial password `admin`, no forced change             | pending-owner |
+| D-0005 | Cell safety applies to text cells only                 | pending-owner |
+| D-0006 | DC and invoice list exports named `.csv`               | pending-owner |
+| D-0007 | Downloads are not logged                               | pending-owner |
 | D-0008 | Minimal Rust Tauri scaffold outside the language check | pending-owner |
-| D-0009 | Money rounding: half-up | pending-owner |
+| D-0009 | Money rounding: half-up                                | pending-owner |
 
 ---
 
 ## Entries
 
 ### D-0001 — No release-age quarantine; trust policy no-downgrade
+
 - Date: 2026-10-14 · Spec/PR: SPEC-00 PR 1 · Status: confirmed
 - Decision: `pnpm-workspace.yaml` sets `minimumReleaseAge: 0` with `trustPolicy: no-downgrade` (`trustPolicyIgnoreAfter` one year). There is no `.npmrc` release-age setting.
 - Alternatives: pnpm's one-day default quarantine; a longer `minimumReleaseAge`.
@@ -59,6 +62,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: Owner decision, 2026-10-14.
 
 ### D-0002 — Toolchain: Vite+ (Oxlint, Oxfmt, Vitest), TypeScript 7, no ESLint or Prettier
+
 - Date: 2026-10-14 · Spec/PR: SPEC-00 PR 1 · Status: confirmed
 - Decision: `vp` is the single CLI: Oxlint (`vp lint`, including the C15 limits), Oxfmt (`vp fmt`), Vitest (`vp test`, imports from `vite-plus/test`), `vp staged` hooks. TypeScript 7 strict with `tsc -b`. Vite+ is not version-pinned through a catalog. No ESLint, Prettier or separate hook manager.
 - Alternatives: ESLint + Prettier + lefthook; TypeScript 5.x.
@@ -67,6 +71,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: Owner decision, 2026-10-14.
 
 ### D-0003 — BHEL buyer seed: none
+
 - Date: 2026-10-14 · Spec/PR: SPEC-05 PR 5 · Status: pending-owner
 - Decision: The seed holds no buyer rows; the user adds BHEL units through the buyers settings (legacy UI).
 - Alternatives: Seed a full public list of BHEL units with their GSTINs allowlisted in the real-data scan.
@@ -75,6 +80,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0004 — Initial password `admin`, no forced change
+
 - Date: 2026-10-14 · Spec/PR: SPEC-07 PR 4 · Status: pending-owner
 - Decision: First run uses the legacy default password `admin` with the legacy "default password" notice; it is changed in Settings, never forced (C11).
 - Alternatives: Set a password during onboarding; force a change on first login (refused by C11).
@@ -83,6 +89,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0005 — Cell safety applies to text cells only
+
 - Date: 2026-10-14 · Spec/PR: SPEC-13 PR 2 · Status: pending-owner
 - Decision: Text values from users or BHEL pages are written as string cells (CSV text cells starting with `=`, `+`, `-`, `@` get a leading `'`); numeric values stay numeric with their legacy number formats (INV-94).
 - Alternatives: Write every cell as a string, as §10.4 literally reads.
@@ -91,6 +98,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0006 — DC and invoice list exports named `.csv`
+
 - Date: 2026-10-14 · Spec/PR: SPEC-13 PR 3 · Status: pending-owner
 - Decision: The DC and invoice list exports keep their CSV content and get a `.csv` file name.
 - Alternatives: Keep the legacy `.xlsx` name on CSV content; produce real xlsx.
@@ -99,6 +107,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0007 — Downloads are not logged
+
 - Date: 2026-10-14 · Spec/PR: SPEC-12 PR 6 · Status: pending-owner
 - Decision: v1 writes no audit or ledger row for document or export downloads; the ledger screen shows the audit rows.
 - Alternatives: Log download events as legacy did.
@@ -107,6 +116,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0008 — Minimal Rust Tauri scaffold outside the language check
+
 - Date: 2026-10-14 · Spec/PR: SPEC-00 PR 2, SPEC-20 PR 2 · Status: pending-owner
 - Decision: `apps/desktop/src-tauri/` holds only the generated minimal Tauri entry (`main.rs`, no logic); the INV-90 language check covers `packages/*/src`, `apps/{api,web}/src` and `apps/desktop/src`. Sidecar control lives in TypeScript.
 - Alternatives: Extend the language check to `src-tauri/` (fails on the required Rust entry); allow Rust logic in the shell.
@@ -115,6 +125,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0009 — Money rounding: half-up
+
 - Date: 2026-10-14 · Spec/PR: SPEC-03 PR 3 · Status: pending-owner
 - Decision: `round2`/`round5` round exact ties half-up on the exact integer result.
 - Alternatives: Half-even (banker's rounding).
@@ -123,6 +134,7 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Owner answer: —
 
 ### D-0010 — No hashed denylist in the real-data scan
+
 - Date: 2026-10-14 · Spec/PR: SPEC-00 PR 3 · Status: decided-owner
 - Decision: The real-data scan drops the hashed denylist, its shingle hashing, the `denylist` rule and the CI secret `SENSTO_DENYLIST`; human task H2 is dropped. Excel files may be committed and their contents are not scanned. SPEC-00 PR 3 becomes the company-details check: a `mobile` rule for Indian mobile numbers, plus the gitignored `tools/checks/company-details.local.txt` matched case-insensitively as substrings by the hook and local `pnpm verify`, skipped silently when absent (CI, forks). Other real data is kept out by review.
 - Alternatives: Hashed token and shingle denylist held in a CI secret (SPEC-00 §4.6 as first written); scanning xlsx XML parts.
