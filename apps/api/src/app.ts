@@ -7,7 +7,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { AppError, ValidationError } from "./errors.ts";
+import { AppError, onboardingRequired, ValidationError } from "./errors.ts";
 import { requireSession } from "./middleware/auth.ts";
 import { bodyLimit } from "./middleware/body-limit.ts";
 import { hostGuard } from "./middleware/host-guard.ts";
@@ -20,6 +20,8 @@ export interface AppDeps {
   readonly logger: Logger;
   /** Whether a session token is live; routes the table does not mark public need one (§10.1). */
   readonly signedIn: (token: string | undefined) => Promise<boolean>;
+  /** Whether the supplier exists; until it does, only public routes answer (INV-78). */
+  readonly onboarded: () => Promise<boolean>;
 }
 
 type Def<N extends RouteName> = (typeof routes)[N];
@@ -50,12 +52,18 @@ export function createApp(deps: AppDeps, handlers: Handlers): Hono {
   const app = new Hono();
   app.use(hostGuard(deps.port), jsonOnly, bodyLimit);
   const requireSignedIn = requireSession(deps.signedIn);
+  // Until the supplier exists only public routes answer (INV-78): the onboarding check runs before the session
+  // check, since first run has nobody signed in.
+  const guard = async (c: Context) => {
+    if (!(await deps.onboarded())) throw onboardingRequired();
+    await requireSignedIn(c);
+  };
   // In the table's order, not the caller's: Hono matches in registration order, and the table lists fixed segments
   // (`/api/po/stats`) before ids (`/api/po/:id`).
   for (const [name, def] of Object.entries<RouteDef>(routes)) {
     // `Handlers` pairs each route name with its handler type; indexing by a string loses that pairing.
     const handler = handlers[name as RouteName] as AnyHandler | undefined;
-    if (handler) mount(app, def, handler, def.public ? undefined : requireSignedIn);
+    if (handler) mount(app, def, handler, def.public ? undefined : guard);
   }
   app.notFound((c) => c.json(NOT_FOUND, 404));
   app.onError((err, c) => {

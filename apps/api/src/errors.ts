@@ -53,3 +53,7 @@ export class PayloadTooLargeError extends AppError {
 export class UnsupportedMediaTypeError extends AppError {
   readonly status = 415;
 }
+
+/** No supplier yet (INV-78): the web app reads this as "open /onboarding". */
+export const onboardingRequired = (): ConflictError =>
+  new ConflictError("onboarding-required", "Set up the supplier details first.");

@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-07 PR 5, SPEC-08 PR 3-4. Next: SPEC-07 PR 6, SPEC-08 PR 5-6, SPEC-10 PR 1. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
+In flight: SPEC-08 PR 3-4, SPEC-10 PR 1. Next: SPEC-07 PR 6, SPEC-08 PR 5-6, SPEC-10 PR 2-4. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -117,7 +117,7 @@ In flight: SPEC-07 PR 5, SPEC-08 PR 3-4. Next: SPEC-07 PR 6, SPEC-08 PR 5-6, SPE
 | 2   | Node platform entry and adapters                      | done (#36) |       |
 | 3   | Startup upgrade gate                                  | done (#39) |       |
 | 4   | Simple login                                          | done (#38) |       |
-| 5   | Onboarding, supplier, settings, buyers, BHEL password | todo       |       |
+| 5   | Onboarding, supplier, settings, buyers, BHEL password | done (#41) |       |
 | 6   | Route conformance                                     | todo       |       |
 
 ## [SPEC-08 — Ingestion services and the job model](../specs/SPEC-08-ingestion-jobs.md)

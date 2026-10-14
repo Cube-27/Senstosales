@@ -12,9 +12,8 @@ import { getRequestListener } from "@hono/node-server";
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
-import { authRoutes } from "../../routes/auth.ts";
 import { healthRoutes } from "../../routes/health.ts";
-import { jobsRoutes } from "../../routes/jobs.ts";
+import { apiRoutes } from "../../routes/index.ts";
 import { createServices } from "../../services/index.ts";
 import { jobWorker } from "../../services/job-worker.ts";
 import { createClock } from "./clock.ts";
@@ -76,12 +75,8 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers: {} }));
   const services = createServices({ db, clock, jobs });
   const app = createApp(
-    { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn },
-    {
-      ...healthRoutes({ version: options.version, db }),
-      ...authRoutes(services.auth),
-      ...jobsRoutes(services.jobs),
-    },
+    { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
+    { ...healthRoutes({ version: options.version, db }), ...apiRoutes(services) },
   );
   app.get("*", spa(options.webRoot));
   server.on("request", getRequestListener(app.fetch));
