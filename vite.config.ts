@@ -10,7 +10,7 @@ import { defineConfig } from "vite-plus";
 // pattern, the builtin `domain` would also match `@senstosales/domain`.
 const C12 = "C12: core packages import ports, not runtime modules.";
 const RUNTIME_MODULES = [...builtinModules, "playwright", "playwright-core"];
-const RUNTIME_PREFIXES = ["node:*", "@playwright/*", "@tauri-apps/*"];
+const RUNTIME_PREFIXES = ["node:*", "playwright/*", "playwright-core/*", "@playwright/*", "@tauri-apps/*"];
 const NO_RUNTIME_IMPORTS: [
   "error",
   {

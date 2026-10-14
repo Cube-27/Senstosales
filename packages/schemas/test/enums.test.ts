@@ -4,26 +4,29 @@ import type { z } from "zod";
 
 import { zFlagStatus, zFlagType, zInvoiceKind, zItemStatus, zJobStatus, zJobType, zPoStatus } from "../src/index.ts";
 
-describe("enums", () => {
-  it("FlagType has exactly the six v1 members (INV-58)", () => {
-    expect(zFlagType.options).toEqual([
-      "QTY_MISMATCH",
-      "DOC_NUMBER_CONFLICT",
-      "OVER_DISPATCH",
-      "OVER_INVOICE",
-      "DOC_ON_CANCELLED_ITEM",
-      "MANUAL_ADJUSTMENT_OVERLAP",
-    ]);
-  });
+const FLAG_TYPES = [
+  "QTY_MISMATCH",
+  "DOC_NUMBER_CONFLICT",
+  "OVER_DISPATCH",
+  "OVER_INVOICE",
+  "DOC_ON_CANCELLED_ITEM",
+  "MANUAL_ADJUSTMENT_OVERLAP",
+];
 
+describe("enums", () => {
   it.each([
-    [zItemStatus, ["Pending", "Delivered", "Closed", "Cancelled"]],
-    [zPoStatus, ["Pending", "Delivered", "Closed"]],
-    [zFlagStatus, ["open", "acknowledged"]],
-    [zJobType, ["po.scrape", "srv.scrape", "po.import-folder", "srv.import-folder", "recompute-all", "backup"]],
-    [zJobStatus, ["queued", "running", "done", "failed", "cancelled"]],
-    [zInvoiceKind, ["dc", "direct"]],
-  ])("%# has the ARCHITECTURE members", (schema, members) => {
+    ["FlagType (six v1 types, INV-58)", zFlagType, FLAG_TYPES],
+    ["ItemStatus", zItemStatus, ["Pending", "Delivered", "Closed", "Cancelled"]],
+    ["PoStatus", zPoStatus, ["Pending", "Delivered", "Closed"]],
+    ["FlagStatus", zFlagStatus, ["open", "acknowledged"]],
+    [
+      "JobType",
+      zJobType,
+      ["po.scrape", "srv.scrape", "po.import-folder", "srv.import-folder", "recompute-all", "backup"],
+    ],
+    ["JobStatus", zJobStatus, ["queued", "running", "done", "failed", "cancelled"]],
+    ["InvoiceKind", zInvoiceKind, ["dc", "direct"]],
+  ])("%s has exactly the ARCHITECTURE members", (_name, schema, members) => {
     expect(schema.options).toEqual(members);
   });
 
