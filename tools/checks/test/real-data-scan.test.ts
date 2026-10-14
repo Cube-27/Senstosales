@@ -1,15 +1,27 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vite-plus/test";
 
-import { applyAllowlist, parseAllowlist, scanFile, selectFiles } from "../src/real-data-scan.ts";
+import { applyAllowlist, parseAllowlist, parseCompanyDetails, scanFile, selectFiles } from "../src/real-data-scan.ts";
 
 // Planted values are assembled at run time so this file never contains them (SPEC-00 §4.6).
 const cat = (...parts: string[]): string => parts.join("");
 const text = (s: string): Buffer => Buffer.from(s, "utf8");
 const GSTIN = cat("27", "ABCDE", "1234", "F", "1", "Z", "5");
+const MOBILE = cat("98765", "43210");
+
+/** A fresh git repository in a temp folder, with a runner for git commands in it. */
+function gitRepo(): { repo: string; run: (...args: string[]) => Buffer } {
+  const repo = mkdtempSync(join(tmpdir(), "scan-"));
+  const run = (...args: string[]) => execFileSync("git", args, { cwd: repo });
+  run("init", "-q");
+  run("config", "user.email", "t@example.test");
+  run("config", "user.name", "t");
+  return { repo, run };
+}
 
 describe("scanFile", () => {
   it("flags a GSTIN-shaped string with its line number", () => {
@@ -105,11 +117,64 @@ describe("scanFile", () => {
   });
 });
 
+describe("mobile rule", () => {
+  it.each([
+    ["bare", MOBILE],
+    ["with +91", `+91${MOBILE}`],
+    ["with +91 and a space", `+91 ${MOBILE}`],
+    ["with a leading 0", `0${MOBILE}`],
+    ["glued to letters", `tel${MOBILE}x`],
+  ])("flags an Indian mobile number %s", (_case, value) => {
+    expect(scanFile("a.md", text(`call ${value} now`))).toEqual([{ path: "a.md", line: 1, rule: "mobile" }]);
+  });
+
+  it.each([
+    ["starting below 6", cat("58765", "43210")],
+    ["nine digits", cat("98765", "4321")],
+    ["inside a longer digit run", cat("1", MOBILE)],
+    ["followed by a digit", cat(MOBILE, "7")],
+    ["with a 91 prefix but no plus", cat("91", MOBILE)],
+  ])("does not flag a number %s", (_case, value) => {
+    expect(scanFile("a.md", text(value))).toEqual([]);
+  });
+});
+
+describe("company details", () => {
+  const details = parseCompanyDetails(cat("  Example ", "Traders Pvt\r\n\n", "12 Sample ", "Road\n   \n"));
+
+  it("reads one trimmed, lowercased value per non-blank line", () => {
+    expect(details).toEqual(["example traders pvt", "12 sample road"]);
+  });
+
+  it("flags a line containing a value, whatever its case, by line number only", () => {
+    const content = text(cat("ok\nBilled to EXAMPLE ", "TRADERS PVT ltd\nship to 12 sample ", "road\n"));
+    expect(scanFile("bill.csv", content, details)).toEqual([
+      { path: "bill.csv", line: 2, rule: "company-details" },
+      { path: "bill.csv", line: 3, rule: "company-details" },
+    ]);
+  });
+
+  it("does not flag a line without any value, or anything when there are no values", () => {
+    expect(scanFile("a.md", text("Example only\n"), details)).toEqual([]);
+    expect(scanFile("a.md", text(cat("Example ", "Traders Pvt")), [])).toEqual([]);
+  });
+});
+
 describe("allowlist", () => {
   it("parses path:rule entries, ignoring comments and blank lines", () => {
     expect([...parseAllowlist("# header\n\n.gitignore:local-data-path  # names what it keeps out\n")]).toEqual([
       ".gitignore:local-data-path",
     ]);
+  });
+
+  it.each([
+    ["no justification", ".gitignore:local-data-path"],
+    ["an empty justification", ".gitignore:local-data-path  #"],
+    ["no rule", ".gitignore  # why"],
+    ["an unknown rule", ".gitignore:no-such-rule  # why"],
+    ["a space in the entry", ".git ignore:gstin  # why"],
+  ])("rejects an entry with %s, naming its line", (_case, entry) => {
+    expect(() => parseAllowlist(`# header\n${entry}\n`)).toThrow("real-data-allow.txt:2");
   });
 
   it("drops only findings whose exact path and rule are listed", () => {
@@ -124,11 +189,7 @@ describe("allowlist", () => {
 
 describe("selectFiles --staged", () => {
   it("lists staged added and modified files with their staged content, not deleted or unstaged ones", () => {
-    const repo = mkdtempSync(join(tmpdir(), "scan-"));
-    const run = (...args: string[]) => execFileSync("git", args, { cwd: repo });
-    run("init", "-q");
-    run("config", "user.email", "t@example.test");
-    run("config", "user.name", "t");
+    const { repo, run } = gitRepo();
     writeFileSync(join(repo, "kept.txt"), "v1");
     writeFileSync(join(repo, "gone.txt"), "x");
     run("add", ".");
@@ -151,5 +212,61 @@ describe("selectFiles --staged", () => {
     } finally {
       process.chdir(cwd);
     }
+  });
+});
+
+describe("real-data-scan --staged (the pre-commit hook)", () => {
+  const SCRIPT = fileURLToPath(new URL("../src/real-data-scan.ts", import.meta.url));
+  const VALUE = cat("Example ", "Traders");
+
+  /** Stages `files` in a fresh repo with an empty allowlist and runs the scan there as the hook does. */
+  function hook(files: Record<string, string>, companyDetails?: string) {
+    const { repo, run } = gitRepo();
+    const write = (path: string, content: string) => {
+      mkdirSync(dirname(join(repo, path)), { recursive: true });
+      writeFileSync(join(repo, path), content);
+    };
+    write("tools/checks/real-data-allow.txt", "# none\n");
+    if (companyDetails !== undefined) write("tools/checks/company-details.local.txt", companyDetails);
+    for (const [path, content] of Object.entries(files)) write(path, content);
+    run("add", "--", ...Object.keys(files));
+    try {
+      const stdout = execFileSync(process.execPath, [SCRIPT, "--staged"], { cwd: repo, stdio: "pipe" });
+      return { status: 0, stdout: stdout.toString(), stderr: "" };
+    } catch (error) {
+      const e = error as { status: number; stdout: Buffer; stderr: Buffer };
+      return { status: e.status, stdout: e.stdout.toString(), stderr: e.stderr.toString() };
+    }
+  }
+
+  it("is run by the committed pre-commit hook, through vp staged", () => {
+    // Without this file the Vite+ dispatcher exits 0 and nothing is scanned at commit time.
+    const hookScript = readFileSync(new URL("../../../.vite-hooks/pre-commit", import.meta.url), "utf8");
+    expect(hookScript).toBe("vp staged\n");
+  });
+
+  it("blocks a staged value from the local company-details file without printing it", () => {
+    const result = hook({ "notes.md": `ok\nsold by ${VALUE.toUpperCase()}\n` }, `${VALUE}\n`);
+    expect(result).toEqual({
+      status: 1,
+      stdout: "real-data-scan: 1 finding(s)\n",
+      stderr: "notes.md:2 company-details\n",
+    });
+  });
+
+  it("blocks a staged mobile number", () => {
+    expect(hook({ "a.txt": `call ${MOBILE}\n` })).toEqual({
+      status: 1,
+      stdout: "real-data-scan: 1 finding(s)\n",
+      stderr: "a.txt:1 mobile\n",
+    });
+  });
+
+  it("passes silently when the company-details file is absent", () => {
+    expect(hook({ "notes.md": `sold by ${VALUE}\n` })).toEqual({
+      status: 0,
+      stdout: "real-data-scan: 0 finding(s)\n",
+      stderr: "",
+    });
   });
 });
