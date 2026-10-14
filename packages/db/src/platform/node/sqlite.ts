@@ -62,14 +62,16 @@ export function openNodeDb(path: string): NodeDb {
       conn.exec("COMMIT");
       return results;
     } catch (err) {
-      conn.exec("ROLLBACK");
+      // Some errors end the transaction inside SQLite; a second ROLLBACK would throw and hide `err`.
+      if (conn.isTransaction) conn.exec("ROLLBACK");
       throw err;
     }
   };
 
   const drizzleDb = drizzle(
-    async (sql, params, method) => execute({ sql, params, method }) as { rows: unknown[] },
-    async (queries) => inTransaction(queries) as { rows: unknown[] }[],
+    // Drizzle calls these only from async methods with `await`, so a synchronous throw still becomes a rejection.
+    (sql, params, method) => Promise.resolve(execute({ sql, params, method }) as { rows: unknown[] }),
+    (queries) => Promise.resolve(inTransaction(queries) as { rows: unknown[] }[]),
   );
 
   return {
