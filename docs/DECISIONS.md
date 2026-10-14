@@ -650,3 +650,43 @@ None.
 - Alternatives: A CHECK per enum.
 - Why: Adding a value later would need the table-rebuild pattern, and every writer is already typed.
 - Reversible: yes.
+
+### D-0075 — Parser document shapes
+
+- Date: 2026-10-14 · Spec/PR: SPEC-06 PR 1 (#24) · Status: decided
+- Decision: `PoDocument`/`SrvDocument` are strict Zod objects over the wire codecs, and a fixture's expected JSON is the encoded form. Header fields not on the page are `null`; `amendNo` is a non-negative integer; `destCode`, `division` and `poStatusCode` are text. `rejQty` (PO) and `ordQty`/`acceptedQty` (SRV) are `null` when the page has no such column. PO `rawHeader` is label as printed -> cleaned cell text for every header label the parser reads; SRV `rawHeader` is column header -> the SRV's first row text. A PO needs at least one item; an SRV file (`zSrvFile`) holds at least one SRV, all of one PO.
+- Alternatives: Plain domain values in the JSON; empty strings for absent fields; codes as integers (legacy).
+- Why: SPEC-06 §4.2 names the fields but not absence or `rawHeader` keys; null for absent text is the most conservative reading, and text codes keep leading zeros.
+- Reversible: yes — edit the types and the expected JSON.
+
+### D-0076 — First fixtures are synthetic, modelled on the legacy labels
+
+- Date: 2026-10-14 · Spec/PR: SPEC-06 PR 1 (#24) · Status: decided
+- Decision: The first 5 PO and 5 SRV fixtures are hand-written with invented values, using the header labels and column headers the legacy parser reads. Assumed PO eras: era 1 has label|value cells, `DD/MM/YYYY` and no REJ QTY column; era 2 has labels above values, `DD-MON-YY`, REJ QTY and descriptions keyed by item number. Assumed SRV layouts: A (`SRV NO`, `RECVD QTY`, `ACPT QTY`, …) and B (`SRV NUMBER`, `RECEIVED QTY`, no ordered or accepted column).
+- Alternatives: Wait for H4 and anonymise real pages.
+- Why: No corpus access (H4) and no real pages in the repo (C1). PR 5 (anonymised pages) and PR 6 (corpus test) check the real era and layout differences.
+- Reversible: yes — PR 5 can replace or extend the fixtures.
+
+### D-0077 — Anonymiser replacement rules
+
+- Date: 2026-10-14 · Spec/PR: SPEC-06 PR 1 (#24) · Status: decided
+- Decision: Kept: entities; real calendar dates in the three page formats; decimal (no leading zero, at most 5 places) and comma-grouped numbers, each only as a whole run; a fixed label, unit and month vocabulary; layout attributes, the `<meta http-equiv>` tag and `<style>` bodies. Everything else (every bare integer, every run of letters, marks and digits in any script, comment text, `id`/`name`/`content`/`href`/`value`/`title` values) is replaced by a same-shape random token through the mapping, never the original, a label word, GSTIN- or mobile-shaped, and avoiding values already mapped. Script bodies are dropped. Paths are compared after resolving symlinks: page under `SENSTO_CORPUS_DIR`, mapping outside the repo.
+- Alternatives: Keep short whole-cell integers; column-aware classification.
+- Why: C1 forbids real DC and invoice numbers, which are short integers on SRV pages; INV-75 keeps quantities, which BHEL prints with decimals. Where they conflict, privacy wins; the mapping keeps item and lot numbers consistent across a PO and its SRV file.
+- Reversible: yes — local tool.
+
+### D-0078 — Initial ParseError codes
+
+- Date: 2026-10-14 · Spec/PR: SPEC-06 PR 1 (#24) · Status: decided
+- Decision: `ParseError.code` is `no-item-table | no-srv-table | bad-date | bad-quantity | duplicate-srv-item-key` (the codes SPEC-06 §4.4 names); later PRs extend the union.
+- Alternatives: An open string code.
+- Why: Stable codes for `job_event` (SPEC-08).
+- Reversible: yes.
+
+### D-0079 — Parser fixture pages are data: not formatted, not analysed by Sonar
+
+- Date: 2026-10-14 · Spec/PR: SPEC-06 PR 1 (#24) · Status: decided
+- Decision: `vp fmt` ignores `packages/parsers/fixtures/**/*.html`, and `.sonarcloud.properties` excludes `packages/parsers/fixtures/**` from SonarCloud analysis.
+- Alternatives: Pretty-printed fixtures; rewriting pages as modern HTML (doctype, `lang`, `<th>`, no `width`/`cellpadding`) to pass Sonar's Web rules and 3% duplication gate.
+- Why: Fixtures stand in for BHEL pages and must keep the legacy markup the parser meets; the formatter re-laid every cell, Sonar flagged the legacy attributes, and fixtures repeat by nature. Like the lockfile they are data; all code stays analysed.
+- Reversible: yes — delete the ignore pattern and the properties file.
