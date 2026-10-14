@@ -1,6 +1,6 @@
 // SPEC-08 PR 1: the job API and the in-process worker (INV-98). One job at a time, a second start is a 409, progress
 // is written per document and cancel is honoured between documents.
-import type { Instant } from "@senstosales/db";
+import type { Db, Instant } from "@senstosales/db";
 import { job } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
 import type { IsoDate } from "@senstosales/domain";
@@ -42,9 +42,9 @@ let results: Record<string, DocumentResult>;
 let hold: Record<string, Promise<void>>;
 let handlers: JobHandlers;
 
-function setup(clock: Clock = tickingClock()) {
+function setup(clock: Clock = tickingClock(), workerDb: Db = db) {
   const logger = memoryLogger();
-  runner = createJobRunner(jobWorker({ db, clock, logger, handlers }));
+  runner = createJobRunner(jobWorker({ db: workerDb, clock, logger, handlers }));
   const http = testApp(jobsRoutes(jobsService({ db, clock, jobs: runner })));
   return { ...http, logger };
 }
@@ -155,6 +155,23 @@ describe("start and run", () => {
     expect(failed.error).toBe("Storage is not reachable.");
     expect(failed.progress).toEqual({ total: 2, done: 1, skipped: 0, failed: 0, current: null });
     expect(logger.lines.map((l) => [l.level, l.message, l.fields["jobId"]])).toEqual([["error", "job failed", id]]);
+  });
+
+  it("keeps a document's count out of the job when its batch fails", async () => {
+    // The batch that records a skipped document is its progress plus its event; the database refuses it.
+    const failing: Db = {
+      ...db,
+      batch: (statements) =>
+        statements.length === 2 ? Promise.reject(new Error("disk I/O error")) : db.batch(statements),
+    };
+    const { client } = setup(tickingClock(), failing);
+    results = { b: { outcome: "skipped", reason: "An older copy of this PO; the stored one is newer." } };
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    const detail = await client.request("jobs.detail", { params: { id } });
+    expect([detail.job.status, detail.job.error]).toEqual(["failed", "disk I/O error"]);
+    expect(detail.job.progress).toEqual({ total: 3, done: 1, skipped: 0, failed: 0, current: null });
+    expect(detail.events).toEqual([]);
   });
 
   it("fails a job whose type has no handler yet", async () => {
