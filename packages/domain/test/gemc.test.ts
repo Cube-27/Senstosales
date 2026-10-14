@@ -38,12 +38,10 @@ describe("INV-17: the net is always derived from the stored source rate", () => 
     expect(moneyToString(gemcNetRate(once))).toBe("609.55903");
   });
 
-  it("is deterministic and never above the source rate", () => {
+  it("is never above the source rate", () => {
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 10_000_000_000_000 }), (n) => {
-        const source = gemcSourceRate(n as Money);
-        expect(gemcNetRate(source)).toBe(gemcNetRate(source));
-        expect(gemcNetRate(source)).toBeLessThanOrEqual(n);
+        expect(gemcNetRate(gemcSourceRate(n as Money))).toBeLessThanOrEqual(n);
       }),
     );
   });

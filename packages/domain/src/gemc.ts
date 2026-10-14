@@ -23,5 +23,5 @@ export function gemcNetRate(source: GemcSourceRate): Money {
   const abs = Math.abs(source);
   const r50 = (abs % 59) * 50;
   const rounded = Math.floor(abs / 59) * 50 + Math.floor(r50 / 59) + (r50 % 59 >= 30 ? 1 : 0);
-  return (source < 0 && rounded !== 0 ? -rounded : rounded) as Money;
+  return (source < 0 ? -rounded : rounded) as Money;
 }
