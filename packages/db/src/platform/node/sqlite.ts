@@ -75,7 +75,7 @@ export function openNodeDb(path: string): NodeDb {
   );
 
   return {
-    ...wrapDrizzle(drizzleDb),
+    ...wrapDrizzle(drizzleDb, (statements) => drizzleDb.batch(statements)),
     async backupTo(path) {
       await backup(conn, path);
     },

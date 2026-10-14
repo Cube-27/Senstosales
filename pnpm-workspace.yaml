@@ -6,6 +6,12 @@ packages:
 # Dependencies allowed to run install scripts.
 allowBuilds:
   esbuild: true
+  workerd: false
+
+# miniflare (local D1 for the dialect check) imports sharp only for its Images binding; sharp's native libvips
+# packages are LGPL, which C13 avoids.
+overrides:
+  miniflare>sharp: "-"
 
 # Supply chain: trust signals (provenance, signatures) may not weaken between updates. No release-age quarantine
 # (pnpm defaults to one day): the Vite+ toolchain ships new dependencies that a quarantine blocks (D-0001).

@@ -43,12 +43,6 @@ describe("MIGRATIONS", () => {
     expect(MIGRATIONS.map((m) => [m.version, m.name])).toEqual([[1, "init"]]);
     expect(LATEST_VERSION).toBe(1);
   });
-
-  test("no migration statement is a transaction, PRAGMA, trigger or view (D1, INV-84)", () => {
-    const statements = MIGRATIONS.flatMap((m) => m.statements);
-    expect(statements.length).toBeGreaterThan(0);
-    for (const s of statements) expect(s).not.toMatch(/\b(BEGIN|COMMIT|PRAGMA|TRIGGER|VIEW)\b/i);
-  });
 });
 
 describe("planMigrations", () => {

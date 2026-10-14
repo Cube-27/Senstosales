@@ -17,8 +17,9 @@ concurrency:
 
 jobs:
   # The first job: tools/orchestrator/config.sh CI_FIRST_JOB names it. Format, lint (C15 guardrails, C12/C3
-  # boundaries), the INV-90 language check, the INV-64 status-source check, typecheck, tests (including the
-  # orchestrator tools and `bash -n` over tools/orchestrator/*.sh).
+  # boundaries), the INV-90 language check, the INV-64 status-source check, the INV-84 migration SQL lint and D1
+  # dialect step (every migration applied on a local in-memory D1), typecheck, tests (including the orchestrator
+  # tools and `bash -n` over tools/orchestrator/*.sh).
   check:
     runs-on: ubuntu-24.04
     steps:
