@@ -36,8 +36,8 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-- In flight: SPEC-00 PR 2 (#4), SPEC-01 PR 1, SPEC-02 PR 1.
-- Next: tooling PR (TS merge guard, no Python, Node 26).
+- In flight: SPEC-01 PR 1, tooling PR (TS merge guard, no Python, Node 26).
+- Next: SPEC-02 PR 2-3.
 - Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
@@ -45,7 +45,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 | PR  | Scope                                             | Status    | Notes |
 | --- | ------------------------------------------------- | --------- | ----- |
 | 1   | Bootstrap (setup session)                         | done (#1) |       |
-| 2   | `build` and `audit` jobs, language and pin checks | todo      |       |
+| 2   | `build` and `audit` jobs, language and pin checks | done (#4) |       |
 | 3   | Company-details check                             | done (#3) |       |
 | 4   | Rulesets and repo settings                        | todo      | H1    |
 
@@ -61,12 +61,12 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md)
 
-| PR  | Scope                               | Status | Notes |
-| --- | ----------------------------------- | ------ | ----- |
-| 1   | Units, dates and tolerance          | todo   |       |
-| 2   | Quantities                          | todo   |       |
-| 3   | Received and rejected (date winner) | todo   |       |
-| 4   | Item and PO status                  | todo   |       |
+| PR  | Scope                               | Status    | Notes |
+| --- | ----------------------------------- | --------- | ----- |
+| 1   | Units, dates and tolerance          | done (#7) |       |
+| 2   | Quantities                          | todo      |       |
+| 3   | Received and rejected (date winner) | todo      |       |
+| 4   | Item and PO status                  | todo      |       |
 
 ## [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md)
 
