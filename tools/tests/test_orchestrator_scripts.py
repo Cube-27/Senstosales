@@ -58,6 +58,26 @@ def test_wait_ci_accepts_the_head_by_any_prefix_length(tmp_path: Path, sha: str)
     assert (result.returncode, result.stdout) == (0, "check COMPLETED SUCCESS\n")
 
 
+@pytest.mark.parametrize(
+    ("checks", "env", "code"),
+    [
+        (["check COMPLETED SKIPPED"], {}, 1),
+        (["check COMPLETED NEUTRAL"], {}, 1),
+        (["check COMPLETED SUCCESS", "advisory COMPLETED NEUTRAL", "docs COMPLETED SKIPPED"], {}, 0),
+        (["check COMPLETED SUCCESS", "Quality Gate COMPLETED SKIPPED"], {"CI_GATE_CHECK": "Quality Gate"}, 1),
+        (["check COMPLETED SUCCESS", "Quality Gate COMPLETED SUCCESS"], {"CI_GATE_CHECK": "Quality Gate"}, 0),
+    ],
+)
+def test_wait_ci_requires_the_first_job_and_the_gate_to_succeed(
+    tmp_path: Path, checks: list[str], env: dict[str, str], code: int
+) -> None:
+    lines = " ".join(f'"{line}"' for line in [f"{HEAD} MERGEABLE CLEAN", *checks])
+    stubs = {"gh": f'printf "%s\\n" {lines}'}
+    result = run_script(tmp_path, "wait_ci.sh", ["1", HEAD[:7], "1"], stubs, {"WAIT_CI_POLL_S": "1", **env})
+
+    assert result.returncode == code
+
+
 def test_wait_ci_rejects_a_sha_too_short_to_identify_a_commit(tmp_path: Path) -> None:
     result = run_script(tmp_path, "wait_ci.sh", ["1", "0123"], {"gh": GH_GREEN}, {"WAIT_CI_POLL_S": "1"})
 

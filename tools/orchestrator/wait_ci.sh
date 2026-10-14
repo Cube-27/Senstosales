@@ -1,10 +1,10 @@
 #!/bin/bash
 # wait_ci.sh PR SHA7 [TIMEOUT_MIN] — waits until every check run on commit SHA7 of the PR has finished, then prints
 # them. SHA7 is a 7-40 hex-digit prefix of the head commit, matched as a prefix (as merge_pr.sh does). Waiting on
-# the head SHA avoids reading the previous commit's results. Exits 0 only when every check passed
-# (SUCCESS, NEUTRAL or SKIPPED); 1 on a failed check, a moved head, or TIMEOUT_MIN (default 45). Right after a push
-# GitHub may still report the old head, so a different head is an error once it is neither SHA7 nor the head seen
-# first, or after 3 minutes.
+# the head SHA avoids reading the previous commit's results. Exits 0 only when every check passed (SUCCESS, NEUTRAL
+# or SKIPPED; $CI_FIRST_JOB and $CI_GATE_CHECK only SUCCESS); 1 on a failed check, a moved head, or TIMEOUT_MIN
+# (default 45). Right after a push GitHub may still report the old head, so a different head is an error once it is
+# neither SHA7 nor the head seen first, or after 3 minutes.
 # GitHub starts no pull_request workflow on a PR that conflicts with its base, so a conflicting PR is an error at
 # once, and so is a head whose $CI_FIRST_JOB check has not appeared after WAIT_CI_NO_RUN_S seconds (default 300).
 # With $CI_GATE_CHECK set (config.sh), that check must also report. WAIT_CI_POLL_S (default 15) is the poll interval.
@@ -43,6 +43,15 @@ all_reported() {
   ! grep -qv ' COMPLETED ' <<< "$checks"
 }
 
+# True when $CI_FIRST_JOB and, if set, $CI_GATE_CHECK succeeded: a skipped or neutral required check is not a pass.
+required_succeeded() {
+  local name
+  for name in "$CI_FIRST_JOB" ${CI_GATE_CHECK:+"$CI_GATE_CHECK"}; do
+    grep -qxF "$name COMPLETED SUCCESS" <<< "$1" || return 1
+  done
+  return 0
+}
+
 while (( $(date +%s) < deadline )); do
   out=$(gh pr view "$pr" --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup --jq "
     \"\(.headRefOid) \(.mergeable) \(.mergeStateStatus)\",
@@ -61,6 +70,7 @@ while (( $(date +%s) < deadline )); do
   if all_reported "$checks"; then
     echo "$checks"
     if grep -qvE ' (SUCCESS|NEUTRAL|SKIPPED)$' <<< "$checks"; then err "a check did not pass"; fi
+    required_succeeded "$checks" || err "a required check ($CI_FIRST_JOB${CI_GATE_CHECK:+, $CI_GATE_CHECK}) did not succeed"
     exit 0
   fi
   sleep "$poll"
