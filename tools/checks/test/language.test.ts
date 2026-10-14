@@ -17,6 +17,10 @@ describe("nonTypeScriptSources", () => {
     "packages/parsers/src/x.mts",
     "packages/domain/src/QTY.JS",
     "packages/db/src/query.sql",
+    // Unlisted extensions fail: only TypeScript and named asset types pass.
+    "packages/domain/src/worker.dart",
+    "packages/domain/src/x.zig",
+    "packages/domain/src/Makefile",
   ])("flags %s", (path) => {
     expect(nonTypeScriptSources([path])).toEqual([path]);
   });
@@ -28,6 +32,8 @@ describe("nonTypeScriptSources", () => {
     "apps/web/src/globals.css",
     "packages/schemas/src/data.json",
     "apps/web/src/logo.svg",
+    "apps/web/src/fonts/Inter.woff2",
+    "apps/web/src/icon.PNG",
     // Outside production sources: tools, tests, config and the Tauri scaffold (D-0008).
     "tools/checks/src/x.py",
     "packages/domain/test/helper.js",
