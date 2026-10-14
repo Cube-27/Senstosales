@@ -21,7 +21,7 @@ test on anonymised fixtures), **API** (Hono `app.request()` against in-memory SQ
 
 | ID | Invariant | Ref | Enforced by | Status |
 |---|---|---|---|---|
-| INV-01 | Quantities are integer milli-units and money integer 1e-5 units; decimal strings convert exactly (`"2.5"` -> `2500`, `"848.75"` -> `84875000`; `0.1 + 0.2` qty sums to exactly `300`). No floats in domain arithmetic or columns. | spec §12; A-12; §6.1, §8.1 | `packages/domain/units`; domain + CI (ESLint ban on `parseFloat`/`toFixed` in domain) | specified |
+| INV-01 | Quantities are integer milli-units and money integer 1e-5 units; decimal strings convert exactly (`"2.5"` -> `2500`, `"848.75"` -> `84875000`; `0.1 + 0.2` qty sums to exactly `300`). No floats in domain arithmetic or columns. | spec §12; A-12; §6.1, §8.1 | `packages/domain/units`; domain + CI (Oxlint ban on `parseFloat`/`toFixed` in domain) | specified |
 | INV-02 | Quantity comparisons use tolerance 0.001 through `gte(a,b) := a >= b − 0.001` and `gtTol(a,b) := a > b + 0.001` only: `gte(9.9995, 10)` is true, `gte(9.998, 10)` false. | spec §6; §6.1 | `packages/domain/units`; domain | specified |
 | INV-03 | `dsp_qty = sum(DC dispatch_qty for the PO item) + sum(PO-direct invoice qty for the PO item) + manual_dispatched_qty`; DC-sourced invoice qty is not added. `DC 4 + its invoice 4 + PO-direct 3 + manual 0 -> 7`. | spec §3; A-15; §6.2 | `packages/domain/quantities`; domain + API | specified |
 | INV-04 | `balance_qty = max(0, ord_qty − max(rcd_qty, dsp_qty))`; rejected qty is not used. `(ord 10, dsp 4, rcd 6) -> 4`; `(10, 12, 0) -> 0`; `(10, 10, rcd 10, rej 3) -> 0`. | spec §3; A-11; §6.2 | `packages/domain/quantities`; domain | specified |
@@ -155,7 +155,7 @@ test on anonymised fixtures), **API** (Hono `app.request()` against in-memory SQ
 | INV-82 | Startup performs no DB writes unless `user_version < expected`; then a backup file exists before the first migration statement runs; data lives under `%LOCALAPPDATA%\SenstoSales`, never in the app folder. | A-4; §13.2, §13.3 | `apps/api/platform/node` startup; API + desktop smoke | specified |
 | INV-83 | The audit log is append-only: no endpoint or job deletes or prunes it. | A-26; §8.3 | `apps/api` route table; API + review | specified |
 | INV-84 | Every write use case commits exactly one batch; there are no DB triggers or views; derived columns are written only inside those batches. | A-3; spec §12; §2 C4 | `packages/db` port, migrations; API + CI (D1 dialect step) | specified |
-| INV-85 | Core packages import no runtime-specific module (`node:*`, Playwright, Tauri, filesystem) outside `platform/*` adapters and `apps/desktop`. | A-3; §2 C12 | ESLint boundaries; CI | specified |
+| INV-85 | Core packages import no runtime-specific module (`node:*`, Playwright, Tauri, filesystem) outside `platform/*` adapters and `apps/desktop`. | A-3; §2 C12 | Oxlint boundaries; CI | specified |
 | INV-86 | Buyers are BHEL units only; scraping launches the system Edge through playwright-core with no bundled browser. | A-5; §7.5 | `packages/db` seed, `packages/scraper`; review | specified |
 | INV-87 | The dropped features (procurement intel page and its analytics endpoints, daily-dispatch report, multi-PO invoices) have no route, screen or endpoint. | A-16; §9 | `packages/schemas` route table; review | specified |
 | INV-88 | Nothing in the Candidates register or `EDGE_CASES.md` is built without an Appendix A owner decision. | A-21, A-27; §2 C14 | review | specified |
@@ -164,3 +164,28 @@ test on anonymised fixtures), **API** (Hono `app.request()` against in-memory SQ
 | INV-91 | No legacy code is copied verbatim. | A-22; §2 C16 | review | specified |
 | INV-92 | An edge case the spec does not cover is recorded in `EDGE_CASES.md` and gets the spec's (or frozen legacy) behaviour, never invented handling. | A-27; §2 C18 | review; PR template | specified |
 | INV-93 | v1 release artefacts are unsigned and `docs/OPERATIONS.md` documents the one-time "More info -> Run anyway" step; the updater manifest is signed with the Tauri updater key. | A-25; §13.2 | `tools/release`; review | specified |
+
+## Added by the specs (2026-10-14)
+
+Rows below make testable the ARCHITECTURE rules that the first 93 rows did not list. Each cites the ARCHITECTURE
+section and owner decision it comes from, and the spec that enforces it. None extends ARCHITECTURE.
+
+| ID | Invariant | Ref | Enforced by | Status |
+|---|---|---|---|---|
+| INV-94 | Export cells holding text from users or BHEL pages are written as strings, never formulas; CSV text cells starting with `=`, `+`, `-` or `@` get a leading `'`. Numeric columns keep their legacy number formats (INV-68). | A-17, A-2; §10.4, §11.2 | `packages/documents/stream`; export (SPEC-13) | specified |
+| INV-95 | `po`, `dc` and `invoice` updates use optimistic concurrency: `UPDATE … WHERE version = ?`; a stale version is a 409 and nothing changes. | A-3; §8.1 | `packages/db` version helper, `apps/api/services`; API (SPEC-05, -10, -11) | specified |
+| INV-96 | `Storage` keys resolve inside the data directory only (`..`, absolute and drive-qualified keys are rejected); no file location comes from a request. | A-4; §4.1, C17 | `apps/api/platform/node/storage-fs`; API (SPEC-07) | specified |
+| INV-97 | BHEL page content is never executed or used as a URL; the portal origin is a constant; PO ids are validated `^\d{1,10}$` before any fetch. | A-5; §7.5, C17 | `packages/scraper`, `packages/schemas` `zPoId`; unit (SPEC-19) | specified |
+| INV-98 | At most one job runs at a time (partial unique index plus an in-process lock); a second start is a 409 with a plain message; cancel is honoured between documents; progress is written per document. | A-3; §7.3 | `apps/api` jobs service, `packages/db` index; API (SPEC-08) | specified |
+| INV-99 | Exports stream from keyset-paged queries with no row cap; a synthetic 10k-row export completes without materialising all rows. | A-2; §11.2 | `packages/documents/stream`, `apps/api/repositories/keyset`; export (SPEC-13) | specified |
+| INV-100 | Scraper sessions are keyed by job id and closed on job end, app exit or 15 minutes idle. | A-5; §7.5 | `packages/scraper/sessions`; unit (SPEC-19) | specified |
+| INV-101 | The route table in `packages/schemas` is the single list of endpoints: every mounted route is in it and every entry is mounted; the generated OpenAPI file is fresh. | A-1; §9 | route-conformance test, CI freshness step (SPEC-04, -07) | specified |
+| INV-102 | Mutating requests must be JSON; the session cookie is `HttpOnly` and `SameSite=Strict`. | A-17; §10.1 | `apps/api` middleware; API (SPEC-07) | specified |
+| INV-103 | A backup is made on the first launch of each day and before every migration; rotation keeps 14 daily and 12 monthly backups and never removes pre-upgrade backups by daily rotation. | A-4; §13.3 | `apps/api/services/backup`; unit + API (SPEC-21) | specified |
+| INV-104 | The web shell bundle stays within 250 kB gzip. | A-2; §12.1 | `tools/checks/bundle-budget`; CI (SPEC-14) | specified |
+| INV-105 | One `VERSION` file is stamped into `tauri.conf.json`, the SEA, every `package.json` and `/api/health`; `/api/health` reports version, schema version and job state. | A-4; §10.4, §13.3 | `tools/release/stamp-version --check`; API + CI (SPEC-07, -20) | specified |
+| INV-106 | Logs are pino JSON with 14-day rotation and never contain secrets, cookies or document bodies. | A-17; §10.4 | `apps/api/platform/node/logger`; unit (SPEC-21) | specified |
+| INV-107 | Raw PO/SRV HTML is stored through `Storage` and recorded in `source_document` before it is parsed. | A-6; §7.3 | `apps/api/services/source-documents`; API (SPEC-08) | specified |
+| INV-108 | Every GitHub Action is pinned to a full commit SHA; workflows default to `permissions: contents: read`. | A-19; §14.2 | `tools/checks/action-pins`; CI (SPEC-00) | specified |
+| INV-109 | No source file exceeds 800 lines and no function exceeds complexity 15 (Oxlint `max-lines`, `complexity`; ruff C90 for Python tools); generated files and lockfiles are excluded; suppressing either rule is refused; there are no coverage gates. | owner; §2 C15 | `vp lint` in `check`, `tools/checks/no-guardrail-disable`; CI (SPEC-00) | specified |
+| INV-110 | Request bodies are capped (10 MB per uploaded HTML file); larger bodies are refused before parsing. | A-17; §9 | `apps/api` body-limit middleware; API (SPEC-07) | specified |

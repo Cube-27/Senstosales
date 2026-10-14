@@ -64,8 +64,8 @@ Hard rules. `CLAUDE.md` §2 copies them; a PR that breaks one is not merged.
 | # | Rule | Why | Enforced by |
 |---|---|---|---|
 | C1 | No real data in the repo: no supplier name, GSTIN, address, person's name, real PO/SRV/DC/invoice number, identifying record counts, business plans, DB files, real HTML pages or local data paths. Fixtures are anonymised or synthetic (§14.3). Private inputs are read only from env-var paths (`SENSTO_CORPUS_DIR`). | Public repo (A-19). | `real-data-scan` CI job and hook; review. |
-| C2 | Business rules come from the spec or Appendix A, never from invention. Each is implemented once in `packages/domain`, cites its `INV-NN`, and has a table-driven test with literal expected values. Nothing else computes quantities, status, FY, GEMC rates, tax or flags. | One implementation per rule; the spec is the source of truth. | Review; ESLint boundaries; `INVARIANTS.md` (INV-01..INV-65). |
-| C3 | Quantities are integer milli-units and money integer 1e-5 units end to end; dates are `YYYY-MM-DD` strings (IST calendar dates). No floats or `Date` objects in domain code, columns or arithmetic. | Exact sums and tolerance; no time-zone drift. | Branded types; ESLint bans in `packages/domain`. |
+| C2 | Business rules come from the spec or Appendix A, never from invention. Each is implemented once in `packages/domain`, cites its `INV-NN`, and has a table-driven test with literal expected values. Nothing else computes quantities, status, FY, GEMC rates, tax or flags. | One implementation per rule; the spec is the source of truth. | Review; Oxlint import boundaries; `INVARIANTS.md` (INV-01..INV-65). |
+| C3 | Quantities are integer milli-units and money integer 1e-5 units end to end; dates are `YYYY-MM-DD` strings (IST calendar dates). No floats or `Date` objects in domain code, columns or arithmetic. | Exact sums and tolerance; no time-zone drift. | Branded types; Oxlint bans in `packages/domain`. |
 | C4 | Every write use case builds one `WriteBatch` and commits it once. Ids (ULID) are generated in the service. No triggers, views, interactive transactions or SQL that D1 cannot run. | A-3; one writer per derived value. | `Db` port has no `transaction()`; D1 dialect CI step (INV-84). |
 | C5 | PO and SRV data enter only through `packages/parsers` from BHEL HTML. The legacy DB is never an input. Derived columns are written only by service batches. | A-6. | Boundaries; review (INV-49). |
 | C6 | No hard caps on DC or invoice creation. The only creation-time rejections are malformed input (qty <= 0, unknown ids, `(number, FY)` collision) and the DC-sourced invoice rule (qty = DC qty, rate = PO rate). | A-7, A-8. | API tests. |
@@ -74,11 +74,11 @@ Hard rules. `CLAUDE.md` §2 copies them; a PR that breaks one is not merged.
 | C9 | Startup is read-only for DB schema and content. The only sanctioned mutation is the version-gated upgrade step, always after a backup. No runtime endpoint resets the database, deletes or prunes the audit log. | A-4, A-26. | Startup test asserts no writes; route-table review. |
 | C10 | The API binds to `127.0.0.1` and rejects any non-loopback `Host`. Never weakened or made configurable for the local build. | A-17. | API test (non-loopback Host -> 400). |
 | C11 | No user-facing security friction: no forced password change, login backoff, complexity rules or CLI-only recovery. Plain language and fewest steps in every flow. | A-17. | Review (INV-80). |
-| C12 | Core packages depend on ports only. `node:*`, Playwright, Tauri and filesystem modules are imported only in `platform/*` adapters and `apps/desktop`. | A-3. | ESLint `no-restricted-imports` (INV-85). |
+| C12 | Core packages depend on ports only. `node:*`, Playwright, Tauri and filesystem modules are imported only in `platform/*` adapters and `apps/desktop`. | A-3. | Oxlint `no-restricted-imports` (INV-85). |
 | C13 | Dependencies under AGPL, GPL, SSPL, Commons Clause or non-commercial licences are refused; LGPL is avoided. SPDX expressions matched by whole identifier. | A-19. | `licenses` CI job with CycloneDX SBOM (INV-77). |
 | C14 | Nothing in the Candidates register (§17) or `EDGE_CASES.md` is built without owner approval recorded in Appendix A. | A-21, A-27. | Review (INV-88). |
-| C15 | Cognitive complexity <= 15 per function (hard); files over 800 lines flagged (soft). No other size or coverage gates. | Readability without ratchets. | Oxlint rule in `check`. |
-| C16 | Legacy code may be read for behaviour, never copied verbatim. | A-22. | Review (INV-91). |
+| C15 | Hard guardrails: no source file over 800 lines (Oxlint `max-lines`) and no function over complexity 15 (Oxlint `complexity`; ruff C90 for Python tools); generated files and lockfiles excluded; the fix is a split, never a suppression. A bug or review finding that recurs becomes a check or a regression test in the PR that fixes it. No coverage gates. | Readability; lessons encoded in structure (owner). | Oxlint (`vp lint`) in `check`; RECURRING.md; review. |
+| C16 | Legacy code may be read for business rules and visible output (UI/UX, export formats), never copied verbatim and never as a model for implementation: match the output, build it the simplest efficient way. | A-22. | Review (INV-91). |
 | C17 | BHEL page content is data, never executed. The portal origin is a constant; PO ids are validated `^\d{1,10}$`; file locations come from the Storage port, never from a request. | Untrusted input. | Scraper unit tests; review. |
 | C18 | When an agent finds, while coding, an edge case the spec does not cover, it records the case as a new `EC-NN` row in `EDGE_CASES.md` (case, example, why deferred, found in) and implements the spec's behaviour (or, where the spec is silent, the frozen legacy behaviour). It never invents handling for the case. | A-27. | Review; PR template checkbox (INV-92). |
 
@@ -126,7 +126,7 @@ pnpm workspace, TypeScript strict, ESM, `tsc -b` project references.
 | desktop | `apps/desktop` | Tauri 2 shell, sidecar packaging, NSIS installer, updater config. | built api and web |
 | tools | `tools/` | `checks/` (licence scan, real-data scan, design validators, token parity, fixture anonymiser), `corpus/` (local-only corpus test), `release/` (SEA build, version stamping), `orchestrator/` (merge guard, agent scripts). | as needed |
 
-Layering in `apps/api` (ESLint boundaries): `routes/*` validate with Zod, call one service, map errors, no SQL;
+Layering in `apps/api` (Oxlint import boundaries): `routes/*` validate with Zod, call one service, map errors, no SQL;
 `services/*` load -> call domain -> build one `WriteBatch` (writes, derived columns, flag changes, audit row) ->
 commit, never import Hono; `repositories/*` return plain rows and compute no business values. One `AppError`
 hierarchy (400, 401, 403, 404, 409) mapped by one `onError`; bodies `{ code, message, details? }`. Services are
@@ -606,11 +606,11 @@ works in a plain browser.
 
 ### 14.2 CI and repo
 - GitHub Actions pinned to commit SHAs; `permissions: contents: read`; concurrency with cancel-in-progress; frozen
-  lockfile; `.npmrc` `minimumReleaseAge`.
+  lockfile; pnpm `trustPolicy: no-downgrade`.
 - Jobs: `check` (lint incl. design validators and complexity, `tsc -b`, Vitest), `build`, `licenses`,
   `real-data-scan`, `audit`, `e2e` (Windows), `desktop` (Tauri build).
 - Rulesets on `main`: PR required, required checks, linear history, no force-push, no bypass; secret scanning and
-  push protection on; lefthook hooks under 10 s. Agents never merge directly (INV-89).
+  push protection on; a `vp staged` pre-commit hook under 10 s. Agents never merge directly (INV-89).
 
 ### 14.3 Fixtures and the real-data scan (A-19, A-26)
 - Parser fixtures (about 40 PO, 30 SRV) are made by a local one-time script (`tools/checks/anonymise-fixture`) that
@@ -643,7 +643,7 @@ works in a plain browser.
 
 TypeScript (pnpm monorepo, Node 24 LTS), Hono, Drizzle over node:sqlite (D1 later), Zod, cheerio, exceljs,
 playwright-core, Vite + React, TanStack Router/Query, react-hook-form, Tailwind v4, Radix UI, Lucide, Vitest,
-Playwright, ESLint + typescript-eslint, Oxlint, Tauri 2, Node SEA. Versions fixed when lockfiles are created; every
+Playwright, Vite+ (`vp`: Oxlint, Oxfmt, Vitest; no ESLint or Prettier), Tauri 2, Node SEA. Versions fixed when lockfiles are created; every
 dependency passes the deny-list (C13). All production code is TypeScript (A-1; INV-90).
 
 ## 17. Candidates register
