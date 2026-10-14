@@ -25,7 +25,7 @@ export { computeItemQuantities, computePoTotals } from "./quantities.ts";
 export type { ItemStatus, ItemStatusInput, PoStatus } from "./status.ts";
 export { itemStatus, poStatus } from "./status.ts";
 export type { DocKey, Fy } from "./fy.ts";
-export { docKey, fyOf } from "./fy.ts";
+export { docKey, fyOf, parseFy } from "./fy.ts";
 export { defaultGc } from "./gc.ts";
 export { matchSrvItem, resolveDocLink } from "./links.ts";
 export type { LineTax, LineTaxInput } from "./tax.ts";
