@@ -8,6 +8,7 @@ import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
 import { jobsService } from "./jobs.ts";
 import { createOnboardingService } from "./onboarding.ts";
+import { poService } from "./po.ts";
 import { createSecretsService } from "./secrets.ts";
 import { createSettingsService } from "./settings.ts";
 import { createSupplierService, supplierRef, type SupplierRef } from "./supplier.ts";
@@ -33,6 +34,7 @@ export function createServices(deps: ServiceDeps) {
     buyers: createBuyersService(withSupplier),
     secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
+    po: poService(deps),
   };
 }
 

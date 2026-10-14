@@ -5,6 +5,7 @@ import { authRoutes } from "./auth.ts";
 import { buyersRoutes } from "./buyers.ts";
 import { jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
+import { poRoutes } from "./po.ts";
 import { settingsRoutes } from "./settings.ts";
 import { supplierRoutes } from "./supplier.ts";
 
@@ -16,5 +17,6 @@ export function apiRoutes(services: Services): Handlers {
     ...settingsRoutes(services),
     ...buyersRoutes(services),
     ...jobsRoutes(services.jobs),
+    ...poRoutes(services.po),
   };
 }
