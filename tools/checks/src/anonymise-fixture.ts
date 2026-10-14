@@ -31,13 +31,25 @@ const LAYOUT_ATTRIBUTES = new Set(
   name nowrap rel rowspan scope size span style type valign width`.split(/\s+/),
 );
 
-// Group 1 is kept as it is: entities, dates (DD/MM/YYYY, DD-MON-YY, DD/MM/YY), grouped or decimal numbers
-// (quantities, rates, values). Any other alphanumeric run is a word or code to replace.
-const TOKEN =
-  /(&#?\w+;|(?<![\w.])\d{1,2}[/.-](?:\d{1,2}|[A-Za-z]{3})[/.-](?:\d{4}|\d{2})(?![\w])|(?<![\d,])\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+\.\d+)|[A-Za-z0-9]+/g;
+const either = (parts: readonly RegExp[]): string => parts.map((part) => part.source).join("|");
+
+// Kept as they are: entities, dates (DD/MM/YYYY, DD-MON-YY, DD/MM/YY), grouped or decimal numbers (quantities,
+// rates, values). The lookbehinds let a number match only where its run starts, so matching stays linear.
+const KEPT = [
+  /&#?\w+;/,
+  /(?<![\w.])\d\d?[/.-](?:\d\d?|[A-Za-z]{3})[/.-]\d\d(?:\d\d)?(?!\w)/,
+  /(?<![\d,])\d{1,3}(?:,\d{2,3})+(?:\.\d+)?/,
+  /(?<![\d.])\d+\.\d+/,
+];
+/** Group 1 is a kept token; any other alphanumeric run is a word or code to replace. */
+const TOKEN = new RegExp(`(${either(KEPT)})|[A-Za-z0-9]+`, "g");
 // A cell holding only a short integer is an item, lot or count, or a rate without paise: a quantity, not an identity.
 const SHORT_INTEGER_CELL = /^\s*\d{1,4}\s*$/;
-const HTML_PART = /<!--([\s\S]*?)(?:-->|$)|(<script\b[^>]*>)[\s\S]*?(?:<\/script\s*>|$)|(<[^>]*>)|([^<]+)|</gi;
+/** Groups: 1 comment body, 2 script open tag (its body is dropped), 3 any other tag, 4 text; else a lone `<`. */
+const HTML_PART = new RegExp(
+  either([/<!--([\s\S]*?)(?:-->|$)/, /(<script\b[^>]*>)[\s\S]*?(?:<\/script\s*>|$)/, /(<[^>]*>)/, /([^<]+)/, /</]),
+  "gi",
+);
 const ATTRIBUTE = /(\s([^\s=>/]+)\s*=\s*)("[^"]*"|'[^']*'|[^\s"'>]+)/g;
 const FIXTURE_NAME = /^(?:po|srv)\/[a-z0-9][a-z0-9-]*$/;
 const FIXTURE_DIR = "packages/parsers/fixtures";
@@ -120,7 +132,10 @@ export function run(options: {
   const [input, name] = options.args;
   const corpus = options.env["SENSTO_CORPUS_DIR"];
   const mapFile = options.env["SENSTO_ANON_MAP"];
-  const fail = (message: string): number => (console.error(message), 2);
+  const fail = (message: string): number => {
+    console.error(message);
+    return 2;
+  };
   if (!corpus || !mapFile || !input || !name)
     return fail(`${USAGE}\nSENSTO_CORPUS_DIR and SENSTO_ANON_MAP must be set`);
   if (!FIXTURE_NAME.test(name)) return fail(`fixture name must look like po/<name> or srv/<name>`);
