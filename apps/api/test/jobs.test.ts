@@ -225,6 +225,32 @@ describe("cancel", () => {
     expect(cancelled.finishedAt).not.toBeNull();
   });
 
+  it("ends at once a job left running by an earlier run of the app, so a new job can start (EC-28)", async () => {
+    await db.batch([
+      db.build.insert(job).values({
+        id: ID,
+        type: "recompute-all",
+        status: "running",
+        createdAt: "2025-04-01T00:00:00.000Z" as Instant,
+        startedAt: "2025-04-01T00:00:01.000Z" as Instant,
+        progress: { total: 10, done: 2, skipped: 0, failed: 1, current: "d" },
+      }),
+    ]);
+    const { client, send } = setup();
+    expect((await send("/api/jobs", START)).status).toBe(409);
+    const cancelled = await client.request("jobs.cancel", { params: { id: ID } });
+    expect(cancelled).toMatchObject({
+      status: "cancelled",
+      cancelRequested: true,
+      finishedAt: "2025-04-01T05:30:01.000Z",
+      progress: { total: 10, done: 2, skipped: 0, failed: 1, current: null },
+    });
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    expect((await client.request("jobs.detail", { params: { id } })).job.status).toBe("done");
+    expect(processed).toEqual(["a", "b", "c"]);
+  });
+
   it("leaves a finished job as it is", async () => {
     const { client } = setup();
     const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });

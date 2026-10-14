@@ -11,7 +11,9 @@ export type JobEventRow = typeof jobEvent.$inferSelect;
 export type JobProgress = JobRow["progress"];
 type JobListQuery = z.output<(typeof routes)["jobs.list"]["query"]>;
 
-const ACTIVE = ["queued", "running"] as const;
+const ACTIVE: readonly JobRow["status"][] = ["queued", "running"];
+
+export const isActive = (row: JobRow): boolean => ACTIVE.includes(row.status);
 
 export const NO_PROGRESS: JobProgress = { total: 0, done: 0, skipped: 0, failed: 0, current: null };
 

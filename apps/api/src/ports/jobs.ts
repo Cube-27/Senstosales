@@ -11,6 +11,9 @@ type JobType = JobStart["type"];
 export interface Jobs {
   /** Runs the queued job `id` when the worker is free. */
   enqueue(id: string, start: JobStart): void;
+  /** Whether this adapter will run, or is running, job `id`. A queued or running row it does not hold was left by an
+   * earlier process (EC-28). */
+  holds(id: string): boolean;
 }
 
 /** One document's outcome. Skipped and failed ones become job events with the reason. */
