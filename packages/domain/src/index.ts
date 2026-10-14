@@ -38,3 +38,5 @@ export {
   validateDcLines,
   validateDirectInvoiceLines,
 } from "./guards.ts";
+export type { DesiredFlag, FlagScope, FlagType, PoFlagSnapshot } from "./flags.ts";
+export { FLAG_TYPES, detectFlags, diffFlags, fingerprint } from "./flags.ts";
