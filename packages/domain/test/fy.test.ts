@@ -58,7 +58,7 @@ describe("INV-21: parseFy accepts only the label fyOf writes", () => {
     expect(parseFy(s)).toEqual({ ok: true, value: s });
   });
 
-  it.each(["2024-26", "2024", "2024-2025", "24-25", "", " 2024-25"])("rejects %j", (s) => {
+  it.each(["2024-26", "2024", "2024-2025", "24-25", "", " 2024-25", "2024-25\n"])("rejects %j", (s) => {
     expect(parseFy(s).ok).toBe(false);
   });
 });

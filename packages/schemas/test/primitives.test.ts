@@ -62,8 +62,8 @@ describe("zGstPct: decimal string on the wire <-> 1e-5 units", () => {
     expect(zGstPct.safeParse(wire).success).toBe(false);
   });
 
-  it("refuses to encode a non-integer", () => {
-    expect(() => z.encode(zGstPct, 9.5 as never)).toThrow();
+  it.each([9.5, -900000])("refuses to encode %j", (value) => {
+    expect(() => z.encode(zGstPct, value as never)).toThrow();
   });
 });
 

@@ -39,7 +39,7 @@ export const zQty = stringCodec<Qty>(parseQty, qtyToString, isUnits);
 export const zMoney = stringCodec<Money>(parseMoney, moneyToString, isUnits);
 
 /** `"9"` <-> `900000` 1e-5 units; never negative (SPEC-03 §9). */
-export const zGstPct = stringCodec<GstPct>(parsePct, pctToString, isUnits);
+export const zGstPct = stringCodec<GstPct>(parsePct, pctToString, (v) => isUnits(v) && (v as number) >= 0);
 
 /** A real `YYYY-MM-DD` calendar date, the same string on both sides (C3). */
 export const zIsoDate = stringCodec<IsoDate>(
