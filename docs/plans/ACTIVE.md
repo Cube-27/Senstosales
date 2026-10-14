@@ -2,7 +2,7 @@
 
 The live state of implementation. The orchestrator (`/run-plan`) decides its content and the implementor writes it
 in its PR's tracker commit; a solo agent with no orchestrator updates it in its own PR (`CLAUDE.md` §3). One row is
-one PR from a spec's PR plan (119 rows). Spec dependencies are in [`specs/README.md`](../specs/README.md). Work in
+one PR from a spec's PR plan (120 rows). Spec dependencies are in [`specs/README.md`](../specs/README.md). Work in
 flight is read from open PRs and `spec-*` branches, not from this file.
 
 A row is ready when everything it needs is available: the code it touches or builds on is merged, or what it needs
@@ -36,8 +36,8 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-- In flight: SPEC-02 PR 4, SPEC-01 PR 1, tooling PR.
-- Next: SPEC-03.
+- In flight: SPEC-03 PR 1 (#12), SPEC-01 PR 1, tooling PR (#10).
+- Next: SPEC-03 PR 2-6, SPEC-02 PR 5.
 - Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
@@ -61,12 +61,13 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md)
 
-| PR  | Scope                               | Status    | Notes |
-| --- | ----------------------------------- | --------- | ----- |
-| 1   | Units, dates and tolerance          | done (#7) |       |
-| 2   | Quantities                          | done (#8) |       |
-| 3   | Received and rejected (date winner) | done (#9) |       |
-| 4   | Item and PO status                  | todo      |       |
+| PR  | Scope                               | Status     | Notes                  |
+| --- | ----------------------------------- | ---------- | ---------------------- |
+| 1   | Units, dates and tolerance          | done (#7)  |                        |
+| 2   | Quantities                          | done (#8)  |                        |
+| 3   | Received and rejected (date winner) | done (#9)  |                        |
+| 4   | Item and PO status                  | done (#11) |                        |
+| 5   | INV-64 single status source check   | todo       | before SPEC-08/SPEC-16 |
 
 ## [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md)
 

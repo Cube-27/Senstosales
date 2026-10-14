@@ -7,3 +7,5 @@ export type { Money, Qty } from "./units.ts";
 export { TOL, gtTol, gte, moneyToString, parseMoney, parseQty, qtyToString, roundMoney, sumQty } from "./units.ts";
 export type { ItemQuantities, ItemQuantityInput, PoTotals, PoTotalsItem } from "./quantities.ts";
 export { computeItemQuantities, computePoTotals } from "./quantities.ts";
+export type { ItemStatus, ItemStatusInput, PoStatus } from "./status.ts";
+export { itemStatus, poStatus } from "./status.ts";

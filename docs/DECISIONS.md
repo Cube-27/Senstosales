@@ -256,3 +256,19 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Alternatives: A separate PO-level SRV date list in `ReceiptInput`.
 - Why: SPEC-02 §4.2 fixes the input shape with `srvDate` on each line; adding a field would change a shape other specs consume. ARCHITECTURE §6.3 takes `MAX(srv_date)` over the same rows it sums.
 - Reversible: yes — one input field.
+
+### D-0027 — Item status input shape
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 4 (#11) · Status: decided
+- Decision: `itemStatus` takes `ItemStatusInput = { ordQty, dspQty, rcdQty, cancelled }`, the derived quantities from `computeItemQuantities` and `computeReceipt`, not their raw lines.
+- Alternatives: Take `ItemQuantityInput` and recompute dsp inside `itemStatus`.
+- Why: SPEC-02 §4.1 names `itemStatus(input)` without defining `input`; derived inputs keep the status rule (INV-62) independent of the quantity formulas and avoid computing dsp twice.
+- Reversible: yes — one input type.
+
+### D-0028 — poStatus takes item statuses including Cancelled
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 4 (#11) · Status: decided
+- Decision: Callers pass every item's status to `poStatus`, which ignores `Cancelled`; no statuses, or all Cancelled, gives Closed (A2-13, EC-06).
+- Alternatives: Callers filter to active items first.
+- Why: INV-64 derives PO status over active items; filtering inside `poStatus` keeps that rule in one place instead of in every caller.
+- Reversible: yes.

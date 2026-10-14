@@ -116,12 +116,13 @@ order; status monotone in `dsp` and `rcd`.
 
 ## 8. PR plan
 
-| #   | Title                               | Scope / files                                                            | Checks  | Done when                                                                                                     |
-| --- | ----------------------------------- | ------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
-| 1   | Units, dates and tolerance          | `packages/domain/src/{units,dates}.ts`, `units.test.ts`, `dates.test.ts` | `check` | INV-01, INV-02 literal and property tests pass; invalid decimals and dates are rejected.                      |
-| 2   | Quantities                          | `src/quantities.ts`, `quantities.test.ts`                                | `check` | INV-03..INV-08 tables pass, including cancelled-item header totals and negative uninvoiced.                   |
-| 3   | Received and rejected (date winner) | `src/receipt.ts`, `receipt.test.ts`                                      | `check` | INV-10..INV-13 tables and the order-independence property (INV-15) pass, including the last-SRV-deleted case. |
-| 4   | Item and PO status                  | `src/status.ts`, `status.test.ts`                                        | `check` | INV-62..INV-64 tables pass, including the mixed-item PO and the all-cancelled PO (A2-13).                     |
+| #   | Title                               | Scope / files                                                                                    | Checks  | Done when                                                                                                               |
+| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 1   | Units, dates and tolerance          | `packages/domain/src/{units,dates}.ts`, `units.test.ts`, `dates.test.ts`                         | `check` | INV-01, INV-02 literal and property tests pass; invalid decimals and dates are rejected.                                |
+| 2   | Quantities                          | `src/quantities.ts`, `quantities.test.ts`                                                        | `check` | INV-03..INV-08 tables pass, including cancelled-item header totals and negative uninvoiced.                             |
+| 3   | Received and rejected (date winner) | `src/receipt.ts`, `receipt.test.ts`                                                              | `check` | INV-10..INV-13 tables and the order-independence property (INV-15) pass, including the last-SRV-deleted case.           |
+| 4   | Item and PO status                  | `src/status.ts`, `status.test.ts`                                                                | `check` | INV-62..INV-64 tables pass, including the mixed-item PO and the all-cancelled PO (A2-13).                               |
+| 5   | INV-64 single status source check   | CI check (`tools/checks`) that no status function exists outside `packages/domain/src/status.ts` | `check` | The check fails on a status function added elsewhere and passes on `main`; lands before SPEC-08/SPEC-16 consume status. |
 
 ## 9. Open issues
 
