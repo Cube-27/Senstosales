@@ -2,14 +2,20 @@
 // packages/*/src or apps/*/src has a code extension other than .ts/.tsx. Assets (CSS, JSON, SVG) are not code;
 // tests, config, tools and the Tauri scaffold (apps/desktop/src-tauri) are not production sources.
 // Usage: node tools/checks/src/language.ts (from the repo root)
+import { extname } from "node:path";
+
 import { selectFiles } from "./real-data-scan.ts";
 
 const PRODUCTION_SOURCE = /^(?:packages|apps)\/[^/]+\/src\//;
-const OTHER_CODE =
-  /\.(?:js|mjs|cjs|jsx|mts|cts|vue|svelte|coffee|py|rs|go|java|kt|kts|rb|php|pl|lua|swift|cs|c|cc|cpp|h|hpp|sh|bash|ps1|bat|cmd|wasm)$/i;
+// Extensions of other programming languages; anything else (CSS, JSON, SVG, fonts) is an asset.
+const OTHER_CODE = new Set(
+  "js mjs cjs jsx mts cts vue svelte coffee py rs go java kt kts rb php pl lua swift cs c cc cpp h hpp sh bash ps1 bat cmd wasm"
+    .split(" ")
+    .map((ext) => `.${ext}`),
+);
 
 export const nonTypeScriptSources = (paths: string[]): string[] =>
-  paths.filter((path) => PRODUCTION_SOURCE.test(path) && OTHER_CODE.test(path));
+  paths.filter((path) => PRODUCTION_SOURCE.test(path) && OTHER_CODE.has(extname(path).toLowerCase()));
 
 function main(): number {
   const found = nonTypeScriptSources(selectFiles(false).map((file) => file.path));
