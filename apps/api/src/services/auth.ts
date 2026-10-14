@@ -7,11 +7,11 @@ import type { SQL } from "drizzle-orm";
 import { AuthError, ValidationError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import * as repo from "../repositories/auth.ts";
-import { audit as auditEntry } from "./audit.ts";
+import { ACTOR, audit as auditEntry } from "./audit.ts";
 import type { ServiceDeps } from "./index.ts";
 import { hashPassword, hashToken, newToken, verifyPassword } from "./password.ts";
 
-const USERNAME = "admin";
+const USERNAME = ACTOR;
 const DEFAULT_PASSWORD = "admin";
 /** The legacy confirmation phrase for reset-to-defaults. */
 const RESET_PHRASE = "RESET TO DEFAULTS";

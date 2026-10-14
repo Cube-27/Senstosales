@@ -6,7 +6,8 @@ import type { SQL } from "drizzle-orm";
 import { newId } from "../ids.ts";
 import { insertAudit } from "../repositories/audit.ts";
 
-const ACTOR = "admin";
+/** The one user (INV-80): every audit row's actor and the login's username. */
+export const ACTOR = "admin";
 
 export interface AuditEntry {
   readonly action: string;
