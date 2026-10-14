@@ -34,8 +34,12 @@ SEPARATORS = ";&|()<>\n`"
 SEPARATOR_CHARS = frozenset(SEPARATORS)
 # gh flags placed between `pr` and `merge` that take a value.
 GH_VALUE_FLAGS = frozenset({"-R", "--repo"})
-# Flags and commands whose next argument is itself a command string: `bash -c`, `pwsh -Command`, `cmd /c`, `iex`.
-NESTED_COMMAND_MARKERS = frozenset({"-c", "-command", "/c", "iex", "invoke-expression"})
+# Shells whose `-c`/`-Command`/`/c` flag takes a command string (`bash -c`, `pwsh -Command`, `cmd /c`). The flag
+# counts only after a shell, since `grep -c`, `rg -c` and `git -c` take no command.
+SHELLS = frozenset({"bash", "sh", "zsh", "dash", "ksh", "pwsh", "powershell", "cmd"})
+SHELL_COMMAND_FLAGS = frozenset({"-c", "-command", "/c"})
+# Commands whose next argument is itself a command string.
+EVAL_COMMANDS = frozenset({"iex", "invoke-expression"})
 MAX_NESTING = 3
 # Bodies that the shell passes on as literal text, never runs: a bash here-document with a quoted delimiter
 # (`<<'EOF'`, Bash manual "Here Documents": no expansion in the body) and a PowerShell single-quoted here-string
@@ -67,8 +71,13 @@ def segments(tokens: list[str]) -> Iterator[list[str]]:
     yield current
 
 
+def program(token: str) -> str:
+    """A token as a command name: its last path part, lower-cased, without `.exe`."""
+    return re.sub(r"\.exe$", "", re.split(r"[\\/]", token)[-1].lower())
+
+
 def is_gh(token: str) -> bool:
-    return re.split(r"[\\/]", token)[-1].lower() in {"gh", "gh.exe"}
+    return program(token) == "gh"
 
 
 def gh_positionals(args: list[str]) -> list[str]:
@@ -96,8 +105,10 @@ def calls_merge_api(segment: list[str]) -> bool:
 
 
 def nested_commands(segment: list[str]) -> Iterator[str]:
+    after_shell = False
     for marker, argument in pairwise(segment):
-        if marker.lower() in NESTED_COMMAND_MARKERS:
+        after_shell = after_shell or program(marker) in SHELLS
+        if program(marker) in EVAL_COMMANDS or (after_shell and marker.lower() in SHELL_COMMAND_FLAGS):
             yield argument
     # Command substitution inside a double-quoted string (`"$(...)"`, `` "`...`" ``) still runs.
     yield from (token for token in segment if "$(" in token or "`" in token)
