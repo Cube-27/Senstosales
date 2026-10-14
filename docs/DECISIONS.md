@@ -338,3 +338,27 @@ None.
 - Alternatives: Trim or upper-case before comparing.
 - Why: Spec §3 matches by material code and states no normalisation; the parsers (SPEC-06) produce the stored values.
 - Reversible: yes.
+
+### D-0036 — GST percentage unit
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 3 (#15) · Status: decided
+- Decision: GST percentages are a branded integer `GstPct` in 1e-5 units (`9` % -> `900000`), parsed exactly by `parsePct`; a negative rate is malformed input.
+- Alternatives: Reuse `Money` for percentages; basis points.
+- Why: SPEC-03 §9 names 1e-5 units; a separate brand stops a percentage being passed where an amount is expected.
+- Reversible: yes — one type and its parser.
+
+### D-0037 — Single rounding from the exact value
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 3 (#15) · Status: decided
+- Decision: Taxable, CGST and SGST are each rounded once, from their exact bigint product, to 5 dp (GEMC) or 2 dp; CGST and SGST are computed from the rounded taxable, as INV-41 reads. No intermediate 5-dp rounding before a 2-dp one.
+- Alternatives: Float arithmetic as legacy; round to 5 dp, then to 2 dp.
+- Why: C3 forbids floats, and double rounding can move a tie. SPEC-12 invoice goldens arbitrate, as for D-0021.
+- Reversible: yes — one function.
+
+### D-0038 — Out-of-range amounts throw
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 3 (#15) · Status: decided
+- Decision: `roundToMoney` throws `RangeError` when a result exceeds 2^53 1e-5 units (about 90 billion), instead of returning a lossy number.
+- Alternatives: Return a `Result` from every tax function; `bigint` Money.
+- Why: Follows D-0022 (never a lossy number). The case is unreachable with valid invoice input, so a `Result` would burden every caller.
+- Reversible: yes.
