@@ -31,9 +31,10 @@ export function jobWorker(deps: { db: Db; clock: Clock; logger: Logger; handlers
 
   return async function runJob(id: string, start: JobStart): Promise<void> {
     let progress = NO_PROGRESS;
-    const write = (next: JobProgress, ...rest: Statement[]) => {
+    // `progress` follows only committed batches, so a failed job keeps the counts the database holds.
+    const write = async (next: JobProgress, ...rest: Statement[]) => {
+      await commit(setProgress(db, id, next), ...rest);
       progress = next;
-      return commit(setProgress(db, id, next), ...rest);
     };
 
     async function run(): Promise<End> {
