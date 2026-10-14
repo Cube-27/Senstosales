@@ -410,3 +410,27 @@ None.
 - Alternatives: Compare qty and rate only, ignoring added or removed lines.
 - Why: Adding or removing a line changes quantities, which INV-33 freezes.
 - Reversible: yes.
+
+### D-0045 — Flag shape and details
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 6 (#18) · Status: decided
+- Decision: `DesiredFlag = { type, scopeType, scopeId, poId, details }`; `details = { field, expected, actual, docIds }` is stored as `details_json`, quantities as exact decimal strings. QTY_MISMATCH `ord_qty` (PO → SRV); DOC_NUMBER_CONFLICT `challan_no`/`invoice_no` (trimmed raw number, one flag per unresolved number); OVER_DISPATCH `dsp_qty` and OVER_INVOICE `invoiced_qty` against ord; DOC_ON_CANCELLED_ITEM `status` → `Cancelled`, one per DC/invoice line citing its document; MANUAL_ADJUSTMENT_OVERLAP `manual_dispatched_qty`, citing the later DCs once each, sorted.
+- Alternatives: Integer `Qty` values in the JSON; `docIds` outside `details`; one DOC_NUMBER_CONFLICT per SRV line.
+- Why: ARCHITECTURE §8.2 stores `details_json (field, expected, actual)`; the cited DC ids are needed to show which DC (SPEC-10/17), so they go in the same JSON.
+- Reversible: yes, until SPEC-08 stores rows.
+
+### D-0046 — Fingerprint encoding
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 6 (#18) · Status: decided
+- Decision: `fingerprint` = `JSON.stringify([type, scopeType, scopeId, field, expected, actual, docIds])`, not hashed. `diffFlags` treats any stored fingerprint, open or acknowledged, as present and returns inserts with their fingerprint.
+- Alternatives: A `|`-joined string (collides when a raw SRV number contains `|`); a SHA hash (crypto import in domain, C12).
+- Why: §6.9 names the parts; JSON is unambiguous and readable. INV-59: re-detection never duplicates, whatever the stored flag's status.
+- Reversible: yes, until SPEC-08 stores rows.
+
+### D-0047 — Readings of the detection rules
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 6 (#18) · Status: decided
+- Decision: QTY_MISMATCH needs a matched PO item (EC-12 lines are not compared); DOC_NUMBER_CONFLICT applies to unmatched lines too; a blank number cites nothing. MANUAL_ADJUSTMENT_OVERLAP uses a strict "after" over ISO-8601 UTC text (§8.1); manual > 0 with no `manualSetAt` raises nothing. OVER_DISPATCH / OVER_INVOICE apply to cancelled items too.
+- Alternatives: Flag on a missing set time; exempt cancelled items.
+- Why: The most literal reading of SPEC-03 §4.2 and ARCHITECTURE §6.9; the spec states no exemption (C2, C18).
+- Reversible: yes.
