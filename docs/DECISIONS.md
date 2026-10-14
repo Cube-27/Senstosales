@@ -1170,3 +1170,43 @@ None.
 - Alternatives: Only the allow-list; only the resolved-path check.
 - Why: Keys are system-made. The allow-list rejects drive letters, UNC paths, alternate data streams and backslashes on Windows without relying on path normalisation. The resolved-path check guards the file-system call itself, and SonarCloud's taint analysis recognises it (INV-96).
 - Reversible: yes.
+
+### D-0140 — Recompute accepts loaded rows with pending changes
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 2 (#37) · Status: decided
+- Decision: `recomputeStatements(deps, snapshot)` is exported with `loadPoSnapshot`; `recomputePo(poId)` is load plus statements. A batch that also changes the PO's rows (ingest, DC create) loads the snapshot, applies its own pending changes in memory, and recomputes from that.
+- Alternatives: `recomputePo(poId)` only, as in SPEC-08 §4.1.
+- Why: A batch's writes are not visible to a read before it commits (C4), so recompute from stored rows alone would derive from the previous state.
+- Reversible: yes.
+
+### D-0141 — One `source_document` row per stored file
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 2 (#37) · Status: decided
+- Decision: Storing a page for a `(supplier, kind, key)` deletes the earlier row and inserts the new one in the same batch, so the row describes the bytes at its storage key.
+- Alternatives: Append a row per ingestion.
+- Why: The storage key is per PO and is overwritten, so older rows would cite a hash that is no longer stored.
+- Reversible: yes.
+
+### D-0142 — Recompute leaves the PO version alone
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 2 (#37) · Status: decided
+- Decision: Derived columns and PO totals are written with a plain update; `po.version` is not bumped.
+- Alternatives: Bump the version on every recompute.
+- Why: INV-95 guards user edits; bumping on every SRV ingest would turn an open edit into a false conflict.
+- Reversible: yes.
+
+### D-0143 — In-house ULID generator
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 2 (#37) · Status: decided
+- Decision: `apps/api/src/ids.ts` `newId()` builds a ULID (48-bit milliseconds, 80 random bits from Web Crypto) with no dependency.
+- Alternatives: The `ulid` npm package.
+- Why: About ten lines, no supply-chain surface, and it runs on Node and Workers.
+- Reversible: yes.
+
+### D-0144 — A source-document key that is not a PO number is refused with 400
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 2 (#37) · Status: decided
+- Decision: `storeSourceDocument` refuses a key that is not `^\d{1,10}$` (`zPoId`) with 400 `bad-po-number`, and stores nothing.
+- Alternatives: Rely on the Storage adapter's key check alone.
+- Why: The key becomes a storage path (C17).
+- Reversible: yes.
