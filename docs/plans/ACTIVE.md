@@ -36,9 +36,8 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-- Next: SPEC-01 spikes and SPEC-00 PR 2–4.
-- Blocked: none.
-- Pending-owner defaults (work proceeds on them): see the open-items index in [`DECISIONS.md`](../DECISIONS.md).
+- In flight: SPEC-00 PR 2, SPEC-01 PR 1 and PR 3 (paused for memory).
+- Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -46,7 +45,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 | --- | ------------------------------------------------- | --------- | ----- |
 | 1   | Bootstrap (setup session)                         | done (#1) |       |
 | 2   | `build` and `audit` jobs, language and pin checks | todo      |       |
-| 3   | Company-details check                             | todo      |       |
+| 3   | Company-details check                             | done (#3) |       |
 | 4   | Rulesets and repo settings                        | todo      | H1    |
 
 ## [SPEC-01 — Spikes (L0.5)](../specs/SPEC-01-spikes.md)

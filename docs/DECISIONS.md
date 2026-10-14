@@ -141,3 +141,35 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Why: Owner: nothing in it is sensitive, it just shouldn't be pushed, and heavy enforcement isn't worth it since an agent could bypass any check anyway; a local file costs no CI time. Templates and goldens need realistic sample data. ARCHITECTURE §14.3 (rev 1.1), INV-74, SPEC-00 §4.6 and SPEC-12 §6 updated.
 - Reversible: yes — the scan can gain a rule later.
 - Owner answer: Owner decision, 2026-10-14.
+
+### D-0011 — Mobile rule prefix form
+
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 3 (#3) · Status: decided
+- Decision: The `mobile` rule takes an optional `+91` or `0` prefix glued to 10 digits starting 6–9, bounded by non-digits; a bare `91` prefix is not matched (`+91 98…` with a space still matches).
+- Alternatives: Also accept a bare `91` prefix.
+- Why: Literal reading of SPEC-00 §4.6; a bare `91` plus 10 digits is a 12-digit run that would also match unrelated numbers.
+- Reversible: yes.
+
+### D-0012 — Company-details file format
+
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 3 (#3) · Status: decided
+- Decision: Each non-blank line of `tools/checks/company-details.local.txt`, trimmed, is one value; there is no comment syntax.
+- Alternatives: `#` comment lines.
+- Why: Addresses can contain `#`; SPEC-00 §4.6 says one value per line.
+- Reversible: yes.
+
+### D-0013 — Strict allowlist format
+
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 3 (#3) · Status: decided
+- Decision: A `real-data-allow.txt` line that is not `path:rule  # justification` with a rule the scan has fails the scan, naming the line.
+- Alternatives: Warn only.
+- Why: A silently ignored entry or an exception without a justification is what the PR 3 format check exists to prevent.
+- Reversible: yes.
+
+### D-0014 — Commit the pre-commit hook script
+
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 3 (#3) · Status: decided
+- Decision: `.vite-hooks/pre-commit` (`vp staged`) is committed; PR 1 had only the Vite+ dispatcher, which exits 0 without it, so no staged check ran. A regression test checks the script and the `vite.config.ts` staged task. Each checkout still needs `pnpm hooks` once (the dispatcher dir is per checkout, contrary to SPEC-00 §4.4's wording).
+- Alternatives: Fix it in a separate PR.
+- Why: PR 3's "blocked by the staged hook" criterion cannot hold without it.
+- Reversible: yes.
