@@ -257,6 +257,7 @@ describe("INV-57: MANUAL_ADJUSTMENT_OVERLAP", () => {
     ["the DC was created at the same instant", "4", setAt, setAt],
     ["the manual quantity is 0", "0", setAt, "2025-06-02T08:00:00.000Z"],
     ["the manual quantity was never set", "0", null, "2025-06-02T08:00:00.000Z"],
+    ["a manual quantity has no set time", "4", null, "2025-06-02T08:00:00.000Z"],
   ])("does not flag when %s", (_, manual, manualSetAt, createdAt) => {
     const withManual = item({
       dspQty: qty("8"),
