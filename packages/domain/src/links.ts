@@ -12,7 +12,11 @@ type PoItemRef = { id: string; materialCode: string; poItemNo: number };
  * INV-37, INV-24: the id of the candidate with the cited number in the FY of the SRV date, else `null`. A March DC
  * cited by an April SRV is not linked (EC-03); numbers are compared through `docKey` (trim only, EC-16).
  */
-export function resolveDocLink(raw: string | null, srvDate: IsoDate, candidates: readonly DocCandidate[]): string | null {
+export function resolveDocLink(
+  raw: string | null,
+  srvDate: IsoDate,
+  candidates: readonly DocCandidate[],
+): string | null {
   if (!raw?.trim()) return null;
   const key = docKey(raw, fyOf(srvDate));
   return candidates.find((c) => docKey(c.number, fyOf(c.date)) === key)?.id ?? null;
@@ -27,7 +31,5 @@ export function matchSrvItem(
   poItems: readonly PoItemRef[],
 ): string | null {
   const byCode = poItems.filter((item) => item.materialCode === materialCode);
-  const [only, ...others] = byCode;
-  if (only && others.length === 0) return only.id;
-  return byCode.find((item) => item.poItemNo === poItemNo)?.id ?? null;
+  return (byCode.length === 1 ? byCode[0] : byCode.find((item) => item.poItemNo === poItemNo))?.id ?? null;
 }

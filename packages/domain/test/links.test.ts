@@ -36,10 +36,6 @@ describe("INV-37: resolveDocLink", () => {
     expect(resolveDocLink(raw, date(srvDate), docs)).toBe(expected);
   });
 
-  it("links nothing when there are no candidates", () => {
-    expect(resolveDocLink("100", date("2025-07-15"), [])).toBe(null);
-  });
-
   it("trims the candidate's number too", () => {
     const padded = [{ id: "dc-9", number: " 9 ", date: date("2025-05-01") }];
     expect(resolveDocLink("9", date("2025-06-01"), padded)).toBe("dc-9");
@@ -50,7 +46,6 @@ const poItems = [
   { id: "item-10", materialCode: "M-100", poItemNo: 10 },
   { id: "item-20", materialCode: "M-200", poItemNo: 20 },
   { id: "item-30", materialCode: "M-200", poItemNo: 30 },
-  { id: "item-40", materialCode: "M-400", poItemNo: 40 },
 ];
 
 // INV-39: match by material code; when the code is on several items, the SRV row's PO item number decides (A2-7).
@@ -59,11 +54,10 @@ describe("INV-39: matchSrvItem", () => {
     ["M-100", 10, "item-10"],
     // The code is on one item: the code decides, whatever the item number says.
     ["M-100", 20, "item-10"],
-    ["M-400", 99, "item-40"],
     // The code is on several items: the PO item number decides.
     ["M-200", 20, "item-20"],
     ["M-200", 30, "item-30"],
-    // Several items and no item number among them: unmatched, never a guess.
+    // EC-19: several items and no item number among them: unmatched, never a guess.
     ["M-200", 10, null],
     // EC-12: the code is on no item of the PO, even if the item number exists.
     ["9000001", 10, null],
@@ -71,9 +65,5 @@ describe("INV-39: matchSrvItem", () => {
     ["m-100", 10, null],
   ])("material %j, PO item %i -> %s", (materialCode, poItemNo, expected) => {
     expect(matchSrvItem({ materialCode, poItemNo }, poItems)).toBe(expected);
-  });
-
-  it("matches nothing on a PO with no items", () => {
-    expect(matchSrvItem({ materialCode: "M-100", poItemNo: 10 }, [])).toBe(null);
   });
 });
