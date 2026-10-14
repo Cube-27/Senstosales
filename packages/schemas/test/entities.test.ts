@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vite-plus/test";
+import type { FlagDetails, ItemQuantities, LineTax, PoTotals } from "@senstosales/domain";
+import { describe, expect, expectTypeOf, it } from "vite-plus/test";
 import { z } from "zod";
 
 import {
@@ -372,5 +373,23 @@ describe("invoice kind decides the DC link (INV-28, INV-30)", () => {
     ["a PO-direct invoice with a DC", { ...INVOICE, kind: "direct", dcId: DC_ID }],
   ])("rejects %s", (_name, wire) => {
     expect(zInvoice.safeParse(wire).success).toBe(false);
+  });
+});
+
+// The shapes carry what the domain computes; these fail to compile if either side gains or loses a field.
+describe("entities carry the domain's computed types", () => {
+  it("PO totals, item quantities, tax amounts and flag details", () => {
+    expectTypeOf<
+      z.output<
+        ReturnType<typeof zPo.pick<{ ordQty: true; dspQty: true; rcdQty: true; rejQty: true; balanceQty: true }>>
+      >
+    >().toEqualTypeOf<PoTotals>();
+    expectTypeOf<
+      z.output<ReturnType<typeof zPoItem.pick<{ dspQty: true; balanceQty: true; uninvoicedQty: true }>>>
+    >().toEqualTypeOf<ItemQuantities>();
+    expectTypeOf<
+      z.output<ReturnType<typeof zInvoiceItem.pick<{ taxable: true; cgst: true; sgst: true; igst: true; total: true }>>>
+    >().toEqualTypeOf<LineTax>();
+    expectTypeOf<z.output<typeof zFlag.shape.details>>().toEqualTypeOf<FlagDetails>();
   });
 });

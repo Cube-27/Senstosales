@@ -2,10 +2,7 @@
 // the `secret` table and has no entity here: no read shape can carry it (INV-81).
 import { z } from "zod";
 
-import { zId } from "../primitives.ts";
-
-/** Free-form label -> text pairs entered at onboarding. */
-const zTextMap = z.record(z.string(), z.string());
+import { zId, zTextMap } from "../primitives.ts";
 
 /** The one supplier of the install (A2-12), created by onboarding (INV-78). */
 export const zSupplier = z.object({
@@ -20,6 +17,14 @@ export const zSupplier = z.object({
   bhelSupplierCode: z.string().nullable(),
   bankDetails: zTextMap,
   invoiceDefaults: zTextMap,
+});
+
+/** The supplier details a DC or invoice carries, editable per document as in legacy. */
+export const zSupplierSnapshot = z.object({
+  supplierName: z.string().nullable(),
+  supplierAddress: z.string().nullable(),
+  supplierGstin: z.string().nullable(),
+  supplierContact: z.string().nullable(),
 });
 
 /** One `settings` row: GST percentages and preferences, never auth state. */

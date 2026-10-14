@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { zItemStatus, zPoStatus } from "../enums.ts";
-import { zId, zInstant, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zId, zInstant, zIsoDate, zMoney, zQty, zTextMap } from "../primitives.ts";
 
 export const zPo = z.object({
   id: zId,
@@ -21,7 +21,7 @@ export const zPo = z.object({
   gemcNumber: z.string().nullable(),
   remarks: z.string().nullable(),
   /** Label -> text as on the PO page (SPEC-06 §4.2). */
-  rawHeader: z.record(z.string(), z.string()),
+  rawHeader: zTextMap,
   status: zPoStatus,
   /** INV-07: sums over active items. */
   ordQty: zQty,

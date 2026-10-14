@@ -1,8 +1,9 @@
 // Wire codecs for the domain's exact units (SPEC-04 §4.2). Quantities and money cross the wire as decimal strings
 // so no float ever touches them (C3); decoding and encoding go through the domain's parsers, never a second copy.
-import type { GstPct, IsoDate, Money, Qty, Result } from "@senstosales/domain";
+import type { Fy, GstPct, IsoDate, Money, Qty, Result } from "@senstosales/domain";
 import {
   moneyToString,
+  parseFy,
   parseIsoDate,
   parseMoney,
   parsePct,
@@ -50,8 +51,15 @@ export const zIsoDate = stringCodec<IsoDate>(
 /** An instant (`*_at` columns), ISO-8601 UTC (ARCHITECTURE §8.1). */
 export const zInstant = z.iso.datetime();
 
-/** A financial-year label such as `"2024-25"`, as the domain's `fyOf` writes it; never computed here (C2). */
-export const zFy = z.string().regex(/^\d{4}-\d{2}$/);
+/** A financial-year label such as `"2024-25"`, the same string on both sides; computed only by the domain (C2). */
+export const zFy = stringCodec<Fy>(
+  parseFy,
+  (fy) => fy,
+  (v) => typeof v === "string" && parseFy(v).ok,
+);
+
+/** Label -> text pairs: a page's raw header, onboarding's bank and invoice defaults. */
+export const zTextMap = z.record(z.string(), z.string());
 
 /** Surrogate ids are ULIDs generated in services (C4). */
 export const zId = z.ulid();

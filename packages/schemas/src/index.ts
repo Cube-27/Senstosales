@@ -1,4 +1,4 @@
-export { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zPoId, zQty } from "./primitives.ts";
+export { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zPoId, zQty, zTextMap } from "./primitives.ts";
 export { zFlagStatus, zFlagType, zInvoiceKind, zItemStatus, zJobStatus, zJobType, zPoStatus } from "./enums.ts";
 export {
   fmtCount,
@@ -19,4 +19,4 @@ export { zInvoice, zInvoiceHeader, zInvoiceItem } from "./entities/invoice.ts";
 export { zJob, zJobEvent } from "./entities/job.ts";
 export { zPo, zPoItem, zPoLot } from "./entities/po.ts";
 export { zSrv, zSrvItem } from "./entities/srv.ts";
-export { zBuyer, zSetting, zSupplier } from "./entities/supplier.ts";
+export { zBuyer, zSetting, zSupplier, zSupplierSnapshot } from "./entities/supplier.ts";

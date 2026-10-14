@@ -17,7 +17,7 @@ export const zFlag = z.object({
     field: z.string(),
     expected: z.string().nullable(),
     actual: z.string(),
-    docIds: z.array(zId),
+    docIds: z.array(zId).readonly(),
   }),
   status: zFlagStatus,
   note: z.string().nullable(),

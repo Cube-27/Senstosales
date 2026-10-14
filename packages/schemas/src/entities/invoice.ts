@@ -2,7 +2,9 @@
 // show (SPEC-11 §9). Tax amounts are computed by the domain at creation (INV-41) and only carried here.
 import { z } from "zod";
 
+import { zInvoiceKind } from "../enums.ts";
 import { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zSupplierSnapshot } from "./supplier.ts";
 
 const text = z.string().nullable();
 
@@ -27,10 +29,7 @@ export const zInvoiceHeader = z.object({
   destination: text,
   termsOfDelivery: text,
   remarks: text,
-  supplierName: text,
-  supplierAddress: text,
-  supplierGstin: text,
-  supplierContact: text,
+  ...zSupplierSnapshot.shape,
 });
 
 /** Tax amounts of a line, or their sums on the invoice header (INV-41). */
@@ -55,8 +54,8 @@ const zInvoiceBase = z.object({
 
 /** A DC-sourced invoice has exactly one DC (INV-28); a PO-direct invoice has none. */
 export const zInvoice = z.discriminatedUnion("kind", [
-  zInvoiceBase.extend({ kind: z.literal("dc"), dcId: zId }),
-  zInvoiceBase.extend({ kind: z.literal("direct"), dcId: z.null() }),
+  zInvoiceBase.extend({ kind: z.literal(zInvoiceKind.enum.dc), dcId: zId }),
+  zInvoiceBase.extend({ kind: z.literal(zInvoiceKind.enum.direct), dcId: z.null() }),
 ]);
 
 /** An invoice line; qty and rate never change after save (INV-33). */

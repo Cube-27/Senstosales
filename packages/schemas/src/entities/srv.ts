@@ -2,7 +2,7 @@
 // links are separate and nullable (INV-38).
 import { z } from "zod";
 
-import { zFy, zId, zIsoDate, zQty } from "../primitives.ts";
+import { zFy, zId, zIsoDate, zQty, zTextMap } from "../primitives.ts";
 
 export const zSrv = z.object({
   id: zId,
@@ -13,7 +13,7 @@ export const zSrv = z.object({
   srvDate: zIsoDate,
   financialYear: zFy,
   /** Label -> text as on the SRV page (SPEC-06 §4.2). */
-  rawHeader: z.record(z.string(), z.string()),
+  rawHeader: zTextMap,
 });
 
 export const zSrvItem = z.object({

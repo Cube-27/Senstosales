@@ -97,7 +97,7 @@ describe("zFy: financial year label", () => {
     expect(zFy.parse("2024-25")).toBe("2024-25");
   });
 
-  it.each(["2024", "2024-2025", "24-25", ""])("rejects %j", (wire) => {
+  it.each(["2024-26", "2024", "2024-2025", "24-25", ""])("rejects %j", (wire) => {
     expect(zFy.safeParse(wire).success).toBe(false);
   });
 });

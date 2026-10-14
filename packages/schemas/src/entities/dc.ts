@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { zFy, zId, zInstant, zIsoDate, zQty } from "../primitives.ts";
+import { zSupplierSnapshot } from "./supplier.ts";
 
 const text = z.string().nullable();
 
@@ -20,10 +21,7 @@ export const zDcHeader = z.object({
   transporter: text,
   modeOfTransport: text,
   remarks: text,
-  supplierName: text,
-  supplierAddress: text,
-  supplierGstin: text,
-  supplierContact: text,
+  ...zSupplierSnapshot.shape,
 });
 
 export const zDc = z.object({
