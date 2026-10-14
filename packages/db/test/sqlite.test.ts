@@ -60,6 +60,21 @@ describe("batch is all-or-nothing", () => {
     expect(await parentIds(db)).toEqual([["P0"], ["P5"]]);
   });
 
+  test("an error after which SQLite already rolled back surfaces as itself", async () => {
+    const db = await withTables("batch-auto-rollback");
+    // RAISE(ROLLBACK) ends the transaction inside SQLite, as SQLITE_FULL or an I/O error can.
+    await db.batch([
+      db.build.run(
+        sql`CREATE TRIGGER refuse BEFORE INSERT ON parent WHEN NEW.k = 99 BEGIN SELECT RAISE(ROLLBACK, 'refused'); END`,
+      ),
+    ]);
+    const failing = db.batch([insertParent(db, "P1", 1), insertParent(db, "P2", 99)]);
+    await expect(failing).rejects.toMatchObject({ name: "DbError", message: "refused" });
+    expect(await parentIds(db)).toEqual([]);
+    await db.batch([insertParent(db, "P3", 3)]);
+    expect(await parentIds(db)).toEqual([["P3"]]);
+  });
+
   test("a foreign-key violation rolls the batch back", async () => {
     const db = await withTables("batch-fk");
     const failing = db.batch([
