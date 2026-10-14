@@ -49,7 +49,7 @@ ledger shows the audit rows of earlier actions.
 - [ ] `/reports` has no daily-dispatch tab; every remaining tab exports with its legacy format.
 - [ ] No interaction (tabs, chips, filters, paging, sort, acknowledge) moves or resizes surrounding layout;
       loading/empty/error keep the same footprint.
-- [ ] Light/dark screenshots match legacy (review artefacts).
+- [ ] Light/dark screenshots show the legacy screens' elements and labels (review artefacts).
 - [ ] `pnpm verify` and every CI job green, including `e2e`.
 
 ## 8. PR plan

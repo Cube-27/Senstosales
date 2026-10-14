@@ -69,7 +69,7 @@ cancelled marker).
       page height with padded rows, a fixed pager, same-footprint loading/empty/error states, popovers and inline
       editors that do not reflow rows.
 - [ ] Folder import works in the desktop shell and in a plain browser.
-- [ ] Light/dark screenshots match legacy (review artefacts).
+- [ ] Light/dark screenshots show the legacy screens' elements and labels (review artefacts).
 - [ ] `pnpm verify` and every CI job green, including `e2e`.
 
 ## 8. PR plan

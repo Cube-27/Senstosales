@@ -10,7 +10,7 @@ Status: design, rev 1.2, 2026-10-14.
 - `specs/`: implementation specs derived from this document.
 - `DECISIONS.md`: decisions agents make during implementation.
 - `plans/ACTIVE.md`: current implementation state.
-- `DESIGN.md`: the frozen visual design system.
+- `DESIGN.md`: the design system (tokens, `role-*` classes); its flows and elements are frozen (D-0016).
 - `../CLAUDE.md`, `ENGINEERING.md`, `../.claude/skills/`: rules and procedures for coding agents.
 
 If a spec or an implementation decision changes anything decided here, this file is updated in the same change,
@@ -125,7 +125,7 @@ pnpm workspace, TypeScript strict, ESM, `tsc -b` project references.
 | documents | `packages/documents` | DC, invoice and GC Excel from de-branded templates; streaming report writers (xlsx, CSV) with the frozen layouts.                                                                                                          | domain, schemas    |
 | scraper   | `packages/scraper`   | `Scraper` port, the Playwright adapter (system Edge), the BHEL login/listing/fetch flow, an in-memory fake.                                                                                                                | schemas            |
 | api       | `apps/api`           | `createApp(deps)` Hono app: routes -> services -> repositories; `platform/node` entry (now), `platform/workers` (candidate). Serves the SPA.                                                                               | packages via ports |
-| web       | `apps/web`           | Vite + React SPA, TanStack Router/Query, the ported design system, one shared-component registry, `Platform` adapter.                                                                                                      | schemas            |
+| web       | `apps/web`           | Vite + React SPA, TanStack Router/Query, the carried-over design tokens, shadcn/ui primitives, one shared-component registry, `Platform` adapter.                                                                          | schemas            |
 | desktop   | `apps/desktop`       | Tauri 2 shell, sidecar packaging, NSIS installer, updater config.                                                                                                                                                          | built api and web  |
 | tools     | `tools/`             | `checks/` (licence scan, real-data scan, design validators, token parity, fixture anonymiser), `corpus/` (local-only corpus test), `release/` (SEA build, version stamping), `orchestrator/` (merge guard, agent scripts). | as needed          |
 
