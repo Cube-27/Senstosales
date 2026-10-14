@@ -15,7 +15,7 @@ const RUNTIME_MODULES = [
   "@playwright/*",
   "@tauri-apps/*",
 ];
-const NO_RUNTIME_IMPORTS = [
+const NO_RUNTIME_IMPORTS: ["error", { patterns: Array<{ group: string[]; message: string }> }] = [
   "error",
   { patterns: [{ group: RUNTIME_MODULES, message: "C12: core packages import ports, not runtime modules." }] },
 ];
