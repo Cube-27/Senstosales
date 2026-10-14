@@ -18,5 +18,5 @@ export {
   type Migration,
 } from "./migrator.ts";
 export { MIGRATIONS } from "./migrations.generated.ts";
-export { updateWithVersion } from "./version.ts";
-export { GST_DEFAULTS, seedStatements, type GstRates } from "./seed.ts";
+export { updateWithVersion, type Versioned } from "./version.ts";
+export { GST_DEFAULTS, GST_KEYS, seedStatements, type GstRates } from "./seed.ts";

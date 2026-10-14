@@ -5,6 +5,8 @@ import type { SQLWrapper } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
+import { staleTable } from "./version.ts";
+
 /** Drizzle's statement builders, without its transaction() or batch(). Build here; run through `Db`. */
 export type QueryBuilder = Omit<BaseSQLiteDatabase<"async", unknown>, "transaction" | "batch">;
 
@@ -75,8 +77,6 @@ export class ConflictError extends DbError {
 }
 
 const UNIQUE = /UNIQUE constraint failed: ([^:]+)/;
-// `updateWithVersion` sets `version` to NULL on a stale row, so the NOT NULL constraint fails the batch (version.ts).
-const STALE = /NOT NULL constraint failed: (\w+)\.version\b/;
 
 /** Maps an executor error to a `DbError`. Drizzle wraps a single query's error, so the database's is the deepest cause. */
 function toDbError(err: unknown): DbError {
@@ -85,7 +85,7 @@ function toDbError(err: unknown): DbError {
   const message = root instanceof Error ? root.message : String(root);
   const unique = UNIQUE.exec(message)?.[1];
   if (unique !== undefined) return new UniqueViolation(unique, { cause: err });
-  const stale = STALE.exec(message)?.[1];
+  const stale = staleTable(message);
   return stale === undefined ? new DbError(message, { cause: err }) : new ConflictError(stale, { cause: err });
 }
 

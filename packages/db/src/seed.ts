@@ -13,12 +13,15 @@ export interface GstRates {
 /** The legacy defaults onboarding pre-fills: 9 % CGST and 9 % SGST. IGST is shown but unused (A2-4). */
 export const GST_DEFAULTS: GstRates = { cgstPct: 900000 as GstPct, sgstPct: 900000 as GstPct };
 
+/** The `settings` keys that hold the GST rates. */
+export const GST_KEYS = { cgstPct: "cgst_pct", sgstPct: "sgst_pct" } as const;
+
 /** The supplier's GST settings rows, for onboarding's batch. */
 export function seedStatements(db: Db, supplierId: string, rates: GstRates = GST_DEFAULTS): Statement[] {
   return [
     db.build.insert(settings).values([
-      { supplierId, key: "cgst_pct", value: pctToString(rates.cgstPct) },
-      { supplierId, key: "sgst_pct", value: pctToString(rates.sgstPct) },
+      { supplierId, key: GST_KEYS.cgstPct, value: pctToString(rates.cgstPct) },
+      { supplierId, key: GST_KEYS.sgstPct, value: pctToString(rates.sgstPct) },
     ]),
   ];
 }
