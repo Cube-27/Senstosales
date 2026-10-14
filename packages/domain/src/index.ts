@@ -29,3 +29,12 @@ export type { LineTax, LineTaxInput } from "./tax.ts";
 export { invoiceLineTax, invoiceTotals } from "./tax.ts";
 export type { GemcSourceRate } from "./gemc.ts";
 export { extractGemcNumber, gemcNetRate, gemcSourceRate } from "./gemc.ts";
+export type { DeleteBlockReason, DeleteLinks, Issue, IssueCode } from "./guards.ts";
+export {
+  acceptIncoming,
+  changedImmutableFields,
+  deleteBlock,
+  validateDcInvoiceLines,
+  validateDcLines,
+  validateDirectInvoiceLines,
+} from "./guards.ts";
