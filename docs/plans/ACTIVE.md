@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-10 PR 2, 4. Next: SPEC-08 PR 5-6, SPEC-10 PR 3, 5-6. SPEC-07 PR 6 waits for every route (SPEC-10 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
+In flight: SPEC-08 PR 5, SPEC-10 PR 2, orchestrator merge fix. Next: SPEC-08 PR 6, SPEC-10 PR 3, 5-6. SPEC-07 PR 6 waits for every route (SPEC-10 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -148,7 +148,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 1   | PO list, stats and detail                   | done (#44) |       |
 | 2   | PO manual create, edit and delete           | todo       |       |
 | 3   | Manual dispatched quantity                  | todo       |       |
-| 4   | SRV list, by-PO list, detail and delete     | todo       |       |
+| 4   | SRV list, by-PO list, detail and delete     | done (#45) |       |
 | 5   | Flags and audit                             | todo       |       |
 | 6   | Dashboard, search and delivery tracker data | todo       |       |
 

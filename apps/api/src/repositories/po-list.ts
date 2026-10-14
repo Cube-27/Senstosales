@@ -3,21 +3,17 @@
 import type { Db } from "@senstosales/db";
 import { dc, invoice, po, poItem, poLot, reconciliationIssue, srv } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
-import type { AnyColumn, SQL, SQLWrapper, Table } from "drizzle-orm";
-import { and, asc, count, desc, eq, getTableColumns, gte, inArray, lte, or, sql } from "drizzle-orm";
+import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
+
+import { apiColumns, contains } from "./sql.ts";
 
 type PoListQuery = z.output<(typeof routes)["po.list"]["query"]>;
 export type PoFilters = z.output<(typeof routes)["po.stats"]["query"]>;
 type SortKey = NonNullable<PoListQuery["sort"]>;
 
 const countOf = (where: SQL) => sql`(SELECT COUNT(*) FROM ${where})`.mapWith(Number);
-
-/** A table's columns without `supplier_id`, which no API shape carries. */
-function apiColumns<T extends Table>(table: T) {
-  const { supplierId: _, ...columns } = getTableColumns(table);
-  return columns;
-}
 
 const openFlagsOf = sql`${reconciliationIssue} WHERE ${reconciliationIssue.poId} = ${po.id} AND ${reconciliationIssue.status} = 'open'`;
 
@@ -47,10 +43,6 @@ const SORTS: Record<SortKey, readonly (AnyColumn | SQLWrapper)[]> = {
   poValue: [po.poValue],
   status: [statusRank],
 };
-
-/** `LIKE` on the text as typed: `%` and `_` match themselves. */
-const contains = (column: SQLWrapper, text: string) =>
-  sql`${column} LIKE ${`%${text.replace(/[\\%_]/g, "\\$&")}%`} ESCAPE '\\'`;
 
 /** The legacy filter panel: text in the PO or GEMC number, PO date range, value range (no value = 0). */
 function where(f: PoFilters): SQL | undefined {

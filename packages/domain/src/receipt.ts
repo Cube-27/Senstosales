@@ -2,8 +2,8 @@
 // the winner; upload or ingest order never does (INV-15).
 import type { IsoDate } from "./dates.ts";
 import { compareIsoDate } from "./dates.ts";
-import type { Qty } from "./units.ts";
-import { sumQty } from "./units.ts";
+import type { Money, Qty } from "./units.ts";
+import { MONEY_DP, QTY_DP, roundToMoney, sumMoney, sumQty } from "./units.ts";
 
 export type Winner = "po" | "srv";
 
@@ -24,8 +24,9 @@ export type Receipt = { winner: Winner; rcd: Qty; rej: Qty };
 export const dateWinner = (poDate: IsoDate, srvDates: readonly IsoDate[]): Winner =>
   srvDates.some((d) => compareIsoDate(d, poDate) >= 0) ? "srv" : "po";
 
-/** INV-11: `COALESCE(NULLIF(rcd, 0), accepted, 0)`. */
-const lineRcd = ({ rcdQty, acceptedQty }: SrvLine): Qty => (rcdQty || acceptedQty || 0) as Qty;
+/** INV-11: one SRV line's received quantity, `COALESCE(NULLIF(rcd, 0), accepted, 0)`. */
+const srvLineRcd = ({ rcdQty, acceptedQty }: Pick<SrvLine, "rcdQty" | "acceptedQty">): Qty =>
+  (rcdQty || acceptedQty || 0) as Qty;
 
 /**
  * INV-11..INV-13. SRV wins: sums over all SRV lines, not filtered by date. PO wins: the PO document's values,
@@ -39,7 +40,48 @@ export function computeReceipt({ poDate, poRcdQty, poRejQty, srvLines }: Receipt
   if (winner === "po") return { winner, rcd: poRcdQty, rej: poRejQty ?? (0 as Qty) };
   return {
     winner,
-    rcd: sumQty(srvLines.map(lineRcd)),
+    rcd: sumQty(srvLines.map(srvLineRcd)),
     rej: sumQty(srvLines.map((l) => l.rejQty ?? (0 as Qty))),
+  };
+}
+
+export type SrvLineQty = Pick<SrvLine, "rcdQty" | "acceptedQty" | "rejQty">;
+
+export type SrvLineShown = { rcdQty: Qty; acceptedQty: Qty; rejQty: Qty };
+
+/** One line as the SRV screens show it: received per INV-11, Accepted as received (INV-09, EC-11), rejected 0 when absent (INV-12). */
+export function srvLineShown(line: SrvLineQty): SrvLineShown {
+  const rcdQty = srvLineRcd(line);
+  return { rcdQty, acceptedQty: rcdQty, rejQty: line.rejQty ?? (0 as Qty) };
+}
+
+/** An SRV line as the SRV list totals it, with the PO item it is matched to (INV-39), or `null`. */
+export type SrvTotalsLine = SrvLineQty & { poItem: { id: string; ordQty: Qty; rate: Money } | null };
+
+export type SrvTotals = { ordQty: Qty; rcdQty: Qty; acceptedQty: Qty; rejQty: Qty; value: Money };
+
+/**
+ * The SRV list's columns over some SRV lines, as the legacy SRV list sums them: each line as `srvLineShown`, ordered
+ * once per matched PO item, and value = received × the PO item's rate, each line rounded to 5 dp. An unmatched line
+ * has no ordered quantity or value.
+ */
+export function srvTotals(lines: readonly SrvTotalsLine[]): SrvTotals {
+  const ordered = new Map<string, Qty>();
+  const shown: SrvLineShown[] = [];
+  const values: Money[] = [];
+  for (const line of lines) {
+    const qty = srvLineShown(line);
+    shown.push(qty);
+    if (line.poItem === null) continue;
+    ordered.set(line.poItem.id, line.poItem.ordQty);
+    values.push(roundToMoney(BigInt(qty.rcdQty) * BigInt(line.poItem.rate), QTY_DP + MONEY_DP, 5));
+  }
+  const sum = (key: keyof SrvLineShown) => sumQty(shown.map((q) => q[key]));
+  return {
+    ordQty: sumQty([...ordered.values()]),
+    rcdQty: sum("rcdQty"),
+    acceptedQty: sum("acceptedQty"),
+    rejQty: sum("rejQty"),
+    value: sumMoney(values),
   };
 }

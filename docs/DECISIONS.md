@@ -1602,3 +1602,75 @@ None.
 - Alternatives: `null`.
 - Why: A file holds every SRV of one PO.
 - Reversible: yes.
+
+### D-0194 — SRV list totals computed in the service
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: The service loads the lines of every SRV the SQL filters keep (text, date range, PO number), totals them with the domain's `srvTotals`, then applies the value range, sorts and pages in memory; both views and the stats share this path. This departs from the SPEC-10 §4.1 wording (sorting and filters in SQL) to keep INV-11 out of SQL (C2).
+- Alternatives: Aggregates in SQL with `COALESCE(NULLIF(rcd,0), accepted, 0)` (as legacy); stored per-SRV total columns.
+- Why: SRV totals are not stored derived columns; computing INV-11 in SQL would place a business rule outside `packages/domain` (C2), and a stored column changes the schema.
+- Reversible: yes.
+
+### D-0195 — SRV value
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: Value = Σ (line received × the matched PO item's rate), each line rounded once to 5 dp; an unmatched line, or one of a PO not in the system, adds 0.
+- Alternatives: The SRV item rate (not stored, D-0107); rounding to 2 dp.
+- Why: The legacy SRV list's Value column (C7 frozen visible value), with the exact rounding rule (D-0021).
+- Reversible: yes.
+
+### D-0196 — SRV list ordered column
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: The flat list shows Σ ordered of the distinct PO items the SRV is matched to; the by-PO view shows the PO's stored `ord_qty`; a PO not in the system shows 0.
+- Alternatives: The SRV page's own ORD QTY.
+- Why: What the legacy lists show.
+- Reversible: yes.
+
+### D-0197 — Accepted shows received on the SRV screens
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: Lists, stats and detail show Accepted as the line's received quantity (`srvLineShown`).
+- Alternatives: The stored accepted quantity, which the legacy SRV list summed.
+- Why: INV-09, A2-8 and EC-11 ("v1: Accepted shows 10"); the `zSrvListRow` schema says the same.
+- Reversible: yes.
+
+### D-0198 — SRV stats
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: Counts and sums over the SRVs the filters keep, the value range applied per SRV; `poCount` is the number of distinct PO numbers among them.
+- Alternatives: Separate stats per view.
+- Why: D-0096: stats take the same filters as their list.
+- Reversible: yes.
+
+### D-0199 — SRV text filter
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: `q` matches the SRV number, the PO number or any item's invoice number.
+- Alternatives: SRV and PO number only.
+- Why: The legacy search fields; the invoice number lives on items here.
+- Reversible: yes.
+
+### D-0200 — SRV list order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: Without a sort, newest first (SRV date, SRV number, id; by-PO: latest SRV date, PO number); a chosen sort breaks ties by that default order; SRV and PO numbers sort numerically.
+- Alternatives: Ties in the chosen direction.
+- Why: The legacy default is `srv_date DESC`; stable pages need a total order.
+- Reversible: yes.
+
+### D-0201 — Flags on SRV detail and delete
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: The detail returns the open flags scoped to the SRV's items; delete leaves flags in place.
+- Alternatives: Delete the flags of the deleted items.
+- Why: ARCHITECTURE §6.9 and INV-59: flags remain until acknowledged, even when their condition disappears; the PO detail shows open flags too.
+- Reversible: yes.
+
+### D-0202 — SRV delete audit row
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 4 (#45) · Status: decided
+- Decision: Audit action `delete-srv`, entity `srv`, `before` = PO number, SRV number, SRV date and item count.
+- Alternatives: `srv.delete`.
+- Why: Matches the `delete-buyer` naming.
+- Reversible: yes.
