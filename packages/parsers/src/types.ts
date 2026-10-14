@@ -73,7 +73,7 @@ const zSrvItem = z.strictObject({
   invoiceDate: zIsoDate.nullable(),
 });
 
-/** One SRV of a PO; one SRV file holds every SRV of one PO. */
+/** One SRV of a PO. */
 export const zSrvDocument = z.strictObject({
   poNumber: zPoId,
   srvNumber: z.string().min(1),
@@ -83,6 +83,9 @@ export const zSrvDocument = z.strictObject({
   items: z.array(zSrvItem).min(1),
 });
 export type SrvDocument = z.output<typeof zSrvDocument>;
+
+/** One SRV file: every SRV of one PO (SPEC-06 §4.1). */
+export const zSrvFile = z.array(zSrvDocument).min(1);
 
 /** SPEC-06 §4.4: every parse failure, with a stable code and a plain message. */
 export type ParseError = {

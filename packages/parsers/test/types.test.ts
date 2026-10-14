@@ -3,11 +3,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
-import { zPoDocument, zSrvDocument } from "../src/index.ts";
+import { zPoDocument, zSrvDocument, zSrvFile } from "../src/index.ts";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);
-const read = (path: string): string => readFileSync(new URL(path, FIXTURES), "utf8");
-const expected = (path: string): unknown => JSON.parse(read(path));
 
 /** A valid PO document on the wire, overridden per case. */
 const PO = {
@@ -53,31 +51,28 @@ const PO = {
   rawHeader: {},
 };
 
+const NAMES = {
+  po: ["amended-short-closed", "era1-single-item", "era2-multi-item", "gemc", "multi-lot"],
+  srv: ["commented-older-table", "layout-a-single", "layout-b-two-srvs", "multi-item", "repeated-challan-fy"],
+};
+
+/** Decoding then encoding gives the file back: its values are valid and written in canonical form. */
+function expectCanonical<S extends z.ZodType>(schema: S, wire: unknown): void {
+  expect(z.encode(schema, schema.parse(wire))).toEqual(wire);
+}
+
 describe("fixtures (SPEC-06 §6)", () => {
-  it.each([
-    ["po", ["amended-short-closed", "era1-single-item", "era2-multi-item", "gemc", "multi-lot"]],
-    ["srv", ["commented-older-table", "layout-a-single", "layout-b-two-srvs", "multi-item", "repeated-challan-fy"]],
-  ])("%s: every page has its expected JSON", (kind, names) => {
+  it.each(["po", "srv"] as const)("%s: every page has its expected JSON", (kind) => {
     const files = readdirSync(new URL(`${kind}/`, FIXTURES)).toSorted();
-    expect(files).toEqual(names.flatMap((name) => [`${name}.expected.json`, `${name}.html`]));
+    expect(files).toEqual(NAMES[kind].flatMap((name) => [`${name}.expected.json`, `${name}.html`]));
   });
 
-  it.each(readdirSync(new URL("po/", FIXTURES)).filter((f) => f.endsWith(".json")))(
-    "po/%s is a canonical PoDocument",
-    (file) => {
-      const wire = expected(`po/${file}`);
-      expect(z.encode(zPoDocument, zPoDocument.parse(wire))).toEqual(wire);
-    },
-  );
-
-  it.each(readdirSync(new URL("srv/", FIXTURES)).filter((f) => f.endsWith(".json")))(
-    "srv/%s is a canonical SrvDocument[]",
-    (file) => {
-      const wire = expected(`srv/${file}`);
-      const schema = z.array(zSrvDocument).min(1);
-      expect(z.encode(schema, schema.parse(wire))).toEqual(wire);
-    },
-  );
+  it.each([
+    ...NAMES.po.map((name) => [`po/${name}`, zPoDocument] as const),
+    ...NAMES.srv.map((name) => [`srv/${name}`, zSrvFile] as const),
+  ])("%s.expected.json is canonical", (name, schema) => {
+    expectCanonical(schema, JSON.parse(readFileSync(new URL(`${name}.expected.json`, FIXTURES), "utf8")));
+  });
 });
 
 describe("zPoDocument", () => {

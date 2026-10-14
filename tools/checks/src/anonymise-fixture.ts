@@ -8,7 +8,7 @@ import { randomInt } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
-import { readCompanyDetails, scanFile } from "./real-data-scan.ts";
+import { lineRules, readCompanyDetails, scanFile } from "./real-data-scan.ts";
 
 /** Original token -> replacement. */
 export type AnonMap = Map<string, string>;
@@ -31,15 +31,14 @@ const LAYOUT_ATTRIBUTES = new Set(
   name nowrap rel rowspan scope size span style type valign width`.split(/\s+/),
 );
 
-// Kept as they are: entities, dates (DD/MM/YYYY, DD-MON-YY, DD/MM/YY), grouped or decimal numbers (quantities, rates,
-// values). Anything else alphanumeric is a word or code to replace.
+// Group 1 is kept as it is: entities, dates (DD/MM/YYYY, DD-MON-YY, DD/MM/YY), grouped or decimal numbers
+// (quantities, rates, values). Any other alphanumeric run is a word or code to replace.
 const TOKEN =
-  /&#?\w+;|(?<![\w.])\d{1,2}[/.-](?:\d{1,2}|[A-Za-z]{3})[/.-](?:\d{4}|\d{2})(?![\w])|(?<![\d,])\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+\.\d+|[A-Za-z0-9]+/g;
-const KEPT_TOKEN = /^(?:&|\d+[/.,-])/;
+  /(&#?\w+;|(?<![\w.])\d{1,2}[/.-](?:\d{1,2}|[A-Za-z]{3})[/.-](?:\d{4}|\d{2})(?![\w])|(?<![\d,])\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+\.\d+)|[A-Za-z0-9]+/g;
 // A cell holding only a short integer is an item, lot or count, or a rate without paise: a quantity, not an identity.
 const SHORT_INTEGER_CELL = /^\s*\d{1,4}\s*$/;
 const HTML_PART = /<!--([\s\S]*?)(?:-->|$)|(<script\b[^>]*>)[\s\S]*?(?:<\/script\s*>|$)|(<[^>]*>)|([^<]+)|</gi;
-const ATTRIBUTE = /(\s([^\s=>/]+)\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/g;
+const ATTRIBUTE = /(\s([^\s=>/]+)\s*=\s*)("[^"]*"|'[^']*'|[^\s"'>]+)/g;
 const FIXTURE_NAME = /^(?:po|srv)\/[a-z0-9][a-z0-9-]*$/;
 const FIXTURE_DIR = "packages/parsers/fixtures";
 
@@ -52,13 +51,10 @@ function sameShape(token: string, random: RandomInt): string {
   const digitsOnly = /^\d+$/.test(token);
   return [...token]
     .map((ch, i) => {
-      const pool = /\d/.test(ch)
-        ? digitsOnly && i === 0
-          ? DIGITS.slice(1)
-          : DIGITS
-        : /[A-Z]/.test(ch)
-          ? UPPER
-          : LOWER;
+      let pool = DIGITS;
+      if (/[A-Z]/.test(ch)) pool = UPPER;
+      else if (/[a-z]/.test(ch)) pool = LOWER;
+      else if (digitsOnly && i === 0) pool = DIGITS.slice(1);
       return pool[random(pool.length)];
     })
     .join("");
@@ -70,8 +66,7 @@ function replacement(token: string, map: AnonMap, random: RandomInt): string {
   if (known !== undefined) return known;
   for (let attempt = 0; attempt < 100; attempt++) {
     const candidate = sameShape(token, random);
-    const clean = scanFile("token.txt", Buffer.from(candidate)).length === 0;
-    if (candidate !== token && !VOCABULARY.has(candidate.toUpperCase()) && clean) {
+    if (candidate !== token && !VOCABULARY.has(candidate.toUpperCase()) && lineRules(candidate).size === 0) {
       map.set(token, candidate);
       return candidate;
     }
@@ -81,16 +76,16 @@ function replacement(token: string, map: AnonMap, random: RandomInt): string {
 
 function anonymiseText(text: string, map: AnonMap, random: RandomInt): string {
   if (SHORT_INTEGER_CELL.test(text)) return text;
-  return text.replace(TOKEN, (token) =>
-    KEPT_TOKEN.test(token) || VOCABULARY.has(token.toUpperCase()) ? token : replacement(token, map, random),
+  return text.replace(TOKEN, (token, kept?: string) =>
+    kept !== undefined || VOCABULARY.has(token.toUpperCase()) ? token : replacement(token, map, random),
   );
 }
 
 function anonymiseTag(tag: string, map: AnonMap, random: RandomInt): string {
-  return tag.replace(ATTRIBUTE, (whole, prefix: string, name: string, dq?: string, sq?: string, bare?: string) => {
+  return tag.replace(ATTRIBUTE, (whole, prefix: string, name: string, value: string) => {
     if (LAYOUT_ATTRIBUTES.has(name.toLowerCase())) return whole;
-    const value = anonymiseText(dq ?? sq ?? bare ?? "", map, random);
-    return dq !== undefined ? `${prefix}"${value}"` : sq !== undefined ? `${prefix}'${value}'` : `${prefix}${value}`;
+    const quote = /^["']/.test(value) ? value.charAt(0) : "";
+    return `${prefix}${quote}${anonymiseText(value.slice(quote.length, value.length - quote.length), map, random)}${quote}`;
   });
 }
 

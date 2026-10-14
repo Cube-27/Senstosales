@@ -123,12 +123,13 @@ describe("run", () => {
   });
 
   it.each([
-    ["no SENSTO_CORPUS_DIR", (env: Record<string, string>) => ({ ...env, SENSTO_CORPUS_DIR: "" }), "po/x"],
-    ["no SENSTO_ANON_MAP", (env: Record<string, string>) => ({ ...env, SENSTO_ANON_MAP: "" }), "po/x"],
-    ["a fixture name outside po/ and srv/", (env: Record<string, string>) => env, "../x"],
-  ])("refuses %s and writes nothing", (_, makeEnv, name) => {
-    const { root, env } = setup();
-    expect(run({ args: ["2024/page.html", name], env: makeEnv(env), root, randomInt: seeded() })).toBe(2);
+    ["no SENSTO_CORPUS_DIR", { SENSTO_CORPUS_DIR: "" }, "po/x"],
+    ["no SENSTO_ANON_MAP", { SENSTO_ANON_MAP: "" }, "po/x"],
+    ["a fixture name outside po/ and srv/", {}, "../x"],
+  ])("refuses %s and writes nothing", (_, override, name) => {
+    const { root, env, mapPath } = setup();
+    expect(run({ args: ["2024/page.html", name], env: { ...env, ...override }, root, randomInt: seeded() })).toBe(2);
+    expect(existsSync(mapPath)).toBe(false);
   });
 
   it("refuses an input outside SENSTO_CORPUS_DIR", () => {
