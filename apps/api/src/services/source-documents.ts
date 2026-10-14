@@ -1,15 +1,19 @@
 // Raw BHEL HTML, kept before it is parsed (INV-107, ARCHITECTURE §7.3): stored through `Storage` and recorded in
-// `source_document`, so a parser fix can re-parse without re-scraping. Its own batch, committed before parsing, so a
-// page that fails to parse is still kept.
+// `source_document`, so a parser fix can re-parse without re-scraping. Its own batch, committed before the ingest
+// batch, so a page whose data is then refused is still kept. A scraped page is stored before it is parsed; an uploaded
+// one once it has parsed and passed the date guard, since its PO number is the key (EC-29).
 import type { Db } from "@senstosales/db";
 import { auditLog, sourceDocument, WriteBatch } from "@senstosales/db";
+import type { IsoDate } from "@senstosales/domain";
 import { zPoId } from "@senstosales/schemas";
 import { and, eq } from "drizzle-orm";
 
-import { ValidationError } from "../errors.ts";
+import { onboardingRequired, ValidationError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Storage } from "../ports/storage.ts";
+import { findSupplierId } from "../repositories/supplier.ts";
+import { ACTOR } from "./audit.ts";
 
 export interface SourceDocumentDeps {
   readonly db: Db;
@@ -24,11 +28,20 @@ export interface IngestContext {
   readonly jobId: string | null;
 }
 
+/** The context of an upload or a job: the install's supplier and the one `admin` user (ARCHITECTURE §10.1). */
+export async function ingestContext(db: Db, jobId: string | null): Promise<IngestContext> {
+  const supplierId = await findSupplierId(db);
+  if (supplierId === null) throw onboardingRequired();
+  return { supplierId, actor: ACTOR, jobId };
+}
+
 export interface RawDocument {
   readonly kind: "po" | "srv";
   /** The BHEL PO number the page belongs to; an SRV page is keyed by its PO too. */
   readonly key: string;
   readonly html: string;
+  /** The document date, when the page has already been parsed. */
+  readonly docDate?: IsoDate;
 }
 
 /**
@@ -62,9 +75,14 @@ export async function storeSourceDocument(
   await new WriteBatch(db)
     .add(db.build.delete(sourceDocument).where(sameDoc))
     .add(
-      db.build
-        .insert(sourceDocument)
-        .values({ ...recorded, id, supplierId: ctx.supplierId, ingestedAt: at, jobId: ctx.jobId }),
+      db.build.insert(sourceDocument).values({
+        ...recorded,
+        id,
+        supplierId: ctx.supplierId,
+        docDate: doc.docDate ?? null,
+        ingestedAt: at,
+        jobId: ctx.jobId,
+      }),
     )
     .add(
       db.build.insert(auditLog).values({

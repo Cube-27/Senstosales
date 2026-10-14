@@ -4,9 +4,11 @@ import type { Db } from "@senstosales/db";
 
 import type { Clock } from "../ports/clock.ts";
 import type { Jobs } from "../ports/jobs.ts";
+import type { Storage } from "../ports/storage.ts";
 import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
 import { jobsService } from "./jobs.ts";
+import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
 import { poService } from "./po.ts";
 import { createSecretsService } from "./secrets.ts";
@@ -17,6 +19,7 @@ export interface ServiceDeps {
   readonly db: Db;
   readonly clock: Clock;
   readonly jobs: Jobs;
+  readonly storage: Storage;
 }
 
 /** What the services of the supplier's data take: one shared supplier id. */
@@ -35,6 +38,7 @@ export function createServices(deps: ServiceDeps) {
     secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
     po: poService(deps),
+    poIngest: poIngestService(deps),
   };
 }
 

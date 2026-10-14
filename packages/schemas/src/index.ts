@@ -24,6 +24,7 @@ export {
   type RouteName,
   type RouteOutput,
 } from "./client.ts";
+export { MAX_BODY_BYTES, splitUpload } from "./upload.ts";
 export { zAuditEntry } from "./entities/audit.ts";
 export { zDc, zDcHeader, zDcItem } from "./entities/dc.ts";
 export { zFlag } from "./entities/flag.ts";

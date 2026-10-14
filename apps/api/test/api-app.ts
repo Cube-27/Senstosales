@@ -8,7 +8,7 @@ import { createClient } from "@senstosales/schemas";
 import { apiRoutes } from "../src/routes/index.ts";
 import { createServices } from "../src/services/index.ts";
 import { migratedDb } from "./db.ts";
-import { fixedClock } from "./service-deps.ts";
+import { fixedClock, memoryStorage } from "./service-deps.ts";
 import { json, testApp } from "./helpers.ts";
 
 export const SUPPLIER_WIRE = {
@@ -47,7 +47,12 @@ export async function onboardedApp() {
 }
 
 function build(db: NodeDb) {
-  const services = createServices({ db, clock: fixedClock, jobs: { enqueue: () => {}, holds: () => false } });
+  const services = createServices({
+    db,
+    clock: fixedClock,
+    jobs: { enqueue: () => {}, holds: () => false },
+    storage: memoryStorage(),
+  });
   const t = testApp(apiRoutes(services), () => Promise.resolve(true), services.onboarding.done);
   const bodies: string[] = [];
   const send = async (path: string, init?: RequestInit) => {

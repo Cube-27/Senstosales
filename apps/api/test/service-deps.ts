@@ -12,9 +12,9 @@ import { migratedDb } from "./db.ts";
 export const SUPPLIER = "S1";
 export const NOW = "2025-06-01T05:30:00.000Z" as Instant;
 
-/** A migrated in-memory DB holding supplier `S1`. The caller closes it. */
-export async function supplierDb(): Promise<NodeDb> {
-  const db = await migratedDb();
+/** A migrated DB (in memory unless `path` is given) holding supplier `S1`. The caller closes it. */
+export async function supplierDb(path?: string): Promise<NodeDb> {
+  const db = await migratedDb(path);
   await db.batch([
     db.build.insert(supplier).values({ id: SUPPLIER, name: "Example Supplier", bankDetails: {}, invoiceDefaults: {} }),
   ]);

@@ -46,6 +46,7 @@ const poItems = [
   { id: "item-10", materialCode: "M-100", poItemNo: 10 },
   { id: "item-20", materialCode: "M-200", poItemNo: 20 },
   { id: "item-30", materialCode: "M-200", poItemNo: 30 },
+  { id: "item-40", materialCode: null, poItemNo: 40 },
 ];
 
 // INV-39: match by material code; when the code is on several items, the SRV row's PO item number decides (A2-7).
@@ -63,6 +64,8 @@ describe("INV-39: matchSrvItem", () => {
     ["9000001", 10, null],
     // Codes are compared exactly.
     ["m-100", 10, null],
+    // EC-12: an SRV line with no material code matches nothing, not even an item that has none.
+    [null, 40, null],
   ])("material %j, PO item %i -> %s", (materialCode, poItemNo, expected) => {
     expect(matchSrvItem({ materialCode, poItemNo }, poItems)).toBe(expected);
   });

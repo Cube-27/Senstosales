@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-08 PR 3-4, SPEC-10 PR 4. Next: SPEC-08 PR 5-6, SPEC-10 PR 2-3, 5-6. SPEC-07 PR 6 waits for every route (SPEC-10 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
+In flight: SPEC-08 PR 4, SPEC-10 PR 2, 4. Next: SPEC-08 PR 5-6, SPEC-10 PR 3, 5-6. SPEC-07 PR 6 waits for every route (SPEC-10 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -128,7 +128,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | --- | -------------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
 | 1   | Jobs port, worker and job API          | done (#40) |                                                                                    |
 | 2   | Source documents and recompute service | done (#37) |                                                                                    |
-| 3   | PO ingest service and upload           | todo       | client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131) |
+| 3   | PO ingest service and upload           | done (#42) | client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131) |
 | 4   | SRV ingest service and upload          | todo       |                                                                                    |
 | 5   | Folder import jobs                     | todo       |                                                                                    |
 | 6   | `recompute-all` job                    | todo       |                                                                                    |

@@ -1,6 +1,8 @@
 // SPEC-07 PR 1: the Host guard (C10, INV-79), JSON-only mutations (INV-102) and the body cap (INV-110).
 import { describe, expect, it } from "vite-plus/test";
 
+import { splitUpload } from "@senstosales/schemas";
+
 import { HOST, ID, json, PORT, testApp } from "./helpers.ts";
 
 const ok = { ok: true } as const;
@@ -117,6 +119,18 @@ describe("Body cap (INV-110)", () => {
     expect(res.status).toBe(413);
     expect(await res.json()).toEqual({ code: "too-large", message: "The upload is too large. The limit is 10 MB." });
     expect(received.length).toBe(before);
+  });
+
+  it("accepts every request the client's splitUpload builds from files filling more than 10 MB (D-0131)", async () => {
+    // Escaped quotes and 2-byte characters make the JSON body larger than the HTML's character count.
+    const files = ["a", "b", "c", "d"].map((name) => ({ name, html: '"é'.repeat(1_200_000) }));
+    const { requests, tooLarge } = splitUpload(files);
+
+    expect([requests.map((r) => r.length), tooLarge]).toEqual([[2, 2], []]);
+    for (const batch of requests) {
+      const res = await send("/api/po/upload", json("POST", { files: batch }));
+      expect(res.status).toBe(200);
+    }
   });
 
   it("refuses a streamed body with no Content-Length once it passes 10 MB", async () => {

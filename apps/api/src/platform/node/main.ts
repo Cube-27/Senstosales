@@ -21,6 +21,7 @@ import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
 import { createJobRunner } from "./job-runner.ts";
 import { upgradeGate } from "./startup.ts";
 import { spa } from "./static.ts";
+import { createFsStorage } from "./storage-fs.ts";
 
 const HOST = "127.0.0.1";
 
@@ -73,10 +74,13 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   const address = await listen(server);
   // Each job type's handler arrives with its PR (SPEC-08 PR 5-6, SPEC-19, SPEC-21); until then a start fails plainly.
   const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers: {} }));
-  const services = createServices({ db, clock, jobs });
+  const services = createServices({ db, clock, jobs, storage: createFsStorage(options.dataDir) });
   const app = createApp(
     { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
-    { ...healthRoutes({ version: options.version, db }), ...apiRoutes(services) },
+    {
+      ...healthRoutes({ version: options.version, db }),
+      ...apiRoutes(services),
+    },
   );
   app.get("*", spa(options.webRoot));
   server.on("request", getRequestListener(app.fetch));

@@ -6,6 +6,7 @@ import { buyersRoutes } from "./buyers.ts";
 import { jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
 import { poRoutes } from "./po.ts";
+import { poUploadRoutes } from "./po-upload.ts";
 import { settingsRoutes } from "./settings.ts";
 import { supplierRoutes } from "./supplier.ts";
 
@@ -18,5 +19,6 @@ export function apiRoutes(services: Services): Handlers {
     ...buyersRoutes(services),
     ...jobsRoutes(services.jobs),
     ...poRoutes(services.po),
+    ...poUploadRoutes(services.poIngest),
   };
 }

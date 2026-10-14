@@ -9,6 +9,7 @@ import { authRoutes } from "../src/routes/auth.ts";
 import { createServices } from "../src/services/index.ts";
 import { migratedDb } from "./db.ts";
 import { json, testApp } from "./helpers.ts";
+import { memoryStorage } from "./service-deps.ts";
 
 const START = "2025-04-01T05:30:00.000Z";
 const TOKEN_COOKIE = /^session=([0-9a-f]{64}); Path=\/; HttpOnly; SameSite=Strict$/;
@@ -37,7 +38,12 @@ async function setup(wrap: (db: Db) => Db = (db) => db) {
       throw new Error("not used");
     },
   };
-  const { auth } = createServices({ db: wrap(db), clock, jobs: { enqueue: () => {}, holds: () => false } });
+  const { auth } = createServices({
+    db: wrap(db),
+    clock,
+    jobs: { enqueue: () => {}, holds: () => false },
+    storage: memoryStorage(),
+  });
   const t = testApp({ ...authRoutes(auth), "buyers.list": () => [] }, auth.signedIn);
 
   const login = (password: string, rememberMe = false) =>
