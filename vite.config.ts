@@ -33,6 +33,19 @@ const NO_RUNTIME_IMPORTS: [
   },
 ];
 
+/** `no-restricted-imports` with C12's ban plus `patterns`, each group refused with its message. */
+function restrictImports(...extra: Array<{ group: string[]; message: string }>): typeof NO_RUNTIME_IMPORTS {
+  const [level, options] = NO_RUNTIME_IMPORTS;
+  return [level, { paths: options.paths, patterns: [...options.patterns, ...extra] }];
+}
+
+// ARCHITECTURE §4 layering in apps/api: routes -> services -> repositories. Services never import Hono or routes;
+// repositories import neither services nor routes.
+const LAYERS = "ARCHITECTURE §4: apps/api layers are routes -> services -> repositories.";
+const NO_HONO = { group: ["hono", "hono/**", "@hono/**"], message: LAYERS };
+const NO_ROUTES = { group: ["../routes/*", "../routes/**", "../app.ts"], message: LAYERS };
+const NO_SERVICES = { group: ["../services/*", "../services/**"], message: LAYERS };
+
 export default defineConfig({
   lint: {
     plugins: ["typescript", "unicorn", "import"],
@@ -63,6 +76,17 @@ export default defineConfig({
         files: ["packages/*/src/platform/**"],
         rules: { "no-restricted-imports": "off" },
       },
+      {
+        // C12 in the API: its node entry and adapters live in apps/api/src/platform/ (SPEC-07 §4.1).
+        files: ["apps/api/src/**"],
+        rules: { "no-restricted-imports": NO_RUNTIME_IMPORTS },
+      },
+      { files: ["apps/api/src/services/**"], rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES) } },
+      {
+        files: ["apps/api/src/repositories/**"],
+        rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES, NO_SERVICES) },
+      },
+      { files: ["apps/api/src/platform/**"], rules: { "no-restricted-imports": "off" } },
       {
         // C3: integer milli-units and 1e-5 money, YYYY-MM-DD strings; no floats or Date in the domain.
         files: ["packages/domain/src/**"],
