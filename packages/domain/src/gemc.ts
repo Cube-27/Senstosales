@@ -8,7 +8,9 @@ export type GemcSourceRate = Money & { readonly __gemcSource: true };
 /** Marks a rate read from the GST-inclusive source (BHEL page, manual GEMC entry or the stored source column). */
 export const gemcSourceRate = (rate: Money): GemcSourceRate => rate as GemcSourceRate;
 
-const GEMC_NUMBER = /\bGEMC\s*[-:/]?\s*([A-Z0-9][A-Z0-9-]*)/i;
+// INV-19's `\s*[-:/]?\s*` written as `\s*(?:[-:/]\s*)?`: the same matches, without quadratic backtracking on a
+// long run of spaces.
+const GEMC_NUMBER = /\bGEMC\s*(?:[-:/]\s*)?([A-Z0-9][A-Z0-9-]*)/i;
 
 /** INV-19: the legacy REMARKS pattern; `"GEMC- 5116"` -> `"5116"`, no match -> `null`. */
 export function extractGemcNumber(remarks: string): string | null {

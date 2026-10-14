@@ -5,6 +5,9 @@ import type { Money } from "../src/index.ts";
 import { extractGemcNumber, gemcNetRate, gemcSourceRate, moneyToString } from "../src/index.ts";
 import { money } from "./unwrap.ts";
 
+// The domain package has no DOM or Node types; the test runtime provides the timer.
+declare const performance: { now(): number };
+
 const net = (source: string): string => moneyToString(gemcNetRate(gemcSourceRate(money(source))));
 
 describe("INV-16: GEMC net rate = round5(source / 1.18)", () => {
@@ -67,5 +70,24 @@ describe("INV-19: GEMC number from REMARKS", () => {
     ["", null],
   ])("extractGemcNumber(%j) -> %j", (remarks, expected) => {
     expect(extractGemcNumber(remarks)).toBe(expected);
+  });
+
+  it("captures what the INV-19 pattern captures", () => {
+    const inv19 = /\bGEMC\s*[-:/]?\s*([A-Z0-9][A-Z0-9-]*)/i;
+    const remarks = fc
+      .array(fc.constantFrom("GEMC", "gemc", "A", "5", " ", "  ", "-", ":", "/", ".", "\t"), { maxLength: 12 })
+      .map((parts) => parts.join(""));
+    fc.assert(
+      fc.property(remarks, (s) => {
+        expect(extractGemcNumber(s)).toBe(inv19.exec(s)?.[1] ?? null);
+      }),
+      { numRuns: 2000 },
+    );
+  });
+
+  it("scans a long run of spaces after GEMC in linear time", () => {
+    const start = performance.now();
+    expect(extractGemcNumber(`GEMC${" ".repeat(50_000)}--`)).toBe(null);
+    expect(performance.now() - start).toBeLessThan(200);
   });
 });
