@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -18,6 +18,8 @@ describe("checkWorkflow", () => {
     ["      - uses: ./.github/actions/setup"],
     [`      - uses: docker://alpine@sha256:${"a".repeat(64)}`],
     [`    uses: octo/repo/.github/workflows/ci.yml@${SHA}`],
+    [`      - { name: x, uses: "a/b@${SHA}" }`],
+    ["      - run: echo uses: a/b@v1"],
   ])("accepts %s", (line) => {
     expect(checkWorkflow(workflow(line))).toEqual([]);
   });
@@ -30,6 +32,8 @@ describe("checkWorkflow", () => {
     ["an uppercase SHA", `      - uses: actions/checkout@${SHA.toUpperCase()}`],
     ["a docker tag", "      - uses: docker://alpine:3.20"],
     ["a quoted tag", "      - uses: 'actions/checkout@v7'"],
+    ["a flow-style step", "      - { uses: actions/checkout@v7 }"],
+    ["a flow-style step after another key", "      - { name: x, uses: 'actions/checkout@v7' }"],
   ])("rejects %s with its line number", (_case, line) => {
     expect(checkWorkflow(workflow("      - run: true", line))).toEqual([{ line: 8, rule: "action-not-pinned" }]);
   });
@@ -68,6 +72,7 @@ describe("action-pins CLI", () => {
       writeFileSync(join(dir, path), content);
     }
     const result = spawnSync(process.execPath, [join(import.meta.dirname, "../src/action-pins.ts")], { cwd: dir });
+    rmSync(dir, { recursive: true, force: true });
     return { status: result.status ?? -1, stderr: result.stderr.toString() };
   };
 

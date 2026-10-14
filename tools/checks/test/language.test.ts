@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -16,6 +16,7 @@ describe("nonTypeScriptSources", () => {
     "apps/desktop/src/run.sh",
     "packages/parsers/src/x.mts",
     "packages/domain/src/QTY.JS",
+    "packages/db/src/query.sql",
   ])("flags %s", (path) => {
     expect(nonTypeScriptSources([path])).toEqual([path]);
   });
@@ -33,6 +34,7 @@ describe("nonTypeScriptSources", () => {
     "packages/domain/vite.config.js",
     "apps/desktop/src-tauri/src/main.rs",
     "packages/domain/srcx/a.js",
+    "packages/db/migrations/0001_init.sql",
   ])("accepts %s", (path) => {
     expect(nonTypeScriptSources([path])).toEqual([]);
   });
@@ -54,6 +56,7 @@ describe("language CLI", () => {
   };
   const run = (cwd: string): { status: number | null; stderr: string } => {
     const result = spawnSync(process.execPath, [join(import.meta.dirname, "../src/language.ts")], { cwd });
+    rmSync(cwd, { recursive: true, force: true });
     return { status: result.status, stderr: result.stderr.toString() };
   };
 

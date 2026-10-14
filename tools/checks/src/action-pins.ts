@@ -7,7 +7,8 @@ import { join } from "node:path";
 
 type Finding = { line: number; rule: "action-not-pinned" | "no-default-permissions" | "permissions-not-read" };
 
-const USES = /^\s*(?:-\s+)?uses:\s*(["']?)([^\s"'#]+)\1/;
+// Block style (`- uses: x`) or flow style (`- { name: n, uses: x }`).
+const USES = /(?:^\s*(?:-\s+)?|[{,]\s*)uses:\s*(["']?)([^\s"'#,}]+)\1/;
 // A local action, a docker image by digest, or owner/repo[/path]@<40-hex SHA>.
 const PINNED = /^(?:\.\/.*|docker:\/\/[^@\s]+@sha256:[0-9a-f]{64}|[^@\s]+@[0-9a-f]{40})$/;
 

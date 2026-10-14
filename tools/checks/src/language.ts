@@ -9,7 +9,7 @@ import { selectFiles } from "./real-data-scan.ts";
 const PRODUCTION_SOURCE = /^(?:packages|apps)\/[^/]+\/src\//;
 // Extensions of other programming languages; anything else (CSS, JSON, SVG, fonts) is an asset.
 const OTHER_CODE = new Set(
-  "js mjs cjs jsx mts cts vue svelte coffee py rs go java kt kts rb php pl lua swift cs c cc cpp h hpp sh bash ps1 bat cmd wasm"
+  "js mjs cjs jsx mts cts vue svelte coffee py rs go java kt kts rb php pl lua swift cs c cc cpp h hpp sh bash ps1 bat cmd wasm sql"
     .split(" ")
     .map((ext) => `.${ext}`),
 );
