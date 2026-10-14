@@ -35,7 +35,7 @@ export const zInvoiceHeader = z.object({
 /** Tax amounts of a line, or their sums on the invoice header (INV-41). */
 const zTaxAmounts = z.object({ taxable: zMoney, cgst: zMoney, sgst: zMoney, igst: zMoney, total: zMoney });
 
-const zInvoiceBase = z.object({
+export const zInvoiceBase = z.object({
   id: zId,
   /** One PO per invoice (INV-30). */
   poId: zId,

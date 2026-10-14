@@ -778,3 +778,139 @@ None.
 - Alternatives: Leave it to PR 3's `parsePo`.
 - Why: It depends only on a header field, so fixture headers match their expected JSON whole.
 - Reversible: yes.
+
+### D-0091 — Route table and API shapes by resource
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: The route table is `src/routes.ts`; request and response shapes are in `src/api/<resource>.ts`, following SPEC-04's module table.
+- Alternatives: Shapes beside each table entry (D-0063).
+- Why: One file per resource keeps `routes.ts` under 800 lines (C15).
+- Reversible: yes.
+
+### D-0092 — Onboarding routes are public
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: `onboarding.status` and `onboarding.complete` need no session; the API answers them only while no supplier exists (INV-78).
+- Alternatives: Require a session.
+- Why: Onboarding runs before the first login (ARCHITECTURE §10.3).
+- Reversible: yes.
+
+### D-0093 — Settings body
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: Settings are `{ cgstPct, sgstPct, preferences }`.
+- Alternatives: Separate routes per setting.
+- Why: One body for the one settings form.
+- Reversible: yes.
+
+### D-0094 — Login takes no username
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: The login body is `{ password, rememberMe }`.
+- Alternatives: Send the username `admin`.
+- Why: The username is fixed (A-17, C11).
+- Reversible: yes.
+
+### D-0095 — No set-default buyer route
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: Buyers have list, create, update and delete only.
+- Alternatives: A set-default route.
+- Why: The ARCHITECTURE §8.2 buyer has no default column.
+- Reversible: yes.
+
+### D-0096 — Stats take the list filters
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: PO, DC, invoice, SRV and tracker stats take the same filters as their lists.
+- Alternatives: Unfiltered totals.
+- Why: The legacy KPI cards show totals of the filtered list.
+- Reversible: yes.
+
+### D-0097 — DC and invoice number checks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: `dc.numberCheck` and `invoice.numberCheck` answer whether a `(number, FY)` is taken.
+- Alternatives: Report the collision only on save.
+- Why: The legacy form checks live; the flow is frozen (C7).
+- Reversible: yes.
+
+### D-0098 — Header edits carry no lines; edit bodies include number and date
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: DC and invoice update bodies hold header fields only, including the number and the date.
+- Alternatives: Edit lines in the same body; fix the number and date at creation.
+- Why: INV-33 holds by construction; INV-25 and INV-37 allow editing the number and date.
+- Reversible: yes.
+
+### D-0099 — Linked documents route
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: `po.linked` returns a PO's DCs, invoices and SRVs for popovers and search previews.
+- Alternatives: Embed them in every list row.
+- Why: Popovers load on demand (INV-73).
+- Reversible: yes.
+
+### D-0100 — Reports routes
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: Reports are the pending and reconciliation tabs; the PO, DC and invoice registers are export-only. Export-selected takes `poIds`, and exports the selected POs' reconciliation rows (SPEC-13 §2).
+- Alternatives: Register list endpoints; export by PO item ids.
+- Why: The legacy UI shows the registers only as downloads; SPEC-13 §2 names the selected POs.
+- Reversible: yes.
+
+### D-0101 — Delivery tracker returns days to due
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: Tracker rows carry `daysToDue`; the UI derives the label.
+- Alternatives: A status string from the API.
+- Why: The API sends values; the UI formats what it shows.
+- Reversible: yes.
+
+### D-0102 — Dashboard lead time in whole days
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: `avgLeadTimeDays` is an integer number of days.
+- Alternatives: A fractional day count.
+- Why: No floats on the wire (C3).
+- Reversible: yes.
+
+### D-0103 — BHEL wizard step union
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: BHEL session responses are a union on `step`: `otp`, `captcha` (with a new image) or `ready`.
+- Alternatives: One object with optional fields.
+- Why: Each step's required fields are enforced by the schema.
+- Reversible: yes.
+
+### D-0104 — Jobs keyed by staging and session ids
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: Job bodies name a `stagingId` or `sessionId`, never a file path.
+- Alternatives: Pass paths.
+- Why: File locations come from the Storage port (C17).
+- Reversible: yes.
+
+### D-0105 — Downloads are files
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: Download routes declare `response: "file"`; the client returns `{ fileName, bytes }`, and the name comes from `Content-Disposition`.
+- Alternatives: A JSON-wrapped download.
+- Why: Excel and CSV names stay as legacy (SPEC-12).
+- Reversible: yes.
+
+### D-0106 — Query arrays as repeated keys
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: An array in a query is sent as repeated keys (`types=po&types=dc`).
+- Alternatives: Comma-joined values.
+- Why: Standard URL encoding; no separator escaping.
+- Reversible: yes.
+
+### D-0107 — Fields with no ARCHITECTURE §8.2 column left out of the API shapes
+
+- Date: 2026-10-15 · Spec/PR: SPEC-04 PR 3 (#27) · Status: decided
+- Decision: These legacy fields are not in any API shape: the supplier description/tagline; the invoice item HSN; the SRV item description, rate, unit, revision and challan qty; the pending report's "no. of packets"; the audit category list. The spec that first needs a field adds its column.
+- Alternatives: Add the fields to the shapes now, with no column behind them.
+- Why: Shapes follow the schema; there is nothing to store or return yet.
+- Reversible: yes.

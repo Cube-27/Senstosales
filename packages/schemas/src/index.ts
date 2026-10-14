@@ -11,7 +11,18 @@ export {
   fmtQty,
   fmtRate,
 } from "./formatters.ts";
-export { zErrorBody, zListQuery, zPaged } from "./api/common.ts";
+export { type ErrorBody, zErrorBody, zListQuery, zOk, zPaged } from "./api/common.ts";
+export { type PathParams, type RouteDef, routes } from "./routes.ts";
+export {
+  ApiError,
+  createClient,
+  type Download,
+  type FetchLike,
+  type FetchResponse,
+  type RouteInput,
+  type RouteName,
+  type RouteOutput,
+} from "./client.ts";
 export { zAuditEntry } from "./entities/audit.ts";
 export { zDc, zDcHeader, zDcItem } from "./entities/dc.ts";
 export { zFlag } from "./entities/flag.ts";
