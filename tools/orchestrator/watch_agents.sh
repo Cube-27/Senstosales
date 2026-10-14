@@ -11,10 +11,13 @@ INTERVAL=${INTERVAL:-30}
 IGNORE=${IGNORE:-}
 
 snapshot() {
-  # Windows Python prints CRLF; strip \r so statuses compare equal.
-  herdr agent list 2>/dev/null | "$PY" -c "import json,sys
+  # Fails when herdr or the parse fails, so a failed poll is told apart from an empty agent list.
+  local agents
+  agents=$(set -o pipefail; herdr agent list 2>/dev/null | "$PY" -c "import json,sys
 for a in json.load(sys.stdin)['result']['agents']:
-    if a.get('name'): print(a['name'], a['agent_status'])" 2>/dev/null | tr -d '\r' | sort
+    if a.get('name'): print(a['name'], a['agent_status'])" 2>/dev/null) || return 1
+  # Windows Python prints CRLF; strip \r so statuses compare equal.
+  tr -d '\r' <<< "$agents" | sort
   return 0
 }
 pr_signals() {
@@ -88,9 +91,8 @@ while true; do
     done <<< "$now_signals"
     signals=$now_signals
   fi
-  cur=$(snapshot)
-  # A failed poll is not every agent gone; keep the last good snapshot.
-  if [[ -n $cur ]]; then
+  # A failed poll is not every agent gone; keep the last good snapshot. An empty list is real: all gone.
+  if cur=$(snapshot); then
     while read -r name _; do
       if [[ -z $name ]] || ignored "$name"; then continue; fi
       if ! awk -v n="$name" '$1==n{f=1} END{exit !f}' <<< "$cur"; then echo "GONE $name"; exit 0; fi
