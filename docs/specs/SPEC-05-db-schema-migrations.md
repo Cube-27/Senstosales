@@ -27,7 +27,8 @@ Core:
 - D1 executor (`db.batch`) and a CI step applying every migration on a local D1; a static check that migration SQL
   uses only `CREATE TABLE`, `CREATE INDEX`, `ALTER TABLE ADD COLUMN` and the table-rebuild pattern, and no
   `TRIGGER` or `VIEW` (§8.3, INV-84).
-- Optimistic concurrency helper: `UPDATE … WHERE id = ? AND version = ?` with a changes check (INV-95).
+- Optimistic concurrency helper: an `UPDATE … WHERE id = ?` that checks the version in the statement and, when it is
+  stale, fails the whole batch, so nothing is written (`ConflictError` -> 409; INV-95, D-0124).
 - Seed: default GST rates offered to onboarding; BHEL buyer units per Open issues.
 
 Out of scope:

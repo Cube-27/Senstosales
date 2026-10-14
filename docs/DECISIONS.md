@@ -1042,3 +1042,27 @@ None.
 - Alternatives: Allowlist statement prefixes only.
 - Why: A prefix-only allowlist lets a trigger hide after an allowed statement and lets an arbitrary `DROP` through. FK handling during a rebuild stays the ADR 0002 open item, settled with the first rebuild migration.
 - Reversible: yes.
+
+### D-0124 — Stale version detected inside the statement
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 5 (#32) · Status: decided
+- Decision: `updateWithVersion` sets `version = CASE WHEN version = expected THEN version + 1 ELSE NULL END`, so a stale row fails its NOT NULL constraint and the whole batch rolls back. The port maps `NOT NULL constraint failed: (po|dc|invoice).version` to `ConflictError` (409). This supersedes the "changes check" wording of ARCHITECTURE §8.1 and SPEC-05 §2 (owner delegated the wording fix to the orchestrator; revision 1.6).
+- Alternatives: A `changes()` check after the batch (`batch()` returns void and the other statements would already be committed); a `RAISE()` guard (triggers only, forbidden by INV-84); a read before the batch (racy; no interactive transaction, C4).
+- Why: INV-95 requires that nothing changes on a stale version. This is the only check that runs inside the one all-or-nothing batch, on node:sqlite and D1.
+- Reversible: yes.
+
+### D-0125 — Seed is a statement builder run by onboarding
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 5 (#32) · Status: decided
+- Decision: `seedStatements(db, supplierId, rates = GST_DEFAULTS)` builds the supplier's GST `settings` rows for onboarding's batch; nothing is seeded into an empty DB. Keys `cgst_pct` and `sgst_pct` (`GST_KEYS`), values decimal strings from `pctToString` (`9`). Defaults 9 % CGST and 9 % SGST; IGST has no setting (A2-4).
+- Alternatives: A supplier-less settings row; seeding at migration time.
+- Why: `settings` is keyed by `(supplier_id, key)`, and no supplier exists before onboarding (INV-78).
+- Reversible: yes.
+
+### D-0126 — Edit of a deleted row (EC-25)
+
+- Date: 2026-10-15 · Spec/PR: SPEC-05 PR 5 (#32) · Status: decided
+- Decision: A versioned update of a missing row writes nothing and raises no conflict; services check that the row exists when they read its version. To revisit in SPEC-11.
+- Alternatives: Treat it as a conflict (not detectable inside the batch without a trigger or a read).
+- Why: INV-95 specifies only the stale-version case (C18).
+- Reversible: yes.

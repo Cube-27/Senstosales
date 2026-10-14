@@ -430,7 +430,7 @@ SQLite now, D1 later; one set of SQL migrations runs on both. Every business tab
 - Surrogate ids: ULID text, generated in services. Business keys are unique indexes.
 - Units in names: quantities `*_qty_m` (INTEGER milli-units), money `*_u5` (INTEGER 1e-5 units), dates `*_date`
   (TEXT `YYYY-MM-DD`), instants `*_at` (TEXT ISO-8601 UTC). Drizzle `customType`s map to branded types.
-- Optimistic concurrency: `version` on `po`, `dc`, `invoice`; `UPDATE … WHERE version = ?` plus a changes check -> 409.
+- Optimistic concurrency: `version` on `po`, `dc`, `invoice`; the `UPDATE` itself checks the version and, when it is stale, fails its batch so nothing is written -> 409 (D-0124).
 - Derived columns are stored for list performance and written only by service batches (spec §12 triggers replaced).
 
 ### 8.2 Tables
@@ -845,3 +845,4 @@ Every section of the legacy business spec, mapped to this document and `INVARIAN
 | 1.3 | 2026-10-14 | §6.11: the tolerance example is `(10, 9.999, 0) -> Delivered`, not `9.9995`, which a three-decimal `Qty` cannot hold; the rule is unchanged. INV-02, INV-62 and SPEC-02 §4.3 likewise (D-0023).                                                                                                                             |
 | 1.4 | 2026-10-14 | §2 C15: the ruff C90 mention goes, with all Python tooling; the merge guard and orchestrator tests are TypeScript (owner, D-0018). §3, §13, §16, A-4: Node 26 LTS replaces Node 24, including the SEA sidecar (owner, D-0019).                                                                                              |
 | 1.5 | 2026-10-15 | §8.2, §13.3: the schema version is `max(version)` in `schema_migration`; `PRAGMA user_version` is no longer written or read, since D1 refuses it (ADR 0002). SPEC-05 and SPEC-07 likewise (owner delegated the decision to the orchestrator; SPEC-05 PR 3).                                                                 |
+| 1.6 | 2026-10-15 | §8.1: optimistic concurrency checks the version inside the `UPDATE`; a stale version fails the batch (409) instead of a changes check after it, which a void batch cannot do. SPEC-05 §2 likewise (owner delegated the wording fix to the orchestrator, D-0124).                                                            |
