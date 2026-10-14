@@ -63,7 +63,20 @@ export class UniqueViolation extends DbError {
   }
 }
 
+/** An update carried a stale `version` (INV-95); the API answers 409. `table` is the one that refused it. */
+export class ConflictError extends DbError {
+  override name = "ConflictError";
+  readonly table: string;
+
+  constructor(table: string, options?: ErrorOptions) {
+    super(`The ${table} was changed by someone else. Reload and try again.`, options);
+    this.table = table;
+  }
+}
+
 const UNIQUE = /UNIQUE constraint failed: ([^:]+)/;
+// `updateWithVersion` sets `version` to NULL on a stale row, so the NOT NULL constraint fails the batch (version.ts).
+const STALE = /NOT NULL constraint failed: (\w+)\.version\b/;
 
 /** Maps an executor error to a `DbError`. Drizzle wraps a single query's error, so the database's is the deepest cause. */
 function toDbError(err: unknown): DbError {
@@ -71,7 +84,9 @@ function toDbError(err: unknown): DbError {
   while (root instanceof Error && root.cause instanceof Error) root = root.cause;
   const message = root instanceof Error ? root.message : String(root);
   const unique = UNIQUE.exec(message)?.[1];
-  return unique === undefined ? new DbError(message, { cause: err }) : new UniqueViolation(unique, { cause: err });
+  if (unique !== undefined) return new UniqueViolation(unique, { cause: err });
+  const stale = STALE.exec(message)?.[1];
+  return stale === undefined ? new DbError(message, { cause: err }) : new ConflictError(stale, { cause: err });
 }
 
 async function mapErrors<T>(run: PromiseLike<T>): Promise<T> {
