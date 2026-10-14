@@ -1,0 +1,31 @@
+<!-- One-minute briefing. Rules: CLAUDE.md §2 and CONTRIBUTING.md. -->
+
+## Why
+
+<!-- 1–3 sentences. Link the spec row: docs/specs/SPEC-NN-*.md §8, PR M. -->
+
+## What changed
+
+-
+
+## Scope
+
+<!-- What this PR covers, and what it deliberately leaves out. -->
+
+## Verification
+
+<!-- Real commands and their outcomes. Map each acceptance criterion of the row to the test or command that proves it. -->
+
+## Decisions
+
+<!-- Each decision in the docs/DECISIONS.md template's fields (no ID), marked `decided` or `needs-owner`; or "None". -->
+
+## Checklist
+
+- [ ] Every CLAUDE.md §2 rule holds for this diff.
+- [ ] No candidate from the ARCHITECTURE candidates register implemented.
+- [ ] Tests assert behaviour at the public interface; each would fail if the code returned a wrong value.
+- [ ] No real data, secrets or customer names; fixtures are synthetic. <!-- public repos -->
+- [ ] No dependency under a denied licence; `NOTICE` updated for any adapted third-party material.
+- [ ] New invariants appended to `docs/INVARIANTS.md`.
+- [ ] Decisions recorded in `docs/DECISIONS.md`, or listed above for the orchestrator to record.

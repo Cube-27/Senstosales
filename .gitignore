@@ -1,0 +1,71 @@
+# --- Append to the stack's standard .gitignore ---
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Real data never enters the repo (public-repo hygiene): local data, captures, exports
+/data/
+/captures/
+.data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv-*/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+.pnpm-store/
+*.log
+
+# Browsers / test artifacts
+playwright-report/
+test-results/
+
+# SBOM and generated reports
+license-report/
+sbom*.json
+reports/
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Agent tooling (local state, worktrees, pause notes)
+.claude/settings.local.json
+.claude/worktrees/
+.worktrees/
+worktrees/
+.herdr/
+RESUME.md
+
+# SenstoSales: real business data never enters the repo (contract C1)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+/db/
+/corpus/
+business_development/

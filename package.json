@@ -1,0 +1,26 @@
+{
+  "name": "senstosales",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "hooks": "vp config --hooks --no-agent",
+    "format": "vp fmt --write",
+    "format:check": "vp fmt --check",
+    "lint": "vp lint",
+    "typecheck": "tsc -b",
+    "test": "vp test run",
+    "build": "pnpm -r --if-present build",
+    "check:real-data": "node tools/checks/src/real-data-scan.ts",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:real-data"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.1.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.22.0"
+}

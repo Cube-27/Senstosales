@@ -1,0 +1,14 @@
+# Python is used only for repo tooling (tools/orchestrator, tools/tests).
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "C90", "PL", "RUF"]
+ignore = ["S603", "PLR2004"]
+
+[lint.per-file-ignores]
+"tools/tests/**" = ["S101"]
+
+[lint.mccabe]
+# Contract C15: complexity <= 15.
+max-complexity = 15

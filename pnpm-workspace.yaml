@@ -1,0 +1,13 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "tools/*"
+
+# Dependencies allowed to run install scripts.
+allowBuilds:
+  esbuild: true
+
+# Supply chain: trust signals (provenance, signatures) may not weaken between updates. No release-age quarantine.
+minimumReleaseAge: 0
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 525600

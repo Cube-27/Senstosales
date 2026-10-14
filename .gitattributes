@@ -1,0 +1,17 @@
+# Copy to .gitattributes.
+# Normalise text to LF in the repo; checkouts follow the platform except where pinned below.
+* text=auto
+# Shell scripts run under bash, which fails on CRLF line endings (Git Bash on Windows included).
+*.sh text eol=lf
+# Hook and CI configs are read by tools that expect LF.
+*.yml text eol=lf
+*.yaml text eol=lf
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+# Pinned external data verified by checksum: keep its bytes exact.
+# data/pinned/** -text
+# Lockfiles: no diffs in reviews, no merge attempts.
+pnpm-lock.yaml -diff linguist-generated
+uv.lock -diff linguist-generated
