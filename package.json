@@ -8,7 +8,7 @@
     "gen:openapi": "node tools/gen/src/openapi.ts",
     "hooks": "vp config --hooks --no-agent",
     "format": "vp fmt --write",
-    "check:code": "vp check && node tools/checks/src/language.ts && node tools/checks/src/status-source.ts && tsc -b && vp test run",
+    "check:code": "vp check && node tools/checks/src/language.ts && node tools/checks/src/status-source.ts && node tools/checks/src/migration-sql-lint.ts && node tools/checks/src/d1-dialect.ts && tsc -b && vp test run",
     "check:real-data": "node tools/checks/src/real-data-scan.ts",
     "check:licenses": "node -e \"require('fs').mkdirSync('license-report',{recursive:true})\" && pnpm licenses list --json --recursive > license-report/licenses.json && node tools/checks/src/license-check.ts license-report/licenses.json",
     "check:build": "pnpm -r --if-present build",

@@ -72,6 +72,12 @@ importers:
 
   tools/checks:
     devDependencies:
+      '@senstosales/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4
       miniflare:
         specifier: 4.20260730.0
         version: 4.20260730.0

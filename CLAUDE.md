@@ -125,7 +125,8 @@ pnpm format          # vp fmt --write (Oxfmt)
 The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:
 
 ```sh
-pnpm check:code        # check: vp check (Oxfmt + Oxlint), language check (INV-90), tsc -b, vp test run (incl. tools)
+pnpm check:code        # check: vp check (Oxfmt + Oxlint), language (INV-90), status-source (INV-64), migration SQL lint
+                       # and D1 dialect step (INV-84), tsc -b, vp test run (incl. tools)
 pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
 pnpm check:build       # build: pnpm -r build
