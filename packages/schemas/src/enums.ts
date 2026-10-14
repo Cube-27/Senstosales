@@ -1,5 +1,6 @@
 // Closed value sets shared by the API and the web client. Each list is the one ARCHITECTURE names; item and PO
-// status match the domain's types (the enums test checks they stay equal).
+// status match the domain's types (the enums test checks they stay equal); flag types come from the domain.
+import { FLAG_TYPES } from "@senstosales/domain";
 import { z } from "zod";
 
 /** ARCHITECTURE §6.11 (INV-62). */
@@ -8,15 +9,8 @@ export const zItemStatus = z.enum(["Pending", "Delivered", "Closed", "Cancelled"
 /** ARCHITECTURE §6.11 (INV-64). */
 export const zPoStatus = z.enum(["Pending", "Delivered", "Closed"]);
 
-/** The v1 flag types (INV-58, A-24). */
-export const zFlagType = z.enum([
-  "QTY_MISMATCH",
-  "DOC_NUMBER_CONFLICT",
-  "OVER_DISPATCH",
-  "OVER_INVOICE",
-  "DOC_ON_CANCELLED_ITEM",
-  "MANUAL_ADJUSTMENT_OVERLAP",
-]);
+/** The v1 flag types (INV-58, A-24), owned by the domain. */
+export const zFlagType = z.enum(FLAG_TYPES);
 
 /** Flag lifecycle `open -> acknowledged` (ARCHITECTURE §5.3). */
 export const zFlagStatus = z.enum(["open", "acknowledged"]);
