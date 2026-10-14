@@ -4,22 +4,9 @@ import { z } from "zod";
 
 import { zDc, zDcHeader, zDcItem } from "../entities/dc.ts";
 import { zFlag } from "../entities/flag.ts";
-import { zPo, zPoItem } from "../entities/po.ts";
-import { zFy, zId, zIsoDate, zMoney, zQty } from "../primitives.ts";
-import { zCount, zDocRef, zFyDocRef, zListQuery, zRangeFilters } from "./common.ts";
-
-/** The PO a DC or invoice belongs to; GEMC switches the rate display to 5 dp (A-12). */
-export const zPoRef = zPo.pick({ id: true, poNumber: true, isGemc: true });
-
-/** The PO item columns a document line shows. */
-export const zItemInfo = zPoItem.pick({
-  poItemNo: true,
-  materialCode: true,
-  description: true,
-  drawingNo: true,
-  unit: true,
-  rate: true,
-});
+import { zPoItem } from "../entities/po.ts";
+import { zCount, zFy, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zDocRef, zFyDocRef, zItemInfo, zListQuery, zPoRef, zRangeFilters } from "./common.ts";
 
 export const zDcListQuery = zListQuery(
   ["number", "dcDate", "poNumber", "ordQty", "dspQty", "rcdQty", "value"],
@@ -37,9 +24,6 @@ export const zDcListRow = zDc.pick({ id: true, number: true, dcDate: true, finan
   openFlagCount: zCount,
 });
 
-/** List filters and sort without paging, for the stats and the CSV export. */
-export const zDcFilterQuery = zDcListQuery.omit({ page: true, pageSize: true });
-
 /** The legacy KPI cards: count, dispatched, value, received. */
 export const zDcStats = z.object({ count: zCount, dspQty: zQty, value: zMoney, rcdQty: zQty });
 
@@ -52,8 +36,6 @@ export const zDcDetail = z.object({
   srvs: z.array(zDocRef),
   flags: z.array(zFlag),
 });
-
-export const zPoIdParams = z.object({ poId: zId });
 
 /** The create form: header defaults and the PO's items with their balances (no cap, INV-32). */
 export const zDispatchable = z.object({

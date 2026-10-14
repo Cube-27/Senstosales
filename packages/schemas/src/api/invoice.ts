@@ -3,13 +3,12 @@
 import { z } from "zod";
 
 import { zFlag } from "../entities/flag.ts";
-import { zInvoice, zInvoiceHeader, zInvoiceItem } from "../entities/invoice.ts";
+import { zInvoice, zInvoiceBase, zInvoiceHeader, zInvoiceItem } from "../entities/invoice.ts";
 import { zInvoiceKind } from "../enums.ts";
-import { zGstPct, zId, zMoney, zQty } from "../primitives.ts";
-import { zCount, zDocRef, zFyDocRef, zListQuery, zRangeFilters } from "./common.ts";
-import { zItemInfo, zPoRef } from "./dc.ts";
+import { zCount, zGstPct, zId, zMoney, zQty } from "../primitives.ts";
+import { zDocRef, zFyDocRef, zItemInfo, zListQuery, zPoRef, zRangeFilters } from "./common.ts";
 
-const zInvoiceCore = zInvoice.options[0].pick({
+const zInvoiceCore = zInvoiceBase.pick({
   id: true,
   number: true,
   invoiceDate: true,
@@ -32,8 +31,6 @@ export const zInvoiceListRow = zInvoiceCore.extend({
   qty: zQty,
 });
 
-export const zInvoiceFilterQuery = zInvoiceListQuery.omit({ page: true, pageSize: true });
-
 /** The legacy KPI cards: count, value, taxable value, tax. */
 export const zInvoiceStats = z.object({ count: zCount, total: zMoney, taxable: zMoney, tax: zMoney });
 
@@ -47,8 +44,6 @@ export const zInvoiceDetail = z.object({
   flags: z.array(zFlag),
 });
 
-export const zDcIdParams = z.object({ dcId: zId });
-
 /**
  * What the create form starts from: header defaults, the settings' GST rates and the lines. From a DC, `qty` is the
  * DC quantity; from a PO it is `null` and `uninvoicedQty` is shown as information, not a cap (INV-05).
@@ -61,15 +56,14 @@ export const zInvoicePreview = z.object({
   sgstPct: zGstPct,
   lines: z.array(
     zItemInfo.extend({
-      poItemId: zId,
-      dcItemId: zId.nullable(),
+      ...zInvoiceItem.pick({ poItemId: true, dcItemId: true }).shape,
       qty: zQty.nullable(),
       uninvoicedQty: zQty,
     }),
   ),
 });
 
-const zInvoiceFields = zInvoice.options[0].pick({ number: true, invoiceDate: true }).extend(zInvoiceHeader.shape);
+const zInvoiceFields = zInvoiceBase.pick({ number: true, invoiceDate: true }).extend(zInvoiceHeader.shape);
 
 /** DC-sourced lines repeat the DC qty and PO rate, which the service checks (INV-29); PO-direct lines take the PO rate. */
 export const zInvoiceCreateBody = z.discriminatedUnion("kind", [
@@ -86,4 +80,4 @@ export const zInvoiceCreateBody = z.discriminatedUnion("kind", [
 ]);
 
 /** Header fields only (INV-33); a changed date moves the invoice to its new FY (INV-25). */
-export const zInvoiceUpdateBody = zInvoiceFields.extend({ version: zInvoice.options[0].shape.version });
+export const zInvoiceUpdateBody = zInvoiceFields.extend({ version: zInvoiceBase.shape.version });

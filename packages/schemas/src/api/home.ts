@@ -4,8 +4,8 @@
 import { z } from "zod";
 
 import { zPoStatus } from "../enums.ts";
-import { zFy, zId, zInstant, zIsoDate, zMoney, zQty } from "../primitives.ts";
-import { zCount, zDocRef, zFyDocRef } from "./common.ts";
+import { zCount, zFy, zId, zInstant, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zDocRef, zLinkedDocs, zRangeFilters, zRepeated } from "./common.ts";
 
 export const zDashboardQuery = z.object({ range: z.enum(["month", "30d", "all"]).default("month") });
 
@@ -32,18 +32,7 @@ export const zActivity = z.object({
   createdAt: zInstant,
 });
 
-export const zSearchQuery = z.object({
-  q: z.string(),
-  /** A repeated key; one value arrives as a string. */
-  types: z
-    .array(zDocType)
-    .or(zDocType.transform((t) => [t]))
-    .optional(),
-  from: zIsoDate.optional(),
-  to: zIsoDate.optional(),
-  amountMin: zMoney.optional(),
-  amountMax: zMoney.optional(),
-});
+export const zSearchQuery = z.object({ ...zRangeFilters, q: z.string(), types: zRepeated(zDocType).optional() });
 
 export const zSearchHit = z.object({
   type: zDocType,
@@ -60,10 +49,5 @@ export const zSearchHit = z.object({
   hasFlags: z.boolean(),
   qty: zQty.nullable(),
   value: zMoney.nullable(),
-  links: z.object({
-    po: zDocRef.nullable(),
-    dcs: z.array(zFyDocRef),
-    invoices: z.array(zFyDocRef),
-    srvs: z.array(zDocRef),
-  }),
+  links: zLinkedDocs.extend({ po: zDocRef.nullable() }),
 });

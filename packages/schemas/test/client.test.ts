@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
 import type { FetchLike, FetchResponse } from "../src/index.ts";
-import { ApiError, createClient, zGstPct, zQty } from "../src/index.ts";
+import { ApiError, createClient, zGstPct, zMoney, zQty } from "../src/index.ts";
 
 const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
 const ITEM = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B4";
@@ -36,26 +36,27 @@ const settings = {
 
 describe("createClient: requests built from the route table", () => {
   it("sends a GET with its query string and no body, and decodes the response", async () => {
-    const { client, calls } = fakeFetch(200, { open: 3, openByType: openByType(3) });
+    const counts = {
+      QTY_MISMATCH: 3,
+      DOC_NUMBER_CONFLICT: 0,
+      OVER_DISPATCH: 0,
+      OVER_INVOICE: 0,
+      DOC_ON_CANCELLED_ITEM: 0,
+      MANUAL_ADJUSTMENT_OVERLAP: 0,
+    };
+    const { client, calls } = fakeFetch(200, { open: 3, openByType: counts });
     const stats = await client.request("flags.stats");
-    expect(stats).toEqual({ open: 3, openByType: openByType(3) });
+    expect(stats).toEqual({ open: 3, openByType: counts });
     expect(calls).toEqual([
       { url: "/api/flags/stats", method: "GET", headers: { accept: "application/json" }, body: undefined },
     ]);
   });
 
-  it("puts the query in the URL, skipping unset keys and repeating array values", async () => {
+  it("encodes the query to wire strings, skipping unset keys and repeating array values", async () => {
     const { client, calls } = fakeFetch(200, []);
-    await client.request("search.query", { query: { q: "a b&c", types: ["po", "dc"], from: undefined } });
-    expect(calls[0]?.url).toBe("/api/search?q=a%20b%26c&types=po&types=dc");
-  });
-
-  it("fills and encodes path params", async () => {
-    const { client, calls } = fakeFetch(200, poItemWire);
-    await client.request("po.setManualDispatched", { params: { id: ID, itemId: ITEM }, body: { qty: four } });
-    expect(calls[0]?.method).toBe("PUT");
-    expect(calls[0]?.url).toBe(`/api/po/${ID}/items/${ITEM}/manual-dispatched`);
-    expect(calls[0]?.body).toBe('{"qty":"4"}');
+    const query = { q: "a b&c", types: ["po" as const, "dc" as const], valueMin: z.decode(zMoney, "1000") };
+    await client.request("search.query", { query });
+    expect(calls[0]?.url).toBe("/api/search?q=a%20b%26c&valueMin=1000&types=po&types=dc");
   });
 
   it("encodes the body through the codecs: percentages go as decimal strings (C3)", async () => {
@@ -70,12 +71,15 @@ describe("createClient: requests built from the route table", () => {
     expect(saved).toEqual({ cgstPct: 900000, sgstPct: 250000, preferences: { currency: "INR" } });
   });
 
-  it("decodes a manual quantity of 4 into milli-units", async () => {
-    const { client } = fakeFetch(200, poItemWire);
+  it("fills path params, encodes a quantity of 4 as a wire string and decodes the answer into milli-units", async () => {
+    const { client, calls } = fakeFetch(200, poItemWire);
     const item = await client.request("po.setManualDispatched", {
       params: { id: ID, itemId: ITEM },
       body: { qty: four, note: "sent by hand" },
     });
+    expect(calls[0]?.method).toBe("PUT");
+    expect(calls[0]?.url).toBe(`/api/po/${ID}/items/${ITEM}/manual-dispatched`);
+    expect(calls[0]?.body).toBe('{"qty":"4","note":"sent by hand"}');
     expect(item.manualDispatchedQty).toBe(4000);
     expect(item.ordQty).toBe(10000);
   });
@@ -96,12 +100,13 @@ describe("createClient: requests built from the route table", () => {
     await expect(client.request("settings.get")).rejects.toThrow(/expected string/i);
   });
 
-  it("returns a download's bytes and its file name", async () => {
-    const { client } = fakeFetch(200, [80, 75, 3, 4], {
+  it("returns a download's bytes and its file name, accepting any type", async () => {
+    const { client, calls } = fakeFetch(200, [80, 75, 3, 4], {
       "content-disposition": 'attachment; filename="DC_12.xlsx"',
     });
     const file = await client.request("dc.excel", { params: { id: ID } });
     expect(file).toEqual({ fileName: "DC_12.xlsx", bytes: new Uint8Array([80, 75, 3, 4]) });
+    expect(calls[0]?.headers).toEqual({ accept: "*/*" });
   });
 });
 
@@ -138,17 +143,6 @@ describe("createClient: calls are typed by the table", () => {
     expect(typeof never).toBe("function");
   });
 });
-
-function openByType(open: number) {
-  return {
-    QTY_MISMATCH: open,
-    DOC_NUMBER_CONFLICT: 0,
-    OVER_DISPATCH: 0,
-    OVER_INVOICE: 0,
-    DOC_ON_CANCELLED_ITEM: 0,
-    MANUAL_ADJUSTMENT_OVERLAP: 0,
-  };
-}
 
 const poItemWire = {
   id: ITEM,

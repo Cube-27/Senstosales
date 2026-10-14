@@ -3,21 +3,31 @@
 // same codecs the API uses, so the wire format stays in one place (C3).
 import { z } from "zod";
 
-import { type ErrorBody, zDownload, zErrorBody } from "./api/common.ts";
-import { type RouteDef, routes } from "./routes.ts";
+import { type ErrorBody, zErrorBody } from "./api/common.ts";
+import { type PathParams, type RouteDef, routes } from "./routes.ts";
 
 export type RouteName = keyof typeof routes;
 type Def<N extends RouteName> = (typeof routes)[N];
 
-/** What a call takes: path params, an optional query (defaults filled by the API) and the decoded body. */
-export type RouteInput<N extends RouteName> = (Def<N> extends { params: infer P extends z.ZodType }
-  ? { params: z.input<P> }
-  : unknown) &
-  (Def<N> extends { query: infer Q extends z.ZodType } ? { query?: z.input<Q> } : unknown) &
+/**
+ * What a call takes: the path's ids, an optional decoded query (defaults filled by the API) and the decoded body.
+ */
+export type RouteInput<N extends RouteName> = ([PathParams<Def<N>["path"]>] extends [never]
+  ? unknown
+  : { params: Record<PathParams<Def<N>["path"]>, string> }) &
+  (Def<N> extends { query: infer Q extends z.ZodType } ? { query?: Partial<z.output<Q>> } : unknown) &
   (Def<N> extends { body: infer B extends z.ZodType } ? { body: z.output<B> } : unknown);
 
+/** A downloaded file: its `Content-Disposition` name and its bytes. */
+export interface Download {
+  readonly fileName: string;
+  readonly bytes: Uint8Array;
+}
+
 /** What a call returns, decoded. */
-export type RouteOutput<N extends RouteName> = z.output<Def<N>["response"]>;
+export type RouteOutput<N extends RouteName> = Def<N>["response"] extends z.ZodType
+  ? z.output<Def<N>["response"]>
+  : Download;
 
 /** The part of `Response` the client reads, so the package needs no DOM types. */
 export interface FetchResponse {
@@ -52,22 +62,37 @@ export function createClient(fetchImpl: FetchLike) {
   return {
     async request<N extends RouteName>(name: N, ...[input]: Args<N>): Promise<RouteOutput<N>> {
       const def: RouteDef = routes[name];
-      const { params, query, body } = (input ?? {}) as { params?: object; query?: object; body?: unknown };
-      const init: Parameters<FetchLike>[1] = { method: def.method, headers: { accept: "application/json" } };
+      const { params, query, body } = (input ?? {}) as {
+        params?: object;
+        query?: Record<string, unknown>;
+        body?: unknown;
+      };
+      const accept = def.response === "file" ? "*/*" : "application/json";
+      const init: Parameters<FetchLike>[1] = { method: def.method, headers: { accept } };
       // Every mutation is JSON (INV-102), even one with nothing to send.
       if (def.method !== "GET") {
         init.headers["content-type"] = "application/json";
         init.body = JSON.stringify(def.body ? z.encode(def.body, body) : {});
       }
-      const res = await fetchImpl(buildUrl(def.path, params, query), init);
+      const wireQuery = def.query && query ? z.encode(partial(def.query), query) : {};
+      const res = await fetchImpl(buildUrl(def.path, params, wireQuery), init);
       if (!res.ok) throw new ApiError(res.status, await errorBody(res));
-      if (def.response === zDownload) {
-        const download = { fileName: fileName(res), bytes: new Uint8Array(await res.arrayBuffer()) };
+      if (def.response === "file") {
+        const download: Download = { fileName: fileName(res), bytes: new Uint8Array(await res.arrayBuffer()) };
         return download as RouteOutput<N>;
       }
       return z.decode(def.response, await res.json()) as RouteOutput<N>;
     },
   };
+}
+
+// A caller sends only the filters it sets, so its query is encoded through the partial schema; built once per route.
+const partials = new WeakMap<z.ZodObject, z.ZodObject>();
+
+function partial(query: z.ZodObject): z.ZodObject {
+  let schema = partials.get(query);
+  if (!schema) partials.set(query, (schema = query.partial()));
+  return schema;
 }
 
 function buildUrl(path: string, params: object = {}, query: object = {}): string {

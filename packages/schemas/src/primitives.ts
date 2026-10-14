@@ -66,3 +66,6 @@ export const zId = z.ulid();
 
 /** A BHEL PO id (C17). */
 export const zPoId = z.string().regex(/^\d{1,10}$/);
+
+/** A count of rows, documents or files. */
+export const zCount = z.int().nonnegative();

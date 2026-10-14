@@ -2,9 +2,10 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { z } from "zod";
 
-import { routes } from "../src/index.ts";
+import { type RouteDef, routes } from "../src/index.ts";
 
-const table = Object.entries(routes).map(([name, def]) => ({ name, ...def }));
+const table: (RouteDef & { name: string })[] = Object.entries(routes).map(([name, def]) => ({ name, ...def }));
+const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
 
 describe("route table (SPEC-04 §4.3, INV-101)", () => {
   it("has one entry per method and path", () => {
@@ -16,12 +17,11 @@ describe("route table (SPEC-04 §4.3, INV-101)", () => {
     for (const r of table) expect(r.path, r.name).toMatch(/^\/api(\/([a-z0-9]+(-[a-z0-9]+)*|:[a-zA-Z]+))+$/);
   });
 
-  it("has path params exactly where the path has :segments", () => {
-    for (const r of table) {
-      const inPath = [...r.path.matchAll(/:(\w+)/g)].map((m) => m[1]).sort();
-      const declared = "params" in r ? Object.keys(r.params.shape).sort() : [];
-      expect(declared, r.name).toEqual(inPath);
-    }
+  it("validates each :segment of a path as an id", () => {
+    const params = routes["po.setManualDispatched"].params;
+    expect(params.parse({ id: ID, itemId: ID })).toEqual({ id: ID, itemId: ID });
+    expect(params.safeParse({ id: ID, itemId: "abc" }).success).toBe(false);
+    expect(params.safeParse({ id: ID }).success).toBe(false);
   });
 
   it("takes a body only on writes, and a query only on reads", () => {
@@ -32,7 +32,7 @@ describe("route table (SPEC-04 §4.3, INV-101)", () => {
   });
 
   it("leaves exactly the login, reset, session, onboarding and health routes public (ARCHITECTURE §10.1)", () => {
-    const publicRoutes = table.filter((r) => r.auth === "public").map((r) => `${r.method} ${r.path}`);
+    const publicRoutes = table.filter((r) => r.public === true).map((r) => `${r.method} ${r.path}`);
     expect(publicRoutes.sort()).toEqual(
       [
         "POST /api/auth/login",
@@ -134,10 +134,6 @@ const RESOURCES: [string, string[]][] = [
 ];
 
 describe("every ARCHITECTURE §9 resource has its routes", () => {
-  it.each(RESOURCES)("%s", (_resource, names) => {
-    for (const name of names) expect(Object.keys(routes), name).toContain(name);
-  });
-
   it("has no route beyond those", () => {
     expect(Object.keys(routes).sort()).toEqual(RESOURCES.flatMap(([, names]) => names).sort());
   });
@@ -185,8 +181,8 @@ describe("no float on the wire (C3)", () => {
   it("has no float in any quantity, money or other value of any route; only the page size enum is a number", () => {
     const found = table.flatMap((r) =>
       (["params", "query", "body", "response"] as const).flatMap((part) => {
-        const schema = (r as Partial<Record<typeof part, z.ZodType>>)[part];
-        if (!schema) return [];
+        const schema = r[part];
+        if (!schema || schema === "file") return [];
         return (["input", "output"] as const).flatMap((io) =>
           floatPaths(z.toJSONSchema(schema, { io, unrepresentable: "any" }), `${r.name}.${part}`),
         );

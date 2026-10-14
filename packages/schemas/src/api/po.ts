@@ -5,8 +5,8 @@ import { z } from "zod";
 import { zFlag } from "../entities/flag.ts";
 import { zPo, zPoItem, zPoLot } from "../entities/po.ts";
 import { zPoStatus } from "../enums.ts";
-import { zId, zMoney, zQty } from "../primitives.ts";
-import { zCount, zFyDocRef, zDocRef, zListQuery, zRangeFilters } from "./common.ts";
+import { zCount, zMoney, zQty } from "../primitives.ts";
+import { zLinkedDocs, zListQuery, zRangeFilters } from "./common.ts";
 
 const filters = {
   ...zRangeFilters,
@@ -45,17 +45,10 @@ export const zPoStatsQuery = z.object(filters);
 /** The legacy list KPI cards over the filtered rows: count, value, shipped, rejected. */
 export const zPoStats = z.object({ count: zCount, poValue: zMoney, dspQty: zQty, rejQty: zQty });
 
-/** Linked documents for the popovers, bypassing pagination (INV-73). */
-export const zPoLinked = z.object({
-  dcs: z.array(zFyDocRef),
-  invoices: z.array(zFyDocRef),
-  srvs: z.array(zDocRef),
-});
-
 export const zPoDetail = z.object({
   po: zPo,
   items: z.array(zPoItem.extend({ lots: z.array(zPoLot) })),
-  linked: zPoLinked,
+  linked: zLinkedDocs,
   /** Open flags on the PO and its items; rows are highlighted by `scopeId`. */
   flags: z.array(zFlag),
 });
@@ -84,8 +77,6 @@ export const zPoCreateBody = zPo
 
 /** An edit sends the version it read (INV-95). */
 export const zPoUpdateBody = zPoCreateBody.extend({ version: zPo.shape.version });
-
-export const zPoItemParams = z.object({ id: zId, itemId: zId });
 
 /** A-15, INV-08: one manual quantity per item; `qty >= 0` is checked by the service (400). */
 export const zManualDispatchedBody = z.object({ qty: zQty, note: z.string().optional() });

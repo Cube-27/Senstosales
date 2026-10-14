@@ -3,10 +3,8 @@
 import { z } from "zod";
 
 import { zPoItem, zPoLot } from "../entities/po.ts";
-import { zId, zIsoDate, zMoney, zQty } from "../primitives.ts";
-import { zCount, zFyDocRef, zListQuery } from "./common.ts";
-
-const zDateRange = { from: zIsoDate.optional(), to: zIsoDate.optional() };
+import { zCount, zId, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zDateRange, zFyDocRef, zItemInfo, zListQuery, zRangeFilters } from "./common.ts";
 
 const zReportItem = zPoItem
   .pick({ poId: true, description: true, ordQty: true, dspQty: true })
@@ -31,9 +29,6 @@ export const zReconciliationQuery = zListQuery(
 /** Ordered, delivered (dispatched), received and rejected per PO item. */
 export const zReconciliationRow = zReportItem.extend({ rcdQty: zQty, rejQty: zQty });
 
-/** Exports are not paged (INV-99); they keep the tab's filters and sort. */
-export const zPendingExportQuery = zPendingQuery.omit({ page: true, pageSize: true });
-export const zReconciliationExportQuery = zReconciliationQuery.omit({ page: true, pageSize: true });
 export const zRegisterExportQuery = z.object(zDateRange);
 
 export const zExportSelectedBody = z.object({
@@ -43,16 +38,18 @@ export const zExportSelectedBody = z.object({
 
 export const zDcIdQuery = z.object({ dcId: zId });
 
+const { q, valueMin, valueMax } = zRangeFilters;
+
 const trackerFilters = {
-  q: z.string().optional(),
+  q,
   /** The stat cards double as status toggles. */
   status: z.enum(["overdue", "due-soon", "due-this-month"]).optional(),
   dueFrom: zIsoDate.optional(),
   dueTo: zIsoDate.optional(),
   entryFrom: zIsoDate.optional(),
   entryTo: zIsoDate.optional(),
-  valueMin: zMoney.optional(),
-  valueMax: zMoney.optional(),
+  valueMin,
+  valueMax,
 };
 
 export const zTrackerQuery = zListQuery(
@@ -63,20 +60,8 @@ export const zTrackerQuery = zListQuery(
 /** One delivery lot with its item's quantities (lots carry only the schedule, INV-06). */
 export const zTrackerRow = zPoLot
   .pick({ lotNo: true, delyDate: true, entryAllowDate: true, entryAllowNote: true })
-  .extend(
-    zPoItem.pick({
-      poId: true,
-      poItemNo: true,
-      materialCode: true,
-      description: true,
-      drawingNo: true,
-      ordQty: true,
-      dspQty: true,
-      rcdQty: true,
-      balanceQty: true,
-      rate: true,
-    }).shape,
-  )
+  .extend(zPoItem.pick({ poId: true, ordQty: true, dspQty: true, rcdQty: true, balanceQty: true }).shape)
+  .extend(zItemInfo.omit({ unit: true }).shape)
   .extend({
     lotId: zId,
     poItemId: zId,
@@ -94,5 +79,3 @@ export const zTrackerStats = z.object({
   dueThisMonthCount: zCount,
   pendingValue: zMoney,
 });
-
-export const zTrackerExportQuery = zTrackerQuery.omit({ page: true, pageSize: true });

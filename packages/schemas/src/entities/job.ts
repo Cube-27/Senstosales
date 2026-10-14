@@ -2,9 +2,7 @@
 import { z } from "zod";
 
 import { zJobStatus, zJobType } from "../enums.ts";
-import { zId, zInstant } from "../primitives.ts";
-
-const count = z.int().nonnegative();
+import { zCount, zId, zInstant } from "../primitives.ts";
 
 export const zJob = z.object({
   id: zId,
@@ -15,7 +13,7 @@ export const zJob = z.object({
   finishedAt: zInstant.nullable(),
   cancelRequested: z.boolean(),
   /** Written per document; `current` is the document in progress. */
-  progress: z.object({ total: count, done: count, skipped: count, failed: count, current: z.string().nullable() }),
+  progress: z.object({ total: zCount, done: zCount, skipped: zCount, failed: zCount, current: z.string().nullable() }),
   error: z.string().nullable(),
   /** Counts, skipped and failed files, flags by type (§7.4); shaped by the job that writes it. */
   summary: z.record(z.string(), z.unknown()).nullable(),

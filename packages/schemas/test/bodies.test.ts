@@ -1,55 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { routes } from "../src/index.ts";
+import { routes, zDcHeader, zInvoiceHeader } from "../src/index.ts";
 
 const ID = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3";
 const ITEM = "01J9Z8Q4S5T6V7W8X9Y0Z1A2B4";
 
-const nulls = <K extends string>(keys: readonly K[]) =>
-  Object.fromEntries(keys.map((k) => [k, null])) as Record<K, null>;
+const nulls = (keys: string[]) => Object.fromEntries(keys.map((k) => [k, null]));
 
-const supplierSnapshot = nulls(["supplierName", "supplierAddress", "supplierGstin", "supplierContact"]);
-const invoiceHeader = {
-  ...nulls([
-    "buyerName",
-    "buyerGstin",
-    "buyerAddress",
-    "buyerState",
-    "buyerStateCode",
-    "placeOfSupply",
-    "buyersOrderDate",
-    "gemcNumber",
-    "gemcDate",
-    "paymentTerms",
-    "despatchDocNo",
-    "srvNo",
-    "srvDate",
-    "vehicleNo",
-    "lrNo",
-    "transporter",
-    "destination",
-    "termsOfDelivery",
-    "remarks",
-  ]),
-  ...supplierSnapshot,
-};
-const dcHeader = {
-  ...nulls([
-    "ourRef",
-    "departmentNo",
-    "consigneeName",
-    "consigneeGstin",
-    "consigneeAddress",
-    "inspectionCompany",
-    "ewayBillNo",
-    "vehicleNo",
-    "lrNo",
-    "transporter",
-    "modeOfTransport",
-    "remarks",
-  ]),
-  ...supplierSnapshot,
-};
+// Every header field is optional text, a date or a GSTIN, so all-null is a valid header.
+const invoiceHeader = nulls(Object.keys(zInvoiceHeader.shape));
+const dcHeader = nulls(Object.keys(zDcHeader.shape));
 
 describe("invoice create: DC-sourced or PO-direct, one PO (INV-29, INV-30, A-16)", () => {
   const body = routes["invoice.create"].body;

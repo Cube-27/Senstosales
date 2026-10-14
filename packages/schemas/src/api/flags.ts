@@ -2,11 +2,10 @@
 // is read-only (INV-83).
 import { z } from "zod";
 
-import { zAuditEntry } from "../entities/audit.ts";
 import { zFlag } from "../entities/flag.ts";
 import { zFlagStatus, zFlagType } from "../enums.ts";
-import { zId, zIsoDate } from "../primitives.ts";
-import { zCount, zListQuery } from "./common.ts";
+import { zCount, zId } from "../primitives.ts";
+import { zDateRange, zListQuery } from "./common.ts";
 
 export const zFlagListQuery = zListQuery(["openedAt", "type", "status", "poNumber"], {
   q: z.string().optional(),
@@ -26,8 +25,5 @@ export const zAuditListQuery = zListQuery(["at", "entityType", "action"], {
   q: z.string().optional(),
   entityType: z.string().optional(),
   action: z.string().optional(),
-  from: zIsoDate.optional(),
-  to: zIsoDate.optional(),
+  ...zDateRange,
 });
-
-export const zAuditRow = zAuditEntry;

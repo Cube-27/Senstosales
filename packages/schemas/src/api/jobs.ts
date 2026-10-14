@@ -5,8 +5,8 @@ import { z } from "zod";
 
 import { zJob, zJobEvent } from "../entities/job.ts";
 import { zJobStatus, zJobType } from "../enums.ts";
-import { zId, zPoId } from "../primitives.ts";
-import { zCount, zListQuery, zUploadBody } from "./common.ts";
+import { zCount, zId, zPoId } from "../primitives.ts";
+import { zListQuery, zUploadBody } from "./common.ts";
 
 const { enum: type } = zJobType;
 
@@ -38,8 +38,6 @@ export const zStaged = z.object({ stagingId: zId, count: zCount });
 const zCaptcha = z.base64();
 
 export const zBhelSession = z.object({ sessionId: zId, captchaPng: zCaptcha });
-
-export const zSessionParams = z.object({ sessionId: zId });
 
 /** The supplier code and the stored password are added by the API (INV-81); the user types only the captcha. */
 export const zCaptchaBody = z.object({ captcha: z.string().min(1) });
