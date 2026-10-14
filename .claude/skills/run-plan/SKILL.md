@@ -49,9 +49,9 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
    - CI red after 3 honest attempts: escalate (§2).
    - To merge, pick the next `READY` PR and send its implementor `YOUR TURN` with the next free decision IDs and the
      new "Current focus" text. It rebases, adds the tracker commit and comments `READY` again. Then:
-     `if tools/orchestrator/merge_pr.sh <n> <sha7>; then tools/orchestrator/close_agent.sh <impl>;
+     `if tools/orchestrator/merge_pr.sh <n> <sha7>; then tools/orchestrator/close_agent.sh <impl> &&
      tools/orchestrator/cleanup_worktree.sh <worktree> <branch>; fi`
-     Never chain with `;`. Never run `gh pr merge` yourself (the merge guard denies it). A failed merge leaves the
+     Never chain with `;`: a pane that didn't close keeps its worktree. Never run `gh pr merge` yourself (the merge guard denies it). A failed merge leaves the
      PR open: retry.
    - **Merge strictly one at a time.** `YOUR TURN` goes to one implementor only, after the previous merge, so IDs
      never clash and every merge is tested against the real `main`.
@@ -78,7 +78,7 @@ For the `CLAUDE.md` §4 list, or a dead end after 3 attempts:
 1. Add a `needs-owner` entry to DECISIONS.md (question, options, recommendation, what is blocked) and copy it as a
    row to OPEN_QUESTIONS.md.
 2. Mark the affected rows `blocked (D-NNNN)`. Do 1–2 in a small `chore(plan): escalate …` PR from its own worktree;
-   it touches only tracker files, so no `/review-pr` is needed.
+   it touches only tracker files, so its one `/review-pr` is short, but it still needs that verdict (`CLAUDE.md` §3).
 3. Notify the owner once, briefly.
 4. **Keep going** with other ready rows.
 
