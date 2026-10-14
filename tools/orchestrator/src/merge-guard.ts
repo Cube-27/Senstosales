@@ -188,14 +188,20 @@ function commandOf(payload: string): string {
   return typeof command === "string" ? command : "";
 }
 
-let command: string;
-try {
-  command = commandOf(readFileSync(0, "utf8"));
-} catch (error) {
-  process.stderr.write(`merge guard: unreadable hook input (${(error as Error).message}); denying.\n`);
-  process.exit(2);
+/** The reason to deny the hook input, or undefined to allow it. */
+function denial(payload: string): string | undefined {
+  let command: string;
+  try {
+    command = commandOf(payload);
+  } catch (error) {
+    return `merge guard: unreadable hook input (${(error as Error).message}); denying.`;
+  }
+  return mergesDirectly(command) ? REASON : undefined;
 }
-if (mergesDirectly(command)) {
-  process.stderr.write(`${REASON}\n`);
-  process.exit(2);
+
+// exitCode, not process.exit(): stderr to a pipe can be asynchronous, and exit() could drop the reason.
+const reason = denial(readFileSync(0, "utf8"));
+if (reason !== undefined) {
+  process.stderr.write(`${reason}\n`);
+  process.exitCode = 2;
 }

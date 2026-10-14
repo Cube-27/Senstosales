@@ -31,7 +31,8 @@ err() { echo "ERROR $*" >&2; exit 1; }
 # json_field PATH...: prints, one line each, the field at each PATH (dot-separated, e.g. result.agent.pane_id) of the
 # JSON on stdin; a missing field prints an empty line and makes it fail. Input that is not JSON prints nothing.
 json_field() {
-  node -e 'const data = JSON.parse(require("fs").readFileSync(0, "utf8"));
+  node -e 'let data;
+try { data = JSON.parse(require("fs").readFileSync(0, "utf8")); } catch { process.exit(1); }
 const values = process.argv.slice(1).map((path) => path.split(".").reduce((value, key) => value?.[key], data));
 for (const value of values) console.log(value ?? "");
 process.exitCode = values.includes(undefined) ? 1 : 0;' "$@"

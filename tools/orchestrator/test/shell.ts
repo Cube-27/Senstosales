@@ -14,9 +14,18 @@ function which(name: string): string[] {
   return (spawnSync(finder, [name], { encoding: "utf8" }).stdout ?? "").split(/\r?\n/).filter(Boolean);
 }
 
-/** The absolute path of bash (Git Bash on Windows, never WSL's), or undefined when there is none. */
-export const BASH: string | undefined = which("bash").find((path) => !/[\\/]System32[\\/]/i.test(path));
-const GIT = which("git")[0];
+/** The first PATH of NAME, or an error: a missing tool fails these tests rather than skipping them (CLAUDE.md §7). */
+function required(name: string, path: string | undefined): string {
+  if (path === undefined) throw new Error(`${name} is not on PATH (on Windows, Git Bash's usr/bin must be)`);
+  return path;
+}
+
+/** The absolute path of bash: Git Bash on Windows, never WSL's. */
+export const BASH = required(
+  "bash",
+  which("bash").find((path) => !/[\\/]System32[\\/]/i.test(path)),
+);
+const GIT = required("git", which("git")[0]);
 
 /** Writes each stub as an executable `#!/bin/bash` script into DIR/bin and returns that folder. */
 export function stubBin(dir: string, stubs: Record<string, string>): string {
@@ -43,6 +52,5 @@ export function run(
 }
 
 export function git(cwd: string, ...args: string[]): string {
-  if (GIT === undefined) throw new Error("git is not on PATH");
   return execFileSync(GIT, args, { cwd, encoding: "utf8" }).trim();
 }

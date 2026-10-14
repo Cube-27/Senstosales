@@ -15,10 +15,10 @@ function hookCommand(): string {
 function runHook(stubs: Record<string, string>, command: string) {
   const bin = stubBin(mkdtempSync(join(tmpdir(), "hook-")), stubs);
   const input = JSON.stringify({ tool_name: "Bash", tool_input: { command } });
-  return run(BASH!, ["-c", hookCommand()], { input, env: { ...process.env, PATH: bin, CLAUDE_PROJECT_DIR: REPO } });
+  return run(BASH, ["-c", hookCommand()], { input, env: { ...process.env, PATH: bin, CLAUDE_PROJECT_DIR: REPO } });
 }
 
-describe.skipIf(BASH === undefined)("merge-guard hook command", () => {
+describe("merge-guard hook command", () => {
   it("allows a plain command", () => {
     expect(runHook({ node: REAL_NODE }, "git status").status).toBe(0);
   });
