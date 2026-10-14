@@ -1,5 +1,5 @@
 // SPEC-07 PR 1: route mounting from the route table, the codecs at the boundary and the one error shape.
-import { ApiError, zErrorBody, zGstPct, zMoney } from "@senstosales/schemas";
+import { ApiError, zErrorBody, zGstPct, zMoney, zQty } from "@senstosales/schemas";
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
@@ -89,6 +89,23 @@ describe("mounting from the route table", () => {
     expect(res.headers.get("content-disposition")).toBe("attachment; filename*=UTF-8''Invoices%202024-25.xlsx");
     const download = await client.request("invoice.export");
     expect(download).toEqual({ fileName: "Invoices 2024-25.xlsx", bytes: new Uint8Array([1, 2, 3]) });
+  });
+
+  it("mounts in route-table order, so a fixed segment wins over an id whatever the handler order", async () => {
+    const { send } = testApp({
+      "po.detail": () => {
+        throw new NotFoundError("po-not-found", "Not found.");
+      },
+      "po.stats": () => ({
+        count: 2,
+        poValue: z.decode(zMoney, "0"),
+        dspQty: z.decode(zQty, "0"),
+        rejQty: z.decode(zQty, "0"),
+      }),
+    });
+    const res = await send("/api/po/stats");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ count: 2, poValue: "0", dspQty: "0", rejQty: "0" });
   });
 
   it("does not answer a route with no handler", async () => {
