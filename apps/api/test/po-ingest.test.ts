@@ -22,7 +22,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
 import { poUploadRoutes } from "../src/routes/po-upload.ts";
-import { testApp } from "./helpers.ts";
+import { json, testApp } from "./helpers.ts";
 import { poPage, type PageSpec } from "./po-pages.ts";
 import { fixedClock, memoryStorage, NOW, supplierDb, SUPPLIER } from "./service-deps.ts";
 
@@ -349,16 +349,12 @@ describe("failures (INV-50)", () => {
     await empty.batch([empty.build.delete(supplier)]);
     const { send } = testApp(poUploadRoutes({ db: empty, storage, clock: fixedClock }));
 
-    const res = await send("/api/po/upload", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ files: [{ name: "a.html", html: poPage(APRIL) }] }),
-    });
+    const res = await send("/api/po/upload", json("POST", { files: [{ name: "a.html", html: poPage(APRIL) }] }));
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
       code: "onboarding-required",
-      message: "Finish setting up the app before uploading.",
+      message: "Set up the supplier details first.",
     });
     empty.close();
   });
