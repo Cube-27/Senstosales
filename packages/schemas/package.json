@@ -1,0 +1,11 @@
+{
+  "name": "@senstosales/schemas",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@senstosales/domain": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

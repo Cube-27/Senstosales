@@ -6,18 +6,23 @@ import { builtinModules } from "node:module";
 
 import { defineConfig } from "vite-plus";
 
-// Bare builtins too (`fs`, `fs/promises`), not only the `node:` form.
-const RUNTIME_MODULES = [
-  "node:*",
-  ...builtinModules,
-  "playwright",
-  "playwright-core",
-  "@playwright/*",
-  "@tauri-apps/*",
-];
-const NO_RUNTIME_IMPORTS: ["error", { patterns: Array<{ group: string[]; message: string }> }] = [
+// Bare builtins too (`fs`, `fs/promises`), not only the `node:` form. Exact names go in `paths`: as a gitignore
+// pattern, the builtin `domain` would also match `@senstosales/domain`.
+const C12 = "C12: core packages import ports, not runtime modules.";
+const RUNTIME_MODULES = [...builtinModules, "playwright", "playwright-core"];
+const RUNTIME_PREFIXES = ["node:*", "playwright/*", "playwright-core/*", "@playwright/*", "@tauri-apps/*"];
+const NO_RUNTIME_IMPORTS: [
   "error",
-  { patterns: [{ group: RUNTIME_MODULES, message: "C12: core packages import ports, not runtime modules." }] },
+  {
+    paths: Array<{ name: string; message: string }>;
+    patterns: Array<{ group: string[]; message: string }>;
+  },
+] = [
+  "error",
+  {
+    paths: RUNTIME_MODULES.map((name) => ({ name, message: C12 })),
+    patterns: [{ group: RUNTIME_PREFIXES, message: C12 }],
+  },
 ];
 
 export default defineConfig({

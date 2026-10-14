@@ -3,6 +3,7 @@
   "references": [
     { "path": "tsconfig.config.json" },
     { "path": "packages/domain" },
+    { "path": "packages/schemas" },
     { "path": "tools/checks" },
     { "path": "tools/orchestrator" }
   ]

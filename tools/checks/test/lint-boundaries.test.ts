@@ -55,6 +55,15 @@ describe("lint boundaries (C12, C3)", () => {
     ]);
   }, 60_000);
 
+  it("allows workspace packages whose name ends in a builtin's name, and still rejects runtime subpaths", () => {
+    // `domain` is a Node builtin; a path pattern for it also matched `@senstosales/domain`.
+    const domain = 'import { parseQty } from "@senstosales/domain";\nexport const q = parseQty;\n';
+    const subpath = 'import { test } from "playwright/test";\nexport const t = test;\n';
+    expect(lint({ "packages/schemas/src/q.ts": domain, "packages/schemas/src/t.ts": subpath })).toEqual([
+      "packages/schemas/src/t.ts no-restricted-imports",
+    ]);
+  }, 60_000);
+
   it("rejects Date and parseFloat in the domain only", () => {
     const source = "export const t = (): number => Date.now() + parseFloat('1');\n";
     expect(lint({ "packages/domain/src/t.ts": source, "packages/schemas/src/t.ts": source })).toEqual([
