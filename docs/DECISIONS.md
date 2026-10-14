@@ -378,3 +378,35 @@ None.
 - Alternatives: Upper-case or otherwise normalise the number.
 - Why: Legacy regex behaviour (A2-3, INV-19); the spec states no normalisation.
 - Reversible: yes.
+
+### D-0041 — DC-sourced invoice issue codes
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 5 (#17) · Status: decided
+- Decision: `validateDcInvoiceLines` reports `line-not-on-dc`, `dc-line-missing` and `duplicate-line` besides SPEC-11 §4.3's `dc-qty-mismatch` and `rate-mismatch`, covering INV-29's "exactly the DC's lines"; qty and rate are compared exactly (integer units, no 0.001 tolerance).
+- Alternatives: Reuse `line-not-on-po` for all three.
+- Why: An exact copy of the DC has no rounding; a code per cause gives a plain reason. An empty invoice reports `dc-line-missing`; which code the API returns is settled in SPEC-11.
+- Reversible: yes.
+
+### D-0042 — A DC with no lines is rejected
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 5 (#17) · Status: decided
+- Decision: DC and PO-direct invoice lines share one rule: at least one line (`no-lines`), each `qty > 0` on an item of the PO, no cap.
+- Alternatives: Accept an empty DC.
+- Why: An empty DC is malformed input (C6); SPEC-11 §4.3 lists `no-lines`. Unknown item ids stay the service's 404 (SPEC-11).
+- Reversible: yes.
+
+### D-0043 — deleteBlock shape and reasons
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 5 (#17) · Status: decided
+- Decision: `deleteBlock(kind, links)` takes per-kind link counts (`dc: { invoices, srvItems }`, `invoice: { srvItems }`, `po: { dcs, invoices }`, `srv: {}`) and returns `dc-has-invoice`, `dc-linked-srv`, `invoice-linked-srv`, `po-has-dc`, `po-has-invoice` or `null`; the first listed reason wins.
+- Alternatives: One `po-has-documents` reason.
+- Why: A specific reason lets the UI show the plain sentence INV-35 asks for.
+- Reversible: yes.
+
+### D-0044 — changedImmutableFields paths
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 5 (#17) · Status: decided
+- Decision: `changedImmutableFields` returns `lines.<id>.qty` and `lines.<id>.rate`, and `lines.<id>` for a line added or removed; any entry means the update is rejected (409).
+- Alternatives: Compare qty and rate only, ignoring added or removed lines.
+- Why: Adding or removing a line changes quantities, which INV-33 freezes.
+- Reversible: yes.
