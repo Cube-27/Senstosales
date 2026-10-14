@@ -17,10 +17,10 @@ describe("real-data-scan", () => {
   });
 
   it.each([
-    ["C:\\Downloads\\po.html", "local-data-path"],
-    ["C:/Users/someone/Downloads/srv.html", "local-data-path"],
-    ["copy db/business.db here", "local-data-path"],
-    ["see business_development/plan.md", "local-data-path"],
+    ["C:\\Downloads\\po.html", "local-data-path"], // real-data-scan: allow
+    ["C:/Users/someone/Downloads/srv.html", "local-data-path"], // real-data-scan: allow
+    ["copy db/business.db here", "local-data-path"], // real-data-scan: allow
+    ["see business_development/plan.md", "local-data-path"], // real-data-scan: allow
   ])("flags %s as %s", (line, rule) => {
     expect(scanFile("notes.md", line, none)).toEqual([{ path: "notes.md", line: 1, rule }]);
   });
