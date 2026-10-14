@@ -3,10 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { Money, Qty } from "../src/index.ts";
 import { TOL, gtTol, gte, moneyToString, parseMoney, parseQty, qtyToString, roundMoney, sumQty } from "../src/index.ts";
-import { unwrap } from "./unwrap.ts";
-
-const qty = (s: string): Qty => unwrap(parseQty(s));
-const money = (s: string): Money => unwrap(parseMoney(s));
+import { money, qty } from "./unwrap.ts";
 
 describe("INV-01: exact integer units", () => {
   it.each([

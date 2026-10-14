@@ -232,3 +232,19 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Why: An example the types cannot express cannot be a literal test (C2).
 - Reversible: yes — a doc edit.
 - Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
+
+### D-0024 — PO header totals columns
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 2 (#8) · Status: decided
+- Decision: `computePoTotals` returns `{ ordQty, dspQty, rcdQty, rejQty, balanceQty }` summed over active items; `balanceQty` is the sum of item balances, not `ord − max(rcd, dsp)` over the totals. No uninvoiced total.
+- Alternatives: Also total `uninvoicedQty`; derive the header balance from the header totals.
+- Why: The spec does not name the totals. The legacy PO list sums exactly these five per item (pending = sum of item balances), and the frozen PO list columns are Pending, Dispatched, Received, Accepted (= rcd, INV-09) and Rejected (C7).
+- Reversible: yes — one domain function and its table.
+
+### D-0025 — Cancelled item: only balance is zeroed
+
+- Date: 2026-10-14 · Spec/PR: SPEC-02 PR 2 (#8) · Status: decided
+- Decision: For a cancelled item, `computeItemQuantities` returns balance 0 and computes dsp and uninvoiced by the normal formulas; `computePoTotals` excludes the item from header totals.
+- Alternatives: Zero every derived value of a cancelled item.
+- Why: A-13 and INV-07 name only balance and header totals. Documents on a cancelled item stay visible and are flagged (`DOC_ON_CANCELLED_ITEM`, INV-56), so their dispatched and invoiced quantities should still show.
+- Reversible: yes.
