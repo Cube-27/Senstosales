@@ -1738,3 +1738,75 @@ None.
 - Alternatives: End `done` with zero files.
 - Why: The user should see that nothing was imported.
 - Reversible: yes.
+
+### D-0211 — Manual PO form stored through PO ingest
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: Create and edit build `PoValues` from the form and store them with `storePoStatements`, the same batch as upload, so cancel/restore (INV-48), SRV matching of "PO not found" SRVs (INV-39, INV-40) and recompute apply alike.
+- Alternatives: A separate manual write path.
+- Why: Legacy mapped the form to the scraper format and ran its ingest; one store path keeps the rules in one place.
+- Reversible: yes.
+
+### D-0212 — What a manual PO edit keeps
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: Amendment no., BHEL status code, PO value and net value, the PO document's rcd/rej per item, the manual dispatched qty and the lots' entry-allow date/note are kept from the stored rows. A new manual PO has amend 0, no PO value, rcd 0 and rej null.
+- Alternatives: Clear them.
+- Why: The form has no fields for them, and clearing them would silently change received quantities and status.
+- Reversible: yes.
+
+### D-0213 — An item left out of a manual edit is cancelled
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: As for a re-ingested PO (INV-48); sending it again restores it.
+- Alternatives: Delete the item.
+- Why: Items may carry DC, invoice or SRV lines; legacy's edit ran through ingest.
+- Reversible: yes.
+
+### D-0214 — Default lot on the manual form
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: An item sent without lots gets lot 1 of the ordered quantity, due on the PO date, as the legacy form did.
+- Alternatives: No lot.
+- Why: Frozen legacy behaviour (C18).
+- Reversible: yes.
+
+### D-0215 — Manual PO form checks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: 400 for no PO date, no items, a duplicate item number, ordered qty <= 0 or rate <= 0, each with a field path.
+- Alternatives: Client-side only, as legacy.
+- Why: Malformed input; recompute needs the PO date, and a duplicate item number would otherwise be a 500.
+- Reversible: yes.
+
+### D-0216 — GEMC on the manual form
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: A PO is GEMC when the form's GEMC number field is not blank, and a blank field is stored as null.
+- Alternatives: Derive it from the remarks (INV-19), as for uploads.
+- Why: The legacy form has its own GEMC number field and legacy decided GEMC from it.
+- Reversible: yes.
+
+### D-0217 — PO number on manual create and edit
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: Create with a stored number is 409 `po-exists`; an edit that changes the number is 400 `po-number-changed`.
+- Alternatives: Upsert, as legacy create did.
+- Why: An upsert from the create form would silently overwrite a PO; legacy refused a different number on edit.
+- Reversible: yes.
+
+### D-0218 — Stale version mapped once
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: `app.onError` maps the db `ConflictError` to 409 `stale-version` for every route.
+- Alternatives: Map it per service.
+- Why: Every versioned entity (PO, DC, invoice) needs the same answer.
+- Reversible: yes.
+
+### D-0219 — PO delete keeps SRVs and raw HTML
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 2 (#46) · Status: decided
+- Decision: The delete removes flags, lots, items and the PO (SPEC-10 §2). SRVs stay with `po_id` and `po_item_id` cleared, and stored source documents stay (INV-107).
+- Alternatives: Delete the SRVs too.
+- Why: SPEC-10 §9 open issue and A2-9.
+- Reversible: yes.
