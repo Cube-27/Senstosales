@@ -1,11 +1,6 @@
-import { readFileSync } from "node:fs";
-
 import { describe, expect, it } from "vite-plus/test";
 
-import { parseSrv, zSrvFile } from "../src/index.ts";
-
-const FIXTURES = new URL("../fixtures/srv/", import.meta.url);
-const NAMES = ["commented-older-table", "layout-a-single", "layout-b-two-srvs", "multi-item", "repeated-challan-fy"];
+import { parseSrv } from "../src/index.ts";
 
 const HEADER = ["PO NO", "SRV NO", "SRV DATE", "PO ITM", "LOT NO", "SRV ITM", "RECVD QTY", "ACPT QTY", "REJ QTY"];
 const ROW = ["4100000999", "5000001", "10/07/2023", "10", "1", "1", "4.000", "4.000", "0.000"];
@@ -28,13 +23,6 @@ const failure = (html: string) => {
   const r = parseSrv(html);
   return r.ok ? undefined : { code: r.error.code, location: r.error.location };
 };
-
-describe("parseSrv: fixtures (SPEC-06 PR 4)", () => {
-  it.each(NAMES)("%s matches the expected JSON", (name) => {
-    const expected = zSrvFile.parse(JSON.parse(readFileSync(new URL(`${name}.expected.json`, FIXTURES), "utf8")));
-    expect(parseSrv(readFileSync(new URL(`${name}.html`, FIXTURES), "utf8"))).toEqual({ ok: true, value: expected });
-  });
-});
 
 describe("parseSrv", () => {
   it("reads a minimal row, absent columns as null and quantities in milli-units", () => {

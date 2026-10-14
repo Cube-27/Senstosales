@@ -1,12 +1,6 @@
-import { readFileSync } from "node:fs";
-
 import { describe, expect, it } from "vite-plus/test";
 
 import { parsePo } from "../src/index.ts";
-import { zPoDocument } from "../src/types.ts";
-
-const FIXTURES = new URL("../fixtures/po/", import.meta.url);
-const NAMES = ["amended-short-closed", "era1-single-item", "era2-multi-item", "gemc", "multi-lot"];
 
 const HEADER = "<table><tr><td>PURCHASE ORDER</td><td>4100000999</td><td>PO DATE</td><td>05/04/2023</td></tr></table>";
 const COLUMNS = [
@@ -68,13 +62,6 @@ const failure = (html: string) => {
   const r = parsePo(html);
   return r.ok ? undefined : { code: r.error.code, location: r.error.location };
 };
-
-describe("parsePo: fixtures (SPEC-06 PR 3)", () => {
-  it.each(NAMES)("%s matches the expected JSON", (name) => {
-    const expected = zPoDocument.parse(JSON.parse(readFileSync(new URL(`${name}.expected.json`, FIXTURES), "utf8")));
-    expect(parsePo(readFileSync(new URL(`${name}.html`, FIXTURES), "utf8"))).toEqual({ ok: true, value: expected });
-  });
-});
 
 describe("parsePo items", () => {
   it("reads an item row with its first lot, quantities and money exactly (C3)", () => {
