@@ -37,7 +37,7 @@ async function setup(wrap: (db: Db) => Db = (db) => db) {
       throw new Error("not used");
     },
   };
-  const { auth } = createServices({ db: wrap(db), clock });
+  const { auth } = createServices({ db: wrap(db), clock, jobs: { enqueue: () => {}, holds: () => false } });
   const t = testApp({ ...authRoutes(auth), "buyers.list": () => [] }, auth.signedIn);
 
   const login = (password: string, rememberMe = false) =>

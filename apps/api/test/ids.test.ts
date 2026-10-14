@@ -21,3 +21,9 @@ describe("newId", () => {
     expect(a).not.toBe(b);
   });
 });
+
+test("ids made in one millisecond sort in the order they were made", () => {
+  const ids = Array.from({ length: 2000 }, () => newId(1469918176385));
+  expect([...ids].sort()).toEqual(ids);
+  expect(new Set(ids).size).toBe(2000);
+});
