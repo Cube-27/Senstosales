@@ -15,10 +15,12 @@ export function itemStatus({ ordQty, dspQty, rcdQty, cancelled }: ItemStatusInpu
   return "Pending";
 }
 
-/** INV-64 (A-9): over active items only; a PO with no active item is Closed (A2-13, EC-06). */
+/**
+ * INV-64 (A-9): over active items only, so Cancelled items are ignored and a PO with no active item is Closed
+ * (A2-13, EC-06).
+ */
 export function poStatus(itemStatuses: readonly ItemStatus[]): PoStatus {
-  const active = itemStatuses.filter((s) => s !== "Cancelled");
-  if (active.every((s) => s === "Closed")) return "Closed";
-  if (active.every((s) => s !== "Pending")) return "Delivered";
-  return "Pending";
+  if (itemStatuses.includes("Pending")) return "Pending";
+  if (itemStatuses.includes("Delivered")) return "Delivered";
+  return "Closed";
 }
