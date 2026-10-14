@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
+import { z } from "zod";
+
 import { routes } from "../src/index.ts";
 
 const table = Object.entries(routes).map(([name, def]) => ({ name, ...def }));
@@ -46,83 +48,89 @@ describe("route table (SPEC-04 §4.3, INV-101)", () => {
 
 // The endpoints of each resource SPEC-04 §4.3 lists, by route name.
 const RESOURCES: [string, string[]][] = [
-    ["auth", ["auth.login", "auth.logout", "auth.session", "auth.changePassword", "auth.resetDefaults"]],
-    ["onboarding", ["onboarding.status", "onboarding.complete"]],
-    ["supplier", ["supplier.get", "supplier.update"]],
+  ["auth", ["auth.login", "auth.logout", "auth.session", "auth.changePassword", "auth.resetDefaults"]],
+  ["onboarding", ["onboarding.status", "onboarding.complete"]],
+  ["supplier", ["supplier.get", "supplier.update"]],
+  [
+    "settings",
     [
-      "settings",
-      ["settings.get", "settings.update", "settings.bhelPassword", "settings.setBhelPassword", "settings.clearBhelPassword"],
+      "settings.get",
+      "settings.update",
+      "settings.bhelPassword",
+      "settings.setBhelPassword",
+      "settings.clearBhelPassword",
     ],
-    ["buyers", ["buyers.list", "buyers.create", "buyers.update", "buyers.delete"]],
+  ],
+  ["buyers", ["buyers.list", "buyers.create", "buyers.update", "buyers.delete"]],
+  [
+    "po",
     [
-      "po",
-      [
-        "po.list",
-        "po.stats",
-        "po.detail",
-        "po.linked",
-        "po.upload",
-        "po.create",
-        "po.update",
-        "po.delete",
-        "po.setManualDispatched",
-      ],
+      "po.list",
+      "po.stats",
+      "po.detail",
+      "po.linked",
+      "po.upload",
+      "po.create",
+      "po.update",
+      "po.delete",
+      "po.setManualDispatched",
     ],
-    ["srv", ["srv.list", "srv.byPo", "srv.detail", "srv.stats", "srv.upload", "srv.delete"]],
+  ],
+  ["srv", ["srv.list", "srv.byPo", "srv.detail", "srv.stats", "srv.upload", "srv.delete"]],
+  [
+    "dc",
     [
-      "dc",
-      [
-        "dc.list",
-        "dc.detail",
-        "dc.stats",
-        "dc.dispatchable",
-        "dc.create",
-        "dc.update",
-        "dc.delete",
-        "dc.excel",
-        "dc.gcExcel",
-        "dc.export",
-        "dc.numberCheck",
-      ],
+      "dc.list",
+      "dc.detail",
+      "dc.stats",
+      "dc.dispatchable",
+      "dc.create",
+      "dc.update",
+      "dc.delete",
+      "dc.excel",
+      "dc.gcExcel",
+      "dc.export",
+      "dc.numberCheck",
     ],
+  ],
+  [
+    "invoice",
     [
-      "invoice",
-      [
-        "invoice.list",
-        "invoice.detail",
-        "invoice.stats",
-        "invoice.previewDc",
-        "invoice.previewPo",
-        "invoice.create",
-        "invoice.update",
-        "invoice.delete",
-        "invoice.excel",
-        "invoice.export",
-        "invoice.numberCheck",
-      ],
+      "invoice.list",
+      "invoice.detail",
+      "invoice.stats",
+      "invoice.previewDc",
+      "invoice.previewPo",
+      "invoice.create",
+      "invoice.update",
+      "invoice.delete",
+      "invoice.excel",
+      "invoice.export",
+      "invoice.numberCheck",
     ],
+  ],
+  [
+    "reports",
     [
-      "reports",
-      [
-        "reports.poRegisterExport",
-        "reports.dcRegisterExport",
-        "reports.invoiceRegisterExport",
-        "reports.pending",
-        "reports.pendingExport",
-        "reports.reconciliation",
-        "reports.reconciliationExport",
-        "reports.exportSelected",
-        "reports.guaranteeCertificateExport",
-      ],
+      "reports.poRegisterExport",
+      "reports.dcRegisterExport",
+      "reports.invoiceRegisterExport",
+      "reports.pending",
+      "reports.pendingExport",
+      "reports.reconciliation",
+      "reports.reconciliationExport",
+      "reports.exportSelected",
+      "reports.guaranteeCertificateExport",
     ],
-    ["delivery tracker", ["deliveryTracker.list", "deliveryTracker.stats", "deliveryTracker.export"]],
-    ["flags", ["flags.list", "flags.stats", "flags.acknowledge"]],
-    ["audit", ["audit.list"]],
-    ["jobs", ["jobs.start", "jobs.list", "jobs.detail", "jobs.cancel", "jobs.stage"]],
-    ["bhel session", ["bhel.start", "bhel.captcha", "bhel.otp", "bhel.close"]],
-    ["search", ["search.query"]],
-    ["dashboard", ["dashboard.summary", "dashboard.activity"]],
-    ["health", ["health.get"]],
+  ],
+  ["delivery tracker", ["deliveryTracker.list", "deliveryTracker.stats", "deliveryTracker.export"]],
+  ["flags", ["flags.list", "flags.stats", "flags.acknowledge"]],
+  ["audit", ["audit.list"]],
+  ["jobs", ["jobs.start", "jobs.list", "jobs.detail", "jobs.cancel", "jobs.stage"]],
+  ["bhel session", ["bhel.start", "bhel.captcha", "bhel.otp", "bhel.close"]],
+  ["search", ["search.query"]],
+  ["dashboard", ["dashboard.summary", "dashboard.activity"]],
+  ["health", ["health.get"]],
 ];
 
 describe("every ARCHITECTURE §9 resource has its routes", () => {
@@ -163,5 +171,27 @@ describe("dropped legacy endpoints are absent (INV-87, INV-83)", () => {
       "recompute-all",
       "backup",
     ]);
+  });
+});
+
+describe("no float on the wire (C3)", () => {
+  /** JSON-schema paths whose type is a float `number`. */
+  function floatPaths(node: unknown, path: string): string[] {
+    if (typeof node !== "object" || node === null) return [];
+    const own = (node as { type?: unknown }).type === "number" ? [path] : [];
+    return own.concat(Object.entries(node).flatMap(([key, child]) => floatPaths(child, `${path}.${key}`)));
+  }
+
+  it("has no float in any quantity, money or other value of any route; only the page size enum is a number", () => {
+    const found = table.flatMap((r) =>
+      (["params", "query", "body", "response"] as const).flatMap((part) => {
+        const schema = (r as Partial<Record<typeof part, z.ZodType>>)[part];
+        if (!schema) return [];
+        return (["input", "output"] as const).flatMap((io) =>
+          floatPaths(z.toJSONSchema(schema, { io, unrepresentable: "any" }), `${r.name}.${part}`),
+        );
+      }),
+    );
+    expect(found.filter((p) => !p.endsWith(".properties.pageSize"))).toEqual([]);
   });
 });
