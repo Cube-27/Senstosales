@@ -102,7 +102,7 @@ describe("INV-01: exact integer units", () => {
   });
 });
 
-describe("INV-01: roundMoney to 2 or 5 decimal places", () => {
+describe("A2-4 (INV-41): roundMoney to 2 or 5 decimal places", () => {
   it.each([
     ["848.75", 2, "848.75"],
     ["848.755", 2, "848.76"],
