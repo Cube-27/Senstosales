@@ -3,7 +3,8 @@
 # Starts a claude herdr agent in $WORKTREE_ROOT/WORKTREE (config.sh), in its own tab of the caller's herdr workspace,
 # checks that the pane's cwd really is that worktree (a wrong cwd stops at a trust prompt), then sends PROMPT.
 # Refuses when free memory is below MIN_FREE_MB, or when a worker (any NAME not starting with "reviewer") would
-# exceed MAX_WORKERS. Prints "<pane> <status>", or "ERROR ..." on stderr and exits 1.
+# exceed MAX_WORKERS in this herdr workspace. Starts run one at a time (a lock in the git common dir, waited on for
+# START_AGENT_LOCK_WAIT_S seconds, default 300). Prints "<pane> <status>", or "ERROR ..." on stderr and exits 1.
 # Build paths here, never inline: in bash double quotes "...\$wt" collapses to a literal "$wt".
 set -u
 source "$(dirname "$0")/config.sh"
@@ -21,10 +22,19 @@ free=$(free_mb)
 # Without --workspace herdr uses whichever workspace has focus, which may belong to another project.
 workspace=${HERDR_WORKSPACE_ID:-}
 [[ -n $workspace ]] || err "HERDR_WORKSPACE_ID is unset: run this from a herdr pane"
+# One start at a time: two parallel starts would read the same worker count and could pass MAX_WORKERS together.
+# mkdir is atomic; the lock lives in the git common dir, shared by every worktree, and goes on exit.
+lock=$(git rev-parse --git-common-dir)/start_agent.lock
+for (( waited = 0; ; waited++ )); do
+  if mkdir "$lock" 2>/dev/null; then trap 'rmdir "$lock" 2>/dev/null' EXIT; break; fi
+  (( waited < ${START_AGENT_LOCK_WAIT_S:-300} )) \
+    || err "another start_agent.sh holds $lock; if none is running, remove that directory"
+  sleep 1
+done
 if [[ $name != reviewer* ]]; then
-  workers=$(herdr agent list 2>/dev/null | "$PY" -c "import json,sys;print(sum(1 for a in json.load(sys.stdin)['result']['agents'] if a.get('name') and not a['name'].startswith('reviewer')))")
-  [[ $workers =~ ^[0-9]+$ ]] || err "could not count live workers"
-  (( workers < MAX_WORKERS )) || err "worker limit: $workers alive, max $MAX_WORKERS"
+  agents=$(workspace_agents) || err "could not list the agents of workspace $workspace"
+  workers=$(grep -c -v -e '^reviewer' -e '^$' <<< "$agents")
+  (( workers < MAX_WORKERS )) || err "worker limit: $workers alive in workspace $workspace, max $MAX_WORKERS"
 fi
 
 # One tab per agent, labelled with its name. Prompt suggestions are off in agent panes: Enter submits the grey

@@ -1,5 +1,6 @@
 #!/bin/bash
-# One watcher for every herdr agent: exits (printing why) as soon as any named agent is not working
+# One watcher for every herdr agent of this workspace ($HERDR_WORKSPACE_ID; other workspaces are other projects):
+# exits (printing why) as soon as any named agent is not working
 # (SETTLED <name> <status>, including one already idle at start; `unknown` counts as working, since herdr reports it
 # briefly mid-turn), disappears (GONE <name>), free memory falls below MIN_FREE_MB (LOWMEM <MB>), or a new comment
 # starting READY, BLOCKED or ESCALATE appears on an open PR (PRCOMMENT <n>; counted from start).
@@ -9,17 +10,8 @@
 source "$(dirname "$0")/config.sh"
 INTERVAL=${INTERVAL:-30}
 IGNORE=${IGNORE:-}
+[[ -n ${HERDR_WORKSPACE_ID:-} ]] || { echo "ERROR HERDR_WORKSPACE_ID is unset: run this from a herdr pane" >&2; exit 1; }
 
-snapshot() {
-  # Fails when herdr or the parse fails, so a failed poll is told apart from an empty agent list.
-  local agents
-  agents=$(set -o pipefail; herdr agent list 2>/dev/null | "$PY" -c "import json,sys
-for a in json.load(sys.stdin)['result']['agents']:
-    if a.get('name'): print(a['name'], a['agent_status'])" 2>/dev/null) || return 1
-  # Windows Python prints CRLF; strip \r so statuses compare equal.
-  tr -d '\r' <<< "$agents" | sort
-  return 0
-}
 pr_signals() {
   # One "<pr> <count>" line per open PR: comments whose body starts with READY, BLOCKED or ESCALATE.
   gh pr list --state open --json number,comments --jq \
@@ -92,7 +84,7 @@ while true; do
     signals=$now_signals
   fi
   # A failed poll is not every agent gone; keep the last good snapshot. An empty list is real: all gone.
-  if cur=$(snapshot); then
+  if cur=$(workspace_agents); then
     while read -r name _; do
       if [[ -z $name ]] || ignored "$name"; then continue; fi
       if ! awk -v n="$name" '$1==n{f=1} END{exit !f}' <<< "$cur"; then echo "GONE $name"; exit 0; fi

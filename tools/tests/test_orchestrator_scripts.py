@@ -1,5 +1,6 @@
 """Behaviour of tools/orchestrator shell scripts, run through bash with stub `gh` and `herdr` on PATH."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -97,9 +98,25 @@ def herdr_sequence(tmp_path: Path, responses: list[str]) -> str:
     )
 
 
-AGENT_A = '{"result": {"agents": [{"name": "impl-a", "agent_status": "working"}]}}'
-NO_AGENTS = '{"result": {"agents": []}}'
-WATCH_ENV = {"INTERVAL": "0", "MIN_FREE_MB": "0"}
+def agents(*entries: tuple[str, str, str]) -> str:
+    """`herdr agent list` output for (name, status, workspace) entries."""
+    listed = [{"name": n, "agent_status": s, "workspace_id": w, "pane_id": f"{w}:p{n}"} for n, s, w in entries]
+    return json.dumps({"result": {"agents": listed}})
+
+
+AGENT_A = agents(("impl-a", "working", "w1"))
+NO_AGENTS = agents()
+WATCH_ENV = {"INTERVAL": "0", "MIN_FREE_MB": "0", "HERDR_WORKSPACE_ID": "w1"}
+
+
+def test_watch_agents_ignores_agents_of_other_workspaces(tmp_path: Path) -> None:
+    other = ("uat-tester2", "idle", "w14")
+    responses = [agents(("impl-a", "working", "w1"), other), agents(other)]
+    stubs = {"herdr": herdr_sequence(tmp_path, responses), "gh": "exit 0"}
+    result = run_script(tmp_path, "watch_agents.sh", [], stubs, WATCH_ENV)
+
+    # An idle agent of another workspace would have exited first with SETTLED uat-tester2 idle.
+    assert (result.returncode, result.stdout) == (0, "GONE impl-a\n")
 
 
 def test_watch_agents_reports_the_last_agent_gone(tmp_path: Path) -> None:
@@ -182,3 +199,66 @@ def test_cleanup_warns_when_docker_cannot_list_containers(tmp_path: Path) -> Non
 
     assert result.returncode == 0, result.stderr
     assert "warning: docker ps failed" in result.stderr
+
+
+def herdr_dispatch(tmp_path: Path, listing: str, agent: dict[str, str] | None = None) -> str:
+    """A `herdr` stub: `agent list` prints LISTING, `agent get` prints AGENT (or fails), `tab create` fails, and
+    `pane close` is recorded in herdr-closed."""
+    (tmp_path / "herdr-list").write_text(listing, encoding="utf-8")
+    get = json.dumps({"result": {"agent": agent}}) if agent else ""
+    (tmp_path / "herdr-get").write_text(get, encoding="utf-8")
+    base = tmp_path.as_posix()
+    return (
+        'case "$1 $2" in\n'
+        f'  "agent list") cat "{base}/herdr-list" ;;\n'
+        f'  "agent get") [[ -s "{base}/herdr-get" ]] || exit 1; cat "{base}/herdr-get" ;;\n'
+        f'  "pane close") echo "$3" >> "{base}/herdr-closed" ;;\n'
+        "  *) exit 1 ;;\n"
+        "esac"
+    )
+
+
+def start_agent(tmp_path: Path, listing: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    (tmp_path / "worktrees" / "spec-09-pr-1").mkdir(parents=True, exist_ok=True)
+    env = {"HERDR_WORKSPACE_ID": "w1", "MAX_WORKERS": "2", "WORKTREE_ROOT": str(tmp_path / "worktrees"), **(env or {})}
+    stubs = {"herdr": herdr_dispatch(tmp_path, listing)}
+    return run_script(tmp_path, "start_agent.sh", ["impl-x", "spec-09-pr-1", "go", "0"], stubs, env)
+
+
+def test_start_agent_counts_workers_of_its_own_workspace_only(tmp_path: Path) -> None:
+    others = [(f"impl-{n}", "working", "w14") for n in range(3)]
+    result = start_agent(tmp_path, agents(("reviewer-pr1", "working", "w1"), ("impl-a", "working", "w1"), *others))
+
+    # Past the limit check (1 worker of 2 in w1), it stops at the stubbed tab create.
+    assert result.stderr.endswith("ERROR tab create failed\n")
+
+
+def test_start_agent_refuses_past_the_worker_limit(tmp_path: Path) -> None:
+    result = start_agent(tmp_path, agents(("impl-a", "working", "w1"), ("impl-b", "idle", "w1")))
+
+    assert result.stderr == "ERROR worker limit: 2 alive in workspace w1, max 2\n"
+
+
+def test_start_agent_waits_for_another_start_then_gives_up(tmp_path: Path) -> None:
+    (tmp_path / "repo").mkdir()
+    git(tmp_path / "repo", "init", "-q")
+    (tmp_path / "repo" / ".git" / "start_agent.lock").mkdir()
+    result = start_agent(tmp_path, agents(), {"START_AGENT_LOCK_WAIT_S": "1"})
+
+    assert result.returncode == 1
+    assert "another start_agent.sh holds" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("workspace", "stdout", "closed"), [("w1", "closed impl-a w1:p1\n", "w1:p1"), ("w14", "gone impl-a\n", "")]
+)
+def test_close_agent_closes_only_agents_of_its_own_workspace(
+    tmp_path: Path, workspace: str, stdout: str, closed: str
+) -> None:
+    agent = {"name": "impl-a", "pane_id": f"{workspace}:p1", "workspace_id": workspace, "agent_status": "idle"}
+    stubs = {"herdr": herdr_dispatch(tmp_path, agents(), agent)}
+    result = run_script(tmp_path, "close_agent.sh", ["impl-a"], stubs, {"HERDR_WORKSPACE_ID": "w1"})
+
+    assert (result.returncode, result.stdout) == (0, stdout)
+    closed_file = tmp_path / "herdr-closed"
+    assert (closed_file.read_text(encoding="utf-8").strip() if closed_file.exists() else "") == closed

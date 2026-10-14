@@ -43,6 +43,21 @@ free_mb() {
   return 0
 }
 
+# "<name> <status>" for each named herdr agent in this project's herdr workspace ($HERDR_WORKSPACE_ID), sorted. Other
+# workspaces belong to other projects and are never counted, watched or closed. Fails when HERDR_WORKSPACE_ID is unset
+# or herdr or the parse fails, so a failed poll is told apart from an empty list.
+workspace_agents() {
+  local agents
+  [[ -n ${HERDR_WORKSPACE_ID:-} ]] || return 1
+  agents=$(set -o pipefail; herdr agent list 2>/dev/null | "$PY" -c "import json,sys
+for a in json.load(sys.stdin)['result']['agents']:
+    if a.get('name') and a.get('workspace_id') == sys.argv[1]: print(a['name'], a['agent_status'])" \
+    "$HERDR_WORKSPACE_ID" 2>/dev/null) || return 1
+  # Windows Python prints CRLF; strip \r so statuses compare equal.
+  tr -d '\r' <<< "$agents" | sort
+  return 0
+}
+
 # A path in the form herdr reports cwd in: Windows-style under Git Bash, unchanged elsewhere.
 native_path() {
   cygpath -w "$1" 2>/dev/null || echo "$1"
