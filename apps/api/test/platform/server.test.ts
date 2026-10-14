@@ -88,6 +88,13 @@ describe("startServer", () => {
     expect(JSON.parse(res.body)).toEqual({ code: "bad-host", message: "This address is not allowed." });
   });
 
+  it("mounts the job API behind the session (SPEC-08)", async () => {
+    const server = await start(await webRoot());
+    const res = await get(server.port, "/api/jobs");
+    expect(res.status).toBe(401);
+    expect(JSON.parse(res.body)).toEqual({ code: "signed-out", message: "Please log in." });
+  });
+
   it("accepts localhost on its port", async () => {
     const server = await start(await webRoot());
     expect((await get(server.port, "/api/health", `localhost:${server.port}`)).status).toBe(200);

@@ -14,9 +14,12 @@ import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
 import { authRoutes } from "../../routes/auth.ts";
 import { healthRoutes } from "../../routes/health.ts";
+import { jobsRoutes } from "../../routes/jobs.ts";
 import { createServices } from "../../services/index.ts";
+import { jobWorker } from "../../services/job-worker.ts";
 import { createClock } from "./clock.ts";
 import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
+import { createJobRunner } from "./job-runner.ts";
 import { upgradeGate } from "./startup.ts";
 import { spa } from "./static.ts";
 
@@ -69,10 +72,16 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  const { auth } = createServices({ db, clock });
+  // Each job type's handler arrives with its PR (SPEC-08 PR 5-6, SPEC-19, SPEC-21); until then a start fails plainly.
+  const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers: {} }));
+  const services = createServices({ db, clock, jobs });
   const app = createApp(
-    { port: address.port, logger: stderrLogger, signedIn: auth.signedIn },
-    { ...healthRoutes({ version: options.version, db }), ...authRoutes(auth) },
+    { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn },
+    {
+      ...healthRoutes({ version: options.version, db }),
+      ...authRoutes(services.auth),
+      ...jobsRoutes(services.jobs),
+    },
   );
   app.get("*", spa(options.webRoot));
   server.on("request", getRequestListener(app.fetch));
