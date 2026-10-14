@@ -1,10 +1,11 @@
 // PO header fields, read by label (SPEC-06 §2). The label vocabulary is the legacy parser's; each pattern matches a
 // whole cell, so a heading such as "PURCHASE ORDER DETAILS" is not a label.
-import { extractGemcNumber, parseMoney } from "@senstosales/domain";
+import { extractGemcNumber } from "@senstosales/domain";
 import type { Money } from "@senstosales/domain";
 import { zPoId } from "@senstosales/schemas";
 
 import { parsePageDate } from "../dates.ts";
+import { fail as failAt, readMoney as readAmount } from "../fields.ts";
 import { findByLabel } from "../html.ts";
 import type { LabelHit, Page } from "../html.ts";
 import type { ParseError, ParseResult, PoDocument } from "../types.ts";
@@ -86,10 +87,9 @@ export function parsePoHeader(page: Page): ParseResult<PoHeader> {
 const text = (found: Found, field: Field): string | null => found.get(field)?.value || null;
 
 /** The error located at the label as printed, or at the field's name when the page lacks it. */
-const fail = (found: Found, code: ParseError["code"], field: Field, message: string): ParseResult<never> => ({
-  ok: false,
-  error: { code, message, location: found.get(field)?.label ?? field },
-});
+const fail = (found: Found, code: ParseError["code"], field: Field, message: string): ParseResult<never> =>
+  failAt(code, message, at(found, field));
+const at = (found: Found, field: Field): string => found.get(field)?.label ?? field;
 
 function readIds(found: Found): ParseResult<Pick<PoHeader, "poNumber" | "poDate">> {
   const number = text(found, "PURCHASE ORDER");
@@ -119,6 +119,5 @@ function readNumbers(found: Found): ParseResult<Pick<PoHeader, "amendNo" | "poVa
 function readMoney(found: Found, field: Field): ParseResult<Money | null> {
   const value = text(found, field);
   if (value === null) return { ok: true, value: null };
-  const money = parseMoney(value.replaceAll(",", ""));
-  return money.ok ? money : fail(found, "bad-number", field, `${field} is not an amount: "${value}"`);
+  return readAmount(value, field, at(found, field));
 }
