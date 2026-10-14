@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000101",
+  "poDate": "2023-04-05",
+  "enquiry": "E-000101",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "21",
+  "quotation": "Q-55",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "12500",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "14750",
+  "remarks": "Supply as per approved sample.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN100010",
+      "description": "HEX BOLT M12 X 40 GALVANISED",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "10",
+      "rate": "1250",
+      "rcdQty": "0",
+      "rejQty": null,
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "10",
+          "delyDate": "2023-06-30",
+          "entryAllowDate": "2023-07-15",
+          "entryAllowNote": null,
+          "destCode": "11"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000101",
+    "PO DATE": "05/04/2023",
+    "ENQUIRY": "E-000101",
+    "ENQ DATE": "01/03/2023",
+    "QUOTATION": "Q-55",
+    "QUOT-DATE": "10/03/2023",
+    "RC NO": "",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "12500.00",
+    "NET PO VAL": "14750.00",
+    "REMARKS": "Supply as per approved sample.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}

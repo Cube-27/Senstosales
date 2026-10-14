@@ -6,6 +6,7 @@
 // Exceptions live in tools/checks/real-data-allow.txt as `path:rule  # justification`; there is no inline marker.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export type Finding = { path: string; line: number; rule: string };
 
@@ -78,23 +79,34 @@ function decode(content: Buffer): string | undefined {
   return content.subarray(0, 8000).includes(0) ? undefined : content.toString("utf8");
 }
 
+/**
+ * Every distinct rule one line of text breaks, so allowlisting one rule for a file can't hide another on the same
+ * line. `companyDetails` comes from parseCompanyDetails.
+ */
+export function lineRules(text: string, companyDetails: readonly string[] = []): Set<string> {
+  const rules = new Set(LINE_RULES.filter(({ pattern }) => pattern.test(text)).map(({ rule }) => rule));
+  if (companyDetails.length > 0) {
+    const lower = text.toLowerCase();
+    if (companyDetails.some((value) => lower.includes(value))) rules.add(COMPANY_DETAILS);
+  }
+  return rules;
+}
+
 /** Findings for one file, before the allowlist is applied. `companyDetails` comes from parseCompanyDetails. */
 export function scanFile(path: string, content: Buffer, companyDetails: readonly string[] = []): Finding[] {
   const pathRule = PATH_RULES.find(({ test }) => test(path, content));
   if (pathRule) return [{ path, line: 0, rule: pathRule.rule }];
   const decoded = decode(content);
   if (decoded === undefined) return [];
-  const findings: Finding[] = [];
-  decoded.split(/\r?\n/).forEach((text, index) => {
-    // Every distinct rule on the line, so allowlisting one rule for a file can't hide another on the same line.
-    const rules = new Set(LINE_RULES.filter(({ pattern }) => pattern.test(text)).map(({ rule }) => rule));
-    if (companyDetails.length > 0) {
-      const lower = text.toLowerCase();
-      if (companyDetails.some((value) => lower.includes(value))) rules.add(COMPANY_DETAILS);
-    }
-    for (const rule of rules) findings.push({ path, line: index + 1, rule });
-  });
-  return findings;
+  return decoded
+    .split(/\r?\n/)
+    .flatMap((text, index) => [...lineRules(text, companyDetails)].map((rule) => ({ path, line: index + 1, rule })));
+}
+
+/** The values of `<root>/tools/checks/company-details.local.txt`, or none when the file is absent (CI, forks). */
+export function readCompanyDetails(root: string): string[] {
+  const path = join(root, COMPANY_DETAILS_PATH);
+  return existsSync(path) ? parseCompanyDetails(readFileSync(path, "utf8")) : [];
 }
 
 export function applyAllowlist(findings: Finding[], allow: ReadonlySet<string>): Finding[] {
@@ -115,9 +127,7 @@ export function selectFiles(staged: boolean): Array<{ path: string; read: () => 
 
 function main(argv: string[]): number {
   const allow = parseAllowlist(readFileSync(ALLOWLIST_PATH, "utf8"));
-  const companyDetails = existsSync(COMPANY_DETAILS_PATH)
-    ? parseCompanyDetails(readFileSync(COMPANY_DETAILS_PATH, "utf8"))
-    : [];
+  const companyDetails = readCompanyDetails(".");
   const findings = applyAllowlist(
     selectFiles(argv.includes("--staged")).flatMap((f) => scanFile(f.path, f.read(), companyDetails)),
     allow,

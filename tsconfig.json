@@ -5,6 +5,7 @@
     { "path": "packages/domain" },
     { "path": "packages/schemas" },
     { "path": "packages/db" },
+    { "path": "packages/parsers" },
     { "path": "tools/checks" },
     { "path": "tools/orchestrator" }
   ]

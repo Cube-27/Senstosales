@@ -1,0 +1,69 @@
+[
+  {
+    "poNumber": "4100000102",
+    "srvNumber": "5000201",
+    "srvDate": "2024-06-10",
+    "rawHeader": {
+      "PO NO": "4100000102",
+      "SRV NO": "5000201",
+      "SRV DATE": "10/06/2024",
+      "PO ITM": "10",
+      "LOT NO": "1",
+      "SRV ITM": "1",
+      "MATERIAL CODE": "SYN200010",
+      "UNIT": "NOS",
+      "ORD QTY": "40.000",
+      "RECVD QTY": "14.000",
+      "ACPT QTY": "12.000",
+      "REJ QTY": "2.000",
+      "CHALLAN NO": "41",
+      "CHALLAN DATE": "03/06/24",
+      "INV NO": "41",
+      "INV DATE": "03/06/24"
+    },
+    "items": [
+      {
+        "poItemNo": 10,
+        "lotNo": 1,
+        "srvItemNo": 1,
+        "materialCode": "SYN200010",
+        "ordQty": "40",
+        "rcdQty": "14",
+        "acceptedQty": "12",
+        "rejQty": "2",
+        "challanNo": "41",
+        "challanDate": "2024-06-03",
+        "invoiceNo": "41",
+        "invoiceDate": "2024-06-03"
+      },
+      {
+        "poItemNo": 20,
+        "lotNo": 1,
+        "srvItemNo": 2,
+        "materialCode": "SYN200020",
+        "ordQty": "100.5",
+        "rcdQty": "50.25",
+        "acceptedQty": "50.25",
+        "rejQty": "0",
+        "challanNo": "41",
+        "challanDate": "2024-06-03",
+        "invoiceNo": "41",
+        "invoiceDate": "2024-06-03"
+      },
+      {
+        "poItemNo": 30,
+        "lotNo": 1,
+        "srvItemNo": 3,
+        "materialCode": "SYN200030",
+        "ordQty": "2",
+        "rcdQty": "1",
+        "acceptedQty": "1",
+        "rejQty": "0",
+        "challanNo": "41",
+        "challanDate": "2024-06-03",
+        "invoiceNo": "41",
+        "invoiceDate": "2024-06-03"
+      }
+    ]
+  }
+]

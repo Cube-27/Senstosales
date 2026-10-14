@@ -1,0 +1,108 @@
+{
+  "poNumber": "4100000102",
+  "poDate": "2024-04-12",
+  "enquiry": "E-000102",
+  "supplierCode": "900101",
+  "orderType": "NB",
+  "division": "32",
+  "quotation": "QT/0102",
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "34105.13",
+  "rcNo": "RC-7",
+  "inspection": "SUPPLIER",
+  "currency": "INR",
+  "netPoValue": "40244.05",
+  "remarks": "Deliver to stores in two batches.",
+  "gemcNumber": null,
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN200010",
+      "description": "FLANGE GASKET 150 NB DRG NO 3A120955 ASBESTOS FREE",
+      "drawingNo": "3A120955",
+      "unit": "NOS",
+      "ordQty": "40",
+      "rate": "450.5",
+      "rcdQty": "12",
+      "rejQty": "2",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "40",
+          "delyDate": "2024-05-31",
+          "entryAllowDate": "2024-06-15",
+          "entryAllowNote": null,
+          "destCode": "21"
+        }
+      ]
+    },
+    {
+      "poItemNo": 20,
+      "materialCode": "SYN200020",
+      "description": "COPPER WIRE 2.5 SQMM",
+      "drawingNo": null,
+      "unit": "KG",
+      "ordQty": "100.5",
+      "rate": "120.25",
+      "rcdQty": "0",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "100.5",
+          "delyDate": "2024-06-30",
+          "entryAllowDate": "2024-07-15",
+          "entryAllowNote": null,
+          "destCode": "21"
+        }
+      ]
+    },
+    {
+      "poItemNo": 30,
+      "materialCode": "SYN200030",
+      "description": "VALVE ASSEMBLY SET",
+      "drawingNo": null,
+      "unit": "SET",
+      "ordQty": "2",
+      "rate": "2000",
+      "rcdQty": "0",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "2",
+          "delyDate": "2024-07-31",
+          "entryAllowDate": "2024-08-15",
+          "entryAllowNote": null,
+          "destCode": "22"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000102",
+    "PO DATE": "12-APR-24",
+    "ENQUIRY": "E-000102",
+    "ENQ DATE": "20-FEB-24",
+    "QUOTATION": "QT/0102",
+    "QUOT-DATE": "01-MAR-24",
+    "RC NO": "RC-7",
+    "ORD-TYPE": "NB",
+    "PO STATUS": "A",
+    "INSPECTION BY": "SUPPLIER",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "32",
+    "AMEND NO": "0",
+    "PO-VALUE": "34105.13",
+    "NET PO VAL": "40244.05",
+    "REMARKS": "Deliver to stores in two batches.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}
