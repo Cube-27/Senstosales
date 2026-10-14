@@ -1370,3 +1370,59 @@ None.
 - Alternatives: Leave the row blocking every start until the database is edited by hand.
 - Why: Cancel is the spec's own way out, and C11 forbids CLI-only recovery. This was review item 1 on #40.
 - Reversible: yes.
+
+### D-0165 — Onboarding gate answers 409 before the session check
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: Before a supplier exists, every non-public route answers 409 `onboarding-required`, checked before the session. `GET /api/onboarding` always answers; `POST /api/onboarding` answers 409 `already-set-up` once a supplier exists.
+- Alternatives: Check the session first (401 on first run, when nobody can be signed in), or hide the onboarding routes with 404 after setup.
+- Why: SPEC-07 §6 asks for a 409 `onboarding-required` redirect signal, and the SPA needs the status on every launch.
+- Reversible: yes.
+
+### D-0166 — One supplier enforced inside the onboarding batch
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: The onboarding batch ends with a statement that fails it if a second supplier row would exist, using the same NOT NULL technique as `updateWithVersion`. Onboarding maps exactly that failure to 409 `already-set-up`.
+- Alternatives: A singleton unique column (needs a migration to a shared table), or check-then-write only (two overlapping submits create two suppliers).
+- Why: A2-12 allows one supplier per install, and a double submit is a realistic way to get two. No schema change is needed.
+- Reversible: yes.
+
+### D-0167 — The supplier id is cached once found
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: The services and the onboarding gate share one supplier id, looked up until found and then kept for the life of the process.
+- Alternatives: Query the supplier on every request (two lookups per request before this change).
+- Why: No route or job deletes the supplier, so a found id stays correct. A later restore that swaps the database must rebuild the services.
+- Reversible: yes.
+
+### D-0168 — Settings PUT replaces every row; GST keys win
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: `PUT /api/settings` rewrites all of the supplier's `settings` rows. A preference whose key is `cgst_pct` or `sgst_pct` is dropped.
+- Alternatives: Merge preferences, or reject a reserved key with 400.
+- Why: The body is the full settings shape, and the rates must stay the typed fields.
+- Reversible: yes.
+
+### D-0169 — Audit actions and values for supplier data
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: The actor is `admin`. The actions are `onboarding`, `update-supplier`, `update-settings`, `create-buyer`, `update-buyer`, `delete-buyer`, `set-bhel-password` and `clear-bhel-password`. Each row carries the before and/or after values, except the BHEL password rows, which carry no values.
+- Alternatives: Store no values in any audit row.
+- Why: The audit log records changed values (ARCHITECTURE §8.2), and INV-81 forbids storing the secret.
+- Reversible: yes.
+
+### D-0170 — The secrets service implements the Secrets port
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: `createSecretsService` implements the `Secrets` port (`get`, `set`) over the `secret` table. Each `set` is one batch with its audit row. The status route derives `saved` from `get`.
+- Alternatives: A separate platform adapter, which would bypass the batch and audit rule.
+- Why: The secret is a DB row, so its writes follow C4 like every other write.
+- Reversible: yes.
+
+### D-0171 — Buyers listed by unit name; delete is unconditional
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 5 (#41) · Status: decided
+- Decision: `GET /api/buyers` lists buyers by unit name, then id. Delete is unconditional, as in legacy, even though `po.buyer_id` may reference the buyer. That column has no foreign key, so the PO keeps a dangling id (EC-30).
+- Alternatives: Order by creation time. Refuse the delete while a PO references the buyer, or clear the references.
+- Why: Readable in the settings list. Delete follows the frozen legacy behaviour, because the spec is silent on references.
+- Reversible: yes.
