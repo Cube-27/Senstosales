@@ -1,5 +1,3 @@
-# --- Append to the stack's standard .gitignore ---
-
 # Secrets and local config
 .env
 .env.*
@@ -40,7 +38,6 @@ test-results/
 
 # SBOM and generated reports
 license-report/
-sbom*.json
 reports/
 
 # Editors and OS
@@ -68,3 +65,4 @@ RESUME.md
 *.sqlite3
 /db/
 /corpus/
+business_development/

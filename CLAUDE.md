@@ -118,22 +118,18 @@ root.
 
 ```sh
 pnpm install         # dependencies
-pnpm hooks           # once per clone: installs the `vp staged` pre-commit hook (covers every worktree)
+pnpm hooks           # once per clone: the `vp staged` pre-commit hook (fmt, lint, real-data scan --staged)
 pnpm verify          # everything CI runs, in CI's order; stops at the first failure
 pnpm format          # vp fmt --write (Oxfmt)
 ```
 
-The checks CI runs, by job (every job must pass before merge):
+The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:
 
 ```sh
-# check
-pnpm install --frozen-lockfile && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
-# real-data-scan (C1)
-node tools/checks/src/real-data-scan.ts
-# licenses (C13): deny-list plus a CycloneDX SBOM artifact
-pnpm licenses list --json --recursive > license-report/licenses.json && node tools/license_check.mjs license-report/licenses.json
-# tools: orchestrator scripts and merge guard
-uvx ruff check tools && uvx ruff format --check tools && uv run --with pytest pytest tools/tests
+pnpm check:code        # check: vp check (Oxfmt + Oxlint), tsc -b, vp test run, build
+pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
+pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
+uvx ruff check tools && uvx ruff format --check tools && uv run --with pytest pytest tools/tests   # tools
 ```
 
 Tooling is Vite+ (`vp`): Oxlint for lint (including the C15 limits `max-lines` 800 and `complexity` 15), Oxfmt for

@@ -1,0 +1,4 @@
+# Real-data scan exceptions (SPEC-00 §4.6): `path:rule  # justification`, documented synthetic or structural
+# matches only. Every entry is reviewed like code.
+.gitignore:local-data-path  # names the local data folders it keeps out of the repo
+tools/checks/src/real-data-scan.ts:local-data-path  # the rule patterns themselves

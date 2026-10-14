@@ -13,12 +13,8 @@
     "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "composite": true,
-    "declaration": true,
-    "declarationMap": false,
-    "forceConsistentCasingInFileNames": true
+    "composite": true
   }
 }

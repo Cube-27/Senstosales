@@ -6,13 +6,10 @@
   "scripts": {
     "hooks": "vp config --hooks --no-agent",
     "format": "vp fmt --write",
-    "format:check": "vp fmt --check",
-    "lint": "vp lint",
-    "typecheck": "tsc -b",
-    "test": "vp test run",
-    "build": "pnpm -r --if-present build",
+    "check:code": "vp check && tsc -b && vp test run && pnpm -r --if-present build",
     "check:real-data": "node tools/checks/src/real-data-scan.ts",
-    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:real-data"
+    "check:licenses": "node -e \"require('fs').mkdirSync('license-report',{recursive:true})\" && pnpm licenses list --json --recursive > license-report/licenses.json && node tools/checks/src/license-check.ts license-report/licenses.json",
+    "verify": "pnpm check:code && pnpm check:real-data && pnpm check:licenses"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",

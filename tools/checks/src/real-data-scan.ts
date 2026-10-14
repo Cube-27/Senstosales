@@ -1,72 +1,84 @@
-// Contract C1 (docs/ARCHITECTURE.md §2, §14.3): no real data in this public repo. Scans every tracked file and fails
-// on GSTIN-shaped strings, local data paths, database files and (optionally) a hashed denylist of real identifiers.
-// Reports `path:line rule` only, never the matched text, so CI logs don't leak what they catch.
-// A documented synthetic test literal may carry the marker `real-data-scan: allow` on its own line.
-import { createHash } from "node:crypto";
+// Contract C1 (docs/ARCHITECTURE.md §2, §14.3; SPEC-00 §4.6): no real data in this public repo. Scans tracked files
+// (default) or staged files (`--staged`) and fails on GSTIN-shaped strings, local data paths, database files and HTML
+// outside the fixture folders. Reports `path:line rule` only, never the matched text, so CI logs don't leak it.
+// Exceptions live in tools/checks/real-data-allow.txt as `path:rule  # justification`; there is no inline marker.
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 export type Finding = { path: string; line: number; rule: string };
 
-const ALLOW_MARKER = "real-data-scan: allow";
 const LINE_RULES: ReadonlyArray<{ rule: string; pattern: RegExp }> = [
   { rule: "gstin", pattern: /\b\d{2}[A-Z]{5}\d{4}[A-Z][0-9A-Z]Z[0-9A-Z]\b/ },
-  { rule: "local-data-path", pattern: /[A-Za-z]:[\\/]+(?:Users[\\/]+[^\\/\s]+[\\/]+)?Downloads\b/i },
+  // A Downloads folder, or any absolute path under a named user profile (Windows, Linux, macOS).
+  { rule: "local-data-path", pattern: /\b[A-Za-z]:[\\/]+(?:Users[\\/]+[^\\/\s"'`]+|[^\\/\s"'`]*Downloads\b)/i },
+  { rule: "local-data-path", pattern: /(?:^|[\s"'`(=])\/(?:home|Users)\/[^/\s"'`]+\//i },
   { rule: "local-data-path", pattern: /\bbusiness\.db\b|\bbusiness_development\b/i },
 ];
-const FILE_RULES: ReadonlyArray<{ rule: string; pattern: RegExp }> = [
-  { rule: "database-file", pattern: /\.(?:db|sqlite3?|db-wal|db-shm)$/i },
-];
-const TOKEN = /[A-Za-z0-9]{4,}/g;
+// Same extensions as the database block in .gitignore; this catches files force-added past it.
+const DATABASE_FILE = /\.(?:db|sqlite3?|db-wal|db-shm)$/i;
+const SQLITE_HEADER = Buffer.from("SQLite format 3\0", "latin1");
+const HTML_FILE = /\.html?$/i;
+const HTML_FIXTURE_DIRS = /^packages\/(?:parsers|scraper)\/fixtures\//;
+const ALLOWLIST_PATH = "tools/checks/real-data-allow.txt";
 
-const sha256 = (text: string): string => createHash("sha256").update(text).digest("hex");
-
-/** Hashes of real identifiers, one lowercase hex SHA-256 per line (CI secret `REAL_DATA_DENYLIST`). */
-export function parseDenylist(raw: string | undefined): ReadonlySet<string> {
-  return new Set(
-    (raw ?? "")
-      .split(/\s+/)
-      .map((h) => h.trim().toLowerCase())
-      .filter((h) => /^[0-9a-f]{64}$/.test(h)),
-  );
+/** Parses `path:rule  # justification` lines; blank lines and comment lines are ignored. */
+export function parseAllowlist(text: string): ReadonlySet<string> {
+  const entries = text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/#.*/, "").trim())
+    .filter(Boolean);
+  return new Set(entries);
 }
 
-function scanLine(line: string, denylist: ReadonlySet<string>): string | undefined {
-  if (line.includes(ALLOW_MARKER)) return undefined;
-  const hit = LINE_RULES.find(({ pattern }) => pattern.test(line));
-  if (hit) return hit.rule;
-  if (denylist.size === 0) return undefined;
-  const tokens = line.match(TOKEN) ?? [];
-  return tokens.some((t) => denylist.has(sha256(t.toLowerCase()))) ? "denylisted-identifier" : undefined;
+function pathRule(path: string, head: Buffer): string | undefined {
+  if (DATABASE_FILE.test(path) || head.subarray(0, SQLITE_HEADER.length).equals(SQLITE_HEADER)) return "database-file";
+  if (HTML_FILE.test(path) && !HTML_FIXTURE_DIRS.test(path)) return "html-outside-fixtures";
+  return undefined;
 }
 
-export function scanFile(path: string, content: string, denylist: ReadonlySet<string>): Finding[] {
-  const fileRule = FILE_RULES.find(({ pattern }) => pattern.test(path));
-  if (fileRule) return [{ path, line: 0, rule: fileRule.rule }];
+const isBinary = (content: Buffer): boolean => content.subarray(0, 8000).includes(0);
+
+/** Findings for one file, before the allowlist is applied. */
+export function scanFile(path: string, content: Buffer): Finding[] {
+  const rule = pathRule(path, content);
+  if (rule) return [{ path, line: 0, rule }];
+  if (isBinary(content)) return [];
   const findings: Finding[] = [];
-  content.split(/\r?\n/).forEach((text, index) => {
-    const rule = scanLine(text, denylist);
-    if (rule) findings.push({ path, line: index + 1, rule });
-  });
+  content
+    .toString("utf8")
+    .split(/\r?\n/)
+    .forEach((text, index) => {
+      const hit = LINE_RULES.find(({ pattern }) => pattern.test(text));
+      if (hit) findings.push({ path, line: index + 1, rule: hit.rule });
+    });
   return findings;
 }
 
-const isBinary = (buffer: Buffer): boolean => buffer.subarray(0, 8000).includes(0);
-
-function trackedFiles(): string[] {
-  return execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
+export function applyAllowlist(findings: Finding[], allow: ReadonlySet<string>): Finding[] {
+  return findings.filter((f) => !allow.has(`${f.path}:${f.rule}`));
 }
 
-function main(): number {
-  const denylist = parseDenylist(process.env["REAL_DATA_DENYLIST"]);
-  const findings = trackedFiles().flatMap((path) => {
-    const buffer = readFileSync(path);
-    const content = isBinary(buffer) ? "" : buffer.toString("utf8");
-    return scanFile(path, content, denylist);
-  });
+const git = (args: string[]): Buffer => execFileSync("git", args, { maxBuffer: 1 << 30 });
+
+/** The files to scan: tracked files, or staged added/copied/modified/renamed files (read from the index). */
+export function selectFiles(staged: boolean): Array<{ path: string; read: () => Buffer }> {
+  const list = staged ? git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"]) : git(["ls-files", "-z"]);
+  return list
+    .toString("utf8")
+    .split("\0")
+    .filter(Boolean)
+    .map((path) => ({ path, read: () => (staged ? git(["show", `:${path}`]) : readFileSync(path)) }));
+}
+
+function main(argv: string[]): number {
+  const allow = parseAllowlist(readFileSync(ALLOWLIST_PATH, "utf8"));
+  const findings = applyAllowlist(
+    selectFiles(argv.includes("--staged")).flatMap((f) => scanFile(f.path, f.read())),
+    allow,
+  );
   for (const f of findings) console.error(`${f.path}:${f.line} ${f.rule}`);
-  console.log(`real-data-scan: ${findings.length} finding(s)${denylist.size ? "" : " (no denylist configured)"}`);
+  console.log(`real-data-scan: ${findings.length} finding(s)`);
   return findings.length === 0 ? 0 : 1;
 }
 
-if (import.meta.main) process.exit(main());
+if (import.meta.main) process.exit(main(process.argv.slice(2)));

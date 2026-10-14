@@ -7,7 +7,9 @@ packages:
 allowBuilds:
   esbuild: true
 
-# Supply chain: trust signals (provenance, signatures) may not weaken between updates. No release-age quarantine.
+# Supply chain: trust signals (provenance, signatures) may not weaken between updates. No release-age quarantine
+# (pnpm defaults to one day): the Vite+ toolchain ships new dependencies that a quarantine blocks (D-0001).
 minimumReleaseAge: 0
 trustPolicy: no-downgrade
+# Releases older than a year (in minutes) predate provenance publishing and are not judged.
 trustPolicyIgnoreAfter: 525600
