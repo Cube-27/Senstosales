@@ -1,13 +1,11 @@
 // PO items and their lots, read from the item table (SPEC-06 §2). The row rules are the legacy parser's: an item row
 // starts with a PO ITM number, a row with LOT NO and DELY QTY adds a lot to the item above, and any other row is
 // description text for the item a 1-2 digit cell names, else the item above.
-import { parseMoney, parseQty } from "@senstosales/domain";
-import type { Money, Qty } from "@senstosales/domain";
-
 import { parsePageDate } from "../dates.ts";
+import { fail, readMoney, readQty } from "../fields.ts";
 import { mapColumnsByHeader } from "../html.ts";
 import type { Page } from "../html.ts";
-import type { ParseError, ParseResult, PoDocument } from "../types.ts";
+import type { ParseResult, PoDocument } from "../types.ts";
 
 type PoItem = PoDocument["items"][number];
 type PoLot = PoItem["lots"][number];
@@ -40,13 +38,6 @@ const WHOLE = /^\d+$/;
 
 /** One table row, read by column; a column the table lacks reads as "". */
 type Cells = (column: Column) => string;
-/** Whether the page has a REJ QTY column: without one, `rejQty` is null. */
-type HasRej = boolean;
-
-const fail = (code: ParseError["code"], message: string, location?: string): ParseResult<never> => ({
-  ok: false,
-  error: location === undefined ? { code, message } : { code, message, location },
-});
 
 export function parsePoItems(page: Page): ParseResult<PoItem[]> {
   const rows = itemTable(page);
@@ -74,7 +65,8 @@ export function parsePoItems(page: Page): ParseResult<PoItem[]> {
     }
   }
   if (items.length === 0) return fail("no-item-table", "The item table has no item rows");
-  return { ok: true, value: items.map((item) => ({ ...item, drawingNo: drawingNo(item.description) })) };
+  for (const item of items) item.drawingNo = drawingNo(item.description);
+  return { ok: true, value: items };
 }
 
 /** The rows of the first table with a whole MATERIAL CODE header cell, from that header row on. */
@@ -87,7 +79,7 @@ function itemTable(page: Page): string[][] | undefined {
 }
 
 /** A new item, or a repeated item row: its lot is added if new and the larger ordered quantity kept (legacy). */
-function readItemRow(cells: Cells, items: PoItem[], hasRej: HasRej): ParseResult<PoItem> {
+function readItemRow(cells: Cells, items: PoItem[], hasRej: boolean): ParseResult<PoItem> {
   const poItemNo = Number(cells("poItemNo"));
   const where = `item ${poItemNo}`;
   if (poItemNo === 0) return fail("bad-number", `${where}, PO ITM is not an item number`, `${where}, PO ITM`);
@@ -109,7 +101,7 @@ function mergeOrdQty(item: PoItem, cells: Cells, where: string): ParseResult<PoI
   return { ok: true, value: item };
 }
 
-function readItem(cells: Cells, poItemNo: number, where: string, hasRej: HasRej): ParseResult<PoItem> {
+function readItem(cells: Cells, poItemNo: number, where: string, hasRej: boolean): ParseResult<PoItem> {
   const materialCode = cells("materialCode");
   if (materialCode === "") {
     return fail("missing-field", `${where}, MATERIAL CODE is empty`, `${where}, MATERIAL CODE`);
@@ -121,6 +113,7 @@ function readItem(cells: Cells, poItemNo: number, where: string, hasRej: HasRej)
   // An empty received or rejected cell is 0, as the legacy parser read it.
   const rcdQty = readQty(cells("rcdQty") || "0", `${where}, RCD QTY`);
   if (!rcdQty.ok) return rcdQty;
+  // Null when the page has no REJ QTY column.
   const rejQty = hasRej ? readQty(cells("rejQty") || "0", `${where}, REJ QTY`) : { ok: true as const, value: null };
   if (!rejQty.ok) return rejQty;
   return {
@@ -205,14 +198,4 @@ function readLot(cells: Cells, item: string): ParseResult<PoLot> {
 function drawingNo(description: string): string | null {
   const found = new Set([...description.matchAll(DRAWING)].map((m) => m[1] ?? "").filter((d) => d.length > 4));
   return found.size === 0 ? null : [...found].sort().join(", ");
-}
-
-function readQty(text: string, where: string): ParseResult<Qty> {
-  const qty = parseQty(text.replaceAll(",", ""));
-  return qty.ok ? qty : fail("bad-quantity", `${where} is not a quantity: "${text}"`, where);
-}
-
-function readMoney(text: string, where: string): ParseResult<Money> {
-  const money = parseMoney(text.replaceAll(",", ""));
-  return money.ok ? money : fail("bad-number", `${where} is not an amount: "${text}"`, where);
 }
