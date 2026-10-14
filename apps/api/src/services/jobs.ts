@@ -1,18 +1,15 @@
-// Start, list, read and cancel background jobs (SPEC-08 §2, INV-98). The worker behind the Jobs port runs them.
+// Start, list, read and cancel background jobs (SPEC-08 §2, INV-98). The Jobs adapter runs them.
 import type { Db } from "@senstosales/db";
 import { WriteBatch } from "@senstosales/db";
 
 import { ConflictError, NotFoundError } from "../errors.ts";
-import type { JobRow, Jobs, JobStart } from "../ports/jobs.ts";
-import type { JobEventRow } from "../repositories/jobs.ts";
-import { findJob, jobEvents, listJobs, requestCancel } from "../repositories/jobs.ts";
+import { newId } from "../ids.ts";
+import type { Clock } from "../ports/clock.ts";
+import type { Jobs, JobStart } from "../ports/jobs.ts";
+import type { JobEventRow, JobRow } from "../repositories/jobs.ts";
+import { findJob, jobEvents, listJobs, queueIfIdle, requestCancel } from "../repositories/jobs.ts";
 
-export interface JobsDeps {
-  readonly db: Db;
-  readonly jobs: Jobs;
-}
-
-export function jobsService({ db, jobs }: JobsDeps) {
+export function jobsService({ db, clock, jobs }: { db: Db; clock: Clock; jobs: Jobs }) {
   async function load(id: string): Promise<JobRow> {
     const row = await findJob(db, id);
     if (row === null) throw new NotFoundError("job-not-found", "This job was not found.");
@@ -21,10 +18,13 @@ export function jobsService({ db, jobs }: JobsDeps) {
 
   return {
     async start(start: JobStart): Promise<JobRow> {
-      const row = await jobs.enqueue(start);
+      const id = newId();
+      await new WriteBatch(db).add(queueIfIdle(db, { id, type: start.type, createdAt: clock.now() })).commit();
+      const row = await findJob(db, id);
       if (row === null) {
         throw new ConflictError("job-running", "Another job is running. Wait for it to finish, or cancel it.");
       }
+      jobs.enqueue(id, start);
       return row;
     },
 
@@ -36,7 +36,6 @@ export function jobsService({ db, jobs }: JobsDeps) {
 
     /** The worker stops after the document in progress. A finished job is returned as it is. */
     async cancel(id: string): Promise<JobRow> {
-      await load(id);
       await new WriteBatch(db).add(requestCancel(db, id)).commit();
       return load(id);
     },

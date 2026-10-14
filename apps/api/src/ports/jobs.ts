@@ -1,19 +1,16 @@
-// The Jobs port (ARCHITECTURE §4.1, §7.3): background jobs, one at a time (INV-98). A job works through a list of
-// documents; the worker writes progress per document and honours cancel between documents. The adapter now is the
-// in-process worker over the `job` table (`platform/node/job-runner.ts`); a Durable Object later.
-import type { job } from "@senstosales/db";
+// The Jobs port (ARCHITECTURE §4.1, §7.3): runs queued jobs one at a time (INV-98). A job works through a list of
+// documents with the handler of its type. The adapter now is the in-process runner (`platform/node/job-runner.ts`);
+// a Durable Object later.
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
-export type JobRow = typeof job.$inferSelect;
-
 /** What `POST /api/jobs` names: the type and its parameters. */
 export type JobStart = z.output<(typeof routes)["jobs.start"]["body"]>;
-export type JobType = JobStart["type"];
+type JobType = JobStart["type"];
 
 export interface Jobs {
-  /** Queues a job and runs it when the worker is free. `null` when a job is already queued or running. */
-  enqueue(start: JobStart): Promise<JobRow | null>;
+  /** Runs the queued job `id` when the worker is free. */
+  enqueue(id: string, start: JobStart): void;
 }
 
 /** One document's outcome. Skipped and failed ones become job events with the reason. */

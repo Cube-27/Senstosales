@@ -6,8 +6,7 @@ import type { routes } from "@senstosales/schemas";
 import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import type { JobRow } from "../ports/jobs.ts";
-
+export type JobRow = typeof job.$inferSelect;
 export type JobEventRow = typeof jobEvent.$inferSelect;
 export type JobProgress = JobRow["progress"];
 type JobListQuery = z.output<(typeof routes)["jobs.list"]["query"]>;
@@ -24,7 +23,7 @@ export function queueIfIdle(db: Db, row: { id: string; type: JobRow["type"]; cre
   return db.build.run(sql`
     INSERT INTO job (id, type, status, created_at, cancel_requested, progress_json)
     SELECT ${row.id}, ${row.type}, 'queued', ${row.createdAt}, 0, ${JSON.stringify(NO_PROGRESS)}
-    WHERE NOT EXISTS (SELECT 1 FROM job WHERE status IN ('queued', 'running'))`);
+    WHERE NOT EXISTS (SELECT 1 FROM job WHERE ${inArray(job.status, ACTIVE)})`);
 }
 
 /** The running job, else the oldest queued one, else `null`. */
@@ -70,6 +69,11 @@ export async function listJobs(db: Db, query: JobListQuery): Promise<{ items: Jo
 /** In the order they were written. */
 export function jobEvents(db: Db, jobId: string): Promise<JobEventRow[]> {
   return db.query(db.build.select().from(jobEvent).where(eq(jobEvent.jobId, jobId)).orderBy(asc(jobEvent.id)));
+}
+
+export async function isCancelRequested(db: Db, id: string): Promise<boolean> {
+  const rows = await db.query(db.build.select({ flag: job.cancelRequested }).from(job).where(eq(job.id, id)));
+  return rows[0]?.flag ?? false;
 }
 
 /** Claims a queued job. The partial unique index refuses it while another job runs. */

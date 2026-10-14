@@ -11,6 +11,7 @@ import type { Clock } from "../src/ports/clock.ts";
 import type { DocumentResult, JobHandlers } from "../src/ports/jobs.ts";
 import { createJobRunner, type JobRunner } from "../src/platform/node/job-runner.ts";
 import { jobsRoutes } from "../src/routes/jobs.ts";
+import { jobWorker } from "../src/services/job-worker.ts";
 import { jobsService } from "../src/services/jobs.ts";
 import { migratedDb } from "./db.ts";
 import { ID, json, memoryLogger, testApp } from "./helpers.ts";
@@ -43,8 +44,8 @@ let handlers: JobHandlers;
 
 function setup(clock: Clock = tickingClock()) {
   const logger = memoryLogger();
-  runner = createJobRunner({ db, clock, logger, handlers });
-  const http = testApp(jobsRoutes(jobsService({ db, jobs: runner })));
+  runner = createJobRunner(jobWorker({ db, clock, logger, handlers }));
+  const http = testApp(jobsRoutes(jobsService({ db, clock, jobs: runner })));
   return { ...http, logger };
 }
 
