@@ -95,7 +95,8 @@ function itemFlags(item: SnapshotItem, add: AddFlag): void {
         field: "manual_dispatched_qty",
         expected: null,
         actual: qtyToString(item.manualDispatchedQty),
-        docIds: [...new Set(later)].sort(),
+        // Code-unit order, not locale order: the fingerprint must not depend on the machine.
+        docIds: [...new Set(later)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
       });
     }
   }
