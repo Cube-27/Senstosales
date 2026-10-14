@@ -1,7 +1,8 @@
 // The `admin` row and its sessions (ARCHITECTURE §10.1): reads return plain rows, writes return statements for the
 // service's batch.
 import { appUser, session, type Db, type Instant, type Statement } from "@senstosales/db";
-import { and, eq, gt, lte } from "drizzle-orm";
+import { and, eq, gt, lte, sql, type SQL } from "drizzle-orm";
+import type { SQLiteInsertValue } from "drizzle-orm/sqlite-core";
 
 export type User = typeof appUser.$inferSelect;
 
@@ -22,7 +23,13 @@ export async function hasSession(db: Db, tokenHash: string, now: Instant): Promi
   return rows.length > 0;
 }
 
-export const insertUser = (db: Db, user: User): Statement => db.build.insert(appUser).values(user);
+/** Inserts the user unless one with that username exists, so two overlapping first logins both succeed. */
+export const insertUserIfMissing = (db: Db, user: User): Statement =>
+  db.build.insert(appUser).values(user).onConflictDoNothing({ target: appUser.username });
+
+/** The id of the user named `username`, read when the batch runs: the row may be inserted earlier in the batch. */
+export const userIdOf = (username: string): SQL<string> =>
+  sql<string>`(SELECT ${appUser.id} FROM ${appUser} WHERE ${appUser.username} = ${username})`;
 
 export const updatePassword = (
   db: Db,
@@ -32,7 +39,7 @@ export const updatePassword = (
 
 export const deleteUser = (db: Db, userId: string): Statement => db.build.delete(appUser).where(eq(appUser.id, userId));
 
-export const insertSession = (db: Db, row: typeof session.$inferInsert): Statement =>
+export const insertSession = (db: Db, row: SQLiteInsertValue<typeof session>): Statement =>
   db.build.insert(session).values(row);
 
 export const deleteSession = (db: Db, tokenHash: string): Statement =>

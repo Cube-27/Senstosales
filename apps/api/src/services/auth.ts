@@ -2,11 +2,12 @@
 // default password `admin` (D-0004): the first login creates the row, and reset-to-defaults removes it. Change
 // password and reset end every session, as legacy. No backoff, no complexity rule, no forced change (C11).
 import { WriteBatch, type Instant, type Statement } from "@senstosales/db";
+import type { SQL } from "drizzle-orm";
 
 import { AuthError, ValidationError } from "../errors.ts";
+import { newId } from "../ids.ts";
 import { insertAudit } from "../repositories/audit.ts";
 import * as repo from "../repositories/auth.ts";
-import { newId } from "./ids.ts";
 import type { ServiceDeps } from "./index.ts";
 import { hashPassword, hashToken, newToken, verifyPassword } from "./password.ts";
 
@@ -42,7 +43,7 @@ const addSeconds = (at: Instant, seconds: number): Instant =>
   new Date(Date.parse(at) + seconds * 1000).toISOString() as Instant;
 
 export function createAuthService({ db, clock }: ServiceDeps) {
-  const audit = (action: Action, userId: string, at: Instant): Statement =>
+  const audit = (action: Action, userId: string | SQL<string>, at: Instant): Statement =>
     insertAudit(db, { id: newId(), at, actor: USERNAME, action, entityType: "app_user", entityId: userId });
 
   async function signedIn(token: string | undefined): Promise<boolean> {
@@ -65,12 +66,14 @@ export function createAuthService({ db, clock }: ServiceDeps) {
       }
       const now = clock.now();
       const batch = new WriteBatch(db);
-      let userId = user?.id;
-      if (userId === undefined) {
-        userId = newId();
+      if (user === null) {
         const passwordHash = await hashPassword(DEFAULT_PASSWORD);
-        batch.add(repo.insertUser(db, { id: userId, username: USERNAME, passwordHash, passwordChangedAt: null }));
+        batch.add(
+          repo.insertUserIfMissing(db, { id: newId(), username: USERNAME, passwordHash, passwordChangedAt: null }),
+        );
       }
+      // Resolved in the batch: an overlapping first login may have created the row with another id.
+      const userId = user?.id ?? repo.userIdOf(USERNAME);
       const token = newToken();
       const expiresAt = addSeconds(now, SESSION_SECONDS);
       await batch
