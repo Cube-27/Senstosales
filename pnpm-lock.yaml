@@ -36,6 +36,15 @@ importers:
         specifier: ^4.10.2
         version: 4.10.2
 
+  packages/parsers:
+    dependencies:
+      '@senstosales/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+
   packages/schemas:
     dependencies:
       '@senstosales/domain':

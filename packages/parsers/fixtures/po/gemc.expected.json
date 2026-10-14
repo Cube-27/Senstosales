@@ -1,0 +1,66 @@
+{
+  "poNumber": "4100000104",
+  "poDate": "2024-09-03",
+  "enquiry": null,
+  "supplierCode": "900101",
+  "orderType": "GM",
+  "division": "21",
+  "quotation": null,
+  "poStatusCode": "A",
+  "amendNo": 0,
+  "poValue": "5900",
+  "rcNo": null,
+  "inspection": "BHEL",
+  "currency": "INR",
+  "netPoValue": "5900",
+  "remarks": "GEMC- 7731 dated 28-AUG-24. Rates are inclusive of GST.",
+  "gemcNumber": "7731",
+  "items": [
+    {
+      "poItemNo": 10,
+      "materialCode": "SYN400010",
+      "description": "PRESSURE GAUGE 0-10 BAR",
+      "drawingNo": null,
+      "unit": "NOS",
+      "ordQty": "5",
+      "rate": "1180",
+      "rcdQty": "0",
+      "rejQty": "0",
+      "lots": [
+        {
+          "lotNo": 1,
+          "delyQty": "5",
+          "delyDate": "2024-10-31",
+          "entryAllowDate": "2024-11-15",
+          "entryAllowNote": null,
+          "destCode": "31"
+        }
+      ]
+    }
+  ],
+  "rawHeader": {
+    "PURCHASE ORDER": "4100000104",
+    "PO DATE": "03-SEP-24",
+    "ENQUIRY": "",
+    "ENQ DATE": "",
+    "QUOTATION": "",
+    "QUOT-DATE": "",
+    "RC NO": "",
+    "ORD-TYPE": "GM",
+    "PO STATUS": "A",
+    "INSPECTION BY": "BHEL",
+    "CURRENCY": "INR",
+    "EX RATE": "1.00",
+    "SUPP NAME M/S": "Example Engineering Works",
+    "SUPP CODE": "900101",
+    "DVN": "21",
+    "AMEND NO": "0",
+    "PO-VALUE": "5900.00",
+    "NET PO VAL": "5900.00",
+    "REMARKS": "GEMC- 7731 dated 28-AUG-24. Rates are inclusive of GST.",
+    "NAME": "Test Officer",
+    "DESIGNATION": "Engineer",
+    "PHONE NO": "011-20000000",
+    "EMAIL": "purchase@example.com"
+  }
+}
