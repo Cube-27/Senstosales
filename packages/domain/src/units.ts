@@ -5,9 +5,12 @@ import type { Result } from "./result.ts";
 
 export type Qty = number & { readonly __brand: "Qty" };
 export type Money = number & { readonly __brand: "Money" };
+/** A GST percentage in 1e-5 units: `9` % -> `900000` (SPEC-03 §9). */
+export type GstPct = number & { readonly __brand: "GstPct" };
 
-const QTY_DP = 3;
-const MONEY_DP = 5;
+export const QTY_DP = 3;
+export const MONEY_DP = 5;
+export const PCT_DP = 5;
 
 /** Quantity tolerance 0.001 (INV-02): one milli-unit. */
 export const TOL = 1 as Qty;
@@ -37,12 +40,18 @@ export const parseQty = (s: string): Result<Qty> => parseScaled(s, QTY_DP) as Re
 /** INV-01: `"848.75"` -> `84875000`. */
 export const parseMoney = (s: string): Result<Money> => parseScaled(s, MONEY_DP) as Result<Money>;
 
+/** SPEC-03 §9: `"9"` -> `900000`. */
+export const parsePct = (s: string): Result<GstPct> => parseScaled(s, PCT_DP) as Result<GstPct>;
+
 export const qtyToString = (q: Qty): string => scaledToString(q, QTY_DP);
 
 export const moneyToString = (m: Money): string => scaledToString(m, MONEY_DP);
 
 /** INV-01: exact integer sum; `0.1 + 0.2` -> `300`. */
 export const sumQty = (qs: readonly Qty[]): Qty => qs.reduce((total, q) => total + q, 0) as Qty;
+
+/** INV-01: exact integer sum. */
+export const sumMoney = (ms: readonly Money[]): Money => ms.reduce((total, m) => total + m, 0) as Money;
 
 /** INV-02: `a >= b − 0.001`. */
 export const gte = (a: Qty, b: Qty): boolean => a >= b - TOL;

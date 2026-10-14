@@ -2,7 +2,18 @@ import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { Money, Qty } from "../src/index.ts";
-import { TOL, gtTol, gte, moneyToString, parseMoney, parseQty, qtyToString, roundMoney, sumQty } from "../src/index.ts";
+import {
+  TOL,
+  gtTol,
+  gte,
+  moneyToString,
+  parseMoney,
+  parseQty,
+  qtyToString,
+  roundMoney,
+  sumMoney,
+  sumQty,
+} from "../src/index.ts";
 import { money, qty } from "./unwrap.ts";
 
 describe("INV-01: exact integer units", () => {
@@ -87,6 +98,15 @@ describe("INV-01: exact integer units", () => {
     [["10", "-12"], -2000],
   ])("sumQty(%j) -> %i", (parts, expected) => {
     expect(sumQty(parts.map(qty))).toBe(expected);
+  });
+
+  it.each([
+    [[], 0],
+    [["0.1", "0.2"], 30000],
+    [["2157.83898", "100.00001"], 225783899],
+    [["848.75", "-848.75"], 0],
+  ])("sumMoney(%j) -> %i", (parts, expected) => {
+    expect(sumMoney(parts.map(money))).toBe(expected);
   });
 
   it("round-trips every safe integer through its decimal string", () => {
