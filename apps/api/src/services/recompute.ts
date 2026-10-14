@@ -96,7 +96,14 @@ export function recomputeStatements({ db, clock }: RecomputeDeps, snapshot: PoSn
       status: "open" as const,
       openedAt,
     }));
-    statements.push(db.build.insert(reconciliationIssue).values(rows));
+    // Another batch built from the same stored flags may commit the same fingerprint first; the unique index then
+    // keeps its row and this batch still commits (INV-59).
+    statements.push(
+      db.build
+        .insert(reconciliationIssue)
+        .values(rows)
+        .onConflictDoNothing({ target: reconciliationIssue.fingerprint }),
+    );
   }
   return statements;
 }
