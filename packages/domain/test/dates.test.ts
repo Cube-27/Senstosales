@@ -2,12 +2,9 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { IsoDate } from "../src/index.ts";
 import { compareIsoDate, parseIsoDate } from "../src/index.ts";
+import { unwrap } from "./unwrap.ts";
 
-const date = (s: string): IsoDate => {
-  const r = parseIsoDate(s);
-  if (!r.ok) throw new Error(r.error);
-  return r.value;
-};
+const date = (s: string): IsoDate => unwrap(parseIsoDate(s));
 
 // C3: dates are YYYY-MM-DD strings (IST calendar dates), validated as real calendar dates.
 describe("C3: IsoDate", () => {

@@ -12,7 +12,7 @@ const isLeapYear = (y: number): boolean => (y % 4 === 0 && y % 100 !== 0) || y %
 export function parseIsoDate(s: string): Result<IsoDate> {
   const m = ISO_DATE.exec(s);
   if (!m) return { ok: false, error: `Not a YYYY-MM-DD date: "${s}"` };
-  const [year, month, day] = m.slice(1).map(Number) as [number, number, number];
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const days = month === 2 && isLeapYear(year) ? 29 : DAYS_IN_MONTH[month - 1];
   if (days === undefined || day < 1 || day > days) return { ok: false, error: `No such date: "${s}"` };
   return { ok: true, value: s as IsoDate };

@@ -3,17 +3,10 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { Money, Qty } from "../src/index.ts";
 import { TOL, gtTol, gte, moneyToString, parseMoney, parseQty, qtyToString, roundMoney, sumQty } from "../src/index.ts";
+import { unwrap } from "./unwrap.ts";
 
-const qty = (s: string): Qty => {
-  const r = parseQty(s);
-  if (!r.ok) throw new Error(r.error);
-  return r.value;
-};
-const money = (s: string): Money => {
-  const r = parseMoney(s);
-  if (!r.ok) throw new Error(r.error);
-  return r.value;
-};
+const qty = (s: string): Qty => unwrap(parseQty(s));
+const money = (s: string): Money => unwrap(parseMoney(s));
 
 describe("INV-01: exact integer units", () => {
   it.each([
