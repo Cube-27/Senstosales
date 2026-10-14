@@ -70,7 +70,11 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
 
-  tools/gen: {}
+  tools/gen:
+    dependencies:
+      '@senstosales/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
 
   tools/orchestrator:
     devDependencies:

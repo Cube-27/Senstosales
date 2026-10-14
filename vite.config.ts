@@ -87,7 +87,13 @@ export default defineConfig({
   // Generated files are checked for freshness against their generator instead (C15).
   fmt: {
     printWidth: 120,
-    ignorePatterns: ["pnpm-lock.yaml", "LICENSE", "packages/parsers/fixtures/**/*.html", "**/*.generated.ts"],
+    ignorePatterns: [
+      "pnpm-lock.yaml",
+      "LICENSE",
+      "packages/parsers/fixtures/**/*.html",
+      "**/*.generated.ts",
+      "packages/schemas/generated/openapi.json",
+    ],
   },
   test: { include: ["{packages,apps,tools}/*/test/**/*.test.ts"] },
   staged: {
