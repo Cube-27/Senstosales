@@ -7,6 +7,7 @@ import type { Jobs } from "../ports/jobs.ts";
 import type { Storage } from "../ports/storage.ts";
 import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
+import { folderImportService } from "./folder-import.ts";
 import { jobsService } from "./jobs.ts";
 import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
@@ -39,6 +40,7 @@ export function createServices(deps: ServiceDeps) {
     buyers: createBuyersService(withSupplier),
     secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
+    folderImport: folderImportService(deps),
     po: poService(deps),
     poIngest: poIngestService(deps),
     srvIngest: srvIngestService(deps),

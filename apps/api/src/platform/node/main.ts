@@ -14,6 +14,7 @@ import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
 import { healthRoutes } from "../../routes/health.ts";
 import { apiRoutes } from "../../routes/index.ts";
+import { folderImportHandlers } from "../../services/folder-import.ts";
 import { createServices } from "../../services/index.ts";
 import { jobWorker } from "../../services/job-worker.ts";
 import { createClock } from "./clock.ts";
@@ -72,9 +73,12 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  // Each job type's handler arrives with its PR (SPEC-08 PR 5-6, SPEC-19, SPEC-21); until then a start fails plainly.
-  const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers: {} }));
-  const services = createServices({ db, clock, jobs, storage: createFsStorage(options.dataDir) });
+  // The other job types' handlers arrive with their PRs (SPEC-08 PR 6, SPEC-19, SPEC-21); until then a start fails
+  // plainly.
+  const storage = createFsStorage(options.dataDir);
+  const handlers = folderImportHandlers({ db, clock, storage });
+  const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers }));
+  const services = createServices({ db, clock, jobs, storage });
   const app = createApp(
     { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
     {
