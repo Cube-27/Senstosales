@@ -314,3 +314,27 @@ None.
 - Alternatives: A `spike/<name>` branch (SPEC-01 §2 wording); merging the prototype.
 - Why: Keeps throwaway code off `main` and leaves no stale branch banner on GitHub (orchestrator). SPEC-01 §2 and §8 still say `spike/<name>`, and spike 3's tag is `spike/db`.
 - Reversible: yes — a tag can be renamed.
+
+### D-0033 — matchSrvItem / resolveDocLink signatures
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: decided
+- Decision: `resolveDocLink(raw, srvDate, candidates)` takes candidates `{ id, number, date }` of one document kind and returns the linked id or `null`; a missing or whitespace-only number links nothing. `matchSrvItem({ materialCode, poItemNo }, poItems)` takes `poItemNo: number` and returns the matched PO item id or `null`.
+- Alternatives: Return the matched object; a string PO item number; a precomputed `DocKey` index for candidates.
+- Why: SPEC-03 §4.1 fixes names and arguments but not element types. `po_item_no` is part of `UNIQUE(po_id, po_item_no)` (ARCHITECTURE §8.2). Ids are what `resolved_dc_id` / `po_item_id` store. Callers can pre-filter candidates by number.
+- Reversible: yes — domain-internal.
+
+### D-0034 — Ambiguous material code is unmatched (EC-19)
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: decided
+- Decision: When a material code is on several PO items and the SRV row's PO item number is none of them, the SRV line is stored unmatched (EC-19), as for EC-12.
+- Alternatives: Pick the first item with the code.
+- Why: A2-7 lets the PO item number decide among the items with that code; picking one would invent a rule (C18). To confirm against legacy ingestion goldens in SPEC-08.
+- Reversible: yes.
+
+### D-0035 — Material codes compared exactly
+
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: decided
+- Decision: `matchSrvItem` compares material codes exactly: no trimming or case folding.
+- Alternatives: Trim or upper-case before comparing.
+- Why: Spec §3 matches by material code and states no normalisation; the parsers (SPEC-06) produce the stored values.
+- Reversible: yes.

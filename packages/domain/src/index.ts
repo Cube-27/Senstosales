@@ -12,3 +12,4 @@ export { itemStatus, poStatus } from "./status.ts";
 export type { DocKey, Fy } from "./fy.ts";
 export { docKey, fyOf } from "./fy.ts";
 export { defaultGc } from "./gc.ts";
+export { matchSrvItem, resolveDocLink } from "./links.ts";
