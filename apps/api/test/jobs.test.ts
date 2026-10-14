@@ -14,7 +14,7 @@ import { jobsRoutes } from "../src/routes/jobs.ts";
 import { jobWorker } from "../src/services/job-worker.ts";
 import { jobsService } from "../src/services/jobs.ts";
 import { migratedDb } from "./db.ts";
-import { ID, json, memoryLogger, testApp } from "./helpers.ts";
+import { gate, ID, json, memoryLogger, testApp } from "./helpers.ts";
 
 /** A clock that moves one second per call, so jobs created one after another sort by `createdAt`. */
 function tickingClock(): Clock {
@@ -25,15 +25,8 @@ function tickingClock(): Clock {
   };
 }
 
-/** Documents whose key is the label upper-cased, so a test sees which one the worker uses where. */
-const docs = (...labels: string[]): JobDocument[] => labels.map((label) => ({ key: label.toUpperCase(), label }));
-
-/** A promise the test resolves, to hold a handler inside a document. */
-function gate() {
-  let open!: () => void;
-  const opened = new Promise<void>((resolve) => (open = resolve));
-  return { open, opened };
-}
+/** Documents whose key is their label. */
+const docs = (...keys: string[]): JobDocument[] => keys.map((key) => ({ key, label: key }));
 
 const START = json("POST", { type: "recompute-all" });
 const RUNNING = { code: "job-running", message: "Another job is running. Wait for it to finish, or cancel it." };
@@ -60,10 +53,9 @@ beforeEach(async () => {
   handlers = {
     "recompute-all": {
       documents: async () => docs("a", "b", "c"),
-      process: async (key) => {
-        const doc = key.toLowerCase();
+      process: async (doc) => {
         await hold[doc];
-        processed.push(key);
+        processed.push(doc);
         return results[doc] ?? { outcome: "done" };
       },
     },
@@ -91,7 +83,7 @@ describe("start and run", () => {
       summary: null,
     });
     await runner.idle();
-    expect(processed).toEqual(["A", "B", "C"]);
+    expect(processed).toEqual(["a", "b", "c"]);
     const detail = await (await send(`/api/jobs/${queued.id}`)).json();
     expect(detail).toEqual({
       job: {
@@ -100,6 +92,7 @@ describe("start and run", () => {
         startedAt: "2025-04-01T05:30:01.000Z",
         finishedAt: "2025-04-01T05:30:02.000Z",
         progress: { total: 3, done: 3, skipped: 0, failed: 0, current: null },
+        summary: { total: 3, done: 3, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [] },
       },
       events: [],
     });
@@ -148,7 +141,7 @@ describe("start and run", () => {
     handlers["recompute-all"] = {
       documents: async () => docs("a", "b"),
       process: async (key) => {
-        if (key === "B") throw new Error("Storage is not reachable.");
+        if (key === "b") throw new Error("Storage is not reachable.");
         return { outcome: "done" };
       },
     };
@@ -201,7 +194,7 @@ describe("one job at a time (INV-98)", () => {
     await runner.idle();
     expect((await send("/api/jobs", START)).status).toBe(200);
     await runner.idle();
-    expect(processed).toEqual(["A", "B", "C", "A", "B", "C"]);
+    expect(processed).toEqual(["a", "b", "c", "a", "b", "c"]);
   });
 
   it("answers 409 when two starts arrive together", async () => {
@@ -209,7 +202,7 @@ describe("one job at a time (INV-98)", () => {
     const statuses = await Promise.all([send("/api/jobs", START), send("/api/jobs", START)]);
     expect(statuses.map((r) => r.status).sort()).toEqual([200, 409]);
     await runner.idle();
-    expect(processed).toEqual(["A", "B", "C"]);
+    expect(processed).toEqual(["a", "b", "c"]);
   });
 
   it("answers 409 when the table holds a running job this process did not start", async () => {
@@ -239,7 +232,7 @@ describe("cancel", () => {
     expect(requested.cancelRequested).toBe(true);
     a.open();
     await runner.idle();
-    expect(processed).toEqual(["A"]);
+    expect(processed).toEqual(["a"]);
     const { job: cancelled } = await client.request("jobs.detail", { params: { id } });
     expect(cancelled.status).toBe("cancelled");
     expect(cancelled.progress).toEqual({ total: 3, done: 1, skipped: 0, failed: 0, current: null });
@@ -269,7 +262,7 @@ describe("cancel", () => {
     const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
     await runner.idle();
     expect((await client.request("jobs.detail", { params: { id } })).job.status).toBe("done");
-    expect(processed).toEqual(["A", "B", "C"]);
+    expect(processed).toEqual(["a", "b", "c"]);
   });
 
   it("leaves a finished job as it is", async () => {
@@ -331,25 +324,69 @@ describe("list and detail", () => {
   });
 });
 
-describe("summary", () => {
-  it("keeps what the handler's finish returns, after every event and count is written", async () => {
+describe("documents and summary", () => {
+  it("processes each document by its key and shows its label as current, on events and in the summary", async () => {
+    const { client } = setup();
+    const seen: unknown[] = [];
+    handlers["recompute-all"] = {
+      documents: async () => [
+        { key: "k1", label: "one.html" },
+        { key: "k2", label: "two.html" },
+      ],
+      process: async (key, _start, jobId) => {
+        seen.push([key, (await client.request("jobs.detail", { params: { id: jobId } })).job.progress.current]);
+        return key === "k2" ? { outcome: "skipped", reason: "Older." } : { outcome: "done" };
+      },
+    };
+    const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
+    await runner.idle();
+    const detail = await client.request("jobs.detail", { params: { id } });
+    expect(seen).toEqual([
+      ["k1", "one.html"],
+      ["k2", "two.html"],
+    ]);
+    expect(detail.events.map((e) => [e.documentKey, e.message])).toEqual([["two.html", "Older."]]);
+    expect(detail.job.summary).toEqual({
+      total: 2,
+      done: 1,
+      skipped: 1,
+      failed: 0,
+      skippedDocuments: [{ document: "two.html", reason: "Older." }],
+      failedDocuments: [],
+    });
+  });
+
+  it("adds what the handler's finish returns, which runs after every event and count is written", async () => {
     const { client } = setup();
     results = { b: { outcome: "failed", reason: "The page has no items table." } };
     handlers["recompute-all"]!.finish = async (_start, jobId) => {
       const { job: seen, events } = await client.request("jobs.detail", { params: { id: jobId } });
-      return { failed: seen.progress.failed, events: events.length };
+      return { seenFailed: seen.progress.failed, seenEvents: events.length };
     };
     const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
     await runner.idle();
     const { job: done } = await client.request("jobs.detail", { params: { id } });
-    expect([done.status, done.summary]).toEqual(["done", { failed: 1, events: 1 }]);
+    expect([done.status, done.summary]).toEqual([
+      "done",
+      {
+        total: 3,
+        done: 2,
+        skipped: 0,
+        failed: 1,
+        skippedDocuments: [],
+        failedDocuments: [{ document: "b", reason: "The page has no items table." }],
+        seenFailed: 1,
+        seenEvents: 1,
+      },
+    ]);
   });
 
-  it("runs finish when the job fails too", async () => {
+  it("runs finish when the job fails too, keeping the counts its batches reached", async () => {
     const { client } = setup();
     handlers["recompute-all"] = {
-      documents: async () => docs("a"),
-      process: async () => Promise.reject(new Error("Storage is not reachable.")),
+      documents: async () => docs("a", "b"),
+      process: async (key) =>
+        key === "b" ? Promise.reject(new Error("Storage is not reachable.")) : { outcome: "done" },
       finish: async () => ({ cleaned: true }),
     };
     const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
@@ -358,19 +395,30 @@ describe("summary", () => {
     expect([failed.status, failed.error, failed.summary]).toEqual([
       "failed",
       "Storage is not reachable.",
-      { cleaned: true },
+      { total: 2, done: 1, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [], cleaned: true },
     ]);
   });
 
-  it("leaves the job as it ended, without a summary, when finish throws, and logs it", async () => {
+  it("leaves finish's part out when it throws, keeps the job as it ended, and logs it", async () => {
     const { client, logger } = setup();
     handlers["recompute-all"]!.finish = async () => Promise.reject(new Error("Storage is not reachable."));
     const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
     await runner.idle();
     const { job: done } = await client.request("jobs.detail", { params: { id } });
-    expect([done.status, done.error, done.summary]).toEqual(["done", null, null]);
+    expect([done.status, done.error, done.summary]).toEqual([
+      "done",
+      null,
+      { total: 3, done: 3, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [] },
+    ]);
     expect(logger.lines.map((l) => [l.level, l.message, l.fields["error"]])).toEqual([
       ["error", "job summary failed", "Storage is not reachable."],
     ]);
+  });
+
+  it("keeps no summary for a job whose type has no handler", async () => {
+    const { client } = setup();
+    const { id } = await client.request("jobs.start", { body: { type: "backup" } });
+    await runner.idle();
+    expect((await client.request("jobs.detail", { params: { id } })).job.summary).toBeNull();
   });
 });

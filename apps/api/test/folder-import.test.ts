@@ -13,7 +13,7 @@ import { apiRoutes } from "../src/routes/index.ts";
 import { folderImportHandlers } from "../src/services/folder-import.ts";
 import { createServices } from "../src/services/index.ts";
 import { jobWorker } from "../src/services/job-worker.ts";
-import { ID, json, memoryLogger, testApp } from "./helpers.ts";
+import { gate, ID, json, memoryLogger, testApp } from "./helpers.ts";
 import { poPage } from "./po-pages.ts";
 import { fixedClock, memoryStorage, supplierDb, SUPPLIER } from "./service-deps.ts";
 
@@ -135,8 +135,8 @@ describe("a PO folder of good, older and broken files", () => {
       done: 2,
       skipped: 1,
       failed: 1,
-      skippedFiles: [{ file: "older.html", reason: older }],
-      failedFiles: [{ file: "broken.html", reason: events[1]?.message }],
+      skippedDocuments: [{ document: "older.html", reason: older }],
+      failedDocuments: [{ document: "broken.html", reason: events[1]?.message }],
       flags: { QTY_MISMATCH: 1 },
     });
     const pos = await db.query(db.build.select({ number: po.poNumber, date: po.poDate }).from(po).orderBy(po.poNumber));
@@ -194,8 +194,8 @@ test("a job whose staging area holds no files fails plainly", async () => {
     done: 0,
     skipped: 0,
     failed: 0,
-    skippedFiles: [],
-    failedFiles: [],
+    skippedDocuments: [],
+    failedDocuments: [],
     flags: {},
   });
 });
@@ -206,8 +206,7 @@ test("a cancelled import keeps the summary of what it did and deletes the staged
     file("two.html", poPage({ number: "4500002", date: "10/04/2025", items: [{ no: 10 }] })),
   ]);
   // Hold the job while it reads the staged files, and cancel it then: it stops before the first document.
-  let open!: () => void;
-  const opened = new Promise<void>((resolve) => (open = resolve));
+  const { open, opened } = gate();
   const { get } = storage;
   storage.get = async (key) => (await opened, get(key));
   const { id } = await http.client.request("jobs.start", { body: { type: "po.import-folder", stagingId } });

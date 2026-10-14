@@ -50,3 +50,10 @@ export const json = (method: string, body: unknown): RequestInit => ({
   headers: { "content-type": "application/json" },
   body: JSON.stringify(body),
 });
+
+/** A promise the test resolves, to hold work at a point until it calls `open`. */
+export function gate() {
+  let open!: () => void;
+  const opened = new Promise<void>((resolve) => (open = resolve));
+  return { open, opened };
+}

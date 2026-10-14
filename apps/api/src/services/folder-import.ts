@@ -3,16 +3,14 @@
 // by one through the upload's ingest service, each file its own batch (INV-50). Older files are skipped and broken
 // ones fail, each as a job event (INV-44); the other files still commit. Staged files live in `Storage` under
 // `staging/<stagingId>/<kind>/`, keyed by the server, never by a request (C17), and are deleted once the job ends. The
-// summary keeps the counts, the skipped and failed files with reasons, and the flags the import raised, by type.
-import type { Db, Instant } from "@senstosales/db";
-import { reconciliationIssue } from "@senstosales/db";
+// job's summary adds the flags the import raised, by type, to the worker's counts and skipped and failed files.
 import type { RouteInput, RouteOutput } from "@senstosales/schemas";
-import { count, gte } from "drizzle-orm";
 import { z } from "zod";
 
 import { newId } from "../ids.ts";
 import type { DocumentResult, JobDocument, JobHandler, JobHandlers, JobStart, JobSummary } from "../ports/jobs.ts";
-import { findJob, jobEvents } from "../repositories/jobs.ts";
+import { flagCountsSince } from "../repositories/flags.ts";
+import { findJob } from "../repositories/jobs.ts";
 import type { FileResult, UploadFile } from "./po-ingest.ts";
 import { ingestPoFile } from "./po-ingest.ts";
 import type { IngestContext, SourceDocumentDeps } from "./source-documents.ts";
@@ -78,43 +76,14 @@ function folderImportHandler<S extends FolderStart>(
         : { outcome: result.status, reason: result.reason ?? "" };
     },
 
+    /** Deletes the staged files and adds the flags the import opened, by type. */
     async finish({ stagingId }, jobId): Promise<JobSummary> {
       for (const key of await storage.list(folderOf(stagingId, kind))) await storage.delete(key);
-      return summarize(deps.db, jobId);
+      // One job runs at a time (INV-98), so the flags opened since it started are the import's own, bar any a user
+      // raised meanwhile.
+      const startedAt = (await findJob(deps.db, jobId))?.startedAt ?? null;
+      const flags = startedAt === null ? [] : await flagCountsSince(deps.db, startedAt);
+      return { flags: Object.fromEntries(flags.map((f) => [f.type, f.count])) };
     },
   };
-}
-
-/**
- * Counts, the skipped and failed files with their reasons (the job's events), and the flags opened since the job
- * started; one job runs at a time (INV-98), so those are the import's own, bar any a user raised meanwhile.
- */
-async function summarize(db: Db, jobId: string): Promise<JobSummary> {
-  const row = await findJob(db, jobId);
-  if (row === null) throw new Error(`Job ${jobId} is missing.`);
-  const { total, done, skipped, failed } = row.progress;
-  const events = await jobEvents(db, jobId);
-  const files = (level: "warn" | "error") =>
-    events.filter((e) => e.level === level).map((e) => ({ file: e.documentKey, reason: e.message }));
-  const flags = row.startedAt === null ? [] : await flagsSince(db, row.startedAt);
-  return {
-    total,
-    done,
-    skipped,
-    failed,
-    skippedFiles: files("warn"),
-    failedFiles: files("error"),
-    flags: Object.fromEntries(flags.map((f) => [f.type, f.count])),
-  };
-}
-
-function flagsSince(db: Db, since: Instant) {
-  return db.query(
-    db.build
-      .select({ type: reconciliationIssue.type, count: count() })
-      .from(reconciliationIssue)
-      .where(gte(reconciliationIssue.openedAt, since))
-      .groupBy(reconciliationIssue.type)
-      .orderBy(reconciliationIssue.type),
-  );
 }

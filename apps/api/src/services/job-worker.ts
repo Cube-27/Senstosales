@@ -1,6 +1,7 @@
 // Runs one queued job (SPEC-08 §4.1, ARCHITECTURE §7.3, INV-98): progress is written per document, skipped and
 // failed documents become job events with their reason, and cancel is honoured between documents. Once the job ends,
-// its handler's summary is kept in the row (§7.4). The Jobs adapter decides when a job runs.
+// its summary is kept in the row (§7.4): the counts, the skipped and failed documents with their reasons, and what the
+// handler's `finish` adds. The Jobs adapter decides when a job runs.
 import type { Db, Statement } from "@senstosales/db";
 import { WriteBatch } from "@senstosales/db";
 
@@ -18,6 +19,9 @@ import {
   setProgress,
 } from "../repositories/jobs.ts";
 
+/** A skipped or failed document as the summary lists it. */
+type Issue = { document: string; reason: string };
+
 /** How a job ended; `error` is shown to the user on the job. */
 type End = { status: "done" | "cancelled"; error: null } | { status: "failed"; error: string };
 
@@ -33,7 +37,8 @@ export function jobWorker(deps: { db: Db; clock: Clock; logger: Logger; handlers
     // `JobHandlers` pairs each type with its handler; indexing by a union type loses that pairing.
     const handler = deps.handlers[start.type] as JobHandler | undefined;
     let progress = NO_PROGRESS;
-    // `progress` follows only committed batches, so a failed job keeps the counts the database holds.
+    const issues: { skipped: Issue[]; failed: Issue[] } = { skipped: [], failed: [] };
+    // `progress` and `issues` follow only committed batches, so a failed job keeps what the database holds.
     const write = async (next: JobProgress, ...rest: Statement[]) => {
       await commit(setProgress(db, id, next), ...rest);
       progress = next;
@@ -52,18 +57,45 @@ export function jobWorker(deps: { db: Db; clock: Clock; logger: Logger; handlers
           [result.outcome]: progress[result.outcome] + 1,
           current: documents[i + 1]?.label ?? null,
         };
-        const event = result.outcome === "done" ? [] : [insertEvent(db, eventFor(document.label, result))];
-        await write(counted, ...event);
+        if (result.outcome === "done") {
+          await write(counted);
+        } else {
+          await write(counted, insertEvent(db, eventFor(document.label, result)));
+          issues[result.outcome].push({ document: document.label, reason: result.reason });
+        }
       }
       return { status: "done", error: null };
     }
 
-    function logFailure(err: unknown, message: string): void {
+    /** Logs `err` and returns its message. */
+    function logFailure(err: unknown, message: string): string {
       const error = err instanceof Error ? err.message : String(err);
       logger.error(
         { jobId: id, type: start.type, error, stack: err instanceof Error ? err.stack : undefined },
         message,
       );
+      return error;
+    }
+
+    /** `null` for a job with no handler; a `finish` that throws leaves its part out. */
+    async function summarize(): Promise<JobSummary | null> {
+      if (handler === undefined) return null;
+      let extra: JobSummary = {};
+      try {
+        extra = (await handler.finish?.(start, id)) ?? {};
+      } catch (err) {
+        logFailure(err, "job summary failed");
+      }
+      const { total, done, skipped, failed } = progress;
+      return {
+        total,
+        done,
+        skipped,
+        failed,
+        skippedDocuments: issues.skipped,
+        failedDocuments: issues.failed,
+        ...extra,
+      };
     }
 
     function eventFor(documentKey: string, result: Extract<DocumentResult, { reason: string }>) {
@@ -71,17 +103,8 @@ export function jobWorker(deps: { db: Db; clock: Clock; logger: Logger; handlers
       return { id: newId(), jobId: id, at: clock.now(), level, documentKey, message: result.reason };
     }
 
-    const end = await run().catch((err: unknown): End => {
-      logFailure(err, "job failed");
-      return { status: "failed", error: err instanceof Error ? err.message : String(err) };
-    });
-    // A summary that cannot be made leaves the job as it ended, without one.
-    const summary = await Promise.resolve(handler?.finish?.(start, id) ?? null).catch(
-      (err: unknown): JobSummary | null => {
-        logFailure(err, "job summary failed");
-        return null;
-      },
-    );
+    const end = await run().catch((err: unknown): End => ({ status: "failed", error: logFailure(err, "job failed") }));
+    const summary = await summarize();
     try {
       const finished = { ...end, finishedAt: clock.now(), progress: { ...progress, current: null }, summary };
       await commit(finishJob(db, id, finished));

@@ -28,7 +28,7 @@ export type DocumentResult =
   | { readonly outcome: "done" }
   | { readonly outcome: "skipped" | "failed"; readonly reason: string };
 
-/** What a finished job keeps in its row (ARCHITECTURE §7.4); shaped by the job type. */
+/** What a finished job keeps in its row (ARCHITECTURE §7.4): the worker's counts and issues, plus `finish`'s part. */
 export type JobSummary = Record<string, unknown>;
 
 /** The work of one job type. A throw from `documents` or `process` fails the whole job. */
@@ -36,8 +36,9 @@ export interface JobHandler<S extends JobStart = JobStart> {
   /** The documents to work through, in order. */
   documents(start: S, jobId: string): Promise<readonly JobDocument[]>;
   process(key: string, start: S, jobId: string): Promise<DocumentResult>;
-  /** Runs once the job has ended, however it ended, with its events and progress committed; returns the summary. */
-  finish?(start: S, jobId: string): Promise<JobSummary | null>;
+  /** Runs once the job has ended, however it ended, with its events and progress committed; returns what the job
+   * type adds to the summary. */
+  finish?(start: S, jobId: string): Promise<JobSummary>;
 }
 
 export type JobHandlers = { [T in JobType]?: JobHandler<Extract<JobStart, { type: T }>> };
