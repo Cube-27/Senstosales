@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -12,52 +12,61 @@ import { openNodeDb, type NodeDb } from "@senstosales/db/node";
 import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
+import { prepareDataDir } from "../../src/platform/node/data-dir.ts";
 import { startServer } from "../../src/platform/node/main.ts";
 import { upgradeGate } from "../../src/platform/node/startup.ts";
 import { migratedDb } from "../db.ts";
 
 const MAIN = join(import.meta.dirname, "../../src/platform/node/main.ts");
 const NOW = "2025-04-01T05:30:00.000Z" as Instant;
-const BACKUP = `pre-upgrade-0-20250401T053000Z.db`;
+const BACKUP = "pre-upgrade-0-20250401T053000Z.db";
 
 let tmp: string;
 let dbPath: string;
 let backupsDir: string;
 beforeEach(async () => {
   tmp = await mkdtemp(join(tmpdir(), "senstosales-startup-"));
-  dbPath = join(tmp, "db", "senstosales.db");
-  backupsDir = join(tmp, "backups");
-  await mkdir(join(tmp, "db"));
-  await mkdir(backupsDir);
+  ({ db: dbPath, backups: backupsDir } = await prepareDataDir(tmp));
 });
 afterEach(() => rm(tmp, { recursive: true, force: true }));
 
-const hash = async (path: string) => createHash("sha256").update(await readFile(path)).digest("hex");
+const hash = async (path: string) =>
+  createHash("sha256")
+    .update(await readFile(path))
+    .digest("hex");
 
-const tables = async (db: NodeDb) =>
-  (
-    await db.query(db.build.values<[string]>(sql`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`))
-  ).map(([name]) => name);
-
-/** Opens the database with every batch recorded, and whether the backup file existed when it ran. */
+/** Opens the database and records, for each batch, whether the backup file existed when it ran. */
 function openRecorded(path: string) {
   const db = openNodeDb(path);
-  const batches: { size: number; backupExisted: boolean }[] = [];
+  const batches: { backupExisted: boolean }[] = [];
   const recorded: NodeDb = {
     ...db,
     async batch(statements: readonly Statement[]) {
-      batches.push({ size: statements.length, backupExisted: existsSync(join(backupsDir, BACKUP)) });
+      batches.push({ backupExisted: existsSync(join(backupsDir, BACKUP)) });
       await db.batch(statements);
     },
   };
   return { db: recorded, batches };
 }
 
+/** Prepares the database at `dbPath`, closes it and returns its hash. */
 async function closedDb(make: (db: NodeDb) => Promise<void>): Promise<string> {
   const db = openNodeDb(dbPath);
   await make(db);
   db.close();
   return hash(dbPath);
+}
+
+/** A database migrated by a version one schema ahead of this build. */
+async function newerDb(): Promise<string> {
+  (await migratedDb(dbPath)).close();
+  return closedDb((db) =>
+    db.batch([
+      db.build
+        .insert(schemaMigration)
+        .values({ version: LATEST_VERSION + 1, name: "future", appliedAt: NOW, appVersion: "9.0.0" }),
+    ]),
+  );
 }
 
 const gate = (db: NodeDb) => upgradeGate(db, { backupsDir, appVersion: "1.2.3", now: NOW });
@@ -83,8 +92,7 @@ describe("upgradeGate", () => {
     const { db, batches } = openRecorded(dbPath);
     await gate(db);
 
-    expect(batches).toHaveLength(1);
-    expect(batches[0]?.backupExisted).toBe(true);
+    expect(batches).toEqual([{ backupExisted: true }]);
     expect(await readSchemaVersion(db)).toBe(LATEST_VERSION);
     expect(await db.query(db.build.select().from(schemaMigration))).toEqual([
       { version: 1, name: "init", appliedAt: NOW, appVersion: "1.2.3" },
@@ -102,16 +110,10 @@ describe("upgradeGate", () => {
     const before = await closedDb((db) => db.batch([db.build.run(sql`CREATE TABLE app_user (x)`)]));
 
     const db = openNodeDb(dbPath);
-    const err = await gate(db).then(
-      () => undefined,
-      (e: unknown) => e,
-    );
-    expect(err).toBeInstanceOf(Error);
-    expect((err as Error).message).toBe(
+    await expect(gate(db)).rejects.toThrow(
       `SenstoSales could not upgrade its data. Nothing was changed. A copy is in ${join(backupsDir, BACKUP)}.`,
     );
     expect(await readSchemaVersion(db)).toBe(0);
-    expect(await tables(db)).toEqual(["app_user"]);
     db.close();
 
     expect(await hash(dbPath)).toBe(before);
@@ -132,14 +134,7 @@ describe("upgradeGate", () => {
   });
 
   it("refuses a database from a newer version without writing", async () => {
-    (await migratedDb(dbPath)).close();
-    const before = await closedDb((db) =>
-      db.batch([
-        db.build
-          .insert(schemaMigration)
-          .values({ version: LATEST_VERSION + 1, name: "future", appliedAt: NOW, appVersion: "9.0.0" }),
-      ]),
-    );
+    const before = await newerDb();
 
     const { db, batches } = openRecorded(dbPath);
     await expect(gate(db)).rejects.toThrow("This data was saved by a newer version of SenstoSales.");
@@ -168,18 +163,10 @@ describe("startServer", () => {
 
 describe("main", () => {
   it("exits with the plain message and no port line on a newer database", async () => {
-    const dataDir = join(tmp, "newer");
-    await mkdir(join(dataDir, "db"), { recursive: true });
-    const db = await migratedDb(join(dataDir, "db", "senstosales.db"));
-    await db.batch([
-      db.build
-        .insert(schemaMigration)
-        .values({ version: LATEST_VERSION + 1, name: "future", appliedAt: NOW, appVersion: "9.0.0" }),
-    ]);
-    db.close();
+    await newerDb();
 
     const child = spawn(process.execPath, [MAIN], {
-      env: { ...process.env, SENSTO_DATA_DIR: dataDir },
+      env: { ...process.env, SENSTO_DATA_DIR: tmp },
       stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "";

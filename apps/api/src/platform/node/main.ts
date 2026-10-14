@@ -4,7 +4,6 @@
 // so it never outlives a shell that crashed.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { openNodeDb } from "@senstosales/db/node";
@@ -52,10 +51,11 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const db = openNodeDb(await prepareDataDir(options.dataDir));
+  const paths = await prepareDataDir(options.dataDir);
+  const db = openNodeDb(paths.db);
   try {
     await upgradeGate(db, {
-      backupsDir: join(options.dataDir, "backups"),
+      backupsDir: paths.backups,
       appVersion: options.version,
       now: createClock().now(),
     });

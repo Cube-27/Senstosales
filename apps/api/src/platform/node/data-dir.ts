@@ -12,9 +12,15 @@ export function resolveDataDir(env: Readonly<Record<string, string | undefined>>
   throw new Error("SenstoSales could not find its data folder (LOCALAPPDATA is not set).");
 }
 
-/** Creates the folders that are missing and returns the database file's path. Folders only: no database or file
+export interface DataPaths {
+  /** The database file. */
+  readonly db: string;
+  readonly backups: string;
+}
+
+/** Creates the folders that are missing and returns the paths startup needs. Folders only: no database or file
  * content is written here (C9). */
-export async function prepareDataDir(root: string): Promise<string> {
+export async function prepareDataDir(root: string): Promise<DataPaths> {
   await Promise.all(DATA_FOLDERS.map((folder) => mkdir(join(root, folder), { recursive: true })));
-  return join(root, "db", "senstosales.db");
+  return { db: join(root, "db", "senstosales.db"), backups: join(root, "backups") };
 }
