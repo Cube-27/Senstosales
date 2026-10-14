@@ -1,6 +1,8 @@
 #!/bin/bash
 # cleanup_worktree.sh WORKTREE BRANCH — after a merge: remove the worktree's throwaway containers, the worktree
-# (retrying while a closing pane still holds it), and the remote and local branch.
+# (retrying while a closing pane still holds it, every CLEANUP_RETRY_S seconds, default 5), and the remote and local
+# branch. A worktree that can't be removed keeps its branches (exit 1); the remote branch is deleted only at the tip
+# that was checked, so a commit pushed since is kept.
 # It first checks that the work is merged, and removes nothing unless no PR of the branch is OPEN and each tip of the
 # branch (local and remote) is the head of a MERGED PR or an ancestor of origin/main. Deleting the remote branch of
 # an open PR makes GitHub close that PR. On refusal, or when GitHub can't be read, it exits 1 with an ERROR on stderr
@@ -13,6 +15,7 @@ if [[ $# -ne 2 ]]; then echo "usage: cleanup_worktree.sh WORKTREE BRANCH" >&2; e
 wt=$1; branch=$2
 dir="$WORKTREE_ROOT/$wt"
 short=${wt//-/}   # spec-03-pr-8 -> spec03pr8
+remote_tip=""     # origin/$branch as require_merged checked it
 
 refuse() {
   echo "ERROR $1: kept the worktree $wt, the branch $branch and the containers" >&2
@@ -30,6 +33,7 @@ require_merged() {
   for ref in "refs/heads/$branch" "refs/remotes/origin/$branch"; do
     tip=$(git -C "$main" rev-parse -q --verify "$ref^{commit}") || continue
     found=1
+    [[ $ref == refs/remotes/* ]] && remote_tip=$tip
     grep -qx "MERGED $tip" <<< "$prs" && continue
     git -C "$main" merge-base --is-ancestor "$tip" origin/main 2>/dev/null \
       || refuse "$branch at $tip is in no merged PR and not in origin/main"
@@ -40,12 +44,30 @@ require_merged() {
 
 require_merged
 if command -v docker >/dev/null 2>&1; then
-  for c in $(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -E "^$CONTAINER_PREFIX-($wt|$short)(-|$)"); do
-    docker rm -f -v "$c" >/dev/null && echo "removed container $c and its volumes"
-  done
+  if names=$(docker ps -a --format '{{.Names}}' 2>/dev/null); then
+    for c in $(grep -E "^$CONTAINER_PREFIX-($wt|$short)(-|$)" <<< "$names"); do
+      docker rm -f -v "$c" >/dev/null && echo "removed container $c and its volumes"
+    done
+  else
+    echo "warning: docker ps failed; containers named $CONTAINER_PREFIX-$wt* were not checked" >&2
+  fi
 fi
-for _ in 1 2 3 4 5 6; do git -C "$main" worktree remove --force "$dir" 2>/dev/null && break; sleep 5; done
-git -C "$main" push -q origin --delete "$branch" 2>/dev/null
+# The branches go only once the worktree is gone: a worktree still held by a process keeps its branch.
+registered() { git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"; }
+for _ in 1 2 3 4 5 6; do
+  registered || break
+  git -C "$main" worktree remove --force "$dir" 2>/dev/null && break
+  sleep "${CLEANUP_RETRY_S:-5}"
+done
+if registered; then
+  echo "ERROR could not remove the worktree $wt (a process may still hold it): kept it and the branch $branch" >&2
+  exit 1
+fi
+# Leased on the tip require_merged checked, so a commit pushed since then is never deleted.
+if [[ -n $remote_tip ]] && ! git -C "$main" push -q --force-with-lease="refs/heads/$branch:$remote_tip" origin \
+  --delete "$branch" 2>/dev/null; then
+  echo "warning: kept origin/$branch: it changed after the merge check, or the delete failed" >&2
+fi
 git -C "$main" branch -D "$branch" 2>/dev/null
 if [[ $PRUNE_DOCKER_CACHE == 1 ]] && command -v docker >/dev/null 2>&1; then
   docker builder prune -af >/dev/null || echo "warning: build cache prune failed" >&2

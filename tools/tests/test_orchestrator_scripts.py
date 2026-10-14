@@ -116,3 +116,69 @@ def test_watch_agents_treats_a_failed_herdr_poll_as_no_news(tmp_path: Path) -> N
     # Only the real empty list after the failed polls reports GONE; the failures alone would not.
     assert (result.returncode, result.stdout) == (0, "GONE impl-a\n")
     assert (tmp_path / "herdr-calls").read_text(encoding="utf-8").strip() == "5"
+
+
+def git(cwd: Path, *args: str) -> str:
+    return subprocess.run([GIT, *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+
+
+def merged_worktree(tmp_path: Path) -> tuple[Path, Path]:
+    """An origin, its clone `app`, and worktree app-worktrees/spec-01-pr-1 on branch `spec-01/pr-1-x`, merged."""
+    origin, main = tmp_path / "origin.git", tmp_path / "app"
+    git(tmp_path, "init", "-q", "--bare", "-b", "main", str(origin))
+    git(tmp_path, "clone", "-q", str(origin), str(main))
+    for key, value in [("user.email", "t@example.test"), ("user.name", "t"), ("commit.gpgsign", "false")]:
+        git(main, "config", key, value)
+    git(main, "commit", "-q", "--allow-empty", "-m", "init")
+    git(main, "push", "-q", "-u", "origin", "main")
+    worktree = tmp_path / "app-worktrees" / "spec-01-pr-1"
+    git(main, "worktree", "add", "-q", "-b", "spec-01/pr-1-x", str(worktree))
+    git(worktree, "commit", "-q", "--allow-empty", "-m", "work")
+    git(worktree, "push", "-q", "origin", "spec-01/pr-1-x")
+    git(main, "merge", "-q", "--ff-only", "spec-01/pr-1-x")
+    git(main, "push", "-q", "origin", "main")
+    return main, origin
+
+
+def run_cleanup(main: Path, tmp_path: Path, docker: str = "exit 0") -> subprocess.CompletedProcess[str]:
+    path = f"{stub_bin(tmp_path, {'gh': 'exit 0', 'docker': docker})}{os.pathsep}{os.environ['PATH']}"
+    return subprocess.run(
+        [BASH, str(ORCHESTRATOR / "cleanup_worktree.sh"), "spec-01-pr-1", "spec-01/pr-1-x"],
+        cwd=main,
+        env={**os.environ, "PATH": path, "CLEANUP_RETRY_S": "0"},
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+
+
+def branches(main: Path, origin: Path) -> tuple[str, str]:
+    return git(main, "branch", "--list", "spec-01/pr-1-x"), git(origin, "branch", "--list", "spec-01/pr-1-x")
+
+
+def test_cleanup_removes_a_merged_worktree_and_its_branches(tmp_path: Path) -> None:
+    main, origin = merged_worktree(tmp_path)
+    result = run_cleanup(main, tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert not (tmp_path / "app-worktrees" / "spec-01-pr-1").exists()
+    assert branches(main, origin) == ("", "")
+
+
+def test_cleanup_keeps_the_branches_when_the_worktree_cannot_be_removed(tmp_path: Path) -> None:
+    main, origin = merged_worktree(tmp_path)
+    git(main, "worktree", "lock", str(tmp_path / "app-worktrees" / "spec-01-pr-1"))  # --force alone can't remove it
+    result = run_cleanup(main, tmp_path)
+
+    assert result.returncode == 1
+    assert "could not remove the worktree spec-01-pr-1" in result.stderr
+    assert branches(main, origin) == ("+ spec-01/pr-1-x", "spec-01/pr-1-x")
+
+
+def test_cleanup_warns_when_docker_cannot_list_containers(tmp_path: Path) -> None:
+    main, _ = merged_worktree(tmp_path)
+    result = run_cleanup(main, tmp_path, docker="exit 1")
+
+    assert result.returncode == 0, result.stderr
+    assert "warning: docker ps failed" in result.stderr
