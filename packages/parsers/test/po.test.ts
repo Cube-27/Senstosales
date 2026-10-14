@@ -160,6 +160,11 @@ describe("parsePo items", () => {
     expect(Array.isArray(r) && r[0]?.drawingNo).toBe("A1234/5, B-7720");
   });
 
+  it("ends a drawing number before a run-in ITEM, VAR or REV; one followed by other text is not read", () => {
+    const r = items(page([item("10"), ["", "DRG 3253020460ITEM(2) DRG 99887;"]]));
+    expect(Array.isArray(r) && r[0]?.drawingNo).toBe("3253020460");
+  });
+
   it("ignores rows before the first item and stops at a REMARKS or TOTAL VALUE row", () => {
     const r = items(page([["", "ORPHAN"], item("10"), ["", "TOTAL VALUE 50.00"], ["", "AFTER TOTAL"], item("20")]));
     expect(Array.isArray(r) && r.map((i) => [i.poItemNo, i.description])).toEqual([

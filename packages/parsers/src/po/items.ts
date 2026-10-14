@@ -32,8 +32,10 @@ const PATTERNS = Object.fromEntries(
 ) as Record<Column, RegExp>;
 const REQUIRED: readonly Column[] = ["poItemNo", "materialCode", "unit", "rate", "ordQty", "rcdQty"];
 
-/** The legacy description pattern for a drawing number; a match shorter than 5 characters is not one. */
-const DRAWING = /(?:DRG|DRAWING)[ .-]*(?:NO[.-]*)?[:-]?\s*([A-Z0-9][A-Z0-9./-]*)(?=\s|ITEM|VAR|REV|,|$)/gi;
+/** A drawing number in the description (the legacy pattern); a match shorter than 5 characters is not one. */
+const DRAWING = /(?:DRG|DRAWING)[ .-]*(?:NO[.-]*\s*)?(?::\s*)?([A-Z0-9][A-Z0-9./-]*)/gi;
+/** A drawing number may run into one of these words; it then ends before the last of them. */
+const RUN_IN = /^(?:ITEM|VAR|REV)/i;
 const WHOLE = /^\d+$/;
 
 /** One table row, read by column; a column the table lacks reads as "". */
@@ -196,6 +198,24 @@ function readLot(cells: Cells, item: string): ParseResult<PoLot> {
 
 /** Every drawing number in the description, distinct and sorted, joined by ", " (legacy); null when none. */
 function drawingNo(description: string): string | null {
-  const found = new Set([...description.matchAll(DRAWING)].map((m) => m[1] ?? "").filter((d) => d.length > 4));
-  return found.size === 0 ? null : [...found].sort().join(", ");
+  const found = new Set<string>();
+  for (const match of description.matchAll(DRAWING)) {
+    const token = drawingToken(match[1] ?? "", description[match.index + match[0].length]);
+    if (token !== undefined && token.length > 4) found.add(token);
+  }
+  // Code-unit order, as the legacy parser sorted.
+  return found.size === 0 ? null : [...found].sort((a, b) => Number(a > b) - Number(a < b)).join(", ");
+}
+
+/**
+ * The drawing number in `token` (a run of number characters), given the character after it: the whole run when a
+ * space, a comma or the end follows, else the run up to the last ITEM, VAR or REV inside it. This is the legacy
+ * pattern's lookahead, done without backtracking.
+ */
+function drawingToken(token: string, next: string | undefined): string | undefined {
+  if (next === undefined || /[\s,]/.test(next)) return token;
+  for (let end = token.length - 1; end > 0; end--) {
+    if (RUN_IN.test(token.slice(end))) return token.slice(0, end);
+  }
+  return undefined;
 }
