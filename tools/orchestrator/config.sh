@@ -26,8 +26,14 @@ PRUNE_DOCKER_CACHE=${PRUNE_DOCKER_CACHE:-0}
 MAX_WORKERS=${MAX_WORKERS:-4}
 MIN_FREE_MB=${MIN_FREE_MB:-1500}
 
-# `python` first: on Windows `python3` is often the Microsoft Store stub.
-PY=${PY:-$(command -v python || command -v python3)}
+# json_field PATH: prints the field at PATH (dot-separated, e.g. result.agent.pane_id) of the JSON on stdin. Fails,
+# printing nothing, when the input is not JSON or the field is missing.
+json_field() {
+  node -e 'let value = JSON.parse(require("fs").readFileSync(0, "utf8"));
+for (const key of process.argv[1].split(".")) value = value[key];
+if (value === undefined) process.exit(1);
+console.log(value);' "$1"
+}
 
 # Free physical memory in MB, or nothing when it can't be read. Windows (Git Bash), Linux, macOS.
 free_mb() {
@@ -49,12 +55,11 @@ free_mb() {
 workspace_agents() {
   local agents
   [[ -n ${HERDR_WORKSPACE_ID:-} ]] || return 1
-  agents=$(set -o pipefail; herdr agent list 2>/dev/null | "$PY" -c "import json,sys
-for a in json.load(sys.stdin)['result']['agents']:
-    if a.get('name') and a.get('workspace_id') == sys.argv[1]: print(a['name'], a['agent_status'])" \
+  agents=$(set -o pipefail; herdr agent list 2>/dev/null | node -e '
+for (const a of JSON.parse(require("fs").readFileSync(0, "utf8")).result.agents)
+  if (a.name && a.workspace_id === process.argv[1]) console.log(a.name, a.agent_status);' \
     "$HERDR_WORKSPACE_ID" 2>/dev/null) || return 1
-  # Windows Python prints CRLF; strip \r so statuses compare equal.
-  tr -d '\r' <<< "$agents" | sort
+  sort <<< "$agents"
   return 0
 }
 

@@ -12,7 +12,7 @@ export const ORCHESTRATOR = join(REPO, "tools", "orchestrator");
 export const BASH: string | undefined = (() => {
   const finder = process.platform === "win32" ? "where" : "which";
   const found = spawnSync(finder, ["bash"], { encoding: "utf8" }).stdout ?? "";
-  return found.split(/\r?\n/).find((path) => path && !/[\/]System32[\/]/i.test(path));
+  return found.split(/\r?\n/).find((path) => path && !/[\\/]System32[\\/]/i.test(path));
 })();
 
 /** Writes each stub as an executable `#!/bin/bash` script into DIR/bin and returns that folder. */

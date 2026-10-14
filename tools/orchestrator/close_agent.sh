@@ -12,10 +12,9 @@ if ! info=$(herdr agent get "$name" 2>/dev/null); then
   echo "gone $name"
   exit 0
 fi
-read -r pane workspace < <("$PY" -c 'import json,sys
-a = json.load(sys.stdin)["result"]["agent"]
-print(a["pane_id"], a.get("workspace_id", ""))' <<< "$info" | tr -d '\r')
-[[ -n ${pane:-} ]] || err "no pane for agent $name"
+pane=$(json_field result.agent.pane_id <<< "$info")
+workspace=$(json_field result.agent.workspace_id <<< "$info")
+[[ -n $pane ]] || err "no pane for agent $name"
 if [[ $workspace != "$HERDR_WORKSPACE_ID" ]]; then
   echo "gone $name"
   exit 0
