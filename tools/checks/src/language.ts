@@ -2,7 +2,7 @@
 // packages/*/src or apps/*/src has a code extension other than .ts/.tsx. Assets (CSS, JSON, SVG) are not code;
 // tests, config, tools and the Tauri scaffold (apps/desktop/src-tauri) are not production sources.
 // Usage: node tools/checks/src/language.ts (from the repo root)
-import { execFileSync } from "node:child_process";
+import { selectFiles } from "./real-data-scan.ts";
 
 const PRODUCTION_SOURCE = /^(?:packages|apps)\/[^/]+\/src\//;
 const OTHER_CODE =
@@ -12,10 +12,7 @@ export const nonTypeScriptSources = (paths: string[]): string[] =>
   paths.filter((path) => PRODUCTION_SOURCE.test(path) && OTHER_CODE.test(path));
 
 function main(): number {
-  const tracked = execFileSync("git", ["ls-files", "-z"], { maxBuffer: 1 << 30 })
-    .toString("utf8")
-    .split("\0");
-  const found = nonTypeScriptSources(tracked);
+  const found = nonTypeScriptSources(selectFiles(false).map((file) => file.path));
   for (const path of found) console.error(`${path}: production source must be TypeScript (INV-90)`);
   return found.length === 0 ? 0 : 1;
 }

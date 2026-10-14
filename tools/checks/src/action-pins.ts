@@ -5,13 +5,13 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export type Finding = { line: number; rule: "action-not-pinned" | "no-default-permissions" | "permissions-not-read" };
+type Finding = { line: number; rule: "action-not-pinned" | "no-default-permissions" | "permissions-not-read" };
 
 const USES = /^\s*(?:-\s+)?uses:\s*(["']?)([^\s"'#]+)\1/;
 // A local action, a docker image by digest, or owner/repo[/path]@<40-hex SHA>.
 const PINNED = /^(?:\.\/.*|docker:\/\/[^@\s]+@sha256:[0-9a-f]{64}|[^@\s]+@[0-9a-f]{40})$/;
 
-export function checkPins(text: string): Finding[] {
+function checkPins(text: string): Finding[] {
   const findings: Finding[] = [];
   text.split(/\r?\n/).forEach((line, index) => {
     const ref = USES.exec(line)?.[2];
@@ -21,9 +21,9 @@ export function checkPins(text: string): Finding[] {
 }
 
 /** The top-level `permissions:` must exist, be non-empty and grant nothing beyond `read` (or `none`) per scope. */
-export function checkPermissions(text: string): Finding[] {
+function checkPermissions(text: string): Finding[] {
   const lines = text.split(/\r?\n/);
-  const at = lines.findIndex((line) => /^permissions:/.test(line));
+  const at = lines.findIndex((line) => line.startsWith("permissions:"));
   if (at === -1) return [{ line: 0, rule: "no-default-permissions" }];
   const inline = lines[at]
     ?.replace(/^permissions:/, "")
@@ -39,8 +39,7 @@ export function checkPermissions(text: string): Finding[] {
   return readOnly ? [] : [{ line: at + 1, rule: "permissions-not-read" }];
 }
 
-export const checkWorkflow = (text: string): Finding[] =>
-  [...checkPermissions(text), ...checkPins(text)].sort((a, b) => a.line - b.line);
+export const checkWorkflow = (text: string): Finding[] => [...checkPermissions(text), ...checkPins(text)];
 
 function main(): number {
   const files = existsSync(".github")
