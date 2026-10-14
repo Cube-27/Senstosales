@@ -8,6 +8,8 @@
     "./node": "./src/platform/node/sqlite.ts"
   },
   "dependencies": {
+    "@senstosales/domain": "workspace:*",
+    "@senstosales/schemas": "workspace:*",
     "drizzle-orm": "^0.45.4"
   }
 }

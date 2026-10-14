@@ -586,3 +586,67 @@ None.
 - Alternatives: Free-text level; integer codes.
 - Why: The three levels match the pino levels the API logs with; codes are identifiers, not numbers, so text keeps any leading zeros.
 - Reversible: yes.
+
+### D-0067 — `supplier_id` on every business table
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: `supplier_id` (NOT NULL, FK to `supplier`) is on every business table, child tables included: settings, secret, buyer, source_document, po, po_item, po_lot, dc, dc_item, invoice, invoice_item, srv, srv_item, reconciliation_issue. It is not on supplier, app_user, session, audit_log, job, job_event or schema_migration.
+- Alternatives: Only on top-level documents; on every table.
+- Why: ARCHITECTURE §8 says "every business table"; the literal reading is the conservative one. Auth, audit, jobs and migrations are install-level.
+- Reversible: yes, before 0001 ships.
+
+### D-0068 — Foreign keys only on ownership edges
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: Foreign keys only on child → parent document, `session.user_id`, `job_event.job_id` and `supplier_id`. No FKs on matched or resolved links (`srv.po_id`, `srv_item.po_item_id`, `resolved_dc_id`, `resolved_invoice_id`, the flag's `scope_id`/`po_id`, `po.buyer_id`, the `job_id` on audit_log and source_document). No `ON DELETE` actions.
+- Alternatives: FKs on every id column; none.
+- Why: Links are recomputed by service batches (§6.10), and their delete rules belong to services (`deleteBlock`, INV-35). An FK would turn a PO or buyer delete into a raw DbError.
+- Reversible: yes, before 0001 ships.
+
+### D-0069 — Extra customTypes `pctU5` and `fy`
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: Besides the five SPEC-05 §4.1 customTypes, `pctU5` maps `cgst_pct_u5`/`sgst_pct_u5` to `GstPct` and `fy` maps `financial_year` to `Fy`. `ulid` stays an unbranded `string`. `Instant` is a brand in `packages/db/src/types.ts`.
+- Alternatives: GST percentages in a `moneyU5` column; branded ids.
+- Why: GstPct is 1e-5 units but not money, and FY values come only from `fyOf`. Ids arrive from the API as plain strings (`zId`), so branding them would add casts with no check behind them.
+- Reversible: yes.
+
+### D-0070 — Integer-unit columns refuse non-integers
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: Integer-unit columns throw `DbError("Not an integer unit: …")` for a non-safe-integer, on write and on read. Text brands are not re-validated.
+- Alternatives: No check; a SQL `CHECK (typeof(x) = 'integer')`.
+- Why: C3 forbids floats in columns, and SQLite INTEGER affinity silently stores 2.5 as REAL. Text values were validated where they entered.
+- Reversible: yes.
+
+### D-0071 — Nullable SRV item quantities
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: `srv_item.rcd_qty_m`, `accepted_qty_m` and `rej_qty_m` are nullable; `ord_qty_m` is NOT NULL.
+- Alternatives: NOT NULL, as `zSrvItem` declares.
+- Why: The domain's `SrvLine` reads them as `Qty | null` and falls back from rcd to accepted (INV-11), so storage keeps what the page lacks. SPEC-10's read mapping can normalise.
+- Reversible: yes.
+
+### D-0072 — Derived columns have no default
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: Derived columns (`status` and the `*_qty_m` totals on po and po_item) are NOT NULL with no default. Only `manual_dispatched_qty_m` (0), `version` (1) and `job.cancel_requested` (false) have defaults.
+- Alternatives: Default 0 / `Pending`.
+- Why: A default would let an insert skip the recompute, and `balance_qty_m` has no correct default.
+- Reversible: yes.
+
+### D-0073 — `app_user` and `session` columns
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: `app_user`: `username` (unique), `password_hash`, `password_changed_at` (nullable). `session`: `user_id`, `token_hash` (unique), `created_at`, `expires_at`.
+- Alternatives: Decide in SPEC-07 via migration 0002.
+- Why: EC-08's reset rule needs to know whether the password was changed, and remember-me needs an expiry. These are the smallest columns that support both.
+- Reversible: yes, before 0001 ships.
+
+### D-0074 — Enum TEXT columns typed in TypeScript only
+
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 2 (#25) · Status: decided
+- Decision: Enum-valued TEXT columns are typed in TypeScript only (domain `ItemStatus`, `PoStatus`, `FlagType`, `FlagScope`; schemas `zJobType`/`zJobStatus`/`zFlagStatus`/`zInvoiceKind`), with no SQL CHECK.
+- Alternatives: A CHECK per enum.
+- Why: Adding a value later would need the table-rebuild pattern, and every writer is already typed.
+- Reversible: yes.
