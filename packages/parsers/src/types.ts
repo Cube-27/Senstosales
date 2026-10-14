@@ -100,7 +100,8 @@ export type ParseError = {
     | "duplicate-srv-item-key"
     | "missing-field"
     | "bad-po-number"
-    | "bad-number";
+    | "bad-number"
+    | "mixed-po-numbers";
   message: string;
   location?: string;
 };
