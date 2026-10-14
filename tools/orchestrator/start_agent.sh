@@ -9,7 +9,6 @@
 set -u
 source "$(dirname "$0")/config.sh"
 name=$1; wt=$2; prompt=$3; min_free=${4:-$MIN_FREE_MB}
-err() { echo "ERROR $*" >&2; exit 1; }
 # herdr agent names are lowercase; checked before memory or herdr is touched.
 [[ $name =~ ^[a-z0-9][a-z0-9-]*$ ]] || err "agent name must be lowercase: '$name' (a-z, 0-9 and '-', not starting with '-')"
 dir="$WORKTREE_ROOT/$wt"
@@ -41,7 +40,7 @@ fi
 # suggested prompt, so an agent can act on an instruction nobody typed.
 pane=$(herdr tab create --workspace "$workspace" --cwd "$path" --label "$name" --no-focus \
   --env CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false 2>/dev/null \
-  | "$PY" -c "import json,sys;print(json.load(sys.stdin)['result']['root_pane']['pane_id'])")
+  | json_field result.root_pane.pane_id)
 [[ -n $pane ]] || err "tab create failed"
 close_and_fail() {
   local reason=$1
@@ -50,10 +49,10 @@ close_and_fail() {
   return 1
 }
 herdr agent start "$name" --kind claude --pane "$pane" --timeout 60000 >/dev/null 2>&1
-cwd=$(herdr agent get "$name" 2>/dev/null | "$PY" -c "import json,sys;print(json.load(sys.stdin)['result']['agent'].get('cwd',''))" | tr -d '\r')
+cwd=$(herdr agent get "$name" 2>/dev/null | json_field result.agent.cwd)
 [[ $cwd == "$path" ]] || close_and_fail "$name cwd is '$cwd', expected '$path'"
 status() {
-  herdr agent get "$name" | "$PY" -c "import json,sys;print(json.load(sys.stdin)['result']['agent']['agent_status'])" | tr -d '\r'
+  herdr agent get "$name" | json_field result.agent.agent_status
   return 0
 }
 # A prompt sent while the agent is still loading can be dropped: wait up to 15 s for a turn, resend once, then fail.

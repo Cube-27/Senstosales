@@ -36,7 +36,7 @@ Out of scope:
 
 ### 4.1 Sidecar lifecycle (§13.1)
 
-Questions: does a Node 24 SEA bundle of a Hono app (with `node:sqlite`) start reliably; how does the shell learn the
+Questions: does a Node 26 SEA bundle of a Hono app (with `node:sqlite`) start reliably; how does the shell learn the
 random port (stdout line vs file); single-instance focus; closing the window ends the sidecar (verified by PID);
 install path with spaces and non-ASCII characters; SEA size and cold start time. Fallback named by the architecture:
 `node.exe` plus the bundle. Output: ADR "sidecar packaging and port handoff".

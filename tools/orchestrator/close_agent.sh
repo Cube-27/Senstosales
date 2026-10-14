@@ -5,18 +5,15 @@
 set -u
 source "$(dirname "$0")/config.sh"
 name=${1:-}
-err() { echo "ERROR $*" >&2; exit 1; }
 [[ -n $name ]] || err "usage: close_agent.sh NAME"
 [[ -n ${HERDR_WORKSPACE_ID:-} ]] || err "HERDR_WORKSPACE_ID is unset: run this from a herdr pane"
 if ! info=$(herdr agent get "$name" 2>/dev/null); then
   echo "gone $name"
   exit 0
 fi
-read -r pane workspace < <("$PY" -c 'import json,sys
-a = json.load(sys.stdin)["result"]["agent"]
-print(a["pane_id"], a.get("workspace_id", ""))' <<< "$info" | tr -d '\r')
+{ read -r pane; read -r workspace; } < <(json_field result.agent.pane_id result.agent.workspace_id <<< "$info")
 [[ -n ${pane:-} ]] || err "no pane for agent $name"
-if [[ $workspace != "$HERDR_WORKSPACE_ID" ]]; then
+if [[ ${workspace:-} != "$HERDR_WORKSPACE_ID" ]]; then
   echo "gone $name"
   exit 0
 fi

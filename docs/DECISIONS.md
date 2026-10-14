@@ -38,15 +38,7 @@ them here in its tracker commit on `YOUR TURN`, under the IDs the orchestrator s
 
 Items with status `needs-owner` or `pending-owner`. Keep this list current.
 
-| ID     | Title                                                  | Status        |
-| ------ | ------------------------------------------------------ | ------------- |
-| D-0003 | BHEL buyer seed: none                                  | pending-owner |
-| D-0004 | Initial password `admin`, no forced change             | pending-owner |
-| D-0005 | Cell safety applies to text cells only                 | pending-owner |
-| D-0006 | DC and invoice list exports named `.csv`               | pending-owner |
-| D-0007 | Downloads are not logged                               | pending-owner |
-| D-0008 | Minimal Rust Tauri scaffold outside the language check | pending-owner |
-| D-0009 | Money rounding: half-up                                | pending-owner |
+None.
 
 ---
 
@@ -72,66 +64,66 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 
 ### D-0003 — BHEL buyer seed: none
 
-- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 5 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-05 PR 5 · Status: decided
 - Decision: The seed holds no buyer rows; the user adds BHEL units through the buyers settings (legacy UI).
 - Alternatives: Seed a full public list of BHEL units with their GSTINs allowlisted in the real-data scan.
 - Why: C1 forbids GSTINs in the repo, and seeding only the units one supplier deals with would identify it (SPEC-05 Open issues).
 - Reversible: yes — a later seed migration can add the public list.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0004 — Initial password `admin`, no forced change
 
-- Date: 2026-10-14 · Spec/PR: SPEC-07 PR 4 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-07 PR 4 · Status: decided
 - Decision: First run uses the legacy default password `admin` with the legacy "default password" notice; it is changed in Settings, never forced (C11).
 - Alternatives: Set a password during onboarding; force a change on first login (refused by C11).
 - Why: Matches legacy behaviour; §10.3 does not say how the first password is set (SPEC-07 Open issues, SPEC-15 Open issues).
 - Reversible: yes — an onboarding step can be added later.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0005 — Cell safety applies to text cells only
 
-- Date: 2026-10-14 · Spec/PR: SPEC-13 PR 2 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-13 PR 2 · Status: decided
 - Decision: Text values from users or BHEL pages are written as string cells (CSV text cells starting with `=`, `+`, `-`, `@` get a leading `'`); numeric values stay numeric with their legacy number formats (INV-94).
 - Alternatives: Write every cell as a string, as §10.4 literally reads.
 - Why: INV-68 freezes the legacy number formats; formulas can only enter through text (SPEC-13 Open issues).
 - Reversible: yes — one writer function.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0006 — DC and invoice list exports named `.csv`
 
-- Date: 2026-10-14 · Spec/PR: SPEC-13 PR 3 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-13 PR 3 · Status: decided
 - Decision: The DC and invoice list exports keep their CSV content and get a `.csv` file name.
 - Alternatives: Keep the legacy `.xlsx` name on CSV content; produce real xlsx.
 - Why: The legacy name/content mismatch is a bug fix A-2 allows. ARCHITECTURE §11.2 does not list these exports yet; adding them is an owner edit (SPEC-13 Open issues).
 - Reversible: yes — a file-name constant.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0007 — Downloads are not logged
 
-- Date: 2026-10-14 · Spec/PR: SPEC-12 PR 6 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-12 PR 6 · Status: decided
 - Decision: v1 writes no audit or ledger row for document or export downloads; the ledger screen shows the audit rows.
 - Alternatives: Log download events as legacy did.
 - Why: `audit_log` holds one row per write batch and a download is not a write (SPEC-12 Open issues).
 - Reversible: yes — add an event write to the download routes.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0008 — Minimal Rust Tauri scaffold outside the language check
 
-- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 2, SPEC-20 PR 2 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-00 PR 2, SPEC-20 PR 2 · Status: decided
 - Decision: `apps/desktop/src-tauri/` holds only the generated minimal Tauri entry (`main.rs`, no logic); the INV-90 language check covers `packages/*/src`, `apps/{api,web}/src` and `apps/desktop/src`. Sidecar control lives in TypeScript.
 - Alternatives: Extend the language check to `src-tauri/` (fails on the required Rust entry); allow Rust logic in the shell.
 - Why: Tauri 2 needs a Rust entry; keeping it a scaffold keeps all logic in TypeScript (SPEC-00 Open issues, SPEC-20 Open issues).
 - Reversible: costly — a different shell would replace SPEC-20.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0009 — Money rounding: half-up
 
-- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 3 · Status: pending-owner
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 3 · Status: decided
 - Decision: `round2`/`round5` round exact ties half-up on the exact integer result.
 - Alternatives: Half-even (banker's rounding).
 - Why: The spec does not state the tie rule; half-up is the conservative reading. SPEC-12 invoice goldens from legacy output are the arbiter; a mismatch is escalated, not silently changed (SPEC-03 Open issues).
 - Reversible: yes — one domain function and its table tests.
-- Owner answer: —
+- Owner answer: Decided by the orchestrator under owner delegation, 2026-10-14.
 
 ### D-0010 — No hashed denylist in the real-data scan
 
@@ -199,6 +191,24 @@ Items with status `needs-owner` or `pending-owner`. Keep this list current.
 - Alternatives: Expose Drizzle's `transaction()` (separate BEGIN/COMMIT, which C4 forbids and D1 refuses); mandate single-row batches now (hosted D1 limits unverified); `schema_migration` as the only version source now (the §13.3 wording would change).
 - Why: Measured in the spike (ADR 0002 Results). Local D1 refuses `PRAGMA user_version`, `journal_mode`, `BEGIN` and `SAVEPOINT`, and accepts triggers and views.
 - Reversible: yes — nothing is built yet; SPEC-05 implements it.
+
+### D-0018 — No Python in the repo tooling
+
+- Date: 2026-10-14 · Spec/PR: tooling PR (#10) · Status: decided
+- Decision: The merge guard is TypeScript (`tools/orchestrator/src/merge-guard.ts`, run by `node` with no build step, behaviour identical to `merge_guard.py`); the hook in `.claude/settings.json` denies when `node` or the script fails. The orchestrator tests are Vitest under `tools/orchestrator/test/`, including `bash -n` over `tools/orchestrator/*.sh`, so the `tools` CI job and `pnpm check:tools` fold into `check`. The shell scripts parse JSON with `node`. `ruff.toml`, `tools/tests/` and the uv/ruff/pytest steps are deleted; ARCHITECTURE rev 1.4 drops the C15 ruff C90 mention.
+- Alternatives: Keep Python for the repo tools only (a second toolchain, uv on every machine and CI runner).
+- Why: One language and one toolchain (Vite+) for the whole TypeScript project.
+- Reversible: yes — tooling only.
+- Owner answer: Owner decision, 2026-10-14.
+
+### D-0019 — Node 26
+
+- Date: 2026-10-14 · Spec/PR: tooling PR (#10) · Status: decided
+- Decision: Node 26 everywhere: CI `setup-node` 26, `engines` `node >=26`, `@types/node` `^26`, and the Node 26 SEA sidecar (ARCHITECTURE rev 1.4: §3, §13, §16, A-4; SPEC-00, SPEC-01, SPEC-20).
+- Alternatives: Stay on Node 24 LTS.
+- Why: Node 26 becomes LTS in late October 2026, before the desktop release; it is installed on the build machine.
+- Reversible: costly — the SEA sidecar and CI move together.
+- Owner answer: Owner decision, 2026-10-14.
 
 ### D-0020 — Signed decimals parse
 

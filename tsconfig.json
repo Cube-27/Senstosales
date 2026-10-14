@@ -1,4 +1,9 @@
 {
   "files": [],
-  "references": [{ "path": "tsconfig.config.json" }, { "path": "packages/domain" }, { "path": "tools/checks" }]
+  "references": [
+    { "path": "tsconfig.config.json" },
+    { "path": "packages/domain" },
+    { "path": "tools/checks" },
+    { "path": "tools/orchestrator" }
+  ]
 }

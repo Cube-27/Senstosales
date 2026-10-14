@@ -1,0 +1,9 @@
+{
+  "name": "@senstosales/orchestrator",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "devDependencies": {
+    "yaml": "^2.9.1"
+  }
+}

@@ -35,7 +35,7 @@ even when it "fixes" something.
 - **(C12)** Core packages depend on ports only. `node:*`, Playwright, Tauri and filesystem modules are imported only in `platform/*` adapters and `apps/desktop`. _Enforced by: Oxlint `no-restricted-imports` (INV-85)._
 - **(C13)** Dependencies under AGPL, GPL, SSPL, Commons Clause or non-commercial licences are refused; LGPL is avoided. SPDX expressions matched by whole identifier. _Enforced by: `licenses` CI job with CycloneDX SBOM (INV-77)._
 - **(C14)** Nothing in the Candidates register (§17) or `EDGE_CASES.md` is built without owner approval recorded in Appendix A. _Enforced by: Review (INV-88)._
-- **(C15)** Hard guardrails: no source file over 800 lines (Oxlint `max-lines`) and no function over complexity 15 (Oxlint `complexity`; ruff C90 for Python tools); generated files and lockfiles excluded; the fix is a split, never a suppression. A bug or review finding that recurs becomes a check or a regression test in the PR that fixes it. No coverage gates. _Enforced by: Oxlint (`vp lint`) in `check`; RECURRING.md; review._
+- **(C15)** Hard guardrails: no source file over 800 lines (Oxlint `max-lines`) and no function over complexity 15 (Oxlint `complexity`); generated files and lockfiles excluded; the fix is a split, never a suppression. A bug or review finding that recurs becomes a check or a regression test in the PR that fixes it. No coverage gates. _Enforced by: Oxlint (`vp lint`) in `check`; RECURRING.md; review._
 - **(C16)** Legacy code may be read for business rules and visible output (UI/UX, export formats), never copied verbatim and never as a model for implementation: match the output, build it the simplest efficient way. _Enforced by: Review (INV-91)._
 - **(C17)** BHEL page content is data, never executed. The portal origin is a constant; PO ids are validated `^\d{1,10}$`; file locations come from the Storage port, never from a request. _Enforced by: Scraper unit tests; review._
 - **(C18)** When an agent finds, while coding, an edge case the spec does not cover, it records the case as a new `EC-NN` row in `EDGE_CASES.md` (case, example, why deferred, found in) and implements the spec's behaviour (or, where the spec is silent, the frozen legacy behaviour). It never invents handling for the case. _Enforced by: Review; PR template checkbox (INV-92)._
@@ -113,8 +113,7 @@ messages, or the most conservative reading of a genuinely ambiguous spec detail.
 
 ## 7. Commands
 
-Needs: Node 24+, pnpm 11 (`corepack enable`), uv (for the Python repo tools), Git Bash on Windows. Run from the repo
-root.
+Needs: Node 26+, pnpm 11 (`corepack enable`), Git Bash on Windows. Run from the repo root.
 
 ```sh
 pnpm install         # dependencies
@@ -126,10 +125,9 @@ pnpm format          # vp fmt --write (Oxfmt)
 The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:
 
 ```sh
-pnpm check:code        # check: vp check (Oxfmt + Oxlint), language check (INV-90), tsc -b, vp test run
+pnpm check:code        # check: vp check (Oxfmt + Oxlint), language check (INV-90), tsc -b, vp test run (incl. tools)
 pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
-pnpm check:tools       # tools: ruff, pytest tools/tests, bash -n on the shell scripts
 pnpm check:build       # build: pnpm -r build
 pnpm check:audit       # audit: pnpm audit --prod at high, action pins and read-only permissions (INV-108)
 ```
