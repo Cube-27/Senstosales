@@ -2,7 +2,7 @@
 // newer DB is refused, and a failing migration leaves the DB as it was. Real in-memory node:sqlite throughout.
 import { sql } from "drizzle-orm";
 import { getTableConfig } from "drizzle-orm/sqlite-core";
-import { afterEach, describe, expect, test } from "vite-plus/test";
+import { describe, expect, onTestFinished, test } from "vite-plus/test";
 
 import {
   applyMigrations,
@@ -21,14 +21,9 @@ import type { Instant } from "../../src/types.ts";
 
 const AT = "2025-04-01T05:30:00.000Z" as Instant;
 
-const opened: NodeDb[] = [];
-afterEach(() => {
-  for (const db of opened.splice(0)) db.close();
-});
-
 function open(): NodeDb {
   const db = openNodeDb(":memory:");
-  opened.push(db);
+  onTestFinished(() => db.close());
   return db;
 }
 
@@ -129,8 +124,9 @@ describe("applyMigrations", () => {
   test("a DB carrying a newer version is refused", async () => {
     const db = await migrated();
     await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (2, 'future', ${AT}, '9.0.0')`)]);
-    expect(await readSchemaVersion(db)).toBe(2);
-    expect(() => planMigrations(2)).toThrow(NewerDatabaseError);
+    const version = await readSchemaVersion(db);
+    expect(version).toBe(2);
+    expect(() => planMigrations(version)).toThrow(NewerDatabaseError);
   });
 
   test("a migration whose last statement fails leaves no table and no version", async () => {

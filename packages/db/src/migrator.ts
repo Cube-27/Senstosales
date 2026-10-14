@@ -8,16 +8,16 @@ import type { Db, Statement } from "./port.ts";
 import { schemaMigration } from "./schema/migration.ts";
 import type { Instant } from "./types.ts";
 
-export { MIGRATIONS };
-
 export interface Migration {
   version: number;
   name: string;
   statements: readonly string[];
 }
 
+const lastVersion = (migrations: readonly Migration[]): number => migrations.at(-1)?.version ?? 0;
+
 /** The schema version this build expects. */
-export const LATEST_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;
+export const LATEST_VERSION = lastVersion(MIGRATIONS);
 
 /** The DB was migrated by a newer build; this one must not open it (§13.3). */
 export class NewerDatabaseError extends Error {
@@ -39,8 +39,7 @@ export async function readSchemaVersion(db: Db): Promise<number> {
 
 /** The migrations above `current`, in order; empty when up to date. Throws `NewerDatabaseError` past the last. */
 export function planMigrations(current: number, migrations: readonly Migration[] = MIGRATIONS): Migration[] {
-  const latest = migrations[migrations.length - 1]?.version ?? 0;
-  if (current > latest) throw new NewerDatabaseError();
+  if (current > lastVersion(migrations)) throw new NewerDatabaseError();
   return migrations.filter((m) => m.version > current);
 }
 

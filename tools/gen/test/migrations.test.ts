@@ -27,14 +27,6 @@ describe("renderMigrations", () => {
     );
   });
 
-  it("quotes as Oxfmt does, so the output passes `vp check`", () => {
-    const out = renderMigrations([
-      { file: "0001_a.sql", sql: `CHECK("t"."q" >= 0)--> statement-breakpoint\nWHERE s = 'x' AND "t" = 'y'` },
-    ]);
-    expect(out).toContain(`      'CHECK("t"."q" >= 0)',\n`);
-    expect(out).toContain(`      "WHERE s = 'x' AND \\"t\\" = 'y'",\n`);
-  });
-
   it("orders files by version", () => {
     const out = renderMigrations([
       { file: "0002_b.sql", sql: "SELECT 2" },

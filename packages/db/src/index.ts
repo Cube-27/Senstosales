@@ -4,9 +4,9 @@ export type { Instant } from "./types.ts";
 export {
   applyMigrations,
   LATEST_VERSION,
-  MIGRATIONS,
   NewerDatabaseError,
   planMigrations,
   readSchemaVersion,
   type Migration,
 } from "./migrator.ts";
+export { MIGRATIONS } from "./migrations.generated.ts";
