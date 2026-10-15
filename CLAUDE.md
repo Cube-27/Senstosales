@@ -136,6 +136,7 @@ pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/re
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
 pnpm check:build       # build: pnpm -r build, then the web shell bundle budget (INV-104)
 pnpm check:audit       # audit: pnpm audit --prod at high, action pins and read-only permissions (INV-108)
+pnpm check:desktop     # desktop (Windows CI only, not in verify: installs, runs and uninstalls the app; SPEC-20)
 ```
 
 Tooling is Vite+ (`vp`): Oxlint for lint (including the C15 limits `max-lines` 800 and `complexity` 15), Oxfmt for

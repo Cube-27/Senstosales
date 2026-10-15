@@ -190,10 +190,7 @@ jobs:
             apps/desktop/src-tauri/target
           key: desktop-cargo-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build:desktop
-      - name: Smoke test the installer
-        shell: bash
-        run: node apps/desktop/test/smoke.ts "$(ls apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe)"
+      - run: pnpm check:desktop
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-installer

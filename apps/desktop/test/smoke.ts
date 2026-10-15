@@ -4,9 +4,9 @@
 // - a second launch exits and leaves one sidecar (single instance);
 // - closing the window ends the shell and the sidecar;
 // - the data stays in the data folder after the uninstall (INV-82).
-// Usage: node apps/desktop/test/smoke.ts <setup.exe>
+// Usage: node apps/desktop/test/smoke.ts   (after `pnpm build:desktop`; CI only: it installs and runs the app)
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const LOCALAPPDATA = process.env["LOCALAPPDATA"] ?? "";
@@ -88,8 +88,11 @@ async function smokeRun(): Promise<void> {
   await waitFor("closing the window ends the sidecar", 15, () => (sidecarPids().length === 0 ? true : null));
 }
 
-async function main(installer: string | undefined): Promise<void> {
-  if (!installer) throw new Error("usage: node apps/desktop/test/smoke.ts <setup.exe>");
+async function main(): Promise<void> {
+  const bundle = join(import.meta.dirname, "../src-tauri/target/release/bundle/nsis");
+  const [setup, ...others] = readdirSync(bundle).filter((name) => name.endsWith("-setup.exe"));
+  if (!setup || others.length > 0) throw new Error(`smoke: expected one installer in ${bundle}`);
+  const installer = join(bundle, setup);
   check((await run(installer, ["/S"])) === 0, "the installer runs silently without admin rights");
   check(existsSync(APP), `the app is installed in ${INSTALL_DIR}`);
   await smokeRun();
@@ -100,4 +103,4 @@ async function main(installer: string | undefined): Promise<void> {
   check(existsSync(DATABASE), "uninstalling leaves the data");
 }
 
-await main(process.argv[2]);
+await main();
