@@ -14,6 +14,8 @@ import type { Clock } from "../ports/clock.ts";
 import type { SrvFilters } from "../repositories/srv-list.ts";
 import { findSrvRow, itemIdsOfSrv, itemsOfSrv, openFlagsOfSrv, srvListLines } from "../repositories/srv-list.ts";
 import { audit } from "./audit.ts";
+import type { Comparator } from "./paging.ts";
+import { byNum, byNumber, byText, desc, on, page } from "./paging.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
 
 type Query<N extends "srv.list" | "srv.byPo"> = z.output<(typeof routes)[N]["query"]>;
@@ -21,21 +23,6 @@ type Line = Awaited<ReturnType<typeof srvListLines>>[number];
 
 type SrvRow = Pick<Line, "id" | "srvNumber" | "srvDate" | "poNumber" | "poId"> & SrvTotals;
 type PoRow = Pick<Line, "poNumber" | "poId"> & SrvTotals & { latestSrvDate: Line["srvDate"]; srvCount: number };
-
-type Comparator<T> = (a: T, b: T) => number;
-const on =
-  <T, V>(get: (row: T) => V, compare: Comparator<V>): Comparator<T> =>
-  (a, b) =>
-    compare(get(a), get(b));
-const desc =
-  <T>(compare: Comparator<T>): Comparator<T> =>
-  (a, b) =>
-    compare(b, a);
-
-/** SRV and PO numbers are digit strings, so they compare as numbers, as legacy sorts them. */
-const byNumber = new Intl.Collator("en", { numeric: true }).compare;
-const byNum = (a: number, b: number) => a - b;
-const byText = (a: string, b: string) => Number(a > b) - Number(a < b);
 
 const totalsSorts = <T extends SrvTotals>() => {
   const field = (key: keyof SrvTotals) => on<T, number>((r) => r[key], byNum);
@@ -65,26 +52,6 @@ const PO_SORTS: Record<NonNullable<Query<"srv.byPo">["sort"]>, Comparator<PoRow>
 /** Newest first, as legacy lists without a sort; also the tie-break of every sort, so pages are stable. */
 const SRV_DEFAULT = [desc(SRV_SORTS.srvDate), desc(SRV_SORTS.srvNumber), desc(on<SrvRow, string>((r) => r.id, byText))];
 const PO_DEFAULT = [desc(PO_SORTS.latestSrvDate), desc(PO_SORTS.poNumber)];
-
-/** One page, sorted by the chosen column in `dir`, then by the default order. */
-function page<T, K extends string>(
-  rows: T[],
-  query: { page: number; pageSize: number; sort?: K | undefined; dir: "asc" | "desc" },
-  sorts: Record<K, Comparator<T>>,
-  defaults: readonly Comparator<T>[],
-) {
-  const chosen = query.sort === undefined ? [] : [query.dir === "desc" ? desc(sorts[query.sort]) : sorts[query.sort]];
-  const order = [...chosen, ...defaults];
-  rows.sort((a, b) => {
-    for (const compare of order) {
-      const result = compare(a, b);
-      if (result !== 0) return result;
-    }
-    return 0;
-  });
-  const start = (query.page - 1) * query.pageSize;
-  return { items: rows.slice(start, start + query.pageSize), total: rows.length };
-}
 
 /** The filtered lines grouped by `key`, one row per group, then the value range applied to the rows. */
 async function rowsBy<K, R extends SrvTotals>(

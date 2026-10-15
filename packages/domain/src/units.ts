@@ -81,3 +81,6 @@ export function roundToMoney(n: bigint, exp: number, dp: 2 | 5): Money {
 
 /** Rounds to 2 or 5 decimal places (A2-4), half away from zero on exact ties (SPEC-03 §9). */
 export const roundMoney = (m: Money, dp: 2 | 5): Money => roundToMoney(BigInt(m), MONEY_DP, dp);
+
+/** Quantity × rate, rounded once to 5 dp (A-12): `2.5 × 848.75 -> 2121.875`. */
+export const qtyValue = (q: Qty, rate: Money): Money => roundToMoney(BigInt(q) * BigInt(rate), QTY_DP + MONEY_DP, 5);

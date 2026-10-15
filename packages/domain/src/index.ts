@@ -1,6 +1,6 @@
 export type { Result } from "./result.ts";
 export type { IsoDate } from "./dates.ts";
-export { compareIsoDate, parseIsoDate } from "./dates.ts";
+export { addDays, compareIsoDate, daysBetween, parseIsoDate } from "./dates.ts";
 export type { ReceiptInput, SrvLine, SrvLineQty, SrvTotals, SrvTotalsLine } from "./receipt.ts";
 export { computeReceipt, dateWinner, srvLineShown, srvTotals } from "./receipt.ts";
 export type { GstPct, Money, Qty } from "./units.ts";
@@ -16,6 +16,7 @@ export {
   parseQty,
   pctToString,
   qtyToString,
+  qtyValue,
   roundMoney,
   sumMoney,
   sumQty,
@@ -43,3 +44,6 @@ export {
 } from "./guards.ts";
 export type { DesiredFlag, FlagDetails, FlagScope, FlagType, PoFlagSnapshot } from "./flags.ts";
 export { FLAG_SCOPES, FLAG_TYPES, detectFlags, diffFlags, fingerprint } from "./flags.ts";
+export { deliveryDue, pendingValueOfItems } from "./tracker.ts";
+export type { DashboardRange } from "./dashboard.ts";
+export { averageLeadTimeDays, rangeStart } from "./dashboard.ts";

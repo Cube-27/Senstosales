@@ -4,11 +4,14 @@ import type { Services } from "../services/index.ts";
 import { auditRoutes } from "./audit.ts";
 import { authRoutes } from "./auth.ts";
 import { buyersRoutes } from "./buyers.ts";
+import { dashboardRoutes } from "./dashboard.ts";
+import { deliveryTrackerRoutes } from "./delivery-tracker.ts";
 import { flagsRoutes } from "./flags.ts";
 import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
 import { poManualQtyRoutes, poRoutes } from "./po.ts";
 import { poUploadRoutes } from "./po-upload.ts";
+import { searchRoutes } from "./search.ts";
 import { settingsRoutes } from "./settings.ts";
 import { srvUploadRoutes } from "./srv-upload.ts";
 import { srvRoutes } from "./srv.ts";
@@ -30,5 +33,8 @@ export function apiRoutes(services: Services): Handlers {
     ...srvRoutes(services.srv),
     ...flagsRoutes(services.flags),
     ...auditRoutes(services.audit),
+    ...deliveryTrackerRoutes(services.deliveryTracker),
+    ...dashboardRoutes(services.dashboard),
+    ...searchRoutes(services.search),
   };
 }

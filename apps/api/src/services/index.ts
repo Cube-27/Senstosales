@@ -8,6 +8,8 @@ import type { Storage } from "../ports/storage.ts";
 import { auditService } from "./audit.ts";
 import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
+import { dashboardService } from "./dashboard.ts";
+import { deliveryTrackerService } from "./delivery-tracker.ts";
 import { flagsService } from "./flags.ts";
 import { folderImportService } from "./folder-import.ts";
 import { jobsService } from "./jobs.ts";
@@ -15,6 +17,7 @@ import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
 import { poService } from "./po.ts";
 import { poManualQtyService } from "./po-manual-qty.ts";
+import { searchService } from "./search.ts";
 import { createSecretsService } from "./secrets.ts";
 import { createSettingsService } from "./settings.ts";
 import { srvIngestService } from "./srv-ingest.ts";
@@ -35,6 +38,7 @@ export interface SupplierDeps extends ServiceDeps {
 
 export function createServices(deps: ServiceDeps) {
   const withSupplier: SupplierDeps = { ...deps, supplierId: supplierRef(deps.db) };
+  const tracker = deliveryTrackerService(deps);
   return {
     auth: createAuthService(deps),
     onboarding: createOnboardingService(withSupplier),
@@ -51,6 +55,9 @@ export function createServices(deps: ServiceDeps) {
     srv: srvService(deps),
     flags: flagsService(deps),
     audit: auditService(deps),
+    deliveryTracker: tracker,
+    dashboard: dashboardService({ ...deps, tracker }),
+    search: searchService(deps),
   };
 }
 

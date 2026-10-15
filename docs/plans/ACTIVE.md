@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-10 PR 6, SPEC-11 PR 1, flaky hook test fix. Next: SPEC-09 PR 2, SPEC-11 PR 2-5. SPEC-07 PR 6 waits for every route (SPEC-10 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
+In flight: SPEC-09 PR 2, SPEC-11 PR 1, flaky hook test fix. Next: SPEC-11 PR 2-5. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -98,7 +98,7 @@ In flight: SPEC-10 PR 6, SPEC-11 PR 1, flaky hook test fix. Next: SPEC-09 PR 2, 
 | 4   | D1 executor, dialect step and SQL lint | done (#33) |       |
 | 5   | Version helper and seed                | done (#32) |       |
 
-Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_issue for correlated counts (#44 review); chunk multi-row inserts under D1's 100-bound-parameter limit (#43 review).
+Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_issue for correlated counts (#44 review); chunk multi-row inserts under D1's 100-bound-parameter limit (#43 review); INV rows for the delivery-tracker and dashboard rules; SRV search with a value range reads all candidate SRVs (#53 review).
 
 ## [SPEC-06 — BHEL parsers, anonymised fixtures and the corpus test](../specs/SPEC-06-bhel-parsers-fixtures.md)
 
@@ -150,7 +150,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 3   | Manual dispatched quantity                  | done (#49) |       |
 | 4   | SRV list, by-PO list, detail and delete     | done (#45) |       |
 | 5   | Flags and audit                             | done (#50) |       |
-| 6   | Dashboard, search and delivery tracker data | todo       |       |
+| 6   | Dashboard, search and delivery tracker data | done (#53) |       |
 
 ## [SPEC-11 — DC and invoice services and APIs](../specs/SPEC-11-dc-invoice-services.md)
 
