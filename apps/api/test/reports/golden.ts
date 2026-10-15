@@ -47,11 +47,26 @@ function styleOf(cell: ExcelJS.Cell): Style {
   }) as Style;
 }
 
-/** Page setup keys whose value differs from a new sheet's, so a writer that omits a default and one that writes it agree. */
-function pageSetupOf(ws: ExcelJS.Worksheet): Record<string, Json> {
-  const defaults = plain(new ExcelJS.Workbook().addWorksheet("x").pageSetup) as Record<string, Json>;
+/** The page setup exceljs reads back from a sheet written with none, so reader-only keys compare as defaults. */
+const readDefaults = (async () => {
+  const blank = new ExcelJS.Workbook();
+  blank.addWorksheet("x");
+  const read = new ExcelJS.Workbook();
+  await read.xlsx.load(await blank.xlsx.writeBuffer());
+  return plain(read.worksheets[0]!.pageSetup) as Record<string, Json>;
+})();
+
+/**
+ * The page setup keys that differ from a blank sheet's, so a writer that omits a default and one that writes it
+ * agree; the fit-to sizes are kept whenever fit-to-page is on, as the goldens record them.
+ */
+async function pageSetupOf(ws: ExcelJS.Worksheet): Promise<Record<string, Json>> {
+  const defaults = await readDefaults;
   const setup = plain(ws.pageSetup) as Record<string, Json>;
-  return Object.fromEntries(Object.entries(setup).filter(([key, value]) => !isDeepStrictEqual(value, defaults[key])));
+  const fit = setup["fitToPage"] === true ? ["fitToWidth", "fitToHeight"] : [];
+  return Object.fromEntries(
+    Object.entries(setup).filter(([key, value]) => fit.includes(key) || !isDeepStrictEqual(value, defaults[key])),
+  );
 }
 
 const byAddress = new Intl.Collator("en", { numeric: true }).compare;
@@ -92,7 +107,7 @@ export async function workbookGolden(
     fileName,
     sheet: ws.name,
     widths: (ws.columns ?? []).map((c) => c.width ?? 0),
-    pageSetup: pageSetupOf(ws),
+    pageSetup: await pageSetupOf(ws),
     oddFooter: ws.headerFooter?.oddFooter ?? null,
     styles: Object.fromEntries(Object.entries(styles).filter(([name]) => used.has(name))),
     merges: [...(ws.model.merges ?? [])].toSorted(byAddress),
