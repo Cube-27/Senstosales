@@ -169,4 +169,21 @@ describe("validate-components", () => {
     expect(checkComponents(at("apps/web/src/components/common/Button.tsx", text))).toEqual([]);
     expect(checkComponents(at("apps/web/src/components/ui/input.tsx", text))).toEqual([]);
   });
+
+  it("fails an icon-only Button without an aria-label, on screens and in the shared components", () => {
+    const text = [
+      `<Button size="icon" onClick={() => go()}><X /></Button>`,
+      `<Button size="icon-sm" aria-label="Next page"><Next /></Button>`,
+      `<Button\n  size={"icon-sm"}\n  className={cn("a", b && "c")}\n>`,
+      `<Button size="sm">Save</Button>`,
+      `<Button size="icon" aria-labelledby={id} />`,
+    ].join("\n");
+    const found = (path: string) => checkComponents(at(path, text)).map((f) => [f.line, f.rule]);
+    const expected = [
+      [1, "unnamed-icon-button"],
+      [3, "unnamed-icon-button"],
+    ];
+    expect(found("apps/web/src/routes/po.tsx")).toEqual(expected);
+    expect(found("apps/web/src/components/common/Pagination.tsx")).toEqual(expected);
+  });
 });

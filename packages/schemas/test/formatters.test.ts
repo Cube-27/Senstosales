@@ -7,6 +7,7 @@ import {
   fmtCount,
   fmtDate,
   fmtDateDashed,
+  fmtDateInput,
   fmtDateMonthName,
   fmtDaysToDue,
   fmtFixed,
@@ -15,9 +16,12 @@ import {
   fmtMoneyCompact,
   fmtMoneyCompactSpaced,
   fmtQty,
+  fmtQtyInput,
   fmtRate,
   foldRepeatedLines,
   moneyNumber,
+  parseDateInput,
+  parseQtyInput,
   qtyExactNumber,
   qtyNumber,
 } from "../src/index.ts";
@@ -299,5 +303,67 @@ describe("foldRepeatedLines: a description with each repeated line once (case an
     ["", ""],
   ])("%j -> %j", (text, expected) => {
     expect(foldRepeatedLines(text)).toBe(expected);
+  });
+});
+
+describe("fmtQtyInput and parseQtyInput: a quantity field", () => {
+  it.each([
+    ["2500", "2.5"],
+    ["1", "0.001"],
+    ["12000", "12"],
+  ])("shows %s milli-units as %s", (milli, expected) => {
+    expect(fmtQtyInput(Number(milli) as Qty)).toBe(expected);
+  });
+
+  it.each<[string, number | null]>([
+    ["2.5", 2500],
+    [" 12 ", 12000],
+    ["0.001", 1],
+    ["", 0],
+    ["-1", 0],
+    ["1.2345", null],
+    ["abc", null],
+    ["1.", null],
+  ])("reads %j as %s", (text, expected) => {
+    expect(parseQtyInput(text)).toBe(expected);
+  });
+});
+
+describe("fmtDateInput: Mon DD, YYYY", () => {
+  it.each([
+    ["2019-12-22", "Dec 22, 2019"],
+    ["2025-01-05", "Jan 05, 2025"],
+  ])("%s -> %s", (d, expected) => {
+    expect(fmtDateInput(date(d))).toBe(expected);
+  });
+});
+
+describe("parseDateInput: the legacy picker's typed formats", () => {
+  it.each<[string, string | null]>([
+    ["2019-12-22", "2019-12-22"],
+    ["2019-1-5", "2019-01-05"],
+    ["Dec 22, 2019", "2019-12-22"],
+    ["dec 22 2019", "2019-12-22"],
+    ["22 Dec 2019", "2019-12-22"],
+    ["22 December 2019", "2019-12-22"],
+    ["5 Sept 2024", "2024-09-05"],
+    ["  22   Dec   2019 ", "2019-12-22"],
+    ["22/12/2019", "2019-12-22"],
+    ["05/01/2025", "2025-01-05"],
+    ["5-1-2025", "2025-01-05"],
+    ["05.01.2025", "2025-01-05"],
+    // Day-first is no date, so month-first.
+    ["12/22/2019", "2019-12-22"],
+    ["29/02/2024", "2024-02-29"],
+    ["29/02/2023", null],
+    ["31/31/2024", null],
+    ["22/12-2019", null],
+    ["Decoy 22, 2019", null],
+    ["De 22, 2019", null],
+    ["2019-02-30", null],
+    ["", null],
+    ["tomorrow", null],
+  ])("%j -> %s", (text, expected) => {
+    expect(parseDateInput(text)).toBe(expected);
   });
 });

@@ -4,6 +4,10 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "type": "module",
+  "sideEffects": [
+    "*.css",
+    "./src/main.tsx"
+  ],
   "scripts": {
     "dev": "vp dev",
     "build": "vp build"
@@ -16,9 +20,12 @@
     "@senstosales/schemas": "workspace:*",
     "@tanstack/react-query": "^5.104.2",
     "@tanstack/react-router": "^1.170.44",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.57.0",
+    "radix-ui": "^1.8.1",
     "react": "^19.3.1",
+    "react-day-picker": "^10.0.2",
     "react-dom": "^19.3.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
