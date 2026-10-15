@@ -3,20 +3,19 @@
 // invoice), so requests and responses are checked against the shared schemas too. Expected values are worked by hand
 // from ARCHITECTURE §6.2-§6.10. Synthetic values only (C1).
 import type { Instant } from "@senstosales/db";
-import type { IsoDate } from "@senstosales/domain";
 import type { RouteInput } from "@senstosales/schemas";
 import { ApiError, zGstPct, zMoney, zQty } from "@senstosales/schemas";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
 import { closeApiApps, onboardedApp } from "../api-app.ts";
 import { poPage } from "../po-pages.ts";
+import { d as day } from "../seed-rows.ts";
 import { srvPage } from "../srv-pages.ts";
 
 afterEach(closeApiApps);
 
 type Client = Awaited<ReturnType<typeof onboardedApp>>["client"];
 
-const day = (s: string) => s as IsoDate;
 const qty = (s: string) => zQty.decode(s);
 const text = (v: Parameters<typeof zQty.encode>[0]) => zQty.encode(v);
 const money = (v: Parameters<typeof zMoney.encode>[0]) => zMoney.encode(v);
@@ -38,16 +37,12 @@ function tickingClock() {
  * - PO 4500002, GEMC: item 10 (ord 10 at 848.75 GST-inclusive, net 719.27966) and item 20 (ord 5 at 118, net 100).
  */
 async function dataset() {
-  const app = await onboardedApp({ clock: tickingClock() });
-  const { client } = app;
+  const { client } = await onboardedApp({ clock: tickingClock() });
   const settings = await client.request("settings.get");
   const nine = zGstPct.decode("9");
   await client.request("settings.update", { body: { ...settings, cgstPct: nine, sgstPct: nine } });
 
-  const uploadPo = async (html: string) => {
-    const res = await client.request("po.upload", { body: { files: [{ name: "po.html", html }] } });
-    expect(res.results.map((r) => r.status)).toEqual(["accepted"]);
-  };
+  const uploadPo = (html: string) => upload(client, "po.upload", html);
   const items = [
     { no: 10, ord: "10.000", rate: "100.00" },
     { no: 20, ord: "5.000", rate: "50.00" },
@@ -74,10 +69,17 @@ async function dataset() {
     const item = (no: number) => detail.items.find((i) => i.poItemNo === no)!.id;
     return { id, item };
   };
-  return { app, client, ...flows(client), po: await stored("4500001"), gemc: await stored("4500002") };
+  return { client, ...flows(client), po: await stored("4500001"), gemc: await stored("4500002") };
 }
 
 type Lines = readonly (readonly [poItemId: string, qty: string])[];
+type DcLine = Extract<RouteInput<"invoice.create">["body"], { kind: "dc" }>["lines"][number];
+
+/** Uploads one BHEL page and checks it was accepted. */
+async function upload(client: Client, route: "po.upload" | "srv.upload", html: string) {
+  const res = await client.request(route, { body: { files: [{ name: "page.html", html }] } });
+  expect(res.results.map((r) => r.status)).toEqual(["accepted"]);
+}
 
 /** The screens' calls, each from the data the screen loads first. */
 function flows(client: Client) {
@@ -113,10 +115,13 @@ function flows(client: Client) {
     return client.request("dc.update", { params: { id }, body: { ...body, ...change } });
   }
 
-  async function uploadSrv(po: string, srv: string, date: string, refs: { challan?: string; invoice?: string }) {
-    const html = srvPage(po, [{ srv, date, item: 10, code: "SYN-10", rcd: "4.000", ...refs }]);
-    const res = await client.request("srv.upload", { body: { files: [{ name: "srv.html", html }] } });
-    expect(res.results.map((r) => r.status)).toEqual(["accepted"]);
+  /** An SRV of PO 4500001 receiving 4 of item 10, citing `refs`; returns its id. */
+  async function uploadSrv(srv: string, date: string, refs: { challan?: string; invoice?: string }) {
+    await upload(
+      client,
+      "srv.upload",
+      srvPage("4500001", [{ srv, date, item: 10, code: "SYN-10", rcd: "4.000", ...refs }]),
+    );
     const { items } = await client.request("srv.list", { query: { pageSize: 100 } });
     return items.find((s) => s.srvNumber === srv)!.id;
   }
@@ -145,7 +150,8 @@ function flows(client: Client) {
   return { createDc, invoiceDc, invoicePo, editDc, uploadSrv, itemsOf, flagsOf, everything };
 }
 
-type DcLine = { dcItemId: string; qty: ReturnType<typeof qty>; rate: ReturnType<typeof zMoney.decode> };
+/** An SRV citing challan 7 with no DC 7 in its FY (INV-53). */
+const CHALLAN_7_UNMATCHED = { field: "challan_no", expected: null, actual: "7", docIds: [] };
 
 /** A refused call's status, code and details. */
 async function refused(call: Promise<unknown>) {
@@ -261,9 +267,8 @@ describe("DC flows", () => {
 
   test("a DC whose (number, FY) an earlier SRV cited links that SRV item (INV-37)", async () => {
     const d = await dataset();
-    const srvId = await d.uploadSrv("4500001", "S-1", "25/04/2025", { challan: "7" });
-    const conflict = { field: "challan_no", expected: null, actual: "7", docIds: [] };
-    expect((await d.flagsOf(d.po.id)).map((f) => [f[0], f[3]])).toEqual([["DOC_NUMBER_CONFLICT", conflict]]);
+    const srvId = await d.uploadSrv("S-1", "25/04/2025", { challan: "7" });
+    expect((await d.flagsOf(d.po.id)).map((f) => [f[0], f[3]])).toEqual([["DOC_NUMBER_CONFLICT", CHALLAN_7_UNMATCHED]]);
 
     const dc = await d.createDc(d.po.id, "7", "2025-04-02", [[d.po.item(10), "4"]]);
     const srv = await d.client.request("srv.detail", { params: { id: srvId } });
@@ -276,7 +281,7 @@ describe("DC flows", () => {
     const d = await dataset();
     const item10 = d.po.item(10);
     const dc7 = await d.createDc(d.po.id, "7", "2025-04-02", [[item10, "4"]]);
-    const srvId = await d.uploadSrv("4500001", "S-1", "25/04/2025", { challan: "7" });
+    const srvId = await d.uploadSrv("S-1", "25/04/2025", { challan: "7" });
     const links = async () =>
       (await d.client.request("srv.detail", { params: { id: srvId } })).items.map((i) => i.resolvedDcId);
     expect(await links()).toEqual([dc7.id]);
@@ -285,9 +290,8 @@ describe("DC flows", () => {
     const moved = await d.editDc(dc7.id, { dcDate: day("2025-03-30"), gcDate: null });
     expect(moved).toMatchObject({ dcDate: "2025-03-30", financialYear: "2024-25", gcDate: "2025-03-30", version: 2 });
     expect(await links()).toEqual([null]);
-    const conflict = { field: "challan_no", expected: null, actual: "7", docIds: [] };
     expect((await d.flagsOf(d.po.id)).map((f) => [f[0], f[1], f[3]])).toEqual([
-      ["DOC_NUMBER_CONFLICT", "srv_item", conflict],
+      ["DOC_NUMBER_CONFLICT", "srv_item", CHALLAN_7_UNMATCHED],
     ]);
 
     // A new DC 7 in 2025-26 takes the free key, and the SRV links to it.
@@ -405,7 +409,7 @@ test("one PO through every document and back: links block deletes with a reason 
     [item20, "2"],
   ]);
   const invoice = await d.invoiceDc(dc.id, "31", "2025-04-03");
-  const srvId = await d.uploadSrv("4500001", "S-1", "25/04/2025", { challan: "7", invoice: "31" });
+  const srvId = await d.uploadSrv("S-1", "25/04/2025", { challan: "7", invoice: "31" });
   const srv = await d.client.request("srv.detail", { params: { id: srvId } });
   expect(srv.items.map((i) => [i.resolvedDcId, i.resolvedInvoiceId])).toEqual([[dc.id, invoice.id]]);
   expect(await d.itemsOf(d.po.id)).toEqual([
@@ -436,7 +440,7 @@ test("one PO through every document and back: links block deletes with a reason 
   // Deleting the invoice is still not enough while the SRV cites the DC.
   await d.client.request("srv.delete", { params: { id: srvId } });
   await deleteInvoice();
-  const srvAgain = await d.uploadSrv("4500001", "S-2", "26/04/2025", { challan: "7" });
+  const srvAgain = await d.uploadSrv("S-2", "26/04/2025", { challan: "7" });
   expect(await refused(deleteDc())).toMatchObject({
     status: 409,
     code: "delete-blocked",
