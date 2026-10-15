@@ -65,6 +65,45 @@ describe("FormField", () => {
   });
 });
 
+describe("FormField around the registry controls", () => {
+  const described = (control: HTMLElement): string | null | undefined =>
+    document.getElementById(control.getAttribute("aria-describedby") ?? "")?.textContent;
+
+  it("names and describes a DatePicker, and keeps its blur and key handlers", () => {
+    const onBlur = vi.fn();
+    const onKeyDown = vi.fn();
+    render(
+      <FormField label="PO date" help="As on the PO" error="Enter a date" required>
+        <DatePicker value="" onChange={() => {}} onBlur={onBlur} onKeyDown={onKeyDown} />
+      </FormField>,
+    );
+    const box = screen.getByRole("textbox", { name: "PO date" });
+    fireEvent.keyDown(box, { key: "a" });
+    fireEvent.blur(box);
+    expect([
+      described(box),
+      box.getAttribute("aria-invalid"),
+      box.getAttribute("aria-required"),
+      onKeyDown.mock.calls.length,
+      onBlur.mock.calls.length,
+    ]).toEqual(["Enter a date", "true", "true", 1, 1]);
+  });
+
+  it("names and describes an Autocomplete", () => {
+    render(
+      <FormField label="Buyer" help="Pick the buyer" error="Pick a buyer" required>
+        <Autocomplete options={OPTIONS} value="" onChange={() => {}} />
+      </FormField>,
+    );
+    const box = screen.getByRole("combobox", { name: "Buyer" });
+    expect([described(box), box.getAttribute("aria-invalid"), box.getAttribute("aria-required")]).toEqual([
+      "Pick a buyer",
+      "true",
+      "true",
+    ]);
+  });
+});
+
 describe("Button", () => {
   it("is disabled and shows a spinner while loading", () => {
     const onClick = vi.fn();
@@ -132,6 +171,15 @@ describe("QuantityInput", () => {
     fireEvent.change(input, { target: { value: "4" } });
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
     expect(input.value).toBe("");
+  });
+
+  it("shows the quantity it holds once the field is left", () => {
+    const onValue = vi.fn();
+    render(<Quantity initial={0} onValue={onValue} />);
+    const input = screen.getByRole("textbox", { name: "Qty" }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "-5" } });
+    fireEvent.blur(input);
+    expect([input.value, onValue.mock.calls]).toEqual(["", [[0]]]);
   });
 
   it("has no upper limit (C6)", () => {
@@ -324,6 +372,14 @@ describe("FileUploadModal", () => {
         .map((li) => li.textContent),
     ).toEqual(["b.htmlOlder than the stored version", "c.htmlNot a BHEL PO page"]);
     expect(within(dialog).getByRole("button", { name: "Done" }).textContent).toBe("Done");
+  });
+
+  it("with no files is complete and can be closed", async () => {
+    const onClose = vi.fn();
+    render(<FileUploadModal open files={[]} onUpload={vi.fn()} onClose={onClose} />);
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Done" }));
+    expect([within(dialog).getByText("0 / 0").textContent, onClose.mock.calls.length]).toEqual(["0 / 0", 1]);
   });
 
   it("stops after the file in flight when cancelled", async () => {

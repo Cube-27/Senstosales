@@ -54,7 +54,11 @@ export function FileUploadModal({ open, onClose, files, onUpload, title = "Uploa
   });
 
   useEffect(() => {
-    if (!open || files.length === 0) return;
+    if (!open) return;
+    if (files.length === 0) {
+      setPhase("complete");
+      return;
+    }
     let live = true;
     cancelled.current = false;
     setPhase("uploading");

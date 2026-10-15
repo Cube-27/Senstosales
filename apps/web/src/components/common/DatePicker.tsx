@@ -32,7 +32,9 @@ export function DatePicker({
   className,
   disabled,
   placeholder = "Dec 22, 2019",
-  "aria-label": ariaLabel = "Date input",
+  "aria-label": ariaLabel,
+  onBlur,
+  onKeyDown,
   ...props
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
@@ -77,8 +79,8 @@ export function DatePicker({
             className="pr-9 role-body-text-sm"
             onChange={(e) => setText(e.target.value)}
             onBlur={(e) => {
-              if (e.relatedTarget?.closest("[data-datepicker-trigger]")) return;
-              commit();
+              if (!e.relatedTarget?.closest("[data-datepicker-trigger]")) commit();
+              onBlur?.(e);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -93,12 +95,13 @@ export function DatePicker({
                 setText(shown(value));
                 setOpen(false);
               }
+              onKeyDown?.(e);
             }}
           />
           <PopoverTrigger
             type="button"
             disabled={disabled}
-            aria-label={`Open ${ariaLabel} calendar`}
+            aria-label={`Open ${ariaLabel ?? "Date input"} calendar`}
             data-datepicker-trigger
             className="absolute top-1/2 right-1 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm bg-[var(--dp-trigger-bg)] text-[var(--dp-icon-color)] hover:bg-[var(--dp-trigger-bg-hover)] disabled:cursor-not-allowed disabled:opacity-65"
           >

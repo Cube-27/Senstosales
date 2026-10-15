@@ -23,11 +23,15 @@ export interface AutocompleteProps {
   readonly disabled?: boolean;
   readonly id?: string;
   readonly "aria-label"?: string;
+  /** Set by FormField: the help or error text, and the field state. */
+  readonly "aria-describedby"?: string;
+  readonly "aria-invalid"?: boolean;
+  readonly "aria-required"?: boolean;
   readonly className?: string;
 }
 
 /**
- * The legacy autocomplete: a search field that lists matching options under it, with a clear button. Keyboard:
+ * The legacy autocomplete: a search field that lists the given options under it (a caller filters them through `onSearch`), with a clear button. Keyboard:
  * ArrowUp/ArrowDown move through the list, Enter picks, Escape closes. Leaving the field without picking restores the
  * chosen option's label. The list floats over the page, so opening it moves nothing (C8).
  */
@@ -42,6 +46,7 @@ export function Autocomplete({
   id,
   "aria-label": ariaLabel,
   className,
+  ...field
 }: AutocompleteProps) {
   const listId = useId();
   const chosen = options.find((o) => o.value === value);
@@ -75,6 +80,7 @@ export function Autocomplete({
   return (
     <div className={cn("relative w-full", className)}>
       <Input
+        {...field}
         id={id}
         role="combobox"
         aria-label={ariaLabel}
