@@ -6,6 +6,8 @@
   "dependencies": {
     "@senstosales/api": "workspace:*",
     "@senstosales/db": "workspace:*",
-    "@senstosales/schemas": "workspace:*"
+    "@senstosales/schemas": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
   }
 }
