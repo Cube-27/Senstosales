@@ -70,7 +70,7 @@ export function designTokens(css: string): { properties: Set<string>; colours: S
   );
   // `.hover\:text-accent-hover:hover` defines the class `hover:text-accent-hover`.
   const classes = new Set(
-    Array.from(css.matchAll(/^\s*\.((?:[\w-]|\\:)+)/gm), (m) => (m[1] ?? "").replaceAll("\\:", ":")),
+    Array.from(css.matchAll(/^\s*\.((?:[\w-]|\\:)+)/gm), (m) => (m[1] ?? "").replaceAll(String.raw`\:`, ":")),
   );
   return { properties, colours, classes };
 }
@@ -96,11 +96,9 @@ export function classStrings(text: string): ClassString[] {
     if (site.index < readTo) continue;
     const start = site.index + site[0].length;
     const opensCall = site[0].endsWith("(");
-    const body = opensCall
-      ? balanced(text, start - 1)
-      : text[start] === "{"
-        ? balanced(text, start)
-        : literalAt(text, start);
+    let body = literalAt(text, start);
+    if (opensCall) body = balanced(text, start - 1);
+    else if (text[start] === "{") body = balanced(text, start);
     readTo = start + body.length;
     const line = lineAt(text, start);
     for (const lit of body.matchAll(LITERAL)) {

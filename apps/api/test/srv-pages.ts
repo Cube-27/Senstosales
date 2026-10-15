@@ -18,7 +18,8 @@ export interface SrvRow {
   readonly invoice?: string;
 }
 
-const tr = (cells: readonly string[], tag = "td") => `<tr>${cells.map((c) => `<${tag}>${c}</${tag}>`).join("")}</tr>`;
+const cell = (tag: string) => (text: string) => `<${tag}>${text}</${tag}>`;
+const tr = (cells: readonly string[], tag = "td") => `<tr>${cells.map(cell(tag)).join("")}</tr>`;
 
 /** An SRV page of PO `po`; the ORD QTY column is printed only when a row gives `ord`. */
 export function srvPage(po: string, rows: readonly SrvRow[]): string {

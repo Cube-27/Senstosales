@@ -60,6 +60,12 @@ export type DesiredFlag = { type: FlagType; scopeType: FlagScope; scopeId: strin
 type AddFlag = (type: FlagType, scopeType: FlagScope, scopeId: string, details: FlagDetails) => void;
 
 /** INV-54, INV-55, INV-56, INV-57: flags on one PO item. */
+/** Code-unit order, not locale order: the fingerprint must not depend on the machine. */
+function byCodeUnit(a: string, b: string): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 function itemFlags(item: SnapshotItem, add: AddFlag): void {
   const expected = qtyToString(item.ordQty);
   if (gtTol(item.dspQty, item.ordQty)) {
@@ -95,8 +101,7 @@ function itemFlags(item: SnapshotItem, add: AddFlag): void {
         field: "manual_dispatched_qty",
         expected: null,
         actual: qtyToString(item.manualDispatchedQty),
-        // Code-unit order, not locale order: the fingerprint must not depend on the machine.
-        docIds: [...new Set(later)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+        docIds: [...new Set(later)].sort(byCodeUnit),
       });
     }
   }

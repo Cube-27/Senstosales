@@ -40,7 +40,10 @@ const matchOf = (t: Terms, number: string, itemMatch: string | null, other: stri
   startsWithText(number, t.q) ? number : (itemMatch ?? other ?? number);
 
 /** The rank the hits are merged by: exact number, number prefix, anything else. */
-const rankOf = (t: Terms, hit: Hit) => (hit.number === t.q ? 0 : startsWithText(hit.number, t.q) ? 1 : 2);
+function rankOf(t: Terms, hit: Hit): number {
+  if (hit.number === t.q) return 0;
+  return startsWithText(hit.number, t.q) ? 1 : 2;
+}
 
 /** A PO link carries a date; a PO without one (never from a BHEL page) is shown without the link. */
 const poLink = (ref: { id: string; number: string; date: IsoDate | null } | null) =>

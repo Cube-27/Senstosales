@@ -56,7 +56,7 @@ async function answer<T>(call: () => Promise<T>): Promise<T> {
   }
 }
 
-const base64 = (bytes: Uint8Array): string => btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""));
+const base64 = (bytes: Uint8Array): string => btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte)).join(""));
 
 export function bhelWizardService(deps: SourceDocumentDeps & BhelDeps & { secrets: Secrets }) {
   const { scraper, sessions, secrets } = deps;

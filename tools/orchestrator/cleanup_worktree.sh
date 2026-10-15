@@ -22,7 +22,10 @@ if [[ $wt == */* || $wt == *\\* ]]; then
   echo "ERROR WORKTREE must be a name under $WORKTREE_ROOT, not a path: $wt; removed nothing" >&2
   exit 2
 fi
-registered() { git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"; }
+registered() {
+  git -C "$main" worktree list --porcelain | grep -qxF "worktree $dir"
+  return
+}
 if [[ -e $dir ]] && ! registered; then
   echo "ERROR $dir is not a registered worktree; removed nothing" >&2
   exit 2

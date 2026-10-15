@@ -64,7 +64,8 @@ export function addStreamedSheet(
     const writer = worksheet as unknown as { _writePageMargins(): void; _write(xml: string): void };
     const margins = writer._writePageMargins.bind(writer);
     writer._writePageMargins = () => {
-      writer._write(`<printOptions ${set.map(([, attribute]) => `${attribute}="1"`).join(" ")}/>`);
+      const attributes = set.map(([, attribute]) => `${attribute}="1"`).join(" ");
+      writer._write(`<printOptions ${attributes}/>`);
       margins();
     };
   }

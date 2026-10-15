@@ -137,7 +137,10 @@ export function heldBatches() {
       return db.batch(statements);
     },
   });
-  return { wrap, hold: (n: number) => void (count = n) };
+  const hold = (n: number): void => {
+    count = n;
+  };
+  return { wrap, hold };
 }
 
 /** A `Db` whose batch after `close()` waits until `open()`; every other batch runs at once. */

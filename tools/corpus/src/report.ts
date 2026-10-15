@@ -138,8 +138,8 @@ export function renderMarkdown(report: ImportReport): string {
     "",
     `Result: ${report.passed ? "passed" : "failed"}`,
     "",
-    ...kinds.map(
-      ({ label, kind }) => `${label} job: ${kind.job.status}${kind.job.error ? ` (${kind.job.error})` : ""}`,
+    ...kinds.map(({ label, kind }) =>
+      [`${label} job: ${kind.job.status}`, kind.job.error && `(${kind.job.error})`].filter(Boolean).join(" "),
     ),
     "",
     "## Pages",

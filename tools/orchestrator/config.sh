@@ -75,6 +75,7 @@ for (const a of JSON.parse(require("fs").readFileSync(0, "utf8")).result.agents)
 
 # A path in the form herdr reports cwd in: Windows-style under Git Bash, unchanged elsewhere.
 native_path() {
-  cygpath -w "$1" 2>/dev/null || echo "$1"
+  local path=$1
+  cygpath -w "$path" 2>/dev/null || echo "$path"
   return 0
 }

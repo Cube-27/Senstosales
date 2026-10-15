@@ -22,7 +22,7 @@ function check(ok: boolean, what: string): void {
 
 /** Windows PowerShell by its full path, not looked up on PATH. */
 const POWERSHELL = join(
-  process.env["SystemRoot"] ?? "C:\\Windows",
+  process.env["SystemRoot"] ?? String.raw`C:\Windows`,
   "System32",
   "WindowsPowerShell",
   "v1.0",
@@ -103,7 +103,7 @@ async function main(): Promise<void> {
   if (!setup || others.length > 0) throw new Error(`smoke: expected one installer in ${bundle}`);
   const installer = join(bundle, setup);
   check((await run(installer, ["/S"])) === 0, "the installer runs silently without admin rights");
-  check(existsSync(APP), "the app is installed in %LOCALAPPDATA%\\Programs\\SenstoSales");
+  check(existsSync(APP), String.raw`the app is installed in %LOCALAPPDATA%\Programs\SenstoSales`);
   await smokeRun();
   check(existsSync(DATABASE), "the data is in the data folder");
 

@@ -22,7 +22,8 @@ export interface PageSpec {
 const COLUMNS = ["PO ITM", "MATERIAL CODE", "UNIT", "PO RATE", "ORD QTY", "RCD QTY", "REJ QTY"];
 const LOT_COLUMNS = ["LOT NO", "DELY QTY", "DELY DATE", "ENTRY ALLOW DATE", "DEST CODE"];
 
-const tr = (cells: readonly string[]) => `<tr>${cells.map((c) => `<td>${c}</td>`).join("")}</tr>`;
+const td = (cell: string) => `<td>${cell}</td>`;
+const tr = (cells: readonly string[]) => `<tr>${cells.map(td).join("")}</tr>`;
 
 const itemRow = (item: PageItem) => {
   const ord = item.ord ?? "10.000";

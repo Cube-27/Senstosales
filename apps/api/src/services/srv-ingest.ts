@@ -78,9 +78,10 @@ export async function ingestSrvFile(
     const reason = `The SRVs of PO ${poNumber} could not be saved. Nothing from this file was changed.`;
     return { name, status: "failed", reason };
   }
+  const were = skipped.length === 1 ? "it was" : "they were";
   const notes = [
     poId !== null ? null : `PO ${poNumber} is not in the system yet; its SRVs are stored and listed as "PO not found".`,
-    skipped.length === 0 ? null : `${olderThan(skipped)}, so ${skipped.length === 1 ? "it was" : "they were"} skipped.`,
+    skipped.length === 0 ? null : `${olderThan(skipped)}, so ${were} skipped.`,
   ].filter((note) => note !== null);
   return { name, status: "accepted", reason: notes.length > 0 ? notes.join(" ") : null };
 }
