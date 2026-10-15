@@ -24,12 +24,14 @@ export async function settle(page: Page): Promise<void> {
   });
 }
 
-/** Runs `action` and fails when any of `locators` moved or changed size. */
+/** Runs `action` and fails when any of `locators` moved or changed size. The first locator is scrolled into view
+ * first, as using a control below the fold would, so a scroll is never measured as a shift. */
 export async function expectNoLayoutShift(
   page: Page,
   locators: Record<string, Locator>,
   action: () => Promise<void>,
 ): Promise<void> {
+  await Object.values(locators)[0]?.scrollIntoViewIfNeeded();
   await settle(page);
   const before = await measure(locators);
   await action();

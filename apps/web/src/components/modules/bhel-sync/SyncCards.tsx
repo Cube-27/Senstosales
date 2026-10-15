@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "../../../lib/cn.ts";
 import { CheckCircle, Info, Lock, Monitor, Play, Reset, Shield } from "../../../lib/icons.ts";
-import { isActive, type Job } from "../../../lib/jobs.ts";
+import type { Job } from "../../../lib/jobs.ts";
 import {
   Button,
   Input,
@@ -123,6 +123,8 @@ export interface ControlCardProps {
   /** The job of this kind's last run, or null with none. */
   readonly jobId: string | null;
   readonly job: Job | undefined;
+  /** The run's job is queued or running. */
+  readonly running: boolean;
   readonly authenticated: boolean;
   /** Why Start is disabled, or null when it can start. */
   readonly startBlockedBy: string | null;
@@ -131,8 +133,7 @@ export interface ControlCardProps {
   onReset(): void;
 }
 
-export function ControlCard({ kind, jobId, job, authenticated, ...props }: ControlCardProps) {
-  const running = jobId !== null && (job === undefined || isActive(job));
+export function ControlCard({ kind, jobId, job, running, authenticated, ...props }: ControlCardProps) {
   const ended = jobId !== null && !running;
   const { label, message } = statusLine(kind, job, jobId !== null);
   const tone = running ? "active" : !ended ? "idle" : job?.status === "failed" ? "error" : "done";

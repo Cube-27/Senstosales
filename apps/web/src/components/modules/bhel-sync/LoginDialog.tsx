@@ -1,7 +1,7 @@
 // The legacy BHEL login dialog (SPEC-19 §2): connecting, then the captcha, then the OTP, or the failure with Try Again.
 // Every step has the same body height, so the dialog keeps its footprint (SPEC-19 §7). Only Cancel closes it. Each
 // code field is uncontrolled and keyed by its step and captcha, so a new step starts empty without an effect.
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 import { AlertCircle, Loading, Shield } from "../../../lib/icons.ts";
 import {
@@ -19,8 +19,7 @@ import type { Login } from "./useBhelLogin.ts";
 export interface LoginDialogProps {
   readonly login: Login;
   readonly submitting: boolean;
-  onCaptcha(sessionId: string, code: string): void;
-  onOtp(sessionId: string, code: string): void;
+  onSubmit(code: string): void;
   onRetry(): void;
   onCancel(): void;
 }
@@ -56,49 +55,61 @@ function submitted(event: FormEvent<HTMLFormElement>, send: (code: string) => vo
   if (code !== "") send(code);
 }
 
-function StepBody({ login, onCaptcha, onOtp }: Pick<LoginDialogProps, "login" | "onCaptcha" | "onOtp">) {
+/** A code field and its prompt; a new step or captcha remounts it, so it starts empty. */
+function CodeForm(props: {
+  readonly prompt: string;
+  readonly label: string;
+  readonly placeholder: string;
+  readonly autoComplete: string;
+  readonly message: string | null;
+  readonly children?: ReactNode;
+  onSubmit(code: string): void;
+}) {
+  return (
+    <form id={FORM_ID} className="flex flex-col gap-3" onSubmit={(e) => submitted(e, props.onSubmit)}>
+      <p className="role-helper-text">{props.prompt}</p>
+      {props.children}
+      <Input
+        name="code"
+        aria-label={props.label}
+        placeholder={props.placeholder}
+        autoComplete={props.autoComplete}
+        className="text-center tracking-widest"
+        autoFocus
+      />
+      <ErrorBanner message={props.message} />
+    </form>
+  );
+}
+
+function StepBody({ login, onSubmit }: Pick<LoginDialogProps, "login" | "onSubmit">) {
   switch (login.step) {
     case "captcha":
       return (
-        <form
-          id={FORM_ID}
-          className="flex flex-col gap-3"
-          onSubmit={(e) => submitted(e, (c) => onCaptcha(login.sessionId, c))}
+        <CodeForm
+          key={login.captchaPng}
+          prompt="Enter the code shown in the image below:"
+          label="CAPTCHA code"
+          placeholder="Type CAPTCHA code"
+          autoComplete="off"
+          message={login.message}
+          onSubmit={onSubmit}
         >
-          <p className="role-helper-text">Enter the code shown in the image below:</p>
           <div className="flex h-24 items-center justify-center rounded-lg border border-border bg-surface-sunken p-2">
             <img src={`data:image/png;base64,${login.captchaPng}`} alt="CAPTCHA" className="max-h-20 w-auto" />
           </div>
-          <Input
-            key={login.captchaPng}
-            name="code"
-            aria-label="CAPTCHA code"
-            placeholder="Type CAPTCHA code"
-            autoComplete="off"
-            className="text-center tracking-widest"
-            autoFocus
-          />
-          <ErrorBanner message={login.message} />
-        </form>
+        </CodeForm>
       );
     case "otp":
       return (
-        <form
-          id={FORM_ID}
-          className="flex flex-col gap-3"
-          onSubmit={(e) => submitted(e, (c) => onOtp(login.sessionId, c))}
-        >
-          <p className="role-helper-text">An OTP was sent to your registered email. Enter it below:</p>
-          <Input
-            name="code"
-            aria-label="OTP code"
-            placeholder="OTP code"
-            autoComplete="one-time-code"
-            className="text-center tracking-widest"
-            autoFocus
-          />
-          <ErrorBanner message={login.message} />
-        </form>
+        <CodeForm
+          prompt="An OTP was sent to your registered email. Enter it below:"
+          label="OTP code"
+          placeholder="OTP code"
+          autoComplete="one-time-code"
+          message={login.message}
+          onSubmit={onSubmit}
+        />
       );
     case "failed":
       return (
@@ -142,7 +153,7 @@ function PrimaryAction({ login, submitting, onRetry }: Pick<LoginDialogProps, "l
   }
 }
 
-export function LoginDialog({ login, submitting, onCaptcha, onOtp, onRetry, onCancel }: LoginDialogProps) {
+export function LoginDialog({ login, submitting, onSubmit, onRetry, onCancel }: LoginDialogProps) {
   const open = login.step !== "idle" && login.step !== "ready";
   return (
     <Dialog open={open}>
@@ -160,7 +171,7 @@ export function LoginDialog({ login, submitting, onCaptcha, onOtp, onRetry, onCa
           <DialogDescription className="sr-only">BHEL portal login</DialogDescription>
         </DialogHeader>
         <div className="h-64 py-2">
-          <StepBody key={login.step} login={login} onCaptcha={onCaptcha} onOtp={onOtp} />
+          <StepBody key={login.step} login={login} onSubmit={onSubmit} />
         </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" size="sm" onClick={onCancel}>

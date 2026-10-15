@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// SPEC-19 PR 5: the tray tooltip names the running job (ARCHITECTURE §7.3, §12.4), from `/api/health` polled every 2 s.
+// SPEC-19 PR 5: the tray tooltip names the running job (ARCHITECTURE §7.3, §12.4), from `/api/health`.
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -18,7 +18,7 @@ const health = (job: { type: string; status: string } | null) => ({
 });
 
 describe("tray status (SPEC-19 PR 5)", () => {
-  it("shows the running job, then the app name once it ends, setting each text once", async () => {
+  it("shows the running job, then the app name once it ends, setting each text once; polls slower while idle", async () => {
     vi.useFakeTimers();
     let current = health({ type: "po.scrape", status: "running" });
     stubApi({ "GET /api/health": () => current });
@@ -38,10 +38,17 @@ describe("tray status (SPEC-19 PR 5)", () => {
     await vi.advanceTimersByTimeAsync(2000);
     expect(texts).toEqual(["SenstoSales: BHEL PO sync running", "SenstoSales: Backup waiting", "SenstoSales"]);
 
+    // With no job it looks every 10 s, not every 2 s.
+    current = health({ type: "recompute-all", status: "running" });
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(texts).toHaveLength(3);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(texts.at(-1)).toBe("SenstoSales: Recalculation running");
+
     stop();
     current = health({ type: "srv.import-folder", status: "running" });
     await vi.advanceTimersByTimeAsync(4000);
-    expect(texts).toHaveLength(3);
+    expect(texts).toHaveLength(4);
   });
 
   it.each([

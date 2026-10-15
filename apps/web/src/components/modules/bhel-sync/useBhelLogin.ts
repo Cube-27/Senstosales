@@ -52,16 +52,13 @@ export function useBhelLogin() {
     onSuccess: ({ sessionId, captchaPng }) => setLogin({ step: "captcha", sessionId, captchaPng, message: null }),
     onError: fail,
   });
-  const captcha = useMutation({
-    mutationFn: ({ sessionId, code }: { sessionId: string; code: string }) =>
-      api.request("bhel.captcha", { params: { sessionId }, body: { captcha: code } }),
-    onSuccess: (answer, { sessionId }) => setLogin(afterStep(sessionId, answer)),
-    onError: fail,
-  });
-  const otp = useMutation({
-    mutationFn: ({ sessionId, code }: { sessionId: string; code: string }) =>
-      api.request("bhel.otp", { params: { sessionId }, body: { otp: code } }),
-    onSuccess: (answer, { sessionId }) => setLogin(afterStep(sessionId, answer)),
+  /** The captcha or the OTP the user typed, as the session's current step asks. */
+  const answer = useMutation({
+    mutationFn: ({ sessionId, step, code }: { sessionId: string; step: "captcha" | "otp"; code: string }) =>
+      step === "captcha"
+        ? api.request("bhel.captcha", { params: { sessionId }, body: { captcha: code } })
+        : api.request("bhel.otp", { params: { sessionId }, body: { otp: code } }),
+    onSuccess: (next, { sessionId }) => setLogin(afterStep(sessionId, next)),
     onError: fail,
   });
 
@@ -74,10 +71,14 @@ export function useBhelLogin() {
 
   return {
     login,
-    submitting: captcha.isPending || otp.isPending,
+    submitting: answer.isPending,
     start: () => start.mutate(),
-    submitCaptcha: (sessionId: string, code: string) => captcha.mutate({ sessionId, code }),
-    submitOtp: (sessionId: string, code: string) => otp.mutate({ sessionId, code }),
+    /** Sends `code` for the step the login is at; nothing outside the captcha and OTP steps. */
+    submit: (code: string) => {
+      if (login.step === "captcha" || login.step === "otp") {
+        answer.mutate({ sessionId: login.sessionId, step: login.step, code });
+      }
+    },
     close,
   };
 }

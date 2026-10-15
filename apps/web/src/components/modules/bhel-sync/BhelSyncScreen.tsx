@@ -5,10 +5,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { api, apiQuery } from "../../../lib/api.ts";
+import { api } from "../../../lib/api.ts";
 import { ArrowRightLeft, CheckCircle } from "../../../lib/icons.ts";
 import { isActive, type Job, jobQuery } from "../../../lib/jobs.ts";
 import { ButtonGroup, PageHeader, useToast } from "../../common/index.ts";
+import { bhelPasswordQuery, supplierQuery } from "../settings/useSettings.ts";
 import { LoginDialog } from "./LoginDialog.tsx";
 import { DEFAULT_CONFIG, type Kind, type PipelineConfig, type ScrapeBody, scrapeBody } from "./scrape.ts";
 import { AuthCard, ControlCard, PipelineCard } from "./SyncCards.tsx";
@@ -25,24 +26,20 @@ interface Run {
   readonly sessionId: string;
 }
 
-const supplierQuery = apiQuery("supplier.get");
-const passwordQuery = apiQuery("settings.bhelPassword");
-
-type Request = ReturnType<typeof scrapeBody>;
-
 /** What the screen shows, derived from the login, the last run and its job; nothing here is stored. */
 function syncState(args: {
   readonly login: Login;
   readonly run: Run | null;
   readonly job: Job | undefined;
-  readonly request: (sessionId: string) => Request;
+  readonly kind: Kind;
+  readonly config: PipelineConfig;
 }) {
   const { login, run, job } = args;
   const running = run !== null && (job === undefined || isActive(job));
   const sessionId = login.step === "ready" ? login.sessionId : null;
   // The run's job closes its session when it ends (D-0379).
   const authenticated = sessionId !== null && !(run?.sessionId === sessionId && !running);
-  const request = authenticated ? args.request(sessionId) : null;
+  const request = authenticated ? scrapeBody(args.kind, sessionId, args.config) : null;
   const configError = request !== null && "error" in request ? request.error : null;
   return { running, authenticated, request, configError };
 }
@@ -63,9 +60,9 @@ export function BhelSyncScreen() {
   const wizard = useBhelLogin();
   const { login } = wizard;
   const supplier = useQuery(supplierQuery);
-  const password = useQuery(passwordQuery);
+  const password = useQuery(bhelPasswordQuery);
   const job = useQuery({ ...jobQuery(run?.jobId ?? ""), enabled: run !== null }).data?.job;
-  const state = syncState({ login, run, job, request: (sessionId) => scrapeBody(kind, sessionId, configs[kind]) });
+  const state = syncState({ login, run, job, kind, config: configs[kind] });
   const { running, authenticated, request } = state;
 
   const start = useMutation({
@@ -100,6 +97,7 @@ export function BhelSyncScreen() {
           kind={kind}
           jobId={shown?.jobId ?? null}
           job={shown ? job : undefined}
+          running={shown !== null && running}
           authenticated={authenticated}
           startBlockedBy={startBlockedBy(state, start.isPending)}
           starting={start.isPending}
@@ -125,8 +123,7 @@ export function BhelSyncScreen() {
       <LoginDialog
         login={login}
         submitting={wizard.submitting}
-        onCaptcha={wizard.submitCaptcha}
-        onOtp={wizard.submitOtp}
+        onSubmit={wizard.submit}
         onRetry={wizard.start}
         onCancel={wizard.close}
       />

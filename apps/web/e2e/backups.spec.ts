@@ -13,14 +13,12 @@ test("Backup now saves today's copy, and Restore brings it back and reloads", as
   const backupNow = panel.getByRole("button", { name: "Backup now" });
   await expect(panel.getByRole("row")).not.toHaveCount(1);
   const fixed = {
-    sections: page.getByRole("group", { name: "Settings sections" }),
     backupNow,
+    sections: page.getByRole("group", { name: "Settings sections" }),
     table: panel.getByRole("table"),
     pager: panel.getByRole("navigation"),
   };
 
-  // The click would scroll the panel into view; scroll first so only a real shift moves anything.
-  await backupNow.scrollIntoViewIfNeeded();
   await expectNoLayoutShift(page, fixed, async () => {
     await backupNow.click();
     await expect(status).toHaveText("Backup saved.");

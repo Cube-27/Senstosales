@@ -24,13 +24,15 @@ async function send(url: string, path: string, body: unknown): Promise<void> {
   if (!res.ok) throw new Error(`${path} answered ${res.status}: ${await res.text()}`);
 }
 
+const onboarded = (url: string) => send(url, "/api/onboarding", { ...SUPPLIER, cgstPct: "9", sgstPct: "9" });
+
 export const DATASETS = {
   /** A first run: no supplier yet, so the app asks for onboarding. */
   fresh: async (_url: string) => {},
   /** Onboarded with the synthetic supplier and the default GST rates; the password is still the default. */
-  onboarded: (url: string) => send(url, "/api/onboarding", { ...SUPPLIER, cgstPct: "9", sgstPct: "9" }),
+  onboarded,
   /** The same, on a server of its own, so the POs a BHEL sync ingests stay out of the other specs. */
-  "bhel-sync": (url: string) => send(url, "/api/onboarding", { ...SUPPLIER, cgstPct: "9", sgstPct: "9" }),
+  "bhel-sync": onboarded,
 } satisfies Record<string, (url: string) => Promise<void>>;
 
 export type Dataset = keyof typeof DATASETS;

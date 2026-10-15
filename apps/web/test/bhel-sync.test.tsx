@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { type FakeApi, renderApp, reply, signedIn, stubApi } from "./app.tsx";
+import { job, SUPPLIER } from "./wire-fixtures.ts";
 
 afterEach(() => {
   cleanup();
@@ -13,18 +14,7 @@ afterEach(() => {
 });
 
 const SESSION = "01J00000000000000000000SES";
-const JOB = {
-  id: "01J000000000000000000000JB",
-  type: "po.scrape",
-  status: "queued",
-  createdAt: "2026-10-15T04:00:00.000Z",
-  startedAt: null,
-  finishedAt: null,
-  cancelRequested: false,
-  progress: { total: 0, done: 0, skipped: 0, failed: 0, current: null },
-  error: null,
-  summary: null,
-};
+const JOB = job({ type: "po.scrape" });
 const DONE = {
   ...JOB,
   status: "done",
@@ -35,19 +25,7 @@ const DONE = {
 function syncApi(extra: FakeApi = {}): FakeApi {
   return {
     ...signedIn(true),
-    "GET /api/supplier": {
-      id: "01J0000000000000000000000S",
-      name: "Example Works",
-      gstin: null,
-      address: null,
-      state: null,
-      stateCode: null,
-      contact: null,
-      email: null,
-      bhelSupplierCode: "TEST-001",
-      bankDetails: {},
-      invoiceDefaults: {},
-    },
+    "GET /api/supplier": { ...SUPPLIER, bhelSupplierCode: "TEST-001" },
     "GET /api/settings/bhel-password": { saved: true },
     "POST /api/bhel/session": { sessionId: SESSION, captchaPng: "iVBORw==" },
     ...extra,

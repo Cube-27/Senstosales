@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { type FakeApi, renderApp, reply, signedIn, stubApi } from "./app.tsx";
+import { job, SUPPLIER } from "./wire-fixtures.ts";
 
 const reloadApp = vi.hoisted(() => vi.fn());
 vi.mock("../src/lib/reload.ts", () => ({ reloadApp }));
@@ -15,18 +16,7 @@ afterEach(() => {
   reloadApp.mockReset();
 });
 
-const JOB = {
-  id: "01J000000000000000000000JB",
-  type: "backup",
-  status: "queued",
-  createdAt: "2026-10-15T04:00:00.000Z",
-  startedAt: null,
-  finishedAt: null,
-  cancelRequested: false,
-  progress: { total: 0, done: 0, skipped: 0, failed: 0, current: null },
-  error: null,
-  summary: null,
-};
+const JOB = job();
 const BACKUPS = [
   { name: "safety-20261015T040000Z.db", kind: "safety" },
   { name: "daily-2026-10-14.db", kind: "daily" },
@@ -36,19 +26,7 @@ const BACKUPS = [
 function settingsApi(extra: FakeApi = {}): FakeApi {
   return {
     ...signedIn(true),
-    "GET /api/supplier": {
-      id: "01J0000000000000000000000S",
-      name: "Example Works",
-      gstin: null,
-      address: null,
-      state: null,
-      stateCode: null,
-      contact: null,
-      email: null,
-      bhelSupplierCode: null,
-      bankDetails: {},
-      invoiceDefaults: {},
-    },
+    "GET /api/supplier": SUPPLIER,
     "GET /api/settings": { cgstPct: "9", sgstPct: "9", preferences: {} },
     "GET /api/buyers": [],
     "GET /api/settings/bhel-password": { saved: false },
