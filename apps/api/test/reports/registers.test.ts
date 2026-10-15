@@ -6,7 +6,7 @@ import ExcelJS from "exceljs";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
 import { mostBoundParams } from "../helpers.ts";
-import { id, routesOver, rows } from "../seed-rows.ts";
+import { id, m, routesOver, rows } from "../seed-rows.ts";
 import { supplierDb } from "../service-deps.ts";
 import { reportDb } from "./dataset-db.ts";
 import { goldenText, workbookGolden, workbookGoldenFile } from "./golden.ts";
@@ -86,6 +86,73 @@ describe("over the report dataset", () => {
       expect(await firstColumn("/api/invoice/export?sort=itemCount&dir=desc")).toEqual(["201", "202"]);
       expect(await firstColumn("/api/invoice/export?sort=total&dir=asc")).toEqual(["202", "201"]);
     });
+  });
+});
+
+// DOC-FRAC and the GEMC registers: quantities go out exact to 3 dp, a GEMC PO's amounts to 5 dp (A-12).
+describe("a GEMC PO with fractional quantities", () => {
+  let db: NodeDb;
+  let send: ReturnType<typeof routesOver>;
+  beforeAll(async () => {
+    db = await supplierDb();
+    send = routesOver(db);
+    const r = rows(db);
+    await db.batch([
+      r.po({ id: id("P1"), poNumber: "4500900", poDate: "2025-05-01", poValue: 123_45678, gemcNumber: "GEMC-1" }),
+      r.item({ id: id("I1"), poId: id("P1"), poItemNo: 10, ordQty: 12_345, rate: m(10_00001) }),
+      r.dc({
+        id: id("D1"),
+        poId: id("P1"),
+        number: "301",
+        dcDate: "2025-05-10",
+        createdAt: "2025-05-10T00:00:00.000Z",
+      }),
+      r.dcItem({ id: id("L1"), dcId: id("D1"), poItemId: id("I1"), dspQty: 1 }),
+      r.invoice({
+        id: id("V1"),
+        poId: id("P1"),
+        number: "401",
+        invoiceDate: "2025-05-11",
+        total: 12_34567,
+        createdAt: "2025-05-11T00:00:00.000Z",
+      }),
+      r.invoiceItem({ id: id("J1"), invoiceId: id("V1"), poItemId: id("I1"), qty: 12_345 }),
+    ]);
+  });
+  afterAll(() => db.close());
+
+  /** The first data row of an export's only sheet, as cell values. */
+  async function firstRow(path: string) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await download(send, path)).bytes.slice().buffer);
+    return (workbook.worksheets[0]!.getRow(2).values as unknown[]).slice(1);
+  }
+
+  it("writes the PO register's value at 5 dp and its quantity at 3", async () => {
+    expect(await firstRow("/api/reports/po-register/export")).toEqual([
+      "4500900",
+      "2025-05-01",
+      "Example Supplier",
+      123.45678,
+      "Pending",
+      1,
+      0,
+    ]);
+  });
+
+  it("writes the DC register's 0.001 dispatched, not 0", async () => {
+    expect((await firstRow("/api/reports/dc-register/export"))[5]).toBe(0.001);
+  });
+
+  it("writes the invoice register's amounts at 5 dp", async () => {
+    expect((await firstRow("/api/reports/invoice-register/export")).slice(4)).toEqual([12.34567, 12.34567, 0]);
+  });
+
+  it("writes the CSVs' quantities exact and the GEMC value at 5 dp", async () => {
+    const dcCsv = csvText((await download(send, "/api/dc/export")).bytes).split("\r\n");
+    expect(dcCsv[1]).toBe("301,2025-05-10,4500900,,Pending,0.01,12.345,0.001,12.344,0");
+    const invoiceCsv = csvText((await download(send, "/api/invoice/export")).bytes).split("\r\n");
+    expect(invoiceCsv[1]).toBe("401,2025-05-11,,4500900,1,12.345,12.34567,Delivered,12.345");
   });
 });
 

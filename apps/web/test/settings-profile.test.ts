@@ -40,6 +40,11 @@ describe("settings form model (SPEC-15 PR 3)", () => {
         gstin: "",
         address: "1 Test Road, Example Town",
         description: "Makers of test parts",
+        state: "Maharashtra",
+        stateCode: "27",
+        jurisdiction: "Example Town",
+        placeOfSupply: "",
+        hsn: "",
       },
       rates: { cgstPct: "9", sgstPct: "2.5" },
       defaults: { currency: "USD", fyCycle: "APR_MAR", igstPct: "18" },
@@ -63,18 +68,27 @@ describe("settings form model (SPEC-15 PR 3)", () => {
 
   it("the supplier body keeps the fields the page does not show and stores blanks as no value", () => {
     const { id: _id, ...stored } = SUPPLIER;
-    const fields = { ...toForm(SUPPLIER, SETTINGS).supplier, contact: "  ", gstin: "TESTGSTIN0001", description: "" };
+    const fields = {
+      ...toForm(SUPPLIER, SETTINGS).supplier,
+      contact: "  ",
+      gstin: "TESTGSTIN0001",
+      description: "",
+      stateCode: " ",
+      placeOfSupply: "Example City",
+      hsn: " 0000 ",
+    };
     expect(supplierBody(stored, fields)).toEqual({
       name: "Example Fabricators",
       gstin: "TESTGSTIN0001",
       address: "1 Test Road, Example Town",
       state: "Maharashtra",
-      stateCode: "27",
+      stateCode: null,
       contact: null,
       email: null,
       bhelSupplierCode: "S-0001",
       bankDetails: { bank: "Example Bank" },
-      invoiceDefaults: { jurisdiction: "Example Town" },
+      // The documents' and new invoices' defaults are invoiceDefaults keys; a blank one is removed.
+      invoiceDefaults: { jurisdiction: "Example Town", placeOfSupply: "Example City", hsn: "0000" },
     });
   });
 
@@ -100,6 +114,11 @@ describe("settings form model (SPEC-15 PR 3)", () => {
         gstin: "",
         address: "",
         description: "Tag",
+        state: "Example State",
+        stateCode: "00",
+        jurisdiction: "",
+        placeOfSupply: "",
+        hsn: "",
       },
       rates: { cgstPct: "9", sgstPct: "9" },
     });
@@ -107,8 +126,8 @@ describe("settings form model (SPEC-15 PR 3)", () => {
       name: "Example Works",
       gstin: null,
       address: null,
-      state: null,
-      stateCode: null,
+      state: "Example State",
+      stateCode: "00",
       contact: null,
       email: "a@example.com",
       bhelSupplierCode: null,

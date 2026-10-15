@@ -60,7 +60,18 @@ describe("DC create: GC number and date may be blank (INV-26)", () => {
       ...dcHeader,
       items: [{ poItemId: ITEM, dspQty: "0.5" }],
     };
-    expect(routes["dc.create"].body.parse(wire)).toEqual({ ...wire, items: [{ poItemId: ITEM, dspQty: 500 }] });
+    expect(routes["dc.create"].body.parse(wire)).toEqual({
+      ...wire,
+      items: [{ poItemId: ITEM, dspQty: 500, packets: null }],
+    });
+  });
+
+  it("takes a body without the invoice the sheet cites (EC-47), as callers that predate it send", () => {
+    const { invoiceNumber: _, invoiceDate: __, ...header } = dcHeader;
+    const create = { poId: ID, number: "12", dcDate: "2025-04-03", gcNumber: null, gcDate: null, ...header, items: [] };
+    expect(routes["dc.create"].body.parse(create)).toMatchObject({ invoiceNumber: null, invoiceDate: null });
+    const update = { number: "12", dcDate: "2025-04-03", version: 1, gcNumber: null, gcDate: null, ...header };
+    expect(routes["dc.update"].body.parse(update)).toMatchObject({ invoiceNumber: null, invoiceDate: null });
   });
 });
 

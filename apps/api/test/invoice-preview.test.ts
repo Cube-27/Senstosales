@@ -30,10 +30,16 @@ const info = (poItemNo: number, rate: string) => ({
   rate,
 });
 
+const hsn = { hsn: "0000", packets: null };
+
 describe("GET /api/invoice/preview/po/:poId", () => {
   test("every item with no qty and its uninvoiced quantity, even when it is zero or negative (INV-05)", async () => {
     const { send, createDirect, storedPo, invoices } = await ready();
     await send("/api/settings", json("PUT", { cgstPct: "9", sgstPct: "9", preferences: {} }));
+    // The settings' place of supply and HSN are the starting values (owner, 2026-10-15).
+    const { id: _, ...supplier } = (await send("/api/supplier")).body;
+    const invoiceDefaults = { placeOfSupply: "Example City", hsn: "0000" };
+    expect((await send("/api/supplier", json("PUT", { ...supplier, invoiceDefaults }))).status).toBe(200);
     const { poId, item10, item20 } = await storedPo(GEMC_PO);
     await createDirect({ poId, number: "1", invoiceDate: "2025-04-03", lines: [{ poItemId: item10, qty: "12" }] });
     await createDirect({ poId, number: "2", invoiceDate: "2025-04-03", lines: [{ poItemId: item20, qty: "5" }] });
@@ -44,12 +50,12 @@ describe("GET /api/invoice/preview/po/:poId", () => {
     expect(res.body).toEqual({
       po: { id: poId, poNumber: "4500002", isGemc: true },
       dc: null,
-      header: { ...BLANK, buyersOrderDate: "2025-03-10", gemcNumber: "GEMC-77" },
+      header: { ...BLANK, buyersOrderDate: "2025-03-10", gemcNumber: "GEMC-77", placeOfSupply: "Example City" },
       cgstPct: "9",
       sgstPct: "9",
       lines: [
-        { ...info(10, "719.27966"), poItemId: item10, dcItemId: null, qty: null, uninvoicedQty: "-2" },
-        { ...info(20, "100"), poItemId: item20, dcItemId: null, qty: null, uninvoicedQty: "0" },
+        { ...info(10, "719.27966"), poItemId: item10, dcItemId: null, qty: null, uninvoicedQty: "-2", ...hsn },
+        { ...info(20, "100"), poItemId: item20, dcItemId: null, qty: null, uninvoicedQty: "0", ...hsn },
       ],
     });
     // A preview writes nothing.
@@ -80,7 +86,7 @@ describe("GET /api/invoice/preview/dc/:dcId", () => {
       transporter: "Example Carrier",
       remarks: "Example note",
       items: [
-        { poItemId: item20, dspQty: "2" },
+        { poItemId: item20, dspQty: "2", packets: 3 },
         { poItemId: item10, dspQty: "4" },
       ],
     });
@@ -106,8 +112,25 @@ describe("GET /api/invoice/preview/dc/:dcId", () => {
       sgstPct: "6",
       // In the DC's order, as the create stores them.
       lines: [
-        { ...info(20, "33.333"), poItemId: item20, dcItemId: dcItem20, qty: "2", uninvoicedQty: "4" },
-        { ...info(10, "100"), poItemId: item10, dcItemId: dcItem10, qty: "4", uninvoicedQty: "10" },
+        // The DC line's packets; no HSN set in the settings.
+        {
+          ...info(20, "33.333"),
+          poItemId: item20,
+          dcItemId: dcItem20,
+          qty: "2",
+          uninvoicedQty: "4",
+          hsn: null,
+          packets: 3,
+        },
+        {
+          ...info(10, "100"),
+          poItemId: item10,
+          dcItemId: dcItem10,
+          qty: "4",
+          uninvoicedQty: "10",
+          hsn: null,
+          packets: null,
+        },
       ],
     });
   });

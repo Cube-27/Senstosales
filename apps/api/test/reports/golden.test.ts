@@ -21,7 +21,7 @@ async function* rowsOf(keys: readonly string[], golden: WorkbookGolden) {
 }
 
 describe("workbookGolden", () => {
-  it("projects the bare sheet of an empty list workbook onto its golden (EC-45)", async () => {
+  it("projects an empty list workbook, its header row only, onto its golden (EC-45)", async () => {
     const golden = workbookGoldenFile("po-register-empty.json");
     const bytes = await bytesOf(xlsxChunks(EXPORTS.poRegister.sheet, none()));
     expect(await workbookGolden(bytes, "PO_Register.xlsx", golden.styles)).toEqual(golden);

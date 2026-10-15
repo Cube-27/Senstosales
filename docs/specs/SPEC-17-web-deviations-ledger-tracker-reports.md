@@ -7,7 +7,7 @@ Layer: L5 (deviations, ledger) and L6 (tracker export, reports). Architecture re
 
 The four reporting screens, with their legacy layouts and labels: `/deviations` (reconciliation flags, with
 acknowledge), `/system/ledger` (the read-only audit log), `/delivery-tracker` (list, stats, smart filters, export)
-and `/reports` (the legacy report tabs minus daily-dispatch, with exports and export-selected). Downloads go through
+and `/reports` (the legacy report tabs and a Daily Dispatch tab, with exports and export-selected). Downloads go through
 the platform adapter (Save-as in the desktop shell, a browser download otherwise).
 
 ## 2. Scope
@@ -18,7 +18,7 @@ Core:
   with an optional note (INV-59), links to the PO and SRV.
 - `/system/ledger`: audit list with filters; read-only; no delete or prune control (INV-83).
 - `/delivery-tracker`: list, stats, smart filter chips, export button (SPEC-13).
-- `/reports`: legacy tabs except daily-dispatch (A-16, INV-87); each tab a DataTable over the report list endpoint;
+- `/reports`: the legacy tabs and Daily Dispatch (ARCHITECTURE rev 1.12, INV-120); each tab a DataTable over the report list endpoint;
   export buttons and export-selected (SPEC-13). The GC report is reached from DC detail (SPEC-18), not from
   `/reports`: the legacy reports screen had no GC control (C7, D-0476).
 
@@ -47,7 +47,7 @@ ledger shows the audit rows of earlier actions.
 
 ## 7. Acceptance criteria
 
-- [ ] `/reports` has no daily-dispatch tab; every remaining tab exports with its legacy format.
+- [ ] `/reports` has a Daily Dispatch tab (rev 1.12); every tab exports with its legacy format, Daily Dispatch with the owner's summary layout.
 - [ ] No interaction (tabs, chips, filters, paging, sort, acknowledge) moves or resizes surrounding layout;
       loading/empty/error keep the same footprint.
 - [ ] Light/dark screenshots show the legacy screens' elements and labels (review artefacts).
@@ -64,4 +64,4 @@ ledger shows the audit rows of earlier actions.
 
 ## 9. Open issues
 
-- The `/reports` sidebar label stays as legacy even though daily-dispatch is dropped (labels frozen, A-2).
+- The `/reports` sidebar label stays as legacy (labels frozen, A-2).

@@ -23,14 +23,12 @@ const A4_FIT_WIDTH = {
 
 /**
  * The legacy generic list workbook, shared by the registers, the reconciliation report, export-selected and the
- * delivery tracker: one sheet named `Report`, a styled header row, then one row per record. Numbers are written
- * rounded to 2 dp with no number format (General); text, dates (`YYYY-MM-DD`) and codes as text; a missing value
- * is an empty cell. With no rows the workbook holds the empty `Report` sheet only: no header row, no page setup
- * (EC-45).
+ * delivery tracker: one sheet named `Report`, a styled header row, then one row per record. Numbers have no number
+ * format (General): quantities exact to 3 dp, amounts to 2 dp, or 5 on a GEMC PO (A-12); text, dates (`YYYY-MM-DD`)
+ * and codes as text; a missing value is an empty cell. With no rows the header row is still written (EC-45).
  */
 export const TABLE = {
   sheet: "Report",
-  decimals: 2,
   headerStyle: {
     font: { bold: true },
     border: box,
@@ -60,7 +58,6 @@ const table = <A extends unknown[]>(fileName: (...args: A) => string, columns: r
     pageSetup: TABLE.pageSetup,
     headerStyle: TABLE.headerStyle,
     oddFooter: TABLE.oddFooter,
-    bareWhenEmpty: true,
   } satisfies Sheet<string>,
 });
 
@@ -90,14 +87,11 @@ const bold = { ...calibri, bold: true };
 const center = { horizontal: "center", vertical: "middle", wrapText: true } as const;
 
 /**
- * The pending-items workbook (legacy "Items Summary"): one `Summary` sheet. Rows 1–7 are the supplier heading, row
- * 9 the table header, then one row per PO item with a balance (PO number, then item number), then the TOTAL row. A
- * merged range carries its top-left cell's text and style across.
+ * The summary workbooks' layout: one `Summary` sheet. Rows 1–7 are the supplier heading, row 9 the table header, then
+ * one row per item, then the TOTAL row. A merged range carries its top-left cell's text and style across.
  */
-const PENDING = {
+const SUMMARY = {
   kind: "summary",
-  fileName: (range?: { from: string; to: string }) =>
-    range === undefined ? "Items_Summary.xlsx" : `Items_Summary_${range.from}_to_${range.to}.xlsx`,
   sheet: "Summary",
   /** 1-based cells of the heading; each `text` names what fills it. */
   heading: [
@@ -108,27 +102,28 @@ const PENDING = {
     { cell: "A5", merge: "A5:I5", text: "<supplier address>", style: "address" },
     { cell: "A6", merge: "A6:I6", text: "SUMMARY", style: "title" },
     { cell: "B7", text: "Date:", style: "dateLabel" },
-    { cell: "C7", text: "<export date DD-MM-YYYY>", style: "dateValue" },
+    { cell: "C7", text: "<date DD-MM-YYYY>", style: "dateValue" },
   ],
   headerRow: 9,
   columns: [
     col("serial", "S.\nNo.", 5),
     // Repeated lines of the description are written once (case and spacing ignored).
     col("description", "Description", 39),
-    // Ordered quantity and unit as text: `10 NOS`.
+    // Quantity and unit as text: `10 NOS`; the item's ordered quantity, or the DC line's dispatched one.
     col("qty", "Quantity\nSet/Nos.", 11),
-    // No v1 column (EC-41): 0.
+    // The DC line's packets; 0 on the pending summary, which has no DC line (EC-41).
     col("packets", "No of\npackets", 8),
     col("poNumber", "PO NO", 13),
-    // The item's invoices' GEMC numbers, else the PO's. Lists are joined with `,`.
+    // The invoices' GEMC numbers, else the PO's. Lists are joined with `,`.
     col("gemcNumber", "GEMC  NO", 15),
     col("invoiceNumbers", "Invoice\nNo.", 11),
     col("dcNumbers", "Challan\nNo.", 11),
-    col("dspQty", "Dispatch\nDelivered", 11),
+    // The pending item's dispatched quantity; on the daily dispatch summary, the department the DC went to.
+    col("delivered", "Dispatch\nDelivered", 11),
   ],
   /** The one left-aligned column; every other cell is centred. */
   leftColumn: "description",
-  /** `TOTAL` merged over A:B; the summed quantity (with the unit when every row has the same one) and packets. */
+  /** `TOTAL` merged over A:B; the summed quantity and packets. */
   total: { label: "TOTAL" },
   styles: {
     tel: { font: calibri },
@@ -151,11 +146,28 @@ const PENDING = {
   } satisfies Partial<ExcelJS.PageSetup>,
 } as const;
 
+/** The pending-items workbook (legacy "Items Summary"): each PO item with a balance, PO number then item number. */
+const PENDING = {
+  ...SUMMARY,
+  fileName: (range?: { from: string; to: string }) =>
+    range === undefined ? "Items_Summary.xlsx" : `Items_Summary_${range.from}_to_${range.to}.xlsx`,
+} as const;
+
+/**
+ * The daily dispatch summary (A-16 reversed, owner 2026-10-15): each DC line dated in the range, oldest DC first, as
+ * the owner's summaries lay it out. Named after legacy's `Daily_Dispatch_<date>.xlsx`.
+ */
+const DISPATCH = {
+  ...SUMMARY,
+  fileName: ({ from, to }: { from: string; to: string }) =>
+    from === to ? `Daily_Dispatch_${from}.xlsx` : `Daily_Dispatch_${from}_to_${to}.xlsx`,
+} as const;
+
 // Widths: legacy fitted each column to its longest value (header + 2, at most 60), which a streaming writer cannot
 // know before the first row. Each column has the width that fit gives on ordinary values: header + 2 and at least
 // 12, 30 for names, 60 for descriptions. Row orders are the legacy defaults.
 
-/** Every kept export (SPEC-13 §2, ARCHITECTURE §11.2). Daily-dispatch is dropped (A-16, INV-87). */
+/** Every kept export (SPEC-13 §2, ARCHITECTURE §11.2), the daily dispatch summary among them (A-16 reversed). */
 export const EXPORTS = {
   // PO date, newest first.
   poRegister: table(
@@ -199,6 +211,7 @@ export const EXPORTS = {
     ],
   ),
   pending: PENDING,
+  dispatch: DISPATCH,
   // All POs dated in the range, or one PO's items (EC-42); PO date, newest first, a PO's items in item order.
   reconciliation: table(
     (poNumber?: string) =>

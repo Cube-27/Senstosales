@@ -10,7 +10,7 @@ import {
   fmtDateInput,
   fmtDateMonthName,
   fmtDaysToDue,
-  fmtFixed,
+  fmtPlain,
   fmtFy,
   fmtFlagType,
   fmtInstantDate,
@@ -26,7 +26,6 @@ import {
   moneyNumber,
   parseDateInput,
   parseQtyInput,
-  qtyExactNumber,
   qtyNumber,
 } from "../src/index.ts";
 
@@ -62,16 +61,15 @@ describe("fmtQty: whole units, Indian grouping", () => {
   });
 });
 
-describe("qtyNumber and moneyNumber: export number cells, 2 dp half up", () => {
+describe("qtyNumber and moneyNumber: export number cells", () => {
   it.each([
     ["0", 0],
     ["1.25", 1.25],
-    ["2.5", 2.5],
-    ["1.254", 1.25],
-    ["1.255", 1.26],
-    ["-1.255", -1.25],
+    ["12.345", 12.345],
+    ["0.001", 0.001],
+    ["-0.5", -0.5],
     ["15", 15],
-  ])("qty %s -> %d", (q, expected) => {
+  ])("qty %s -> %d, exact to 3 dp", (q, expected) => {
     expect(qtyNumber(qty(q))).toBe(expected);
   });
 
@@ -81,8 +79,16 @@ describe("qtyNumber and moneyNumber: export number cells, 2 dp half up", () => {
     ["400.005", 400.01],
     ["0.1", 0.1],
     ["1180.5", 1180.5],
-  ])("money %s -> %d", (m, expected) => {
-    expect(moneyNumber(money(m))).toBe(expected);
+  ])("money %s -> %d, 2 dp half up", (m, expected) => {
+    expect(moneyNumber(money(m), { gemc: false })).toBe(expected);
+  });
+
+  it.each([
+    ["94.06779", 94.06779],
+    ["400.00499", 400.00499],
+    ["826", 826],
+  ])("GEMC money %s -> %d, exact to 5 dp (A-12)", (m, expected) => {
+    expect(moneyNumber(money(m), { gemc: true })).toBe(expected);
   });
 });
 
@@ -144,17 +150,18 @@ describe("fmtRate: as fmtMoney without the rupee sign", () => {
   });
 });
 
-describe("fmtFixed: every decimal place, no grouping (legacy DC consignment value)", () => {
+describe("fmtPlain: to its precision, no grouping, no trailing zeros (the DC's consignment value)", () => {
   it.each([
-    ["0", false, "0.00"],
-    ["1234.5", false, "1234.50"],
+    ["0", false, "0"],
+    ["1234.5", false, "1234.5"],
+    ["123900", false, "123900"],
     ["1234567.891", false, "1234567.89"],
     ["0.005", false, "0.01"],
     ["719.27966", false, "719.28"],
-    ["719.2796", true, "719.27960"],
-    ["12", true, "12.00000"],
+    ["719.2796", true, "719.2796"],
+    ["12", true, "12"],
   ])("%s gemc=%s -> %s", (m, gemc, expected) => {
-    expect(fmtFixed(money(m), { gemc })).toBe(expected);
+    expect(fmtPlain(money(m), { gemc })).toBe(expected);
   });
 });
 
@@ -261,7 +268,9 @@ describe("fmtAmountWords: legacy Indian rupee words", () => {
     ["2157.83898", "Rupees Two Thousand One Hundred and Fifty Seven and Paise Eighty Four Only"],
     ["0.00499", "Rupees Zero Only"],
     ["0.005", "Rupees Zero and Paise One Only"],
-    ["5.996", "Rupees Five and Paise One Hundred Only"],
+    // Paise that round to a hundred carry into the rupees; no "Paise Zero" or "Paise One Hundred".
+    ["5.996", "Rupees Six Only"],
+    ["31391.99999", "Rupees Thirty One Thousand Three Hundred and Ninety Two Only"],
     [
       `${"9".repeat(10)}.99`, // just under a thousand crore
       "Rupees Nine Hundred and Ninety Nine Crore Ninety Nine Lakh Ninety Nine Thousand Nine Hundred and Ninety Nine and Paise Ninety Nine Only",
@@ -281,18 +290,6 @@ describe("fmtDateDashed: the pending summary's export date", () => {
     ["2026-12-31", "31-12-2026"],
   ])("%s -> %s", (d, expected) => {
     expect(fmtDateDashed(d as IsoDate)).toBe(expected);
-  });
-});
-
-describe("qtyExactNumber: a quantity as a number cell, unrounded, as the pending summary writes it", () => {
-  it.each([
-    ["10", 10],
-    ["1.25", 1.25],
-    ["2.125", 2.125],
-    ["0", 0],
-    ["-0.5", -0.5],
-  ])("%s -> %d", (s, expected) => {
-    expect(qtyExactNumber(qty(s))).toBe(expected);
   });
 });
 

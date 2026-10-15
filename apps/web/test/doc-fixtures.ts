@@ -32,6 +32,8 @@ const DC_HEADER = {
   transporter: null,
   modeOfTransport: null,
   remarks: "First note\n\nSecond note",
+  invoiceNumber: null,
+  invoiceDate: null,
   ...SUPPLIER,
 };
 
@@ -63,6 +65,7 @@ export const dcLine = (over: Record<string, unknown> = {}) => ({
   dcId: DC_ID,
   poItemId: ITEM_A,
   dspQty: "4",
+  packets: null,
   createdAt: CREATED,
   ...itemInfo(10, "100"),
   ...over,
@@ -153,6 +156,8 @@ export const invoiceLine = (over: Record<string, unknown> = {}) => ({
   sgst: "36",
   igst: "0",
   total: "472",
+  hsn: "0000",
+  packets: null,
   ...itemInfo(10, "100"),
   ...over,
 });

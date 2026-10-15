@@ -52,7 +52,7 @@ const withStatus = (status: TrackerFilters["status"]) => (r: Row) => status === 
 /** A row as the list sends it; `overdue` marks the screen's highlighted rows. */
 const listed = ({ due, lotValue: _, unit: __, ...row }: Row) => ({ ...row, overdue: due.overdue });
 
-/** Export cells (SPEC-13 catalog): quantities and amounts as numbers at 2 dp, dates and codes as text. */
+/** Export cells (SPEC-13 catalog): quantities exact to 3 dp, amounts to 2 dp, dates and codes as text. */
 async function* cells(rows: AsyncIterable<Row>) {
   for await (const r of rows) {
     yield {
@@ -67,8 +67,8 @@ async function* cells(rows: AsyncIterable<Row>) {
       dspQty: qtyNumber(r.dspQty),
       rcdQty: qtyNumber(r.rcdQty),
       balanceQty: qtyNumber(r.balanceQty),
-      rate: moneyNumber(r.rate),
-      pendingValue: moneyNumber(r.pendingValue),
+      rate: moneyNumber(r.rate, { gemc: false }),
+      pendingValue: moneyNumber(r.pendingValue, { gemc: false }),
       daysOverdue: fmtDaysToDue(r.daysToDue),
     };
   }

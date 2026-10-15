@@ -89,16 +89,8 @@ describe("xlsxChunks", () => {
     expect(sheet.headerFooter.oddFooter).toBe("&CPage &P of &N");
   });
 
-  // EC-45: with no rows the legacy list workbook is the bare sheet.
-  it("writes a bare sheet with no rows when the sheet asks for it", async () => {
-    const sheet = await read(xlsxChunks({ ...SHEET, bareWhenEmpty: true, oddFooter: "&CPage" }, of()));
-    expect(sheet.rowCount).toBe(0);
-    expect(sheet.columns).toBeNull();
-    expect(sheet.pageSetup.orientation).toBe("portrait");
-    expect(sheet.headerFooter?.oddFooter).toBeUndefined();
-  });
-
-  it("writes the header row with no rows otherwise", async () => {
+  // EC-45, EXP-09: an empty list still names its columns.
+  it("writes the header row with no rows", async () => {
     const sheet = await read(xlsxChunks(SHEET, of()));
     expect(sheet.getSheetValues()).toEqual([undefined, [undefined, "Doc No", "Note", "Qty"]]);
   });

@@ -42,9 +42,12 @@ const DC_7: DcDocument = {
     departmentNo: null,
     consigneeName: null,
     consigneeAddress: null,
+    remarks: null,
+    invoiceNumber: null,
+    invoiceDate: null,
   },
   po: PO,
-  invoiceNumber: "INV/31",
+  invoice: { number: "INV/31", invoiceDate: d("2025-04-03") },
   items: [
     { poItemNo: 10, description: "Example part", unit: "NOS", dspQty: q(4_000), rate: m(10_000_000) },
     { poItemNo: 20, description: "Example part", unit: "NOS", dspQty: q(2_000), rate: m(3_333_300) },
@@ -91,6 +94,8 @@ const INVOICE_31: InvoiceDocument = {
       sgst: m(2_400_000),
       igst: m(0),
       total: m(44_800_000),
+      hsn: null,
+      packets: null,
     },
     {
       poItemNo: 20,
@@ -103,6 +108,8 @@ const INVOICE_31: InvoiceDocument = {
       sgst: m(400_000),
       igst: m(0),
       total: m(7_467_000),
+      hsn: null,
+      packets: null,
     },
   ],
 };

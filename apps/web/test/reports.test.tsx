@@ -39,12 +39,48 @@ const PENDING = [
   item("3", "2", { unit: null, gemcNumbers: [], dcs: [], invoices: [] }),
 ];
 const RECONCILIATION = [item("1", "1", { rcdQty: "3", rejQty: "1", balanceQty: "6" })];
+const DISPATCH = [
+  {
+    dcItemId: id("E1"),
+    dcId: id("D1"),
+    dcNumber: "101",
+    dcDate: "2025-06-01",
+    poId: id("P1"),
+    poNumber: "4500001",
+    poItemNo: 10,
+    description: "Item 1",
+    unit: "Nos",
+    dspQty: "40",
+    packets: 2,
+    gemcNumber: "GEMC-1",
+    invoiceNumber: "201",
+    departmentNo: "456",
+  },
+  {
+    dcItemId: id("E2"),
+    dcId: id("D2"),
+    dcNumber: "102",
+    dcDate: "2025-06-01",
+    poId: id("P2"),
+    poNumber: "4500002",
+    poItemNo: 10,
+    description: "Item 3",
+    unit: null,
+    dspQty: "1",
+    packets: null,
+    gemcNumber: null,
+    invoiceNumber: null,
+    departmentNo: null,
+  },
+];
 
 function reportsApi() {
   return stubApi({
     ...signedIn(true),
     "GET /api/reports/pending": { items: PENDING, total: 3 },
     "GET /api/reports/reconciliation": { items: RECONCILIATION, total: 1 },
+    "GET /api/reports/daily-dispatch": { items: DISPATCH, total: 2 },
+    "GET /api/reports/daily-dispatch/export": fileReply("Daily_Dispatch_2025-05-31_to_2025-06-01.xlsx"),
     "GET /api/reports/pending/export": fileReply("Items_Summary_2025-05-31_to_2025-06-01.xlsx"),
     "GET /api/reports/reconciliation/export": fileReply("PO_Reconciliation_Report.xlsx"),
     "POST /api/reports/export-selected": fileReply("PO_Reconciliation_Report.xlsx"),
@@ -56,7 +92,7 @@ const bodyRows = () => within(screen.getAllByRole("rowgroup")[1] as HTMLElement)
 const headers = () => screen.getAllByRole("columnheader").map((h) => h.textContent);
 
 describe("reports (SPEC-17 PR 4)", () => {
-  it("opens on Items Summary for yesterday to today, with the legacy columns and no daily-dispatch tab", async () => {
+  it("opens on Items Summary for yesterday to today, with the legacy columns", async () => {
     const calls = reportsApi();
     renderApp("/reports");
     expect(await screen.findByRole("heading", { level: 1, name: "Operations Insights" })).toBeTruthy();
@@ -64,7 +100,7 @@ describe("reports (SPEC-17 PR 4)", () => {
       within(screen.getByRole("group", { name: "Report" }))
         .getAllByRole("button")
         .map((b) => b.textContent),
-    ).toEqual(["Items Summary", "Audit Ledger"]);
+    ).toEqual(["Items Summary", "Audit Ledger", "Daily Dispatch"]);
     await screen.findByText("Item 1");
     const sent = last(calls, "GET /api/reports/pending");
     expect([sent?.get("from"), sent?.get("to")]).toEqual(["2025-05-31", "2025-06-01"]);
@@ -110,6 +146,45 @@ describe("reports (SPEC-17 PR 4)", () => {
         .map((c) => c.textContent),
     ).toEqual(["", "4500001", "Item 1", "10", "4", "3", "1"]);
     expect(last(calls, "GET /api/reports/reconciliation")?.get("from")).toBe("2025-05-31");
+  });
+
+  it("switches to Daily Dispatch: each DC line in the range, and downloads its summary", async () => {
+    const saved = captureDownloads();
+    const calls = reportsApi();
+    renderApp("/reports");
+    await screen.findByText("Item 1");
+    await userEvent.click(screen.getByRole("button", { name: "Daily Dispatch" }));
+    await screen.findByText("456");
+    expect(headers()).toEqual([
+      "Material",
+      "Qty",
+      "Packets",
+      "PO #",
+      "GEMC #",
+      "Invoice #",
+      "Challan #",
+      "Dispatch Delivered",
+    ]);
+    expect(
+      bodyRows().map((r) =>
+        within(r)
+          .getAllByRole("cell")
+          .map((c) => c.textContent),
+      ),
+    ).toEqual([
+      ["Item 1", "40 Nos", "2", "4500001", "GEMC-1", "201", "101", "456"],
+      ["Item 3", "1", "-", "4500002", "-", "-", "102", "-"],
+    ]);
+    expect(
+      within(bodyRows()[0] as HTMLElement)
+        .getByRole("link", { name: "101" })
+        .getAttribute("href"),
+    ).toBe(`/dc/${id("D1")}`);
+    expect(last(calls, "GET /api/reports/daily-dispatch")?.get("from")).toBe("2025-05-31");
+    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+    await waitFor(() => expect(saved).toEqual(["Daily_Dispatch_2025-05-31_to_2025-06-01.xlsx"]));
+    const sent = last(calls, "GET /api/reports/daily-dispatch/export");
+    expect([sent?.get("from"), sent?.get("to")]).toEqual(["2025-05-31", "2025-06-01"]);
   });
 
   it("downloads the tab's workbook for the range, without the search text", async () => {

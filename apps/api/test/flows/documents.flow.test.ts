@@ -76,7 +76,7 @@ function flows(client: Client) {
   /** The create-DC form: its defaults from the PO, the lines typed in, GC left blank (INV-26). */
   async function createDc(poId: string, number: string, dcDate: string, lines: Lines) {
     const form = await client.request("dc.dispatchable", { params: { poId } });
-    const items = lines.map(([poItemId, q]) => ({ poItemId, dspQty: qty(q) }));
+    const items = lines.map(([poItemId, q]) => ({ poItemId, dspQty: qty(q), packets: null }));
     const body = { ...form.defaults, poId, number, dcDate: day(dcDate), gcNumber: null, gcDate: null, items };
     return client.request("dc.create", { body });
   }
@@ -84,7 +84,13 @@ function flows(client: Client) {
   /** Create Invoice from a DC: the preview's header and lines (DC qty, PO rate), unless `change` alters a line. */
   async function invoiceDc(dcId: string, number: string, invoiceDate: string, change = (l: DcLine[]) => l) {
     const preview = await client.request("invoice.previewDc", { params: { dcId } });
-    const lines = preview.lines.map((l) => ({ dcItemId: l.dcItemId!, qty: l.qty!, rate: l.rate }));
+    const lines = preview.lines.map((l) => ({
+      dcItemId: l.dcItemId!,
+      qty: l.qty!,
+      rate: l.rate,
+      hsn: l.hsn,
+      packets: l.packets,
+    }));
     const body = { ...preview.header, kind: "dc" as const, dcId, number, invoiceDate: day(invoiceDate) };
     return client.request("invoice.create", { body: { ...body, lines: change(lines) } });
   }
@@ -94,7 +100,7 @@ function flows(client: Client) {
     const preview = await client.request("invoice.previewPo", { params: { poId } });
     const body = { ...preview.header, kind: "direct" as const, poId, number, invoiceDate: day(invoiceDate) };
     return client.request("invoice.create", {
-      body: { ...body, lines: lines.map(([poItemId, q]) => ({ poItemId, qty: qty(q) })) },
+      body: { ...body, lines: lines.map(([poItemId, q]) => ({ poItemId, qty: qty(q), hsn: null, packets: null })) },
     });
   }
 

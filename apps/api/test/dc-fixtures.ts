@@ -59,6 +59,8 @@ export const HEADER = {
   transporter: null,
   modeOfTransport: null,
   remarks: null,
+  invoiceNumber: null,
+  invoiceDate: null,
   supplierName: "Example Supplier",
   supplierAddress: "1 Example Road",
   supplierGstin: "TESTGSTIN0001",

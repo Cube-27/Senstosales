@@ -3479,6 +3479,23 @@
                       "null"
                     ]
                   },
+                  "invoiceNumber": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "invoiceDate": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/IsoDate"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "supplierName": {
                     "type": [
                       "string",
@@ -3513,6 +3530,19 @@
                         },
                         "dspQty": {
                           "$ref": "#/components/schemas/Qty"
+                        },
+                        "packets": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -3922,6 +3952,22 @@
                             "null"
                           ]
                         },
+                        "invoiceNumber": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "invoiceDate": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/components/schemas/IsoDate"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
                         "supplierName": {
                           "type": [
                             "string",
@@ -3960,6 +4006,8 @@
                         "transporter",
                         "modeOfTransport",
                         "remarks",
+                        "invoiceNumber",
+                        "invoiceDate",
                         "supplierName",
                         "supplierAddress",
                         "supplierGstin",
@@ -4122,6 +4170,18 @@
                           "dspQty": {
                             "$ref": "#/components/schemas/Qty"
                           },
+                          "packets": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "$ref": "#/components/schemas/Instant"
                           },
@@ -4163,6 +4223,7 @@
                           "dcId",
                           "poItemId",
                           "dspQty",
+                          "packets",
                           "createdAt",
                           "poItemNo",
                           "materialCode",
@@ -4373,6 +4434,23 @@
                     "type": [
                       "string",
                       "null"
+                    ]
+                  },
+                  "invoiceNumber": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "invoiceDate": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/IsoDate"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ]
                   },
                   "supplierName": {
@@ -4957,6 +5035,26 @@
                             },
                             "rate": {
                               "$ref": "#/components/schemas/Money"
+                            },
+                            "hsn": {
+                              "default": null,
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "packets": {
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
                           },
                           "required": [
@@ -5175,6 +5273,26 @@
                             },
                             "qty": {
                               "$ref": "#/components/schemas/Qty"
+                            },
+                            "hsn": {
+                              "default": null,
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "packets": {
+                              "default": null,
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
                           },
                           "required": [
@@ -5794,6 +5912,24 @@
                           },
                           "uninvoicedQty": {
                             "$ref": "#/components/schemas/Qty"
+                          },
+                          "hsn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "packets": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -5806,7 +5942,9 @@
                           "poItemId",
                           "dcItemId",
                           "qty",
-                          "uninvoicedQty"
+                          "uninvoicedQty",
+                          "hsn",
+                          "packets"
                         ]
                       }
                     }
@@ -6155,6 +6293,24 @@
                           },
                           "uninvoicedQty": {
                             "$ref": "#/components/schemas/Qty"
+                          },
+                          "hsn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "packets": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -6167,7 +6323,9 @@
                           "poItemId",
                           "dcItemId",
                           "qty",
-                          "uninvoicedQty"
+                          "uninvoicedQty",
+                          "hsn",
+                          "packets"
                         ]
                       }
                     }
@@ -6316,6 +6474,24 @@
                           "total": {
                             "$ref": "#/components/schemas/Money"
                           },
+                          "hsn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "packets": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "poItemNo": {
                             "type": "integer",
                             "minimum": 0,
@@ -6358,6 +6534,8 @@
                           "sgst",
                           "igst",
                           "total",
+                          "hsn",
+                          "packets",
                           "poItemNo",
                           "materialCode",
                           "description",
@@ -7270,6 +7448,267 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A file, named by `Content-Disposition`.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "default": {
+            "description": "An error: `{ code, message, details? }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/daily-dispatch": {
+      "get": {
+        "operationId": "reports.dispatch",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dcDate"
+              ]
+            }
+          },
+          {
+            "name": "dir",
+            "in": "query",
+            "schema": {
+              "default": "asc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IsoDate"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IsoDate"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "poId": {
+                            "$ref": "#/components/schemas/Id"
+                          },
+                          "poItemNo": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "unit": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "dcItemId": {
+                            "$ref": "#/components/schemas/Id"
+                          },
+                          "dcId": {
+                            "$ref": "#/components/schemas/Id"
+                          },
+                          "dcNumber": {
+                            "type": "string"
+                          },
+                          "dcDate": {
+                            "$ref": "#/components/schemas/IsoDate"
+                          },
+                          "poNumber": {
+                            "type": "string"
+                          },
+                          "dspQty": {
+                            "$ref": "#/components/schemas/Qty"
+                          },
+                          "packets": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "gemcNumber": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "invoiceNumber": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "departmentNo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "poId",
+                          "poItemNo",
+                          "description",
+                          "unit",
+                          "dcItemId",
+                          "dcId",
+                          "dcNumber",
+                          "dcDate",
+                          "poNumber",
+                          "dspQty",
+                          "packets",
+                          "gemcNumber",
+                          "invoiceNumber",
+                          "departmentNo"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error: `{ code, message, details? }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/daily-dispatch/export": {
+      "get": {
+        "operationId": "reports.dispatchExport",
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dcDate"
+              ]
+            }
+          },
+          {
+            "name": "dir",
+            "in": "query",
+            "schema": {
+              "default": "asc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IsoDate"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IsoDate"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -9950,6 +10389,22 @@
               "null"
             ]
           },
+          "invoiceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoiceDate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IsoDate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "supplierName": {
             "type": [
               "string",
@@ -10003,6 +10458,8 @@
           "transporter",
           "modeOfTransport",
           "remarks",
+          "invoiceNumber",
+          "invoiceDate",
           "supplierName",
           "supplierAddress",
           "supplierGstin",

@@ -1,5 +1,6 @@
 // The invoice workbook against goldens derived from the legacy invoice download (SPEC-12 §4.2, INV-69). Inputs and
 // goldens are synthetic (C1, INV-75); SPEC-12 PR 2 confirms the goldens against legacy output (H5).
+import type { Qty } from "@senstosales/domain";
 import { describe, expect, it } from "vite-plus/test";
 
 import { buildInvoiceWorkbook, invoiceFileName, type InvoiceDocument } from "../src/invoice.ts";
@@ -31,6 +32,25 @@ describe("invoice workbook", () => {
       Array(5).fill("#,##0.00"),
       Array(5).fill("#,##0.00000"),
     ]);
+  });
+
+  it("prints each line's HSN and packets, totals the packets, and shows a fractional quantity exactly", async () => {
+    const one = input("invoice-1");
+    const item = one.items[0]!;
+    const items = [
+      { ...item, poItemNo: 1, hsn: "0000", packets: 3, qty: 12_345 as Qty },
+      { ...item, poItemNo: 2, hsn: null, packets: null },
+    ];
+    const sheet = await build({ ...one, items });
+    const cells = (row: number) => ["I", "J", "K"].map((column) => sheet.cells[`${column}${row}`]?.value ?? null);
+    // A line without packets prints legacy's 1.
+    expect([cells(17), cells(18), cells(20)]).toEqual([
+      ["0000", 3, 12.345],
+      [null, 1, 1],
+      [null, 4, 13.345],
+    ]);
+    // General, Excel's default, reads back as no number format.
+    expect(["K17", "K18", "K20"].map((at) => sheet.cells[at]?.style["numFmt"])).toEqual(Array(3).fill(undefined));
   });
 
   it.each([

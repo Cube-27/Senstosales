@@ -73,6 +73,7 @@ export const dcLinesToInvoice = (db: Db, dcId: string) =>
         dcItemId: dcItem.id,
         poItemId: dcItem.poItemId,
         qty: dcItem.dspQty,
+        packets: dcItem.packets,
         poRate: poItem.rate,
         poItemNo: poItem.poItemNo,
         materialCode: poItem.materialCode,

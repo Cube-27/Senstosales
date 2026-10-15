@@ -49,7 +49,7 @@ const CSV_GOLDENS = [
 ] as const;
 
 describe("export inventory", () => {
-  it("has a golden for every export SPEC-13 §2 keeps, and no daily-dispatch (A-16)", () => {
+  it("has a golden for every export SPEC-13 §2 keeps", () => {
     const goldens = Object.fromEntries(
       Object.keys(EXPORTS).map((name) => [
         name,
@@ -60,8 +60,9 @@ describe("export inventory", () => {
       poRegister: ["po-register.json"],
       dcRegister: ["dc-register.json"],
       invoiceRegister: ["invoice-register.json"],
-      // Tested on its own below.
+      // Tested on their own (the API's report tests).
       pending: [],
+      dispatch: [],
       reconciliation: ["reconciliation.json", "reconciliation-one-po.json"],
       exportSelected: ["export-selected.json"],
       // SPEC-12's goldens.
@@ -78,7 +79,7 @@ describe("export inventory", () => {
       if (e.kind === "table") return e.sheet.columns.map((c) => c.header);
       return e.kind === "document" ? [] : e.columns.map((c) => c.header);
     });
-    expect(headers).toHaveLength(80);
+    expect(headers).toHaveLength(89);
     expect(headers.filter((h) => /flag|issue|mismatch/i.test(h))).toEqual([]);
   });
 });
@@ -90,6 +91,11 @@ describe("file names", () => {
     [EXPORTS.invoiceRegister.fileName(), "Invoice_Register.xlsx"],
     [pending.fileName(), "Items_Summary.xlsx"],
     [pending.fileName({ from: "2025-04-01", to: "2025-04-30" }), "Items_Summary_2025-04-01_to_2025-04-30.xlsx"],
+    [EXPORTS.dispatch.fileName({ from: "2025-04-01", to: "2025-04-01" }), "Daily_Dispatch_2025-04-01.xlsx"],
+    [
+      EXPORTS.dispatch.fileName({ from: "2025-04-01", to: "2025-04-02" }),
+      "Daily_Dispatch_2025-04-01_to_2025-04-02.xlsx",
+    ],
     [reconciliation.fileName(), "PO_Reconciliation_Report.xlsx"],
     [reconciliation.fileName("4500999"), "PO_Reconciliation_4500999.xlsx"],
     [EXPORTS.exportSelected.fileName(), "PO_Reconciliation_Report.xlsx"],
@@ -130,24 +136,12 @@ describe("table goldens", () => {
     expect(lots).toEqual(["4500102 M-210 L1", "4500101 M-110 L2", "4500101 M-120 L1", "4500101 M-110 L1"]);
   });
 
-  it("an empty export is the bare Report sheet: no header row, no page setup (EC-45)", () => {
-    expect(golden("po-register-empty.json")).toEqual({
-      fileName: "PO_Register.xlsx",
-      sheet: "Report",
-      widths: [],
-      pageSetup: {},
-      oddFooter: null,
-      styles: {},
-      merges: [],
-      rows: [],
-    });
+  it("an empty export keeps its header row, widths and page setup (EC-45, EXP-09)", () => {
+    const full = golden("po-register.json");
+    expect(golden("po-register-empty.json")).toEqual({ ...full, rows: full.rows.slice(0, 1) });
   });
 
-  it("writes numbers rounded to 2 dp and never as text", () => {
-    const numbers = TABLE_GOLDENS.flatMap(({ file }) => golden(file).rows.slice(1).flat()).filter(
-      (cell) => typeof cell === "number",
-    );
-    expect(numbers.filter((n) => Number(n.toFixed(TABLE.decimals)) !== n)).toEqual([]);
+  it("writes numbers as numbers, never as text", () => {
     expect(golden("dc-register.json").rows[1]).toEqual(["103", "2025-05-28", "4500102", "Example Works Unit", 1, 1.25]);
   });
 });

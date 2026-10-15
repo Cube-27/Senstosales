@@ -16,6 +16,10 @@ export const zSupplier = z.object({
   email: z.string().nullable(),
   bhelSupplierCode: z.string().nullable(),
   bankDetails: zTextMap,
+  /**
+   * Keyed `description` and `jurisdiction` (the letterhead's description line and the invoice's jurisdiction city,
+   * D-0298), and `placeOfSupply` and `hsn` (what new invoices start from, owner 2026-10-15).
+   */
   invoiceDefaults: zTextMap,
 });
 

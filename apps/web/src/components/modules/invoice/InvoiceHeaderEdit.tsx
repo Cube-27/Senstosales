@@ -53,7 +53,6 @@ function valuesOf(i: Invoice): InvoiceEditValues {
 function invoiceEditError(v: InvoiceEditValues): string | null {
   if (v.invoiceDate === "") return "Invoice date is required.";
   if (v.buyerName.trim() === "") return "Buyer name is required.";
-  if (v.buyerAddress.trim() === "") return "Buyer address is required.";
   return null;
 }
 
@@ -163,7 +162,7 @@ export function InvoiceHeaderEdit({ invoice, open, onClose }: Readonly<InvoiceHe
         <FormField label="Buyer Name" required>
           <Input {...register("buyerName")} />
         </FormField>
-        <FormField label="Buyer Address" required className="col-span-2">
+        <FormField label="Buyer Address" className="col-span-2">
           <Textarea {...register("buyerAddress")} className="min-h-12" />
         </FormField>
         <FormField label="GSTIN">

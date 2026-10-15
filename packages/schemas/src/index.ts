@@ -8,7 +8,7 @@ export {
   fmtDateInput,
   fmtDateMonthName,
   fmtDaysToDue,
-  fmtFixed,
+  fmtPlain,
   fmtFlagType,
   fmtFy,
   fmtInstantDate,
@@ -24,7 +24,6 @@ export {
   moneyNumber,
   parseDateInput,
   parseQtyInput,
-  qtyExactNumber,
   qtyNumber,
 } from "./formatters.ts";
 export { type ErrorBody, zErrorBody, zListQuery, zOk, zPaged } from "./api/common.ts";

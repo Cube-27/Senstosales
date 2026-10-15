@@ -76,9 +76,9 @@ describe("removed endpoints", () => {
     expect(table.filter((r) => r.includes("health"))).toEqual(["GET /api/health"]);
   });
 
-  // Procurement analytics, dashboard insights and forecast, daily dispatch, HTTP "reconcile all" (now the
-  // `recompute-all` job) and download-folder preferences (ARCHITECTURE §9, INV-87).
-  test.each(["procurement", "analytics", "insight", "forecast", "daily-dispatch", "reconcile-all", "download"])(
+  // Procurement analytics, dashboard insights and forecast, HTTP "reconcile all" (now the `recompute-all` job) and
+  // download-folder preferences (ARCHITECTURE §9, INV-87). The daily dispatch summary is back (A-16 reversed).
+  test.each(["procurement", "analytics", "insight", "forecast", "reconcile-all", "download"])(
     "no route names %s (INV-87)",
     (word) => {
       expect(table.filter((r) => r.toLowerCase().includes(word))).toEqual([]);
@@ -89,7 +89,6 @@ describe("removed endpoints", () => {
     ["DELETE", "/api/audit"],
     ["GET", "/api/dashboard/insights"],
     ["GET", "/api/dashboard/forecast"],
-    ["GET", "/api/reports/daily-dispatch"],
     ["POST", "/api/reconcile-all"],
     ["GET", "/api/healthz"],
   ])("%s %s answers 404", async (method, path) => {

@@ -122,3 +122,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Wait for SPEC-14.
 - Why: Not in SPEC-14's list; settings and the dashboard both need it; the parallel SPEC-14 and SPEC-16 workers did not take it.
 - Reversible: yes.
+
+### D-0590 — Settings: state, state code and invoice defaults
+
+- Date: 2026-10-15 · Spec/PR: SPEC-15 E2E FIX-3 (#94) · Status: decided
+- Decision: State and State Code use the supplier's columns; Jurisdiction (City), Default Place of Supply and Default HSN are `invoiceDefaults` keys (no migration); a blank one is removed. The supplier's place of supply is labelled "Default Place of Supply", apart from the buyer's.
+- Alternatives: New columns.
+- Why: No migration in this batch; D-0298 keys the description this way.
+- Reversible: yes.

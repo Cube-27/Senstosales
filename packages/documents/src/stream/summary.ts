@@ -1,5 +1,6 @@
-// The pending-items workbook (legacy "Items Summary", SPEC-13 §2), streamed (INV-99): the catalog's heading, the
-// table header, one row per pending item as it arrives, then the TOTAL row and a print area ending at it.
+// The summary workbooks (SPEC-13 §2): pending items (legacy "Items Summary") and the daily dispatch summary, which
+// share a layout, streamed (INV-99): the catalog's heading, the table header, one row per item as it arrives, then the
+// TOTAL row and a print area ending at it.
 import type ExcelJS from "exceljs";
 
 import { EXPORTS } from "../reports/catalog.ts";
@@ -13,8 +14,11 @@ type Style = keyof typeof SUMMARY.styles;
 /** The texts the catalog's heading names in `<…>`, keyed by that name. */
 export type SummaryHeading = Record<string, string>;
 
-/** The TOTAL row's quantity: with the unit when every row has the same one, else the number. */
-export type SummaryTotal = string | number;
+/** The TOTAL row's quantity (a number, or text with the units) and packets. */
+export interface SummaryTotal {
+  qty: string | number;
+  packets: number;
+}
 
 /** The last column's letter: the table has fewer than 27 columns. */
 const LAST_COLUMN = String.fromCodePoint(64 + SUMMARY.columns.length);
@@ -40,12 +44,11 @@ function writeHeading(ws: ExcelJS.Worksheet, heading: SummaryHeading) {
 }
 
 /** The TOTAL row: the label over the first two columns, the quantity and packets under theirs, the rest blank. */
-function writeTotal(ws: ExcelJS.Worksheet, r: number, total: SummaryTotal) {
+function writeTotal(ws: ExcelJS.Worksheet, r: number, { qty, packets }: SummaryTotal) {
   ws.mergeCells(r, 1, r, 2);
   const row = ws.getRow(r);
   put(row.getCell(1), SUMMARY.total.label, "totalLabel");
-  // No v1 packets column (EC-41): 0.
-  const values: Partial<Record<Key, string | number>> = { qty: total, packets: 0 };
+  const values: Partial<Record<Key, string | number>> = { qty, packets };
   SUMMARY.columns.forEach((c, i) => {
     if (i >= 2) put(row.getCell(i + 1), values[c.key] ?? "", "totalCell");
   });

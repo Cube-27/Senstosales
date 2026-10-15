@@ -34,7 +34,16 @@ import { PartyBlock, PartySection, SourceLink } from "./parties.tsx";
 
 type TextField = Exclude<
   keyof InvoiceFormValues,
-  "number" | "invoiceDate" | "gemcDate" | "srvDate" | "qty" | "buyerName" | "buyerAddress" | "buyerStateCode"
+  | "number"
+  | "invoiceDate"
+  | "gemcDate"
+  | "srvDate"
+  | "qty"
+  | "hsn"
+  | "packets"
+  | "buyerName"
+  | "buyerAddress"
+  | "buyerStateCode"
 >;
 
 /** The legacy free-text document fields after the SRV date, in their order. */
@@ -168,7 +177,8 @@ function DocumentFields({
 const COLUMNS: readonly LineColumn[] = [
   { label: "S.N.", width: "w-12", align: "center" },
   { label: "Description", align: "left" },
-  { label: "HSN", width: "w-16", align: "center" },
+  { label: "HSN", width: "w-24", align: "center" },
+  { label: "Packets", width: "w-20", align: "center" },
   { label: "Unit", width: "w-16", align: "center" },
   { label: "Qty", width: "w-28", align: "right" },
   { label: "Rate", width: "w-24", align: "right" },
@@ -204,6 +214,7 @@ function QtyCell({ preview, i }: { readonly preview: Preview; readonly i: number
 }
 
 function LineItems({ preview, taxes }: { readonly preview: Preview | null; readonly taxes: readonly LineTax[] }) {
+  const { register } = useFormContext<InvoiceFormValues>();
   const lines = preview?.lines ?? [];
   const gemc = preview?.po.isGemc ?? false;
   let empty: string | null = null;
@@ -225,8 +236,17 @@ function LineItems({ preview, taxes }: { readonly preview: Preview | null; reado
             <LineCell title={materialTitle(line.materialCode, line.description)}>
               <MaterialCell code={line.materialCode} description={line.description} />
             </LineCell>
-            {/* v1 stores no HSN code (EC-50, EC-62). */}
-            <LineCell align="center">—</LineCell>
+            <LineCell>
+              <Input {...register(`hsn.${i}`)} className="text-center" aria-label={`HSN of item ${line.poItemNo}`} />
+            </LineCell>
+            <LineCell>
+              <Input
+                {...register(`packets.${i}`)}
+                inputMode="numeric"
+                className="text-center"
+                aria-label={`Packets of item ${line.poItemNo}`}
+              />
+            </LineCell>
             <LineCell align="center">{line.unit ?? "—"}</LineCell>
             <LineCell align="right">{preview && <QtyCell preview={preview} i={i} />}</LineCell>
             <LineCell align="right">{fmtRate(line.rate, { gemc })}</LineCell>

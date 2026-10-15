@@ -21,17 +21,24 @@ import {
   PageHeader,
   type Selection,
 } from "../../common/index.ts";
-import { PENDING_COLUMNS, type PendingRow, RECONCILIATION_COLUMNS, type ReconciliationRow } from "./columns.tsx";
-import { defaultRange, pendingSort, reconciliationSort, type ReportsSearch } from "./search.ts";
+import {
+  DISPATCH_COLUMNS,
+  PENDING_COLUMNS,
+  type PendingRow,
+  RECONCILIATION_COLUMNS,
+  type ReconciliationRow,
+} from "./columns.tsx";
+import { defaultRange, dispatchSort, pendingSort, reconciliationSort, type ReportsSearch } from "./search.ts";
 
 type Row = PendingRow | ReconciliationRow;
-type Tab = "pending" | "reconciliation";
+type Tab = "pending" | "reconciliation" | "dispatch";
 type Range = { readonly from: IsoDate; readonly to: IsoDate };
 
-/** Daily-dispatch is dropped (A-16, INV-87): two tabs. */
+/** The legacy tabs, and the daily dispatch summary (A-16 reversed, owner 2026-10-15). */
 const TABS = [
   { id: "pending", label: "Items Summary" },
   { id: "reconciliation", label: "Audit Ledger" },
+  { id: "dispatch", label: "Daily Dispatch" },
 ] as const;
 
 /**
@@ -55,7 +62,7 @@ function useRowSelection(rows: readonly Row[] | undefined) {
   return { selection, poIds: [...new Set(selected.values())], clear: () => setSelected(new Map()) };
 }
 
-/** Both tabs' lists for the search; only the open tab's is read. */
+/** The tabs' lists for the search; only the open tab's is read. */
 function useReportRows(search: ReportsSearch, tab: Tab, range: Range) {
   const query = {
     page: search.page,
@@ -72,7 +79,15 @@ function useReportRows(search: ReportsSearch, tab: Tab, range: Range) {
     ...apiQuery("reports.reconciliation", { query: { ...query, sort: reconciliationSort(search.sort) } }),
     enabled: tab === "reconciliation",
   });
-  return { pending, reconciliation, active: tab === "pending" ? pending : reconciliation };
+  const dispatch = useQuery({
+    ...apiQuery("reports.dispatch", { query: { ...query, sort: dispatchSort(search.sort) } }),
+    enabled: tab === "dispatch",
+  });
+  const active = { pending, reconciliation, dispatch }[tab];
+  // Only the item tabs' rows are selectable: export-selected takes their POs.
+  const itemTab = { pending, reconciliation, dispatch: undefined }[tab];
+  const selectable = itemTab?.data?.items;
+  return { pending, reconciliation, dispatch, active, selectable };
 }
 
 /** Download: the selected rows' POs (export-selected, then the selection clears), else the tab's workbook. */
@@ -80,6 +95,8 @@ function exportRequest(tab: Tab, search: ReportsSearch, range: Range, poIds: rea
   if (poIds.length > 0) return api.request("reports.exportSelected", { body: { poIds: [...poIds] } });
   // As legacy, the workbook covers the range in the tab's sort; the search box narrows only the screen.
   const query = { ...range, dir: search.dir };
+  if (tab === "dispatch")
+    return api.request("reports.dispatchExport", { query: { ...query, sort: dispatchSort(search.sort) } });
   return tab === "pending"
     ? api.request("reports.pendingExport", { query: { ...query, sort: pendingSort(search.sort) } })
     : api.request("reports.reconciliationExport", { query: { ...query, sort: reconciliationSort(search.sort) } });
@@ -128,8 +145,9 @@ function ReportActions(p: Readonly<ReportActionsProps>) {
 }
 
 /**
- * `/reports` (SPEC-17 §2): the legacy Operations Insights screen. Two tabs over the report lists, a search box, the
+ * `/reports` (SPEC-17 §2): the legacy Operations Insights screen. Three tabs over the report lists, a search box, the
  * date range with Reset, and Download: the tab's workbook for the range, or the selected rows' POs (export-selected).
+ * The daily dispatch tab (A-16 reversed) shares the range: one day picked as both ends gives that day's summary.
  */
 export function Reports() {
   const list = useListSearch<ReportsSearch>();
@@ -138,8 +156,8 @@ export function Reports() {
   const tab: Tab = search.tab ?? "pending";
   const defaults = defaultRange(todayIst());
   const range = { from: search.from ?? defaults.from, to: search.to ?? defaults.to };
-  const { pending, reconciliation, active } = useReportRows(search, tab, range);
-  const picked = useRowSelection(active.data?.items);
+  const { pending, reconciliation, dispatch, active, selectable } = useReportRows(search, tab, range);
+  const picked = useRowSelection(selectable);
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
   const download = useDownload();
 
@@ -165,7 +183,6 @@ export function Reports() {
     ...list.table,
     ...tableQuery(active),
     emptyText: "No data found for this period",
-    selection: picked.selection,
   } as const;
 
   return (
@@ -189,11 +206,18 @@ export function Reports() {
       <div className="flex items-center gap-3">
         <ButtonGroup label="Report" options={TABS} value={tab} onChange={showTab} />
       </div>
-      {tab === "pending" ? (
-        <DataTable columns={PENDING_COLUMNS} rows={pending.data?.items} {...table} />
-      ) : (
-        <DataTable columns={RECONCILIATION_COLUMNS} rows={reconciliation.data?.items} {...table} />
+      {tab === "pending" && (
+        <DataTable columns={PENDING_COLUMNS} rows={pending.data?.items} selection={picked.selection} {...table} />
       )}
+      {tab === "reconciliation" && (
+        <DataTable
+          columns={RECONCILIATION_COLUMNS}
+          rows={reconciliation.data?.items}
+          selection={picked.selection}
+          {...table}
+        />
+      )}
+      {tab === "dispatch" && <DataTable columns={DISPATCH_COLUMNS} rows={dispatch.data?.items} {...table} />}
     </div>
   );
 }

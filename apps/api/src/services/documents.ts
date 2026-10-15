@@ -28,7 +28,7 @@ export function documentsService({ db, storage, profile }: DocumentsDeps) {
       supplier: documentSupplier(supplier, row.dc),
       dc: row.dc,
       po: row.po,
-      invoiceNumber: row.invoiceNumber,
+      invoice: row.invoice,
       items,
     };
   }

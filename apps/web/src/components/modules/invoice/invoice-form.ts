@@ -4,7 +4,7 @@
 import { invoiceLineTax, invoiceTotals, type IsoDate, type LineTax, type Qty, sumQty } from "@senstosales/domain";
 import type { RouteOutput } from "@senstosales/schemas";
 
-import { blankToNull } from "../../../lib/text.ts";
+import { blankToNull, countOrNull } from "../../../lib/text.ts";
 
 export type Preview = RouteOutput<"invoice.previewPo">;
 type PreviewLine = Preview["lines"][number];
@@ -31,9 +31,15 @@ export interface InvoiceFormValues {
   readonly termsOfDelivery: string;
   /** PO-direct: the typed quantity per preview line, in its order. */
   readonly qty: readonly Qty[];
+  /** Per preview line, as typed: the HSN (starting at the settings' default) and the packets. */
+  readonly hsn: readonly string[];
+  readonly packets: readonly string[];
 }
 
-type TextKey = Exclude<keyof InvoiceFormValues, "number" | "invoiceDate" | "gemcDate" | "srvDate" | "qty">;
+type TextKey = Exclude<
+  keyof InvoiceFormValues,
+  "number" | "invoiceDate" | "gemcDate" | "srvDate" | "qty" | "hsn" | "packets"
+>;
 
 /** The form's start: the preview's header and no number (INV-27); PO-direct lines start at 0. */
 export function formDefaults(preview: Preview | null, today: IsoDate | ""): InvoiceFormValues {
@@ -60,6 +66,8 @@ export function formDefaults(preview: Preview | null, today: IsoDate | ""): Invo
     lrNo: text("lrNo"),
     termsOfDelivery: text("termsOfDelivery"),
     qty: (preview?.lines ?? []).map(() => sumQty([])),
+    hsn: (preview?.lines ?? []).map((line) => line.hsn ?? ""),
+    packets: (preview?.lines ?? []).map((line) => (line.packets === null ? "" : String(line.packets))),
   };
 }
 
@@ -114,16 +122,17 @@ export function invoiceCreateBody(preview: Preview, v: InvoiceFormValues) {
     lrNo: blankToNull(v.lrNo),
     termsOfDelivery: blankToNull(v.termsOfDelivery),
   };
+  const extras = (i: number) => ({ hsn: blankToNull(v.hsn[i] ?? ""), packets: countOrNull(v.packets[i]) });
   if (preview.dc !== null) {
     // Exactly the DC's lines at the DC qty and PO rate (INV-28, INV-29).
-    const lines = preview.lines.flatMap(({ dcItemId, qty, rate }) =>
-      dcItemId === null || qty === null ? [] : [{ dcItemId, qty, rate }],
+    const lines = preview.lines.flatMap(({ dcItemId, qty, rate }, i) =>
+      dcItemId === null || qty === null ? [] : [{ dcItemId, qty, rate, ...extras(i) }],
     );
     return { ...fields, kind: "dc", dcId: preview.dc.id, lines } as const;
   }
   const lines = preview.lines.flatMap((line, i) => {
     const qty = v.qty[i] ?? sumQty([]);
-    return qty > 0 ? [{ poItemId: line.poItemId, qty }] : [];
+    return qty > 0 ? [{ poItemId: line.poItemId, qty, ...extras(i) }] : [];
   });
   if (lines.length === 0) return { error: "Enter quantity greater than zero for at least one PO item." } as const;
   return { ...fields, kind: "direct", poId: preview.po.id, lines } as const;

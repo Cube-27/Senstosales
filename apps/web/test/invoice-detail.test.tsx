@@ -49,7 +49,7 @@ describe("/invoice/:id (SPEC-18 PR 3)", () => {
       within(line)
         .getAllByRole("cell")
         .map((td) => td.textContent),
-    ).toEqual(["2", "SYN100020Synthetic part 20", "—", "NOS", "2", "40", "₹80", "₹7.2", "₹7.2", "₹94.4"]);
+    ).toEqual(["2", "SYN100020Synthetic part 20", "0000", "NOS", "2", "40", "₹80", "₹7.2", "₹7.2", "₹94.4"]);
     expect(screen.getByText("₹566.4")).toBeTruthy();
   });
 
@@ -116,6 +116,8 @@ describe("/invoice/:id (SPEC-18 PR 3)", () => {
     expect((await within(dialog).findByRole("alert")).textContent).toBe("Buyer name is required.");
     expect(calls.some((c) => c.method === "PUT")).toBe(false);
     fireEvent.change(within(dialog).getByLabelText("Buyer Name*"), { target: { value: "Example Buyer Unit" } });
+    // The buyer address is optional (owner, 2026-10-15).
+    fireEvent.change(within(dialog).getByLabelText("Buyer Address"), { target: { value: " " } });
     const dated = within(dialog).getByLabelText("Dated*");
     fireEvent.change(dated, { target: { value: "03/03/2025" } });
     fireEvent.blur(dated);
@@ -123,6 +125,9 @@ describe("/invoice/:id (SPEC-18 PR 3)", () => {
     await waitFor(() =>
       expect(within(dialog).getByRole("alert").textContent).toBe("Invoice INV-17 already exists in FY 2024-25."),
     );
-    expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({ invoiceDate: "2025-03-03" });
+    expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({
+      invoiceDate: "2025-03-03",
+      buyerAddress: null,
+    });
   });
 });

@@ -29,14 +29,9 @@ const FIRST_ITEM_ROW = 17;
 /** The template's bordered row under the items; rows for items past the eighth go in above it. */
 const BOTTOM_ROW = 25;
 const ITEM_SLOTS = BOTTOM_ROW - FIRST_ITEM_ROW;
-const GUARANTEE_ROW = 27;
 const SIGN_ROW = 34;
 /** Legacy grows an item row by 17 points for each 95 characters of description. */
 const LINE_HEIGHT = 17;
-// Legacy overwrote the template's text ("24 Month") with this.
-const GUARANTEE =
-  "The goods supplied as above are guaranteed against manufacturing defects for 24 Months from delivery date. " +
-  "We undertake to replace or rectify the materials free of cost if any defects occur during this period.";
 
 const numberAndDate = (number: string, date: IsoDate | null): string =>
   `${number}  dt. ${date === null ? "" : fmtDate(date)}`.trim();
@@ -60,8 +55,8 @@ export async function buildGcWorkbook(doc: GcDocument): Promise<Uint8Array> {
   fillSupplier(ws, doc.supplier);
   writeHeader(ws, doc);
   insertRows(ws, BOTTOM_ROW, extra, BOTTOM_ROW - 1);
-  writeItemRows(ws, items, { firstRow: FIRST_ITEM_ROW, qtyColumn: "J", lineHeight: LINE_HEIGHT });
-  put(ws, `B${GUARANTEE_ROW + extra}`, GUARANTEE);
+  // The guarantee text is the template's ("24 Month"), as the owner's GCs print it; it moves down with the rows.
+  writeItemRows(ws, items, { firstRow: FIRST_ITEM_ROW, qtyColumn: "J", qtyGap: " ", lineHeight: LINE_HEIGHT });
   setPortraitPage(ws, SIGN_ROW + extra, 0);
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }

@@ -114,3 +114,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: The export's wording.
 - Why: C7; the screen's own labels are frozen.
 - Reversible: yes.
+
+### D-0591 — Daily Dispatch tab
+
+- Date: 2026-10-15 · Spec/PR: SPEC-17 E2E FIX-3 (#94) · Status: decided
+- Decision: A third `/reports` tab sharing the tabs' range (default yesterday to today; one day as both ends gives that day), with no row selection; the download is `Daily_Dispatch_<date>.xlsx` or `Daily_Dispatch_<from>_to_<to>.xlsx`, the heading's date the range.
+- Alternatives: A single date picker, which would shift the header controls (C8).
+- Why: Legacy had the endpoint but no screen; the owner wants the report back.
+- Reversible: yes.

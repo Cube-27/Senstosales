@@ -109,5 +109,60 @@ export const poNumbersOf = (db: Db, poIds: readonly string[]) =>
       .where(inArray(po.id, [...poIds])),
   );
 
+/**
+ * One page of DC lines with their DC, PO item and PO, and the invoice made from the DC (at most one, INV-30), in
+ * `page`'s order, among those `where` keeps.
+ */
+export const dispatchLines = (db: Db, where: SQL | undefined, page: KeysetPage) =>
+  db.query(
+    db.build
+      .select({
+        dcItemId: dcItem.id,
+        dcId: dc.id,
+        dcNumber: dc.number,
+        dcDate: dc.dcDate,
+        createdAt: dc.createdAt,
+        departmentNo: dc.departmentNo,
+        dcInvoiceNumber: dc.invoiceNumber,
+        poId: po.id,
+        poNumber: po.poNumber,
+        poGemcNumber: po.gemcNumber,
+        poItemNo: poItem.poItemNo,
+        description: poItem.description,
+        materialCode: poItem.materialCode,
+        unit: poItem.unit,
+        dspQty: dcItem.dspQty,
+        packets: dcItem.packets,
+        invoiceNumber: invoice.number,
+        invoiceGemcNumber: invoice.gemcNumber,
+      })
+      .from(dcItem)
+      .innerJoin(dc, eq(dc.id, dcItem.dcId))
+      .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
+      .innerJoin(po, eq(po.id, poItem.poId))
+      .leftJoin(invoice, eq(invoice.dcId, dc.id))
+      .where(and(where, page.after))
+      .orderBy(...page.orderBy)
+      .limit(page.limit),
+  );
+
+export type DispatchLine = Awaited<ReturnType<typeof dispatchLines>>[number];
+
+/** DC date, then the order the DCs were made in (legacy), then each DC's lines by item number. */
+export const BY_DISPATCH: Keyset<DispatchLine> = {
+  parts: [
+    { by: dc.dcDate, field: "dcDate", dir: "asc" },
+    { by: dc.createdAt, field: "createdAt", dir: "asc" },
+    { by: dc.id, field: "dcId", dir: "asc" },
+    { by: poItem.poItemNo, field: "poItemNo", dir: "asc" },
+  ],
+  id: { by: dcItem.id, field: "dcItemId", dir: "asc" },
+};
+
+/** The daily dispatch tab's sort column. */
+export const DISPATCH_SORTS = {
+  dcDate: [{ by: dc.dcDate, field: "dcDate" }],
+} satisfies Record<string, SortParts<DispatchLine>>;
+
 /** The most item ids {@link itemDocuments} takes. */
 export const DOCUMENTS_BATCH = 100;
