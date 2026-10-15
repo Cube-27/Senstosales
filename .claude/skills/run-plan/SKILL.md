@@ -1,14 +1,14 @@
 ---
 name: run-plan
-description: Orchestrate implementation from docs/plans/ACTIVE.md with minimal owner involvement — assign ready PR rows to workers, sequence and merge on green, keep the tracker and decisions log current, escalate only what CLAUDE.md requires. Use when asked to run, continue or orchestrate the implementation.
+description: Orchestrate implementation from docs/plans/ACTIVE.md with minimal owner involvement — assign batches of ready PR rows to workers, sequence and merge on green, keep the tracker and decisions log current, escalate only what CLAUDE.md requires. Use when asked to run, continue or orchestrate the implementation.
 ---
 
 # Run the plan
 
-You are the orchestrator. You only assign rows, merge, clean up and unblock stuck PRs; you write no code and don't
-relay messages between implementor and reviewer. You hand each implementor a decision-ID range at assignment; it
-writes its row and decisions in the PR's tracker commit before its first `READY`. Adapted from pstack's autonomous-run and orchestrate
-playbooks (MIT, see `NOTICE`).
+You are the orchestrator. You only assign batches of rows, merge, clean up and unblock stuck PRs; you write no code and
+don't relay messages between implementor and reviewer. You hand each implementor a decision-ID range at assignment; it
+writes its rows and decisions in the PR's tracker commit before its first `READY`. Adapted from pstack's autonomous-run
+and orchestrate playbooks (MIT, see `NOTICE`).
 
 Requires herdr (`HERDR_ENV=1`). Without it, run `/implement-pr` solo instead.
 
@@ -31,14 +31,18 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
    available: the code it builds on is merged, or what it needs from unmerged work is fully specified. Readiness is
    per row. `human` and `blocked` rows are skipped.
 2. **Assign.** At most `MAX_WORKERS` (default 4) workers alive at once; reviewers don't count. Every start needs
-   `MIN_FREE_MB` (default 1500) free. `start_agent.sh` refuses past either limit. Name reviewers `reviewer*`,
-   everything else is a worker. Run independent ready rows in parallel; two workers never run rows that edit the
-   same migration or generated file. For each assignment:
-   - `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>`: fetches and creates the worktree
-     off `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`. Never a raw `git worktree add`, and
-     never an MSYS drive path (`/c/...`): with path conversion off, git creates it under `C:/c/`;
-   - `tools/orchestrator/start_agent.sh <name> spec-NN-pr-M "<prompt>"` with: "Run `/implement-pr` for SPEC-NN
-     PR M. An orchestrator assigned you this row. Your decision IDs are D-NNNN..D-NNNN. Own the PR through
+   `MIN_FREE_MB` (default 1500) free. `start_agent.sh` refuses past either limit. Name reviewers `reviewer*`, everything
+   else is a worker. Each assignment is one PR: it covers a batch of related ready rows, normally all ready rows of one
+   spec, or of adjacent specs touching the same code. Target 30-80 changed files or about 1500-4000 changed lines; split
+   only when a row waits on a human task or on unmerged code, or the PR would pass ~4000 lines. Branch
+   `spec-NN/pr-A-B-<name>`, worktree `spec-NN-pr-A-B`. Commit row by row; the tracker commit marks every row in the
+   batch `done (#n)`. One `/simplify` pass and one review per PR, regardless of size. Run independent batches in
+   parallel; two workers never run rows that edit the same migration or generated file. For each assignment:
+   - `tools/orchestrator/new_worktree.sh spec-NN-pr-A-B spec-NN/pr-A-B-<short-name>`: fetches and creates the worktree
+     off `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-A-B`. Never a raw `git worktree add`, and never
+     an MSYS drive path (`/c/...`): with path conversion off, git creates it under `C:/c/`;
+   - `tools/orchestrator/start_agent.sh <name> spec-NN-pr-A-B "<prompt>"` with: "Run `/implement-pr` for SPEC-NN PRs A-B
+     in one PR. An orchestrator assigned you these rows. Your decision IDs are D-NNNN..D-NNNN. Own the PR through
      `/implement-pr` §6 until it merges." Give each implementor its own range of five free IDs, never overlapping
      another open PR's.
 3. **Review and merge.** The implementor owns its PR end to end: it starts one reviewer once the PR is
@@ -104,5 +108,5 @@ tasks now due (H-numbers); the next ready rows.
 
 ## Cost discipline
 
-One reviewer per PR; no panels, no parallel attempts at the same row. A fresh worker per row. Don't re-verify what
+One reviewer per PR; no panels, no parallel attempts at the same row. A fresh worker per batch. Don't re-verify what
 a merged PR's CI already proved.

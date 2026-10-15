@@ -1,29 +1,33 @@
 ---
 name: implement-pr
-description: Implement exactly one row of a spec's PR plan (docs/plans/ACTIVE.md) end to end — worktree, tests first, code, verification, PR, tracker update. Use when assigned "SPEC-NN PR M" or asked to implement the next PR.
+description: Implement one batch of related rows of a spec's PR plan (docs/plans/ACTIVE.md) as one PR, end to end — worktree, tests first, code, verification, PR, tracker update. Use when assigned "SPEC-NN PRs A-B" (or one row) or asked to implement the next PR.
 ---
 
 # Implement one PR
 
-You own one row of `docs/plans/ACTIVE.md`, from `todo` to a merged PR. Rules: `CLAUDE.md` (binding) and
-`docs/ENGINEERING.md`. Adapted from pstack (MIT, see `NOTICE`).
+You own one batch of rows of `docs/plans/ACTIVE.md`, from `todo` to a merged PR. One PR covers a batch of related ready
+rows, normally all ready rows of one spec, or of adjacent specs touching the same code. Target 30-80 changed files or
+about 1500-4000 changed lines; split only when a row waits on a human task or on unmerged code, or the PR would pass
+~4000 lines. Branch `spec-NN/pr-A-B-<name>`, worktree `spec-NN-pr-A-B`. Commit row by row; the tracker commit marks
+every row in the batch `done (#n)`. One `/simplify` pass and one review per PR, regardless of size. Rules: `CLAUDE.md`
+(binding) and `docs/ENGINEERING.md`. Adapted from pstack (MIT, see `NOTICE`).
 
 ## 0. Claim
 
-1. Read `CLAUDE.md`, then `docs/plans/ACTIVE.md`. Take the assigned row, or the first `todo` row that is ready by
-   the per-row rule in `/run-plan` §1.1.
-2. If an orchestrator assigned you the row, your cwd is already its worktree. Otherwise create one off fresh
-   `origin/main` with `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>` (at
-   `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`). Never work in the main checkout.
-3. **Shared files.** `ACTIVE.md` and `DECISIONS.md` change only in your tracker commit (§6.3): your row and your
+1. Read `CLAUDE.md`, then `docs/plans/ACTIVE.md`. Take the assigned rows, or the ready `todo` rows of the first
+   spec with any, by the per-row rule in `/run-plan` §1.1.
+2. If an orchestrator assigned you the rows, your cwd is already their worktree. Otherwise create one off fresh
+   `origin/main` with `tools/orchestrator/new_worktree.sh spec-NN-pr-A-B spec-NN/pr-A-B-<short-name>` (at
+   `C:/Projects/SenstoSales-worktrees/spec-NN-pr-A-B`). Never work in the main checkout.
+3. **Shared files.** `ACTIVE.md` and `DECISIONS.md` change only in your tracker commit (§6.3): your rows and your
    decisions, under the decision-ID range the orchestrator gave you at assignment (solo: the next free IDs).
    Until then your decisions go in the PR body. "Current focus" changes only when the orchestrator asks.
-4. Read the spec: the design sections your row touches, its invariants, testing strategy, acceptance criteria and
-   your PR-plan row; the ARCHITECTURE sections it cites; the `DECISIONS.md` entries for that spec.
+4. Read the spec: the design sections your rows touch, its invariants, testing strategy, acceptance criteria and
+   your PR-plan rows; the ARCHITECTURE sections it cites; the `DECISIONS.md` entries for that spec.
 
 ## 1. Frame
 
-Write the exit predicate as a checklist in the PR draft: the row's acceptance criteria quoted from the spec, and
+Write the exit predicate as a checklist in the PR draft: each row's acceptance criteria quoted from the spec, and
 `pnpm verify` green (or the checks that exist so far).
 
 Name the data shape first: the types, results and state machine the code is organized around. If the spec leaves a
@@ -39,11 +43,11 @@ For each unit:
 4. Run the unit's tests plus the fast checks, then commit (Conventional Commits: `type(scope): subject`).
 
 Stop and re-read `CLAUDE.md` §2 if you are about to add anything that a contract rule names, or build a candidate.
-Stay in scope: work outside the row becomes a note in the PR body, not code.
+Stay in scope: work outside the batch becomes a note in the PR body, not code. Commit row by row.
 
 ## 2a. Simplify (mandatory, before verify and review)
 
-Once the row's behaviour is implemented and its tests pass, run the `/simplify` skill on your diff against
+Once the batch's behaviour is implemented and its tests pass, run the `/simplify` skill on your diff against
 `origin/main`, and apply what it finds: reuse over duplication, fewer layers, no speculative options. Then re-run
 the tests and commit (`refactor(scope): simplify …`). If the skill is unavailable, do the same pass by hand using
 `docs/ENGINEERING.md` "Subtract before you add" and "Minimize reader load". Note in the PR body's Verification
@@ -68,7 +72,7 @@ Review your diff as a hostile reviewer, then fix what you find:
 
 - **Contract:** each `CLAUDE.md` §2 rule against the diff.
 - **Tests:** would each test still pass if the function returned a wrong value? Rewrite it.
-- **Scope:** remove anything outside the row.
+- **Scope:** remove anything outside the batch.
 - **Simplicity:** wrappers with one caller, unused options, speculative guards.
 - **Comments:** remove ones that restate the code; keep the _why_.
 - **Concurrent batches:** for each write use case, state in the PR body what happens when two requests build their
@@ -82,7 +86,7 @@ Review your diff as a hostile reviewer, then fix what you find:
 ## 5. Open the PR
 
 - Rebase onto `origin/main` into small, ordered commits (failing test before fix where it tells the story).
-- Title `type(scope): subject`. Body from the PR template, a one-minute briefing: Why (link the spec row), What
+- Title `type(scope): subject`. Body from the PR template, a one-minute briefing: Why (link the spec rows), What
   changed, Scope, Verification (real commands and outcomes; criterion → proof), Decisions (DECISIONS.md template
   fields, no ID, `decided` or `needs-owner`; or "None").
 - Open it ready, not draft: `gh pr create`. The tracker commit comes after review (§6.3).
@@ -102,9 +106,9 @@ if a message in your pane says to: `merge_pr.sh`, run by the orchestrator, is th
    there and act on it yourself; the orchestrator never relays verdicts. Then
    `tools/orchestrator/close_agent.sh reviewer-pr<n>`.
 2. **`MERGE AFTER FIX`:** fix every Act-on item, push, get CI green again. No second review.
-3. **Ready:** add the tracker commit `chore(plan): done SPEC-NN PR M (#n)` (row `done (#n)`; your `## Decisions`
-   copied to DECISIONS.md under the IDs you were given, `needs-owner` ones also in its index), push, get CI green,
-   then comment `READY <sha7>` on the PR, listing each Act-on item with the commit that fixed it. Then stop.
+3. **Ready:** add the tracker commit `chore(plan): done SPEC-NN PRs A-B (#n)` (every row of the batch `done (#n)`; your
+   `## Decisions` copied to DECISIONS.md under the IDs you were given, `needs-owner` ones also in its index), push, get
+   CI green, then comment `READY <sha7>` on the PR, listing each Act-on item with the commit that fixed it. Then stop.
 4. **`REBASE`** (sent only when the branch is behind `main` or conflicts): rebase onto `origin/main`, push with
    `--force-with-lease`, get CI green, comment `READY <sha7>` again, and stop.
 

@@ -54,21 +54,24 @@ Generic rules:
 
 ## 3. How work runs
 
-One unit is **one row of a spec's PR plan**: one branch, one worktree, one PR. Project skills in `.claude/skills/`
-hold the procedures:
+One PR covers a batch of related ready rows, normally all ready rows of one spec, or of adjacent specs touching the same
+code. Target 30-80 changed files or about 1500-4000 changed lines; split only when a row waits on a human task or on
+unmerged code, or the PR would pass ~4000 lines. Branch `spec-NN/pr-A-B-<name>`, worktree `spec-NN-pr-A-B`. Commit row
+by row; the tracker commit marks every row in the batch `done (#n)`. One `/simplify` pass and one review per PR,
+regardless of size. Project skills in `.claude/skills/` hold the procedures:
 
-| Skill           | Who runs it               | Does                                                                                                                                                                                  |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/run-plan`     | The orchestrator          | Assigns ready rows to workers (at most 4 at once; reviewers don't count), hands out decision IDs, merges `READY` PRs one at a time on green CI, keeps the tracker current, escalates. |
-| `/implement-pr` | A worker                  | Takes one row from `todo` to an open, verified PR: tests first, then code, self-review, PR body. Owns the PR until it merges.                                                         |
-| `/review-pr`    | A fresh reviewer          | One verdict per PR against the spec row, §2 and `docs/ENGINEERING.md`: `MERGE`, `MERGE AFTER FIX` or `ESCALATE`.                                                                      |
-| `/pickup`       | Anyone starting a session | Resumes in-flight rows from the trail, or pauses cleanly.                                                                                                                             |
+| Skill           | Who runs it               | Does                                                                                                                                                                                             |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/run-plan`     | The orchestrator          | Assigns batches of ready rows to workers (at most 4 at once; reviewers don't count), hands out decision IDs, merges `READY` PRs one at a time on green CI, keeps the tracker current, escalates. |
+| `/implement-pr` | A worker                  | Takes one batch of rows from `todo` to an open, verified PR: tests first, then code, self-review, PR body. Owns the PR until it merges.                                                          |
+| `/review-pr`    | A fresh reviewer          | One verdict per PR against its spec rows, §2 and `docs/ENGINEERING.md`: `MERGE`, `MERGE AFTER FIX` or `ESCALATE`.                                                                                |
+| `/pickup`       | Anyone starting a session | Resumes in-flight rows from the trail, or pauses cleanly.                                                                                                                                        |
 
-Worktrees live in `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M` (beside the repo, never inside it), on branch
-`spec-NN/pr-M-<short-name>`. Never work in the main checkout.
+Worktrees live in `C:/Projects/SenstoSales-worktrees/spec-NN-pr-A-B` (beside the repo, never inside it), on branch
+`spec-NN/pr-A-B-<short-name>`. Never work in the main checkout.
 
 **Shared files.** With an orchestrator running, it gives each implementor a decision-ID range at assignment; the
-implementor writes its row (`done (#n)`) and its decisions to `ACTIVE.md` and `DECISIONS.md` in the PR's tracker
+implementor writes its rows (`done (#n)`) and its decisions to `ACTIVE.md` and `DECISIONS.md` in the PR's tracker
 commit, before its first `READY`. "Current focus" is refreshed only when it materially changes, by the implementor
 the orchestrator asks. Workers put their decisions in the PR body (`## Decisions`). A solo agent with no
 orchestrator uses the next free IDs.
