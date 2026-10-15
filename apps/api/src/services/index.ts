@@ -6,6 +6,7 @@ import type { Clock } from "../ports/clock.ts";
 import type { Jobs } from "../ports/jobs.ts";
 import type { Storage } from "../ports/storage.ts";
 import { auditService } from "./audit.ts";
+import { type BhelDeps, bhelWizardService } from "./bhel-sync.ts";
 import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
 import { dashboardService } from "./dashboard.ts";
@@ -35,6 +36,8 @@ export interface ServiceDeps {
   readonly clock: Clock;
   readonly jobs: Jobs;
   readonly storage: Storage;
+  /** BHEL sync; absent where no scraper is available, and then its routes do not answer. */
+  readonly bhel?: BhelDeps;
 }
 
 /** What the services of the supplier's data take: one shared supplier id. */
@@ -46,15 +49,17 @@ export function createServices(deps: ServiceDeps) {
   const withSupplier: SupplierDeps = { ...deps, supplierId: supplierRef(deps.db) };
   const tracker = deliveryTrackerService(deps);
   const supplier = createSupplierService(withSupplier);
+  const secrets = createSecretsService(withSupplier);
   return {
     auth: createAuthService(deps),
     onboarding: createOnboardingService(withSupplier),
     supplier,
     settings: createSettingsService(withSupplier),
     buyers: createBuyersService(withSupplier),
-    secrets: createSecretsService(withSupplier),
+    secrets,
     jobs: jobsService(deps),
     folderImport: folderImportService(deps),
+    bhel: deps.bhel && bhelWizardService({ ...deps, ...deps.bhel, secrets }),
     po: poService(withSupplier),
     poManualQty: poManualQtyService(deps),
     poIngest: poIngestService(deps),

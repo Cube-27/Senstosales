@@ -45,6 +45,9 @@ importers:
       '@senstosales/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@senstosales/scraper':
+        specifier: workspace:*
+        version: link:../../packages/scraper
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4

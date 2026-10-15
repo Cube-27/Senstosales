@@ -3,6 +3,7 @@ import type { Handlers } from "../app.ts";
 import type { Services } from "../services/index.ts";
 import { auditRoutes } from "./audit.ts";
 import { authRoutes } from "./auth.ts";
+import { bhelSyncRoutes } from "./bhel-sync.ts";
 import { buyersRoutes } from "./buyers.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { deliveryTrackerRoutes } from "./delivery-tracker.ts";
@@ -31,6 +32,7 @@ export function apiRoutes(services: Services): Handlers {
     ...buyersRoutes(services),
     ...jobsRoutes(services.jobs),
     ...jobStagingRoutes(services.folderImport),
+    ...(services.bhel && bhelSyncRoutes(services.bhel)),
     ...poRoutes(services.po),
     ...poManualQtyRoutes(services.poManualQty),
     ...poUploadRoutes(services.poIngest),

@@ -4,6 +4,7 @@
 // ones fail, each as a job event (INV-44); the other files still commit. Staged files live in `Storage` under
 // `staging/<stagingId>/<kind>/`, keyed by the server, never by a request (C17), and are deleted once the job ends. The
 // job's summary adds the flags the import raised, by type, to the worker's counts and skipped and failed files.
+import type { Db } from "@senstosales/db";
 import type { RouteInput, RouteOutput } from "@senstosales/schemas";
 import { z } from "zod";
 
@@ -81,11 +82,15 @@ function folderImportHandler<S extends FolderStart>(
     /** Deletes the staged files and adds the flags the import opened, by type. */
     async finish({ stagingId }, jobId): Promise<JobSummary> {
       for (const key of await storage.list(folderOf(stagingId, kind))) await storage.delete(key);
-      // One job runs at a time (INV-98), so the flags opened since it started are the import's own, bar any a user
-      // raised meanwhile.
-      const startedAt = (await findJob(deps.db, jobId))?.startedAt ?? null;
-      const flags = startedAt === null ? [] : await flagCountsSince(deps.db, startedAt);
-      return { flags: Object.fromEntries(flags.map((f) => [f.type, f.count])) };
+      return flagsSummary(deps.db, jobId);
     },
   };
+}
+
+/** The flags a job opened, by type. One job runs at a time (INV-98), so the flags opened since it started are its
+ * own, bar any a user raised meanwhile. */
+export async function flagsSummary(db: Db, jobId: string): Promise<JobSummary> {
+  const startedAt = (await findJob(db, jobId))?.startedAt ?? null;
+  const flags = startedAt === null ? [] : await flagCountsSince(db, startedAt);
+  return { flags: Object.fromEntries(flags.map((f) => [f.type, f.count])) };
 }
