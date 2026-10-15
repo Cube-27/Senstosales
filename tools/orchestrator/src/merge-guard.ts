@@ -1,4 +1,4 @@
-// Claude Code PreToolUse hook: deny a Bash or PowerShell command that merges a pull request directly.
+// PreToolUse guard (run by guards.ts): deny a Bash or PowerShell command that merges a pull request directly.
 //
 // `tools/orchestrator/merge_pr.sh` is the only sanctioned merge path: it merges on a passing CI wait, pinned to the
 // head commit, after the implementor's tracker commit. Agents have merged their own PRs anyway, so this hook denies
@@ -7,9 +7,6 @@
 // call and passes. This guards against mistakes, not against an agent set on evading it (aliases, scripts written to
 // disk, a quoted here-document piped to a shell).
 //
-// Hook input and exit codes: hook-input.ts.
-import { guard } from "./hook-input.ts";
-
 const REASON =
   "merge guard: agents don't merge PRs directly. Comment READY <sha7> on the PR and stop; the orchestrator merges" +
   " with tools/orchestrator/merge_pr.sh after the tracker commit (CLAUDE.md section 3, /implement-pr section 6).";
@@ -185,4 +182,5 @@ function mergesDirectly(command: string, depth = 0): boolean {
   );
 }
 
-guard("merge guard", (command) => (mergesDirectly(command) ? REASON : undefined));
+/** The reason to deny COMMAND, or undefined to allow it. */
+export const mergeDenial = (command: string): string | undefined => (mergesDirectly(command) ? REASON : undefined);

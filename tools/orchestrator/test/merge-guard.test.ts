@@ -1,16 +1,8 @@
-// Behaviour of tools/orchestrator/src/merge-guard.ts, the PreToolUse hook that keeps agents from merging PRs directly,
-// run as Claude Code runs it: hook JSON on stdin, exit 2 and a reason on stderr to deny.
-import { join } from "node:path";
+// Behaviour of tools/orchestrator/src/merge-guard.ts, the guard that keeps agents from merging PRs directly, run as
+// Claude Code runs the PreToolUse hook (src/guards.ts): hook JSON on stdin, exit 2 and a reason on stderr to deny.
 import { describe, expect, it } from "vite-plus/test";
 
-import { ORCHESTRATOR, run } from "./shell.ts";
-
-const GUARD = join(ORCHESTRATOR, "src", "merge-guard.ts");
-
-const runGuard = (payload: string) => run(process.execPath, [GUARD], { input: payload });
-
-const hookInput = (command: string, tool = "Bash"): string =>
-  JSON.stringify({ hook_event_name: "PreToolUse", tool_name: tool, tool_input: { command } });
+import { hookInput, runGuards } from "./shell.ts";
 
 const DENIED = [
   "gh pr merge 100 --squash",
@@ -78,35 +70,35 @@ const ALLOWED = [
 
 describe("merge guard", () => {
   it.each(DENIED)("denies a direct merge with a reason: %j", (command) => {
-    const result = runGuard(hookInput(command));
+    const result = runGuards(hookInput(command));
 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("tools/orchestrator/merge_pr.sh");
   });
 
   it.each(ALLOWED)("lets other commands pass: %j", (command) => {
-    expect(runGuard(hookInput(command))).toMatchObject({ status: 0, stderr: "" });
+    expect(runGuards(hookInput(command))).toMatchObject({ status: 0, stderr: "" });
   });
 
   it("checks PowerShell tool commands too", () => {
-    expect(runGuard(hookInput("gh pr merge 7", "PowerShell")).status).toBe(2);
+    expect(runGuards(hookInput("gh pr merge 7", "PowerShell")).status).toBe(2);
   });
 
   it("falls back to a text match for a command with unbalanced quotes", () => {
-    expect(runGuard(hookInput("gh pr merge 7 --body 'unterminated")).status).toBe(2);
-    expect(runGuard(hookInput("echo 'unterminated")).status).toBe(0);
+    expect(runGuards(hookInput("gh pr merge 7 --body 'unterminated")).status).toBe(2);
+    expect(runGuards(hookInput("echo 'unterminated")).status).toBe(0);
   });
 
   it("lets input without a command pass", () => {
     const payload = JSON.stringify({ tool_name: "Read", tool_input: { file_path: "x" } });
 
-    expect(runGuard(payload).status).toBe(0);
+    expect(runGuards(payload).status).toBe(0);
   });
 
   it.each(["not json", "[1]"])("denies unreadable hook input: %j", (payload) => {
-    const result = runGuard(payload);
+    const result = runGuards(payload);
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain("merge guard");
+    expect(result.stderr).toContain("guard: unreadable hook input");
   });
 });

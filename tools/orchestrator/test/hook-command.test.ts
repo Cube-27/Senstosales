@@ -1,5 +1,5 @@
-// The guard hook commands in .claude/settings.json, run through bash as Claude Code runs them, with stub programs as
-// the whole PATH: each must deny (exit 2) whenever its guard can't run, never fail open.
+// The guard hook command in .claude/settings.json, run through bash as Claude Code runs it, with stub programs as the
+// whole PATH: it must deny (exit 2) whenever the guards can't run, never fail open.
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,50 +7,46 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { BASH, REPO, REAL_NODE, run, stubBin } from "./shell.ts";
 
-const settings = JSON.parse(readFileSync(join(REPO, ".claude", "settings.json"), "utf8"));
-const HOOKS = settings.hooks.PreToolUse[0].hooks.map((hook: { command: string }) => hook.command) as string[];
-
-// Each guard by its position in settings.json, with a command it denies.
-const GUARDS: Array<[name: string, index: number, denied: string]> = [
-  ["merge guard", 0, "gh pr merge 7"],
-  ["path guard", 1, `git worktree add ${"/c"}/Projects/x`],
-];
-
-function runHook(hook: string, stubs: Record<string, string>, command: string) {
-  const bin = stubBin(mkdtempSync(join(tmpdir(), "hook-")), stubs);
-  const input = JSON.stringify({ tool_name: "Bash", tool_input: { command } });
-  return run(BASH, ["-c", hook], { input, env: { ...process.env, PATH: bin, CLAUDE_PROJECT_DIR: REPO } });
+function hookCommand(): string {
+  const settings = JSON.parse(readFileSync(join(REPO, ".claude", "settings.json"), "utf8"));
+  return settings.hooks.PreToolUse[0].hooks[0].command as string;
 }
 
-describe.each(GUARDS)("%s hook command", (name, index, denied) => {
-  const hook = HOOKS[index]!;
+function runHook(stubs: Record<string, string>, command: string) {
+  const bin = stubBin(mkdtempSync(join(tmpdir(), "hook-")), stubs);
+  const input = JSON.stringify({ tool_name: "Bash", tool_input: { command } });
+  return run(BASH, ["-c", hookCommand()], { input, env: { ...process.env, PATH: bin, CLAUDE_PROJECT_DIR: REPO } });
+}
 
-  it("names its guard", () => {
-    expect(hook).toContain(name);
-  });
-
+describe("guard hook command", () => {
   it("allows a plain command", () => {
-    expect(runHook(hook, { node: REAL_NODE }, "git status").status).toBe(0);
+    expect(runHook({ node: REAL_NODE }, "git status").status).toBe(0);
   });
 
-  it("denies a guarded command", () => {
-    expect(runHook(hook, { node: REAL_NODE }, denied).status).toBe(2);
+  it.each([
+    ["merge guard", "gh pr merge 7"],
+    ["path guard", `git worktree add ${"/c"}/Projects/x`],
+  ])("runs the %s", (name, command) => {
+    const result = runHook({ node: REAL_NODE }, command);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain(name);
   });
 
   it.each([
     ["cannot start", "exit 9009"],
     ["fails with an error", 'echo "node: boom" >&2; exit 1'],
   ])("denies when node %s", (_case, stub) => {
-    const result = runHook(hook, { node: stub }, "git status");
+    const result = runHook({ node: stub }, "git status");
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain(name);
+    expect(result.stderr).toContain("guard: node exited");
   });
 
   it("denies when no node is on PATH", () => {
-    const result = runHook(hook, {}, "git status");
+    const result = runHook({}, "git status");
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain(name);
+    expect(result.stderr).toContain("guard: no node on PATH");
   });
 });

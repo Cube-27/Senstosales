@@ -1,16 +1,18 @@
-// Behaviour of tools/orchestrator/new_worktree.sh, run through bash from a throwaway clone.
+// Behaviour of tools/orchestrator/new_worktree.sh, run through bash from throwaway repositories.
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vite-plus/test";
+import { beforeAll, describe, expect, it } from "vite-plus/test";
 
 import { BASH, ORCHESTRATOR, git, run } from "./shell.ts";
 
 const SLOW = { timeout: 120_000 };
 const posix = (path: string): string => path.replaceAll("\\", "/");
 
-/** An origin and a repository `app` tracking it, with one commit on origin's main that `app` has not fetched. */
-function cloneBehindOrigin(dir: string): { main: string; tip: string } {
+/** In a new temp dir: an origin and a repository `app` tracking it, with one commit on origin's main that `app`
+ * has not fetched. */
+function cloneBehindOrigin(): { dir: string; main: string; tip: string } {
+  const dir = mkdtempSync(join(tmpdir(), "wt-"));
   const origin = join(dir, "origin.git");
   const main = join(dir, "app");
   const other = join(dir, "other");
@@ -23,7 +25,7 @@ function cloneBehindOrigin(dir: string): { main: string; tip: string } {
   git(dir, "clone", "-q", origin, other);
   git(other, ...identity, "commit", "-q", "--allow-empty", "-m", "newer");
   git(other, "push", "-q", "origin", "HEAD:main");
-  return { main, tip: git(other, "rev-parse", "HEAD") };
+  return { dir, main, tip: git(other, "rev-parse", "HEAD") };
 }
 
 function newWorktree(main: string, args: string[], env: Record<string, string> = {}) {
@@ -31,9 +33,15 @@ function newWorktree(main: string, args: string[], env: Record<string, string> =
 }
 
 describe("new_worktree.sh", SLOW, () => {
+  // The refusals exit before fetching or creating anything, so they share one plain repository.
+  let repo = "";
+  beforeAll(() => {
+    repo = mkdtempSync(join(tmpdir(), "wt-"));
+    git(repo, "init", "-q");
+  });
+
   it("creates the worktree off fresh origin/main beside the repo and prints its path", () => {
-    const dir = mkdtempSync(join(tmpdir(), "wt-"));
-    const { main, tip } = cloneBehindOrigin(dir);
+    const { dir, main, tip } = cloneBehindOrigin();
     const result = newWorktree(main, ["spec-01-pr-1", "spec-01/pr-1-x"]);
     const worktree = join(dir, "app-worktrees", "spec-01-pr-1");
 
@@ -44,8 +52,7 @@ describe("new_worktree.sh", SLOW, () => {
   });
 
   it.runIf(process.platform === "win32")("turns an MSYS drive-path WORKTREE_ROOT into a Windows path", () => {
-    const dir = mkdtempSync(join(tmpdir(), "wt-"));
-    const { main } = cloneBehindOrigin(dir);
+    const { dir, main } = cloneBehindOrigin();
     const root = posix(join(dir, "roots")).replace(
       /^([A-Za-z]):/,
       (_match, drive: string) => `/${drive.toLowerCase()}`,
@@ -60,22 +67,18 @@ describe("new_worktree.sh", SLOW, () => {
   it.each(["C:/c/Projects/app-worktrees", "D:/d/app-worktrees"])(
     "refuses a WORKTREE_ROOT under a mangled drive path and creates nothing: %s",
     (root) => {
-      const dir = mkdtempSync(join(tmpdir(), "wt-"));
-      const { main } = cloneBehindOrigin(dir);
-      const result = newWorktree(main, ["spec-01-pr-1", "spec-01/pr-1-x"], { WORKTREE_ROOT: root });
+      const result = newWorktree(repo, ["spec-01-pr-1", "spec-01/pr-1-x"], { WORKTREE_ROOT: root });
 
       expect(result.status).toBe(1);
       expect(result.stderr).toContain("MSYS drive path");
-      expect(git(main, "branch", "--list", "spec-01/pr-1-x")).toBe("");
+      expect(git(repo, "branch", "--list", "spec-01/pr-1-x")).toBe("");
     },
   );
 
   it.each(["../spec-01-pr-1", "a\\b", ""])("refuses a name that is not a plain directory name: %j", (name) => {
-    const dir = mkdtempSync(join(tmpdir(), "wt-"));
-    const { main } = cloneBehindOrigin(dir);
-    const result = newWorktree(main, [name, "spec-01/pr-1-x"]);
+    const result = newWorktree(repo, [name, "spec-01/pr-1-x"]);
 
     expect(result.status).toBe(2);
-    expect(git(main, "branch", "--list", "spec-01/pr-1-x")).toBe("");
+    expect(git(repo, "branch", "--list", "spec-01/pr-1-x")).toBe("");
   });
 });

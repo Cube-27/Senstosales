@@ -6,11 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "command -v node >/dev/null || { echo \"merge guard: no node on PATH; denying.\" >&2; exit 2; }; node \"$CLAUDE_PROJECT_DIR/tools/orchestrator/src/merge-guard.ts\" && exit 0; rc=$?; [ \"$rc\" -eq 2 ] || echo \"merge guard: node exited $rc; denying.\" >&2; exit 2"
-          },
-          {
-            "type": "command",
-            "command": "command -v node >/dev/null || { echo \"path guard: no node on PATH; denying.\" >&2; exit 2; }; node \"$CLAUDE_PROJECT_DIR/tools/orchestrator/src/path-guard.ts\" && exit 0; rc=$?; [ \"$rc\" -eq 2 ] || echo \"path guard: node exited $rc; denying.\" >&2; exit 2"
+            "command": "command -v node >/dev/null || { echo \"guard: no node on PATH; denying.\" >&2; exit 2; }; node \"$CLAUDE_PROJECT_DIR/tools/orchestrator/src/guards.ts\" && exit 0; rc=$?; [ \"$rc\" -eq 2 ] || echo \"guard: node exited $rc; denying.\" >&2; exit 2"
           }
         ]
       }

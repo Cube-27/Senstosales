@@ -1,16 +1,8 @@
-// Behaviour of tools/orchestrator/src/path-guard.ts, the PreToolUse hook that denies MSYS drive paths, run as Claude
-// Code runs it: hook JSON on stdin, exit 2 and a reason on stderr to deny.
-import { join } from "node:path";
+// Behaviour of tools/orchestrator/src/path-guard.ts, the guard that denies MSYS drive paths, run as Claude Code runs
+// the PreToolUse hook (src/guards.ts): hook JSON on stdin, exit 2 and a reason on stderr to deny.
 import { describe, expect, it } from "vite-plus/test";
 
-import { ORCHESTRATOR, run } from "./shell.ts";
-
-const GUARD = join(ORCHESTRATOR, "src", "path-guard.ts");
-
-const runGuard = (payload: string) => run(process.execPath, [GUARD], { input: payload });
-
-const hookInput = (command: string, tool = "Bash"): string =>
-  JSON.stringify({ hook_event_name: "PreToolUse", tool_name: tool, tool_input: { command } });
+import { hookInput, runGuards } from "./shell.ts";
 
 const DENIED = [
   // The command that created a stray worktree under C:/c/Projects.
@@ -45,30 +37,17 @@ const ALLOWED = [
 
 describe("path guard", () => {
   it.each(DENIED)("denies an MSYS drive path with a reason: %j", (command) => {
-    const result = runGuard(hookInput(command));
+    const result = runGuards(hookInput(command));
 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("write C:/Projects/... instead");
   });
 
   it.each(ALLOWED)("lets other commands pass: %j", (command) => {
-    expect(runGuard(hookInput(command))).toMatchObject({ status: 0, stderr: "" });
+    expect(runGuards(hookInput(command))).toMatchObject({ status: 0, stderr: "" });
   });
 
   it("checks PowerShell tool commands too", () => {
-    expect(runGuard(hookInput("git worktree add /c/Projects/x", "PowerShell")).status).toBe(2);
-  });
-
-  it("lets input without a command pass", () => {
-    const payload = JSON.stringify({ tool_name: "Read", tool_input: { file_path: "/c/Projects/x" } });
-
-    expect(runGuard(payload).status).toBe(0);
-  });
-
-  it.each(["not json", "[1]"])("denies unreadable hook input: %j", (payload) => {
-    const result = runGuard(payload);
-
-    expect(result.status).toBe(2);
-    expect(result.stderr).toContain("path guard");
+    expect(runGuards(hookInput("git worktree add /c/Projects/x", "PowerShell")).status).toBe(2);
   });
 });
