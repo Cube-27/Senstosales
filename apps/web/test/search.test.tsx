@@ -192,6 +192,30 @@ describe("global search (SPEC-15 PR 5, INV-24)", () => {
     await waitFor(() => expect(optionTexts(dialog)).toEqual(["SRV 800012"]));
   });
 
+  it("Ctrl+K opens the dialog anywhere and closes it again", async () => {
+    searchApi();
+    renderApp("/");
+    await screen.findByRole("button", { name: /Search.../ });
+    await userEvent.keyboard("{Control>}k{/Control}");
+    expect((await screen.findByRole("dialog", { name: "Quick Search" })).textContent).toContain("SenstoSearch");
+    await userEvent.keyboard("{Control>}k{/Control}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("new results start with the first hit selected", async () => {
+    searchApi((url) => (url.searchParams.get("q") === "12" ? HITS : HITS.slice(1)));
+    renderApp("/");
+    const dialog = await openSearch();
+    const box = within(dialog).getByRole("textbox", { name: /Search POs/ });
+    await userEvent.type(box, "12");
+    await within(dialog).findAllByRole("option");
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    expect(within(dialog).getByRole("option", { selected: true }).textContent).toBe("Invoice 12 · FY 2025-26");
+    await userEvent.type(box, "3");
+    await waitFor(() => expect(optionTexts(dialog)).toHaveLength(3));
+    expect(within(dialog).getByRole("option", { selected: true }).textContent).toBe("DC 12 · FY 2025-26");
+  });
+
   it("remembers answered searches and offers them when the box is empty", async () => {
     searchApi();
     renderApp("/");
