@@ -16,7 +16,7 @@ const LINE_RULES: ReadonlyArray<{ rule: string; pattern: RegExp }> = [
   // Optional +91 or 0 prefix, then 10 digits starting 6-9, bounded by non-digits.
   { rule: "mobile", pattern: /(?<!\d)(?:\+91|0)?[6-9]\d{9}(?!\d)/ },
   // A Downloads folder, or any absolute path under a named user profile (Windows, Linux, macOS).
-  { rule: "local-data-path", pattern: /\b[A-Za-z]:[\\/]+(?:Users[\\/]+[^\\/\s"'`]+|[^\\/\s"'`]*Downloads\b)/i },
+  { rule: "local-data-path", pattern: /\b[a-z]:[\\/]+(?:Users[\\/]+[^\\/\s"'`]+|[^\\/\s"'`]*Downloads\b)/i },
   { rule: "local-data-path", pattern: /(?:^|[\s"'`(=])\/(?:home|Users)\/[^/\s"'`]+\//i },
   { rule: "local-data-path", pattern: /\bbusiness\.db\b|\bbusiness_development\b/i },
   // The owner's private data folder beside this repo; only CLAUDE.md names it, to forbid reading it.
