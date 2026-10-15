@@ -1,5 +1,23 @@
-// Row helpers implementing the legacy documents' pagination as the goldens show it (SPEC-12 §4.1).
+// Cell and row helpers implementing the legacy documents' layout as the goldens show it (SPEC-12 §4.1).
 import type ExcelJS from "exceljs";
+
+export type Value = string | number | null;
+
+/** Text cells are left empty rather than holding "" (D-0304). */
+export function put(ws: ExcelJS.Worksheet, address: string, value: Value): void {
+  ws.getCell(address).value = value === "" ? null : value;
+}
+
+const FILE_NAME_SAFE = /^[\p{L}\p{N}_-]+$/u;
+
+/**
+ * Legacy's download name `<prefix>_<number>.xlsx`: path characters become `_`, anything else unsafe gives `fallback`;
+ * at most 100 characters.
+ */
+export function documentFileName(prefix: string, number: string, fallback: string): string {
+  const name = number.replace(/\.\.|[/\\]/g, "_");
+  return `${prefix}_${FILE_NAME_SAFE.test(name) ? [...name].slice(0, 100).join("") : fallback}.xlsx`;
+}
 
 interface Range {
   top: number;

@@ -5,7 +5,7 @@ import { qtyToString, qtyValue, sumMoney } from "@senstosales/domain";
 import { fmtDate, fmtFixed } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
-import { insertRows } from "./layout.ts";
+import { documentFileName, insertRows, put, type Value } from "./layout.ts";
 import { fillSupplier, type DocumentSupplier } from "./supplier.ts";
 import { templateBytes } from "./templates.ts";
 
@@ -41,13 +41,6 @@ const REMARKS_ROW = 31;
 /** Legacy grows an item row by 18 points for each 95 characters of description. */
 const CHARS_PER_LINE = 95;
 const LINE_HEIGHT = 18;
-
-type Value = string | number | null;
-
-/** Text cells are left empty rather than holding "". */
-function put(ws: ExcelJS.Worksheet, address: string, value: Value): void {
-  ws.getCell(address).value = value === "" ? null : value;
-}
 
 /** Legacy's department column held integers, so a number-only value prints as a number (`0456` -> 456). */
 function departmentCell(departmentNo: string | null): Value {
@@ -142,10 +135,5 @@ export async function buildDcWorkbook(doc: DcDocument): Promise<Uint8Array> {
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }
 
-const FILE_NAME_SAFE = /^[\p{L}\p{N}_-]+$/u;
-
-/** Legacy's download name: path characters become `_`, anything else unsafe gives `export`; at most 100 characters. */
-export function dcFileName(number: string): string {
-  const name = number.replace(/\.\.|[/\\]/g, "_");
-  return `DC_${FILE_NAME_SAFE.test(name) ? [...name].slice(0, 100).join("") : "export"}.xlsx`;
-}
+/** Legacy's DC download name; an unsafe number gives `DC_export.xlsx`. */
+export const dcFileName = (number: string): string => documentFileName("DC", number, "export");
