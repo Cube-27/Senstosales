@@ -3,8 +3,13 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./playwright": "./src/platform/playwright/index.ts"
+  },
   "dependencies": {
-    "@senstosales/schemas": "workspace:*"
+    "@senstosales/schemas": "workspace:*",
+    "cheerio": "^1.2.0",
+    "playwright-core": "^1.64.1"
   }
 }

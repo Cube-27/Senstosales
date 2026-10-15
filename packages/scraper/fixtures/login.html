@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Supplier login (synthetic)</title>
+    <style>
+      .popup {
+        position: fixed;
+        inset: 0;
+        background: #fff;
+      }
+      .popup[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Synthetic page shaped like the portal login: three notices over the form, each OK showing the next. -->
+    <div class="popup" id="notice1">
+      <p>Notice one.</p>
+      <button
+        id="okButton1"
+        onclick="
+          notice1.hidden = true;
+          notice2.hidden = false;
+        "
+      >
+        OK
+      </button>
+    </div>
+    <div class="popup" id="notice2" hidden>
+      <label><input type="checkbox" id="myCheckbox" /> I have read the notice.</label>
+      <button
+        id="okButton"
+        onclick="
+          if (myCheckbox.checked) {
+            notice2.hidden = true;
+            notice3.hidden = false;
+          }
+        "
+      >
+        OK
+      </button>
+    </div>
+    <div class="popup" id="notice3" hidden>
+      <label><input type="checkbox" id="suvidhaAgree" /> I agree.</label>
+      <button id="suvidhaOkBtn" onclick="if (suvidhaAgree.checked) notice3.hidden = true;">OK</button>
+    </div>
+    <form method="post" action="login_check.asp">
+      <table>
+        <tr>
+          <td>Supplier code</td>
+          <td><input type="text" name="supp_code" /></td>
+        </tr>
+        <tr>
+          <td>Password</td>
+          <td><input type="password" name="b2b_passwd" /></td>
+        </tr>
+        <tr>
+          <td>Captcha</td>
+          <td>
+            <table>
+              <tr>
+                <td><img src="captcha.asp?d=1" alt="" width="20" height="30" /></td>
+                <td><img src="captcha.asp?d=2" alt="" width="20" height="30" /></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td>Enter captcha</td>
+          <td><input type="text" name="c" /></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><input type="submit" name="search" value="Login" /></td>
+        </tr>
+      </table>
+    </form>
+  </body>
+</html>
