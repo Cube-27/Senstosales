@@ -5,6 +5,8 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
+    "@senstosales/domain": "workspace:*",
+    "@senstosales/schemas": "workspace:*",
     "exceljs": "^4.4.0",
     "readable-stream": "^4.8.0"
   },

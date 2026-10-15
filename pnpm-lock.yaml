@@ -70,6 +70,12 @@ importers:
 
   packages/documents:
     dependencies:
+      '@senstosales/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@senstosales/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0

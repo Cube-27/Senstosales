@@ -6,6 +6,7 @@ import {
   fmtCount,
   fmtDate,
   fmtDateMonthName,
+  fmtFixed,
   fmtFy,
   fmtMoney,
   fmtMoneyCompact,
@@ -101,6 +102,20 @@ describe("fmtRate: as fmtMoney without the rupee sign", () => {
     ["-12.3", false, "-12.3"],
   ])("%s gemc=%s -> %s", (m, gemc, expected) => {
     expect(fmtRate(money(m), { gemc })).toBe(expected);
+  });
+});
+
+describe("fmtFixed: every decimal place, no grouping (legacy DC consignment value)", () => {
+  it.each([
+    ["0", false, "0.00"],
+    ["1234.5", false, "1234.50"],
+    ["1234567.891", false, "1234567.89"],
+    ["0.005", false, "0.01"],
+    ["719.27966", false, "719.28"],
+    ["719.2796", true, "719.27960"],
+    ["12", true, "12.00000"],
+  ])("%s gemc=%s -> %s", (m, gemc, expected) => {
+    expect(fmtFixed(money(m), { gemc })).toBe(expected);
   });
 });
 

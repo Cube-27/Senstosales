@@ -4,6 +4,7 @@ export {
   fmtCount,
   fmtDate,
   fmtDateMonthName,
+  fmtFixed,
   fmtFy,
   fmtMoney,
   fmtMoneyCompact,
