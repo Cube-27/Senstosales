@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-09 PR 2, SPEC-13 PR 2, flaky hook test fix. Next: SPEC-11 PR 2-5, SPEC-12 PR 1. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
+In flight: SPEC-11 PR 2, SPEC-13 PR 2, flaky hook test fix. Next: SPEC-11 PR 3-5, SPEC-12 PR 1. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -135,11 +135,11 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 
 ## [SPEC-09 — Corpus import and report (local only)](../specs/SPEC-09-corpus-import-report.md)
 
-| PR  | Scope                                       | Status     | Notes                                                                |
-| --- | ------------------------------------------- | ---------- | -------------------------------------------------------------------- |
-| 1   | Corpus import runner                        | done (#54) |                                                                      |
-| 2   | Import report                               | todo       | report lists tooLarge pages so none is dropped silently (#54 review) |
-| 3   | Corpus ingestion assertions and idempotency | todo       | H4                                                                   |
+| PR  | Scope                                       | Status     | Notes                                                                                                                      |
+| --- | ------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Corpus import runner                        | done (#54) |                                                                                                                            |
+| 2   | Import report                               | done (#56) | report lists tooLarge pages so none is dropped silently (#54 review)                                                       |
+| 3   | Corpus ingestion assertions and idempotency | todo       | H4; a default run overwrites the previous import-report.* in the temp folder; handle with the idempotency run (#56 review) |
 
 ## [SPEC-10 — PO, SRV, flags, audit, dashboard and search APIs](../specs/SPEC-10-po-srv-flags-read-api.md)
 
