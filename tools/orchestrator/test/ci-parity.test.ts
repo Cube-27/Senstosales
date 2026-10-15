@@ -33,7 +33,7 @@ describe("CI parity", () => {
   it("runs exactly one check script in every CI job", () => {
     const counts = Object.fromEntries(ciJobs().map(([job, commands]) => [job, checkScriptsOf(commands).length]));
 
-    expect(counts).toEqual({ check: 1, "real-data-scan": 1, licenses: 1, build: 1, audit: 1 });
+    expect(counts).toEqual({ check: 1, "real-data-scan": 1, licenses: 1, build: 1, audit: 1, e2e: 1 });
   });
 
   it("chains every CI check script in job order in verify", () => {

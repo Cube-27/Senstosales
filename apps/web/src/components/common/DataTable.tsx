@@ -114,7 +114,8 @@ function BodyState({ state, error, emptyText, pageSize, colSpan }: BodyStateProp
       <span className="role-empty-text">{emptyText}</span>
     );
   return (
-    <tr>
+    // Every body row has the same 1px bottom border, so the collapsed table is the same height in every state.
+    <tr className="border-b border-transparent">
       <td colSpan={colSpan} className="text-center align-middle" style={{ height: pageSize * ROW_HEIGHT }}>
         {content}
       </td>
@@ -193,7 +194,12 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
                   </tr>
                 ))}
                 {Array.from({ length: Math.max(0, pageSize - bodyRows.length) }, (_, i) => (
-                  <tr key={`filler-${i}`} aria-hidden style={{ height: ROW_HEIGHT }} data-filler>
+                  <tr
+                    key={`filler-${i}`}
+                    aria-hidden
+                    style={{ height: ROW_HEIGHT }}
+                    className="border-b border-transparent"
+                  >
                     <td colSpan={columns.length} />
                   </tr>
                 ))}
