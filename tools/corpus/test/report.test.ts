@@ -66,11 +66,14 @@ SRV job: done
 | Type | Opened by the PO import | Opened by the SRV import | In the database |
 | ---- | ----------------------- | ------------------------ | --------------- |
 | QTY_MISMATCH | 0 | 0 | 0 |
-| DOC_NUMBER_CONFLICT | 0 | 2 | 2 |
+| DOC_NUMBER_CONFLICT | 0 | 0 | 0 |
 | OVER_DISPATCH | 0 | 0 | 0 |
 | OVER_INVOICE | 0 | 0 | 0 |
 | DOC_ON_CANCELLED_ITEM | 0 | 0 | 0 |
 | MANUAL_ADJUSTMENT_OVERLAP | 0 | 0 | 0 |
+| SRV_PO_ITEM_ZERO | 0 | 0 | 0 |
+| SRV_DUPLICATE_ITEM | 0 | 0 | 0 |
+| SRV_UNKNOWN_PO_ITEM | 0 | 0 | 0 |
 
 ## POs by status
 
@@ -96,6 +99,9 @@ const NO_FLAGS = {
   OVER_INVOICE: 0,
   DOC_ON_CANCELLED_ITEM: 0,
   MANUAL_ADJUSTMENT_OVERLAP: 0,
+  SRV_PO_ITEM_ZERO: 0,
+  SRV_DUPLICATE_ITEM: 0,
+  SRV_UNKNOWN_PO_ITEM: 0,
 };
 
 const JSON_REPORT = {
@@ -120,9 +126,10 @@ const JSON_REPORT = {
     ],
     failed: [],
     tooLarge: [],
-    flagsOpened: { ...NO_FLAGS, DOC_NUMBER_CONFLICT: 2 },
+    // The SRV cites a challan and an invoice with no DC or invoice in the corpus: no flag (INV-53).
+    flagsOpened: NO_FLAGS,
   },
-  flagsByType: { ...NO_FLAGS, DOC_NUMBER_CONFLICT: 2 },
+  flagsByType: NO_FLAGS,
   posByStatus: { Pending: 0, Delivered: 0, Closed: 1 },
   srvsPoNotFound: 1,
   logged: [],
