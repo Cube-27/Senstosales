@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DashboardRange } from "../src/index.ts";
-import { averageLeadTimeDays, fyStartOf, pendingDispatchQty, rangeStart } from "../src/index.ts";
+import { averageLeadTimeDays, defaultReportRange, fyStartOf, pendingDispatchQty, rangeStart } from "../src/index.ts";
 import { date, qty } from "./unwrap.ts";
 
 // SPEC-10 §2: the legacy dashboard's period and lead time; the current FY is the default (owner, 2026-10-15).
@@ -37,6 +37,17 @@ describe("averageLeadTimeDays", () => {
     ["only SRVs before the PO date", [po("2025-04-10", "2025-04-01")], null],
   ])("%s -> %s", (_, pos, expected) => {
     expect(averageLeadTimeDays(pos)).toBe(expected);
+  });
+});
+
+// INV-113: a report without a chosen period covers the current FY to today.
+describe("defaultReportRange", () => {
+  it.each([
+    ["2025-06-01", { from: "2025-04-01", to: "2025-06-01" }],
+    ["2026-03-31", { from: "2025-04-01", to: "2026-03-31" }],
+    ["2026-04-01", { from: "2026-04-01", to: "2026-04-01" }],
+  ])("%s -> %j", (today, expected) => {
+    expect(defaultReportRange(date(today))).toEqual(expected);
   });
 });
 

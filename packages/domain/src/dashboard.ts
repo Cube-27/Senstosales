@@ -2,8 +2,8 @@
 import type { IsoDate } from "./dates.ts";
 import { addDays, daysBetween } from "./dates.ts";
 import { fyStartOf } from "./fy.ts";
+import { sumActive } from "./quantities.ts";
 import type { Qty } from "./units.ts";
-import { sumQty } from "./units.ts";
 
 export type DashboardRange = "fy" | "month" | "30d" | "all";
 
@@ -17,6 +17,15 @@ export function rangeStart(range: DashboardRange, today: IsoDate): IsoDate | nul
   if (range === "30d") return addDays(today, -30);
   return null;
 }
+
+/**
+ * INV-113: a report's period when none is chosen: the start of today's FY to today (owner, 2026-10-15; legacy used
+ * yesterday to today on Operations Insights and the 30 days to today on reconciliation).
+ */
+export const defaultReportRange = (today: IsoDate): { from: IsoDate; to: IsoDate } => ({
+  from: fyStartOf(today),
+  to: today,
+});
 
 /**
  * The mean days from PO date to the PO's first SRV, over POs whose first SRV is not earlier than the PO date, in
@@ -35,5 +44,5 @@ export function averageLeadTimeDays(pos: readonly { poDate: IsoDate; firstSrvDat
  */
 export function pendingDispatchQty(items: readonly { ordQty: Qty; dspQty: Qty; cancelled: boolean }[]): Qty {
   // A difference of two milli-unit integers is a milli-unit integer; the brand cannot follow arithmetic.
-  return sumQty(items.filter((i) => !i.cancelled).map((i) => Math.max(0, i.ordQty - i.dspQty) as Qty));
+  return sumActive(items, (i) => Math.max(0, i.ordQty - i.dspQty) as Qty);
 }

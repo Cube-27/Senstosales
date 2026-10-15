@@ -1,7 +1,5 @@
 // `/reports`' URL search (SPEC-14 §2): the tab, paging, the tab's sort, the search text and the date range. Without a
-// range the tabs show the current FY to today (owner, 2026-10-15; legacy showed yesterday to today).
-import type { IsoDate } from "@senstosales/domain";
-import { fyStartOf } from "@senstosales/domain";
+// range the tabs show the domain's default report range, the current FY to today (INV-113).
 import { routes, zIsoDate } from "@senstosales/schemas";
 import { z } from "zod";
 
@@ -30,6 +28,3 @@ export const reconciliationSort = sortIn(zReconciliationSort.options);
 
 /** The search's sort for the daily dispatch tab, or none when it names another tab's column. */
 export const dispatchSort = sortIn(zDispatchSort.options);
-
-/** The tabs' default range: the start of `today`'s FY, to `today`, so the screen is never empty for want of recent POs. */
-export const defaultRange = (today: IsoDate) => ({ from: fyStartOf(today), to: today });

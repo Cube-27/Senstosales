@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { Money } from "../src/index.ts";
-import { extractGemcNumber, gemcNetRate, gemcSourceRate, moneyToString } from "../src/index.ts";
+import { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate, moneyToString } from "../src/index.ts";
 import { money } from "./unwrap.ts";
 
 // The domain package has no DOM or Node types; the test runtime provides the timer.
@@ -89,5 +89,19 @@ describe("INV-19: GEMC number from REMARKS", () => {
     const start = performance.now();
     expect(extractGemcNumber(`GEMC${" ".repeat(50_000)}--`)).toBe(null);
     expect(performance.now() - start).toBeLessThan(200);
+  });
+});
+
+// A2-3: the GEMC number entered on the form, else the one the remarks name (owner, 2026-10-15).
+describe("gemcNumberOf", () => {
+  it.each<[string | null, string | null, string | null]>([
+    ["GEMC-77", null, "GEMC-77"],
+    [" GEMC-77 ", "GEMC- 5116", "GEMC-77"],
+    [" ", "Supply against GEMC- 5116 only", "5116"],
+    [null, "GEMC/88", "88"],
+    [null, "No marker here", null],
+    ["", null, null],
+  ])("entered %j, remarks %j -> %j", (entered, remarks, expected) => {
+    expect(gemcNumberOf(entered, remarks)).toBe(expected);
   });
 });

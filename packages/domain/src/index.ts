@@ -38,7 +38,7 @@ export { matchSrvItem, resolveDocLink } from "./links.ts";
 export type { LineTax, LineTaxInput } from "./tax.ts";
 export { invoiceLineTax, invoiceTotals } from "./tax.ts";
 export type { GemcSourceRate } from "./gemc.ts";
-export { extractGemcNumber, gemcNetRate, gemcSourceRate } from "./gemc.ts";
+export { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate } from "./gemc.ts";
 export type { DeleteBlockReason, DeleteLinks, Issue, IssueCode } from "./guards.ts";
 export {
   acceptIncoming,
@@ -54,4 +54,4 @@ export { deliveryDue, pendingValueOfItems } from "./tracker.ts";
 export type { ListProgress } from "./list-exports.ts";
 export { dcListProgress, dcListTotals, invoiceListProgress } from "./list-exports.ts";
 export type { DashboardRange } from "./dashboard.ts";
-export { averageLeadTimeDays, pendingDispatchQty, rangeStart } from "./dashboard.ts";
+export { averageLeadTimeDays, defaultReportRange, pendingDispatchQty, rangeStart } from "./dashboard.ts";

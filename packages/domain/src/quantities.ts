@@ -54,7 +54,7 @@ export function poUninvoicedQty(items: readonly { uninvoicedQty: Qty; cancelled:
 }
 
 /** INV-07: a cancelled item contributes 0 to a PO total. */
-function sumActive<T extends { cancelled: boolean }>(items: readonly T[], qty: (item: T) => Qty): Qty {
+export function sumActive<T extends { cancelled: boolean }>(items: readonly T[], qty: (item: T) => Qty): Qty {
   return sumQty(items.filter((i) => !i.cancelled).map(qty));
 }
 

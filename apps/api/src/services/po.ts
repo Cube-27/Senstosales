@@ -113,8 +113,13 @@ export function poService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 
     /** The form sends the version it read; a stale one changes nothing (INV-95). */
     async update(id: string, { version, ...form }: PoForm & { version: number }) {
-      const [row, items, lots] = await Promise.all([load(id), itemsOfPo(db, id), lotsOfPo(db, id)]);
-      const fromPage = await hasPoPage(db, await supplierId.require(), row.poNumber);
+      // The PO number cannot change (checked below), so the form's names the stored page.
+      const [row, items, lots, fromPage] = await Promise.all([
+        load(id),
+        itemsOfPo(db, id),
+        lotsOfPo(db, id),
+        supplierId.require().then((supplier) => hasPoPage(db, supplier, form.poNumber)),
+      ]);
       // As legacy: the PO number is the PO's identity; a different one is a different PO.
       if (form.poNumber !== row.poNumber) {
         throw fieldError("po-number-changed", "poNumber", "The PO number cannot be changed.");

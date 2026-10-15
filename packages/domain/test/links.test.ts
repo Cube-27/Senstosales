@@ -64,10 +64,10 @@ describe("INV-39: matchSrvItem", () => {
     // PO ITM 0 as BHEL printed it: no item 0 on this PO.
     [0, null],
   ])("PO item %i -> %s", (poItemNo, expected) => {
-    expect(matchSrvItem({ poItemNo }, poItems)).toBe(expected);
+    expect(matchSrvItem(poItemNo, poItems)).toBe(expected);
   });
 
   it("links PO ITM 0 to a stored item 0", () => {
-    expect(matchSrvItem({ poItemNo: 0 }, [...poItems, { id: "item-0", poItemNo: 0 }])).toBe("item-0");
+    expect(matchSrvItem(0, [...poItems, { id: "item-0", poItemNo: 0 }])).toBe("item-0");
   });
 });

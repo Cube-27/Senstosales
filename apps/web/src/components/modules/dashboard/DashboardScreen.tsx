@@ -2,6 +2,7 @@
 // Funnel, for the chosen period. The open-flag count is the action row the legacy deviation count was (INV-60); no
 // insights (INV-87). While a period loads the previous one stays on screen, and before the first answer every value
 // shows as 0, so nothing changes size (C8).
+import type { DashboardRange } from "@senstosales/domain";
 import { fmtCount, fmtDate, fmtMoneyCompact, fmtQty, type RouteOutput, zMoney, zQty } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -26,7 +27,7 @@ import { ButtonGroup, PageHeader, StatCard, StatCardRow, useToast } from "../../
 import { DOC } from "../documents.ts";
 import { sharePct } from "./funnel.ts";
 
-type Range = "fy" | "month" | "30d" | "all";
+type Range = DashboardRange;
 type Summary = RouteOutput<"dashboard.summary">;
 type Activity = RouteOutput<"dashboard.activity">[number];
 
@@ -67,7 +68,7 @@ export function DashboardScreen() {
 
   const s = summary.data ?? EMPTY;
   const refreshing = summary.isFetching;
-  const label = RANGES.find((r) => r.id === range)?.label ?? "This FY";
+  const label = RANGES.find((r) => r.id === range)?.label ?? RANGES[0].label;
 
   return (
     <div className="flex flex-col gap-4">

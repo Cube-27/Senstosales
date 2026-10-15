@@ -2,7 +2,7 @@
 // the form through PO ingest, and so does this (`storePoStatements`); the form's rate is GST-inclusive on a GEMC PO
 // and ingest derives the net from it (INV-17, INV-20).
 import type { IsoDate, Qty } from "@senstosales/domain";
-import { extractGemcNumber, manualPoValue } from "@senstosales/domain";
+import { gemcNumberOf, manualPoValue } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
@@ -66,8 +66,7 @@ export function formValues(form: PoForm, poDate: IsoDate, kept: Kept): PoValues 
     quotation: form.quotation,
     orderType: form.orderType,
     remarks: form.remarks,
-    // A blank GEMC number field is not a GEMC PO unless the remarks name one, as a page's do (A2-3).
-    gemcNumber: form.gemcNumber?.trim() || (form.remarks === null ? null : extractGemcNumber(form.remarks)),
+    gemcNumber: gemcNumberOf(form.gemcNumber, form.remarks),
     rawHeader: form.rawHeader,
     poStatusCode: kept.header.bhelStatusCode,
     amendNo: kept.header.amendNo,

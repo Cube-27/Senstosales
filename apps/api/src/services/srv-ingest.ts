@@ -215,7 +215,7 @@ function srvItemRow(
     srvId,
     poItemNo: item.poItemNo,
     srvItemNo: item.srvItemNo,
-    poItemId: refs.items ? matchSrvItem(item, refs.items) : null,
+    poItemId: refs.items ? matchSrvItem(item.poItemNo, refs.items) : null,
     srvDate,
     // A page without ORD QTY stores 0, as legacy (EC-31).
     ordQty: item.ordQty ?? ZERO,
