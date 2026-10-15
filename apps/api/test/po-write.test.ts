@@ -269,6 +269,40 @@ describe("PUT /api/po/:id (manual edit)", () => {
     expect(body.items[0]!.lots).toMatchObject([{ lotNo: 1, entryAllowNote: "On request" }]);
   });
 
+  test("a lot number printed twice keeps each lot's own entry-allow values and page row through an edit (A2-10)", async () => {
+    const lots = [
+      { lotNo: 1, delyQty: "4", delyDate: "2025-05-15", destCode: "D1" },
+      { lotNo: 1, delyQty: "6", delyDate: "2025-06-15", destCode: "D1" },
+    ];
+    const body = { ...BODY, items: [{ ...LINE, lots }] };
+    const id = await created(body);
+    // As an upload stores them: each repeated lot with its own values, in page order (ids are made in page order).
+    const ids = await app.db.query(app.db.build.select({ id: poLot.id }).from(poLot).orderBy(poLot.id));
+    await app.db.batch(
+      ids.map(({ id: lotId }, i) =>
+        app.db.build
+          .update(poLot)
+          .set({
+            entryAllowDate: `2025-0${i + 7}-01` as IsoDate,
+            entryAllowNote: `Note ${i + 1}`,
+            rawRow: { "LOT NO": "1", "DELY QTY": lots[i]!.delyQty },
+          })
+          .where(sql`${poLot.id} = ${lotId}`),
+      ),
+    );
+    expect((await update(id, { ...body, version: 1 })).status).toBe(200);
+    const stored = await app.db.query(
+      app.db.build
+        .select({ delyQty: poLot.delyQty, date: poLot.entryAllowDate, note: poLot.entryAllowNote, raw: poLot.rawRow })
+        .from(poLot)
+        .orderBy(poLot.id),
+    );
+    expect(stored).toEqual([
+      { delyQty: 4000, date: "2025-07-01", note: "Note 1", raw: { "LOT NO": "1", "DELY QTY": "4" } },
+      { delyQty: 6000, date: "2025-08-01", note: "Note 2", raw: { "LOT NO": "1", "DELY QTY": "6" } },
+    ]);
+  });
+
   test("a stale version -> 409 and nothing changes (INV-95)", async () => {
     const id = await created();
     await update(id, { ...BODY, remarks: "First", version: 1 });
