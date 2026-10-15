@@ -245,3 +245,11 @@ Cross-cutting, process and owner items.
 - Alternatives: Oxlint rules mirroring Sonar (dropped on owner correction).
 - Why: Owner direction: Sonar already checks the patterns, and every PR carried 10+ issues.
 - Reversible: yes.
+
+### D-0545 — `pnpm start` runs the app locally; the node entry stops cleanly on SIGINT/SIGTERM
+
+- Date: 2026-10-15 · Spec/PR: owner request (#91) · Status: decided
+- Decision: The root `start` script builds `apps/web`, then runs `tools/start/src/start.ts`, a separate workspace package with no dependencies. That script spawns the node entry and turns its `SENSTO_PORT` line into `SenstoSales is running at http://127.0.0.1:<port>  (Ctrl+C to stop)`. The entry takes its stdin-close shutdown on SIGINT and SIGTERM. It registers the handlers before writing the port line, and the close waits until the daily backup job has started. The stdout protocol and C10 are unchanged.
+- Alternatives: a detached child plus signal forwarding in the script (only `pnpm start` would stop cleanly); putting the script in `tools/release` (that package is about releases).
+- Why: Owner asked for one command to run the app. Handling the signals in the entry gives a clean stop however it is run.
+- Reversible: yes.
