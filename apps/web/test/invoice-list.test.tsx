@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { fail, file, renderApp, stubApi } from "./screens.tsx";
@@ -44,6 +45,7 @@ describe("/invoice (SPEC-18 PR 3)", () => {
     renderApp("/invoice");
     await screen.findByRole("link", { name: "INV-18" });
     expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
+      "",
       "Invoice #",
       "Date",
       "Linked DCs",
@@ -53,7 +55,7 @@ describe("/invoice (SPEC-18 PR 3)", () => {
       "Value",
       "Actions",
     ]);
-    expect(cells(rowOf("INV-17")).slice(0, 7)).toEqual([
+    expect(cells(rowOf("INV-17")).slice(1, 8)).toEqual([
       "INV-17",
       "03/05/2025",
       "17",
@@ -62,10 +64,28 @@ describe("/invoice (SPEC-18 PR 3)", () => {
       "6",
       "₹566.4",
     ]);
-    expect(cells(rowOf("INV-18"))[2]).toBe("Direct");
+    expect(cells(rowOf("INV-18"))[3]).toBe("Direct");
     expect(within(rowOf("INV-17")).getByRole("link", { name: "17" }).getAttribute("href")).toBe(`/dc/${DC_ID}`);
     expect(screen.getAllByRole("link", { name: "4100000101" })[0]?.getAttribute("href")).toBe(`/po/${PO_ID}`);
     expect(screen.getByText("Taxable Value").parentElement?.textContent).toContain("1,000");
+  });
+
+  it("keeps the legacy row checkboxes and select-all, which drive no action (C7, EC-63)", async () => {
+    const calls = api([invoiceRow(), invoiceRow({ id: DIRECT_ID, number: "INV-18", kind: "direct", dc: null })]);
+    renderApp("/invoice");
+    await screen.findByRole("link", { name: "INV-18" });
+    const before = calls.length;
+    const box = (name: string) => screen.getByRole("checkbox", { name });
+    const checked = (name: string) => box(name).getAttribute("aria-checked");
+    await userEvent.click(box("Select row 1"));
+    expect(checked("Select row 1")).toBe("true");
+    expect(checked("Select all rows on this page")).toBe("mixed");
+    await userEvent.click(box("Select all rows on this page"));
+    expect(checked("Select row 2")).toBe("true");
+    expect(checked("Select all rows on this page")).toBe("true");
+    await userEvent.click(box("Select all rows on this page"));
+    expect(checked("Select row 1")).toBe("false");
+    expect(calls.length).toBe(before);
   });
 
   it("downloads an invoice's Excel and the register with the list's filters", async () => {

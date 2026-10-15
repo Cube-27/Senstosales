@@ -2,6 +2,7 @@ import type { RouteOutput } from "@senstosales/schemas";
 import { fmtCount, fmtDate, fmtMoney, fmtMoneyCompact } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
@@ -142,6 +143,8 @@ export function InvoiceList() {
     resources: ["invoice", "dc", "po"],
   });
 
+  // The legacy row checkboxes: their selection drives no action (EC-64), but they are on the frozen screen (C7).
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const cols = columns({
     busy: download.busy,
     onDownload: (row) =>
@@ -198,6 +201,7 @@ export function InvoiceList() {
           columns={cols}
           rows={rows.data?.items}
           {...tableQuery(rows)}
+          selection={{ rowKey: (row) => row.id, selected, onChange: setSelected }}
           emptyText="No invoices found."
           {...list.table}
         />
