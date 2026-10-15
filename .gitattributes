@@ -13,5 +13,6 @@
 pnpm-lock.yaml -diff linguist-generated
 # Generated from source and checked for freshness in CI; collapsed in review diffs.
 packages/schemas/generated/** linguist-generated
+**/*.generated.ts linguist-generated
 # CSV goldens are exact bytes (CRLF line ends, a BOM), as the legacy exports wrote them.
 packages/*/test/**/golden/*.csv -text

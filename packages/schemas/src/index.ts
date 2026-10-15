@@ -21,8 +21,8 @@ export {
 } from "./formatters.ts";
 export { type ErrorBody, zErrorBody, zListQuery, zOk, zPaged } from "./api/common.ts";
 export { type PathParams, type RouteDef, routes } from "./routes.ts";
+export { ApiError } from "./errors.ts";
 export {
-  ApiError,
   contentDisposition,
   createClient,
   downloadFileName,

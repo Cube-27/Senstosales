@@ -6,6 +6,7 @@
   "scripts": {
     "gen:migrations": "node tools/gen/src/migrations.ts",
     "gen:openapi": "node tools/gen/src/openapi.ts",
+    "gen:routes": "node tools/gen/src/routes.ts",
     "gen:templates": "node tools/gen/src/templates.ts",
     "import:corpus": "node tools/corpus/src/import.ts",
     "hooks": "vp config --hooks --no-agent",
@@ -20,7 +21,7 @@
   "devDependencies": {
     "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
-    "vite-plus": "^1.1.0"
+    "vite-plus": "^1.2.0"
   },
   "engines": {
     "node": ">=26"

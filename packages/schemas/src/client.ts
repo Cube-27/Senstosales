@@ -4,6 +4,7 @@
 import { z } from "zod";
 
 import { type ErrorBody, zErrorBody } from "./api/common.ts";
+import { ApiError } from "./errors.ts";
 import { type PathParams, type RouteDef, routes } from "./routes.ts";
 
 export type RouteName = keyof typeof routes;
@@ -42,19 +43,6 @@ export type FetchLike = (
   url: string,
   init: { method: string; headers: Record<string, string>; body?: string },
 ) => Promise<FetchResponse>;
-
-/** A non-2xx answer, with the API's error body (`{ code, message, details? }`). */
-export class ApiError extends Error {
-  readonly status: number;
-  readonly body: ErrorBody;
-
-  constructor(status: number, body: ErrorBody) {
-    super(body.message);
-    this.status = status;
-    this.body = body;
-    this.name = "ApiError";
-  }
-}
 
 /** A call's arguments after the route name: the input is optional when every part of it is. */
 export type RouteArgs<N extends RouteName> =

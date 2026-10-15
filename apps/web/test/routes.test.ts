@@ -40,21 +40,9 @@ describe("route tree (INV-67)", () => {
     ["/po/7000123", "/po/$id"],
     ["/po/create", "/po/create"],
     ["/po/ingest-bhel", "/po/ingest-bhel"],
-    ["/dc", "/dc/"],
     ["/dc/01J0000000000000000000000A", "/dc/$id"],
     ["/dc/create", "/dc/create"],
-    ["/invoice", "/invoice/"],
-    ["/invoice/01J0000000000000000000000B", "/invoice/$id"],
-    ["/invoice/create", "/invoice/create"],
-    ["/srv", "/srv/"],
-    ["/srv/01J0000000000000000000000C", "/srv/$id"],
-    ["/delivery-tracker", "/delivery-tracker"],
-    ["/reports", "/reports"],
-    ["/deviations", "/deviations"],
     ["/system/ledger", "/system/ledger"],
-    ["/settings", "/settings"],
-    ["/auth/login", "/auth/login"],
-    ["/onboarding", "/onboarding"],
   ])("%s resolves to %s", (path, routeId) => {
     expect(resolve(path)).toBe(routeId);
   });

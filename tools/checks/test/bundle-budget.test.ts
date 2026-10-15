@@ -1,7 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gzipSync } from "node:zlib";
 import { randomBytes } from "node:crypto";
 
 import { afterAll, describe, expect, it } from "vite-plus/test";
@@ -33,26 +32,25 @@ describe("bundle-budget (INV-104)", () => {
     const bodies = { "index-abc.js": "a".repeat(5000), "react-def.js": "b".repeat(300), "index-ghi.css": "c{}" };
     for (const [name, body] of Object.entries(bodies)) writeFileSync(join(dist, "assets", name), body);
     writeFileSync(join(dist, "assets", "po-route.js"), "x".repeat(100_000));
-    const gz = Object.values(bodies).map((body) => gzipSync(body).byteLength);
     expect(measureShell(dist)).toEqual({
       files: [
-        { path: "assets/index-abc.js", gzip: gz[0] },
-        { path: "assets/react-def.js", gzip: gz[1] },
-        { path: "assets/index-ghi.css", gzip: gz[2] },
+        { path: "assets/index-abc.js", gzip: 41 },
+        { path: "assets/react-def.js", gzip: 25 },
+        { path: "assets/index-ghi.css", gzip: 23 },
       ],
-      total: (gz[0] ?? 0) + (gz[1] ?? 0) + (gz[2] ?? 0),
+      total: 89,
     });
   });
 
   it.each([
-    ["passes a shell of 249 kB gzip", 249_000, 0],
-    ["fails a shell of 251 kB gzip", 251_000, 1],
+    ["passes a shell under 250 kB gzip", 249_000, 0],
+    ["fails a shell over 250 kB gzip", 250_000, 1],
   ])("%s", (_, bytes, expected) => {
     const build = join(dist, String(bytes));
     mkdirSync(build);
     writeFileSync(join(build, "index.html"), '<script type="module" src="/main.js"></script>');
-    // Random bytes do not compress: gzip adds a few bytes of framing, so the size sits just above `bytes`.
-    writeFileSync(join(build, "main.js"), randomBytes(bytes - 1000));
+    // Random bytes do not compress: gzip adds a few dozen bytes of framing, so the size sits just above `bytes`.
+    writeFileSync(join(build, "main.js"), randomBytes(bytes));
     expect(main(build)).toBe(expected);
   });
 

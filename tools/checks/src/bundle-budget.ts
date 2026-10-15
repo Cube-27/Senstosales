@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
-export const BUDGET_BYTES = 250_000;
+const BUDGET_BYTES = 250_000;
 
 /** The `src`/`href` of each script and stylesheet in `html`, as paths under the dist root. */
 export function shellAssets(html: string): string[] {
@@ -31,13 +31,11 @@ export function main(dist: string): number {
   }
   const { files, total } = measureShell(dist);
   for (const f of files) console.log(`${f.path} ${(f.gzip / 1000).toFixed(2)} kB gzip`);
-  const verdict = `${(total / 1000).toFixed(2)} kB gzip of ${BUDGET_BYTES / 1000} kB`;
-  if (total > BUDGET_BYTES) {
-    console.error(`bundle-budget: shell is ${verdict}`);
-    return 1;
-  }
-  console.log(`bundle-budget: shell is ${verdict}`);
-  return 0;
+  const over = total > BUDGET_BYTES;
+  (over ? console.error : console.log)(
+    `bundle-budget: shell is ${(total / 1000).toFixed(2)} kB gzip of ${BUDGET_BYTES / 1000} kB`,
+  );
+  return over ? 1 : 0;
 }
 
 if (import.meta.main) process.exit(main(process.argv[2] ?? "apps/web/dist"));

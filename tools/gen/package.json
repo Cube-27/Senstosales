@@ -10,6 +10,7 @@
     "@senstosales/schemas": "workspace:*"
   },
   "devDependencies": {
+    "@tanstack/router-generator": "^1.167.44",
     "exceljs": "^4.4.0"
   }
 }
