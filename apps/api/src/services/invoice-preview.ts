@@ -2,7 +2,7 @@
 // rates and the lines. Each line shows its item's uninvoiced quantity as information, never as a cap (INV-05, C6).
 // The defaults are the legacy previews' where v1 stores the field; the rest start blank (EC-36, EC-46). The place of
 // supply and each line's HSN start as the settings' defaults (owner, 2026-10-15).
-import { INVOICE_DEFAULTS, type routes } from "@senstosales/schemas";
+import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
 import { dcHasInvoice, dcNotFound, NotFoundError } from "../errors.ts";
@@ -63,12 +63,12 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
     const header = {
       ...BLANK_HEADER,
       ...supplierSnapshotOf(supplierRow),
-      placeOfSupply: defaults[INVOICE_DEFAULTS.placeOfSupply] ?? null,
+      placeOfSupply: defaults["placeOfSupply"] ?? null,
       buyersOrderDate: row.poDate,
       gemcNumber: row.gemcNumber,
       remarks: row.remarks,
     };
-    const hsn = defaults[INVOICE_DEFAULTS.hsn] ?? null;
+    const hsn = defaults["hsn"] ?? null;
     return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, header, hsn, ...rates };
   }
 

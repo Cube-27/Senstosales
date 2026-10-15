@@ -69,7 +69,15 @@ export const zInvoicePreview = z.object({
 const zInvoiceFields = zInvoiceBase.pick({ number: true, invoiceDate: true }).extend(zInvoiceHeader.shape);
 
 /** A line's HSN and packets as typed; blank HSN takes the settings' default, blank packets the DC line's. */
-const zLineExtras = { hsn: z.string().trim().nullable().default(null), packets: zPackets.default(null) };
+const zLineExtras = {
+  hsn: z
+    .string()
+    .trim()
+    .transform((text) => text || null)
+    .nullable()
+    .default(null),
+  packets: zPackets.default(null),
+};
 
 /** DC-sourced lines repeat the DC qty and PO rate, which the service checks (INV-29); PO-direct lines take the PO rate. */
 export const zInvoiceCreateBody = z.discriminatedUnion("kind", [

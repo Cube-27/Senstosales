@@ -10,7 +10,7 @@ import {
   fmtDateInput,
   fmtDateMonthName,
   fmtDaysToDue,
-  fmtFixed,
+  fmtPlain,
   fmtFy,
   fmtFlagType,
   fmtInstantDate,
@@ -150,17 +150,18 @@ describe("fmtRate: as fmtMoney without the rupee sign", () => {
   });
 });
 
-describe("fmtFixed: every decimal place, no grouping (legacy DC consignment value)", () => {
+describe("fmtPlain: to its precision, no grouping, no trailing zeros (the DC's consignment value)", () => {
   it.each([
-    ["0", false, "0.00"],
-    ["1234.5", false, "1234.50"],
+    ["0", false, "0"],
+    ["1234.5", false, "1234.5"],
+    ["123900", false, "123900"],
     ["1234567.891", false, "1234567.89"],
     ["0.005", false, "0.01"],
     ["719.27966", false, "719.28"],
-    ["719.2796", true, "719.27960"],
-    ["12", true, "12.00000"],
+    ["719.2796", true, "719.2796"],
+    ["12", true, "12"],
   ])("%s gemc=%s -> %s", (m, gemc, expected) => {
-    expect(fmtFixed(money(m), { gemc })).toBe(expected);
+    expect(fmtPlain(money(m), { gemc })).toBe(expected);
   });
 });
 

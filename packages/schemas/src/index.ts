@@ -8,7 +8,7 @@ export {
   fmtDateInput,
   fmtDateMonthName,
   fmtDaysToDue,
-  fmtFixed,
+  fmtPlain,
   fmtFlagType,
   fmtFy,
   fmtInstantDate,
@@ -50,4 +50,4 @@ export { zInvoice, zInvoiceHeader, zInvoiceItem } from "./entities/invoice.ts";
 export { zJob, zJobEvent } from "./entities/job.ts";
 export { zPo, zPoItem, zPoLot } from "./entities/po.ts";
 export { zSrv, zSrvItem } from "./entities/srv.ts";
-export { INVOICE_DEFAULTS, zBuyer, zSetting, zSupplier, zSupplierSnapshot } from "./entities/supplier.ts";
+export { zBuyer, zSetting, zSupplier, zSupplierSnapshot } from "./entities/supplier.ts";

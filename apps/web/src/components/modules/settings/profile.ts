@@ -1,8 +1,10 @@
 // The settings form (SPEC-15 §2): the supplier profile, the GST rates and the legacy System Defaults selects, as the
 // form edits them (text) and as the API takes them. The form state is derived from the server value and never stored
 // elsewhere (§4.1). Rates are validated by the shared `zGstPct` codec, the one parser of percentages (C3).
-import { INVOICE_DEFAULTS, type RouteOutput, zGstPct } from "@senstosales/schemas";
+import { type RouteOutput, zGstPct } from "@senstosales/schemas";
 import { z } from "zod";
+
+import { blankToNull } from "../../../lib/text.ts";
 
 type Supplier = RouteOutput<"supplier.get">;
 type Settings = RouteOutput<"settings.get">;
@@ -101,7 +103,7 @@ const pref = (settings: Settings, key: keyof typeof PREF): string =>
 
 /** The `invoiceDefaults` fields as the form edits them. */
 const defaultFields = (stored: Readonly<Record<string, string>>) =>
-  Object.fromEntries(DEFAULT_FIELDS.map((field) => [field, stored[INVOICE_DEFAULTS[field]] ?? ""])) as Record<
+  Object.fromEntries(DEFAULT_FIELDS.map((field) => [field, stored[field] ?? ""])) as Record<
     (typeof DEFAULT_FIELDS)[number],
     string
   >;
@@ -136,9 +138,9 @@ const orNull = (text: string): string | null => (text.trim() === "" ? null : tex
 export function supplierBody(stored: Omit<Supplier, "id">, fields: z.output<typeof zSupplierFields>) {
   const invoiceDefaults: Record<string, string> = { ...stored.invoiceDefaults };
   for (const field of DEFAULT_FIELDS) {
-    const value = orNull(fields[field].trim());
-    if (value === null) delete invoiceDefaults[INVOICE_DEFAULTS[field]];
-    else invoiceDefaults[INVOICE_DEFAULTS[field]] = value;
+    const value = blankToNull(fields[field]);
+    if (value === null) delete invoiceDefaults[field];
+    else invoiceDefaults[field] = value;
   }
   return {
     ...stored,

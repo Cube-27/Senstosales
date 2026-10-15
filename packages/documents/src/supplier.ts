@@ -1,6 +1,5 @@
 // The supplier identity a document prints, filled into the templates' `{supplier.<field>}` placeholders (SPEC-12
 // §1, D-0298). The description and jurisdiction have no supplier column; they are `invoiceDefaults` keys.
-import { INVOICE_DEFAULTS } from "@senstosales/schemas";
 import type ExcelJS from "exceljs";
 
 export interface DocumentSupplier {
@@ -36,8 +35,8 @@ export function documentSupplier(profile: SupplierProfile, snapshot: SupplierSna
     contact: snapshot.supplierContact || profile.contact,
     state: profile.state,
     stateCode: profile.stateCode,
-    description: profile.invoiceDefaults[INVOICE_DEFAULTS.description] ?? null,
-    jurisdiction: profile.invoiceDefaults[INVOICE_DEFAULTS.jurisdiction] ?? null,
+    description: profile.invoiceDefaults["description"] ?? null,
+    jurisdiction: profile.invoiceDefaults["jurisdiction"] ?? null,
   };
 }
 

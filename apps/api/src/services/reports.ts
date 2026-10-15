@@ -32,7 +32,7 @@ import {
   reportColumns,
   reportItems,
 } from "../repositories/reports.ts";
-import { contains, inBatches } from "../repositories/sql.ts";
+import { contains, inBatches, inRange } from "../repositories/sql.ts";
 import { findSupplier } from "../repositories/supplier.ts";
 import { gcFile, mapped, summaryFile, xlsxFile } from "./exports.ts";
 import { byNumber, LIST_READ_PAGE, pageOfRows } from "./paging.ts";
@@ -89,25 +89,32 @@ const reconciliationCells = (r: ReturnType<typeof reportColumns>) => ({
 const summaryTotal = (total: Qty, units: ReadonlySet<string>) =>
   units.size === 1 ? `${qtyToString(total)} ${[...units][0]}` : qtyNumber(total);
 
+/** A summary's quantity cell: the quantity and its unit, `10 NOS`; the quantity alone without a unit (EC-54). */
+const qtyWithUnit = (q: Qty, unit: string | null) => `${qtyToString(q)} ${unit ?? ""}`.trim();
+
 /** The daily dispatch TOTAL as the owner's summaries print it: each unit's sum, `42.5 Nos + 1 Set`; none gives 0. */
 function dispatchTotal(byUnit: ReadonlyMap<string, Qty>) {
-  const parts = [...byUnit].map(([unit, qty]) => `${qtyToString(qty)} ${unit}`.trim());
+  const parts = [...byUnit].map(([unit, qty]) => qtyWithUnit(qty, unit));
   return parts.length === 0 ? 0 : parts.join(" + ");
 }
+
+/** A GEMC number that is not blank. */
+const hasText = (n: string | null): n is string => Boolean(n?.trim());
 
 /** A summary's description: repeated lines once; without one the material code, else `No Description` (legacy). */
 const summaryDescription = (r: { description: string | null; materialCode: string | null }) =>
   foldRepeatedLines(r.description ?? r.materialCode ?? "No Description");
 
-/** The daily dispatch tab's rows: DC lines dated in the range, today without one, narrowed by its search box. */
-function dispatchWhere(q: DispatchQuery, today: IsoDate) {
-  return and(gte(dc.dcDate, q.from ?? today), lte(dc.dcDate, q.to ?? today), searched(q.q));
-}
+/** The daily dispatch tab's range: today without one. */
+const dispatchRange = (q: DispatchQuery, today: IsoDate) => ({ from: q.from ?? today, to: q.to ?? today });
 
-/**
- * A DC line as the tab lists it: GEMC from the DC's invoice, else its PO's; the invoice made from the DC, else the one
- * the user filled in on it (EC-47).
- */
+/** A DC line's GEMC number: its DC's invoice's, else its PO's, as the pending summary takes it. */
+const dispatchGemc = (r: DispatchLine) => [r.invoiceGemcNumber, r.poGemcNumber].find(hasText) ?? null;
+
+/** The invoice a DC line cites, as the DC sheet does: the one filled in on the DC (EC-47), else the one made from it. */
+const dispatchInvoice = (r: DispatchLine) => r.dcInvoiceNumber ?? r.invoiceNumber;
+
+/** A DC line as the tab lists it. */
 const dispatchColumns = (r: DispatchLine) => ({
   dcItemId: r.dcItemId,
   dcId: r.dcId,
@@ -120,8 +127,8 @@ const dispatchColumns = (r: DispatchLine) => ({
   unit: r.unit,
   dspQty: r.dspQty,
   packets: r.packets,
-  gemcNumber: r.invoiceGemcNumber?.trim() || r.poGemcNumber?.trim() || null,
-  invoiceNumber: r.invoiceNumber ?? r.dcInvoiceNumber,
+  gemcNumber: dispatchGemc(r),
+  invoiceNumber: dispatchInvoice(r),
   departmentNo: r.departmentNo,
 });
 
@@ -142,7 +149,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     );
     const dcs = Map.groupBy(docs.dcs, (ref) => ref.poItemId);
     const invoices = Map.groupBy(docs.invoices, (ref) => ref.poItemId);
-    const gemc = (n: string | null) => (n?.trim() ? [n] : []);
+    const gemc = (n: string | null) => (hasText(n) ? [n] : []);
     return page.map((item) => {
       const own = invoices.get(item.poItemId) ?? [];
       const invoiceGemc = [...new Set(own.flatMap((i) => gemc(i.gemcNumber)))];
@@ -200,7 +207,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
       return {
         serial,
         description: summaryDescription(r),
-        qty: `${qtyToString(r.ordQty)} ${r.unit ?? ""}`.trim(),
+        qty: qtyWithUnit(r.ordQty, r.unit),
         // No v1 column (EC-41).
         packets: 0,
         poNumber: r.poNumber,
@@ -213,33 +220,30 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     return { rows, total: () => ({ qty: summaryTotal(ordered, units), packets: 0 }) };
   }
 
-  /** The daily dispatch tab's DC lines in order. */
-  const dispatchRows = (query: DispatchQuery, pageSize?: number) =>
-    keysetRows(
-      listKey(DISPATCH_SORTS, BY_DISPATCH, query),
-      (page) => dispatchLines(db, dispatchWhere(query, clock.today()), page),
-      pageSize,
-    );
+  /** The daily dispatch tab's DC lines dated in `range`, narrowed by its search box, in order. */
+  const dispatchRows = (query: DispatchQuery, range: { from: IsoDate; to: IsoDate }, pageSize?: number) => {
+    const where = and(inRange(dc.dcDate, range), searched(query.q));
+    return keysetRows(listKey(DISPATCH_SORTS, BY_DISPATCH, query), (page) => dispatchLines(db, where, page), pageSize);
+  };
 
   /** The DC lines as summary cells, adding up each unit's quantity and the packets for the TOTAL row as they pass. */
-  function dispatchSummaryRows(query: DispatchQuery) {
+  function dispatchSummaryRows(lines: AsyncIterable<DispatchLine>) {
     const byUnit = new Map<string, Qty>();
     let packets = 0;
     let serial = 0;
-    const rows = mapped(dispatchRows(query), (line) => {
-      const r = dispatchColumns(line);
+    const rows = mapped(lines, (r) => {
       const unit = r.unit?.trim() ?? "";
       byUnit.set(unit, sumQty([byUnit.get(unit) ?? (0 as Qty), r.dspQty]));
       packets += r.packets ?? 0;
       serial += 1;
       return {
         serial,
-        description: summaryDescription(line),
-        qty: `${qtyToString(r.dspQty)} ${unit}`.trim(),
+        description: summaryDescription(r),
+        qty: qtyWithUnit(r.dspQty, unit),
         packets: r.packets ?? "",
         poNumber: r.poNumber,
-        gemcNumber: r.gemcNumber ?? "",
-        invoiceNumbers: r.invoiceNumber ?? "",
+        gemcNumber: dispatchGemc(r) ?? "",
+        invoiceNumbers: dispatchInvoice(r) ?? "",
         dcNumbers: r.dcNumber,
         delivered: r.departmentNo ?? "",
       };
@@ -268,10 +272,9 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
 
     /** The daily dispatch summary for the range, today without one; the heading's date is the range's. */
     async dispatchExport(query: DispatchQuery) {
-      const today = clock.today();
-      const range = { from: query.from ?? today, to: query.to ?? today };
+      const range = dispatchRange(query, clock.today());
       const dates = [...new Set([range.from, range.to])].map(fmtDateDashed).join(" to ");
-      const { rows, total } = dispatchSummaryRows(query);
+      const { rows, total } = dispatchSummaryRows(dispatchRows(query, range));
       return summaryFile(EXPORTS.dispatch.fileName(range), await summaryHeading(dates), rows, total);
     },
 
@@ -312,8 +315,11 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     },
     reconciliation: (query: ReconciliationQuery & Paged) =>
       pageOfRows(reconciliationRows(query, LIST_READ_PAGE), query),
-    dispatch: (query: DispatchQuery & Paged) =>
-      pageOfRows(mapped(dispatchRows(query, LIST_READ_PAGE), dispatchColumns), query),
+    async dispatch(query: DispatchQuery & Paged) {
+      const rows = dispatchRows(query, dispatchRange(query, clock.today()), LIST_READ_PAGE);
+      const { items: page, total } = await pageOfRows(rows, query);
+      return { items: page.map(dispatchColumns), total };
+    },
   };
 }
 

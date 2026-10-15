@@ -53,18 +53,17 @@ export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-
 export const fmtQty = (q: Qty): string => fmtCount(roundDiv(q, ONE_UNIT));
 
 /** A unit rate without the rupee sign (legacy rate cells draw it apart): `1234.50` -> `"1,234.5"`. */
-export function fmtRate(m: Money, { gemc }: Precision): string {
-  const [int = "", frac] = moneyToString(gemc ? m : roundMoney(m, 2)).split(".");
+export function fmtRate(m: Money, precision: Precision): string {
+  const [int = "", frac] = fmtPlain(m, precision).split(".");
   const sign = int.startsWith("-") ? "-" : "";
   return sign + groupIndian(int.slice(sign.length)) + (frac === undefined ? "" : `.${frac}`);
 }
 
-/** An amount with every decimal place and no grouping, as the legacy DC prints one: `1234.5` -> `"1234.50"`. */
-export function fmtFixed(m: Money, { gemc }: Precision): string {
-  const dp = gemc ? 5 : 2;
-  const [int = "", frac = ""] = moneyToString(roundMoney(m, dp)).split(".");
-  return `${int}.${frac.padEnd(dp, "0")}`;
-}
+/**
+ * An amount to its precision (GEMC 5 dp, others 2, A-12) without grouping or trailing zeros, as the owner's DCs print
+ * the consignment value: `1234.50` -> `"1234.5"`, `123900` -> `"123900"`.
+ */
+export const fmtPlain = (m: Money, { gemc }: Precision): string => moneyToString(gemc ? m : roundMoney(m, 2));
 
 /** A full-precision amount: `-848.755` -> `"-₹848.76"`; GEMC `719.27966` -> `"₹719.27966"`. */
 export function fmtMoney(m: Money, precision: Precision): string {

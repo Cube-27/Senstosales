@@ -2,8 +2,8 @@
 // of items (A-2, INV-69), laid out as the owner's DCs print (owner, 2026-10-15). Eight item rows fit the template;
 // more are inserted before its last, blank, item row.
 import type { IsoDate, Money } from "@senstosales/domain";
-import { moneyToString, qtyValue, roundMoney, sumMoney } from "@senstosales/domain";
-import { fmtDate } from "@senstosales/schemas";
+import { qtyValue, sumMoney } from "@senstosales/domain";
+import { fmtDate, fmtPlain } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
 import {
@@ -61,17 +61,17 @@ function departmentCell(departmentNo: string | null): Value {
 /** A DC or PO number of digits alone prints as a number, as the owner's DCs show it; `075` keeps its zero as text. */
 const numberCell = (text: string): Value => (/^(0|[1-9]\d{0,14})$/.test(text) ? Number(text) : text);
 
+type Cited = { number: string; date: string };
+
 /** The invoice the sheet cites: the one the user filled in (EC-47), else the DC's own; no date prints none. */
-function citedInvoice({ dc, invoice }: DcDocument): { number: string; date: string } {
+function citedInvoice({ dc, invoice }: DcDocument): Cited {
   const own = dc.invoiceNumber === null ? invoice : null;
   const date = dc.invoiceDate ?? own?.invoiceDate ?? null;
   return { number: dc.invoiceNumber ?? own?.number ?? "", date: date === null ? "" : fmtDate(date) };
 }
 
-function writeHeader(ws: ExcelJS.Worksheet, doc: DcDocument): void {
-  const { dc, po } = doc;
+function writeHeader(ws: ExcelJS.Worksheet, { dc, po }: DcDocument, invoice: Cited): void {
   const [name, firstLine, rest] = consigneeLines(dc);
-  const invoice = citedInvoice(doc);
   const cells: Array<[string, Value]> = [
     ["B9", name],
     ["B10", firstLine],
@@ -94,20 +94,15 @@ function noteLines(remarks: string | null): string[] {
     .map((note) => note.trim())
     .filter((note) => note !== "");
   if (notes.length === 0) return ["TC No  dt.  Of"];
-  const last = notes.slice(NOTE_SLOTS - 1).join("  ");
-  return last === "" ? notes : [...notes.slice(0, NOTE_SLOTS - 1), last];
+  if (notes.length <= NOTE_SLOTS) return notes;
+  return [...notes.slice(0, NOTE_SLOTS - 1), notes.slice(NOTE_SLOTS - 1).join("  ")];
 }
-
-/** The consignment value with no trailing zeros (`123900`, `2157.84`): GEMC at 5 dp, others at 2 (INV-18). */
-const consignmentValue = (total: Money, gemc: boolean): string => moneyToString(gemc ? total : roundMoney(total, 2));
 
 /**
  * The numbered remarks, the GC line (INV-36), the user's notes and the consignment value; returns the last row, the
  * template's signature block 10 and 11 rows down.
  */
-function writeFooter(ws: ExcelJS.Worksheet, doc: DcDocument, at: number): number {
-  const { dc, po, items } = doc;
-  const invoice = citedInvoice(doc);
+function writeFooter(ws: ExcelJS.Worksheet, { dc, po, items }: DcDocument, invoice: Cited, at: number): number {
   const total = sumMoney(items.map((item) => qtyValue(item.dspQty, item.rate)));
   const notes = noteLines(dc.remarks).flatMap((note, i): Array<[number, string, Value]> => [
     [3 + i, "B", 4 + i],
@@ -122,7 +117,8 @@ function writeFooter(ws: ExcelJS.Worksheet, doc: DcDocument, at: number): number
     [2, "C", `Dimension Report ${(dc.ourRef ?? "").trim()}`.trimEnd()],
     ...notes,
     [6, "C", "Lot No."],
-    [7, "C", `Consignment Value of BHEL PO ${consignmentValue(total, po.isGemc)}`],
+    // No trailing zeros (`123900`, `2157.84`): GEMC at 5 dp, others at 2 (INV-18).
+    [7, "C", `Consignment Value of BHEL PO ${fmtPlain(total, { gemc: po.isGemc })}`],
   ];
   for (const [offset, column, value] of cells) put(ws, `${column}${at + offset}`, value);
   return at + 11;
@@ -137,15 +133,16 @@ export async function buildDcWorkbook(doc: DcDocument): Promise<Uint8Array> {
   const items = doc.items.toSorted((a, b) => a.poItemNo - b.poItemNo);
   const extra = Math.max(0, items.length - ITEM_SLOTS);
 
+  const invoice = citedInvoice(doc);
   fillSupplier(ws, doc.supplier);
-  writeHeader(ws, doc);
+  writeHeader(ws, doc, invoice);
   insertRows(ws, BLANK_ROW, extra, BLANK_ROW - 1);
   // Unused slots are hidden while the items fit; the blank row under the items always shows.
   for (let row = FIRST_ITEM_ROW; row <= BLANK_ROW + extra; row++) {
     ws.getRow(row).hidden = extra === 0 && row >= FIRST_ITEM_ROW + items.length && row < BLANK_ROW;
   }
   writeItemRows(ws, items, { firstRow: FIRST_ITEM_ROW, qtyColumn: "I", qtyGap: "  ", lineHeight: LINE_HEIGHT });
-  const lastRow = writeFooter(ws, doc, REMARKS_ROW + extra);
+  const lastRow = writeFooter(ws, doc, invoice, REMARKS_ROW + extra);
   setPortraitPage(ws, lastRow, extra === 0 ? 1 : 0);
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }

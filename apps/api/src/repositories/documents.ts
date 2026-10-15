@@ -12,7 +12,11 @@ const poColumns = { poNumber: po.poNumber, poDate: po.poDate, isGemc: po.isGemc 
 export async function dcForDocument(db: Db, id: string) {
   const [row] = await db.query(
     db.build
-      .select({ dc: apiColumns(dc), po: poColumns, invoiceNumber: invoice.number, invoiceDate: invoice.invoiceDate })
+      .select({
+        dc: apiColumns(dc),
+        po: poColumns,
+        invoice: { number: invoice.number, invoiceDate: invoice.invoiceDate },
+      })
       .from(dc)
       .innerJoin(po, eq(po.id, dc.poId))
       // A DC has at most one invoice (INV-28).

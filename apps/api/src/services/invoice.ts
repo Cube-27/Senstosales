@@ -18,7 +18,7 @@ import {
   validateDcInvoiceLines,
   validateDirectInvoiceLines,
 } from "@senstosales/domain";
-import { INVOICE_DEFAULTS, type routes } from "@senstosales/schemas";
+import type { routes } from "@senstosales/schemas";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 
@@ -160,7 +160,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       gstRatesOf(db, supplier),
       findSupplier(db),
     ]);
-    const defaultHsn = supplierRow?.invoiceDefaults[INVOICE_DEFAULTS.hsn] ?? null;
+    const defaultHsn = supplierRow?.invoiceDefaults["hsn"] ?? null;
     const { poId, dc } = source;
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
     const row = await loadPo(db, poId);
@@ -179,7 +179,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       supplierId: supplier,
       invoiceId: id,
       ...line,
-      hsn: line.hsn || defaultHsn,
+      hsn: line.hsn ?? defaultHsn,
       ...invoiceLineTax({ ...line, cgstPct, sgstPct, gemc: row.isGemc }),
     }));
     const totals = invoiceTotals(itemRows);
