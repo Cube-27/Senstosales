@@ -3,6 +3,7 @@ import { fyOf, parseIsoDate, parseMoney, parseQty } from "@senstosales/domain";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
+  fmtAmountWords,
   fmtCount,
   fmtDate,
   fmtDateMonthName,
@@ -228,5 +229,37 @@ describe("fmtDaysToDue: the tracker export's Days Overdue, as legacy (no singula
     [14, "Due in 14 days"],
   ])("%i -> %s", (days, expected) => {
     expect(fmtDaysToDue(days)).toBe(expected);
+  });
+});
+
+describe("fmtAmountWords: legacy Indian rupee words", () => {
+  it.each([
+    ["0", "Rupees Zero Only"],
+    ["1", "Rupees One Only"],
+    ["15", "Rupees Fifteen Only"],
+    ["40", "Rupees Forty Only"],
+    ["99", "Rupees Ninety Nine Only"],
+    ["100", "Rupees One Hundred Only"],
+    ["101", "Rupees One Hundred and One Only"],
+    ["1180.5", "Rupees One Thousand One Hundred and Eighty and Paise Fifty Only"],
+    ["100000", "Rupees One Lakh Only"],
+    [
+      "12345678.9",
+      "Rupees One Crore Twenty Three Lakh Forty Five Thousand Six Hundred and Seventy Eight and Paise Ninety Only",
+    ],
+    ["2157.83898", "Rupees Two Thousand One Hundred and Fifty Seven and Paise Eighty Four Only"],
+    ["0.00499", "Rupees Zero Only"],
+    ["0.005", "Rupees Zero and Paise One Only"],
+    ["5.996", "Rupees Five and Paise One Hundred Only"],
+    [
+      `${"9".repeat(10)}.99`, // just under a thousand crore
+      "Rupees Nine Hundred and Ninety Nine Crore Ninety Nine Lakh Ninety Nine Thousand Nine Hundred and Ninety Nine and Paise Ninety Nine Only",
+    ],
+  ])("%s -> %s", (m, expected) => {
+    expect(fmtAmountWords(money(m))).toBe(expected);
+  });
+
+  it("fails from a thousand crore, as legacy did (EC-49)", () => {
+    expect(() => fmtAmountWords(money("10000000000"))).toThrow("Amount too large to write in words");
   });
 });

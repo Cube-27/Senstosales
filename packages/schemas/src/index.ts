@@ -1,6 +1,7 @@
 export { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zPoId, zQty, zTextMap } from "./primitives.ts";
 export { zFlagStatus, zFlagType, zInvoiceKind, zItemStatus, zJobStatus, zJobType, zPoStatus } from "./enums.ts";
 export {
+  fmtAmountWords,
   fmtCount,
   fmtDate,
   fmtDateMonthName,
