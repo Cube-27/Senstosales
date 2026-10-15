@@ -7,6 +7,7 @@ import { buyersRoutes } from "./buyers.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { deliveryTrackerRoutes } from "./delivery-tracker.ts";
 import { dcRoutes } from "./dc.ts";
+import { documentsRoutes } from "./documents.ts";
 import { flagsRoutes } from "./flags.ts";
 import { invoiceRoutes } from "./invoice.ts";
 import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
@@ -44,5 +45,6 @@ export function apiRoutes(services: Services): Handlers {
     ...dashboardRoutes(services.dashboard),
     ...searchRoutes(services.search),
     ...registersRoutes(services.registers),
+    ...documentsRoutes(services.documents),
   };
 }

@@ -11,6 +11,7 @@ import { createBuyersService } from "./buyers.ts";
 import { dashboardService } from "./dashboard.ts";
 import { deliveryTrackerService } from "./delivery-tracker.ts";
 import { dcService } from "./dc.ts";
+import { documentsService } from "./documents.ts";
 import { flagsService } from "./flags.ts";
 import { folderImportService } from "./folder-import.ts";
 import { invoiceService } from "./invoice.ts";
@@ -68,6 +69,7 @@ export function createServices(deps: ServiceDeps) {
     dashboard: dashboardService({ ...deps, tracker }),
     search: searchService(deps),
     registers: registersService(deps),
+    documents: documentsService(deps),
   };
 }
 
