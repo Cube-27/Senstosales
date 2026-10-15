@@ -1,7 +1,9 @@
 import { fmtCount } from "@senstosales/schemas/formatters";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { api } from "../../lib/api.ts";
+import { isActive, jobQuery } from "../../lib/jobs.ts";
 import { FolderOpen, Loading } from "../../lib/icons.ts";
 import { pickHtmlFolder, stageFolder } from "../../lib/upload.ts";
 import { Button } from "../ui/button.tsx";
@@ -11,7 +13,7 @@ import { JobProgress } from "./JobProgress.tsx";
 export interface FolderImportProps {
   readonly open: boolean;
   onClose(): void;
-  /** Called when an import job ends, so the screen behind can refresh. */
+  /** Called when the dialog closes after a job ran, so the screen behind can refresh. */
   onImported?(): void;
 }
 
@@ -21,14 +23,18 @@ type Kind = "po" | "srv";
 type Run =
   | { readonly step: "idle" }
   | { readonly step: "staging"; readonly count: number }
-  | { readonly step: "job"; readonly jobId: string; readonly tooLarge: readonly string[]; readonly ended: boolean }
+  | { readonly step: "job"; readonly jobId: string; readonly tooLarge: readonly string[] }
   | { readonly step: "error"; readonly message: string };
 
 const IDLE: Run = { step: "idle" };
 const LABEL: Record<Kind, string> = { po: "PO", srv: "SRV" };
 const STEP: Record<Kind, string> = { po: "1.", srv: "2." };
 
-const running = (run: Run) => run.step === "staging" || (run.step === "job" && !run.ended);
+/** Whether the folder's import is under way: staging, or its job not yet ended (read from the job's own query). */
+function useRunning(run: Run): boolean {
+  const job = useQuery({ ...jobQuery(run.step === "job" ? run.jobId : ""), enabled: run.step === "job" }).data?.job;
+  return run.step === "staging" || (run.step === "job" && (job === undefined || isActive(job)));
+}
 
 /** Picks a folder, stages its HTML files and starts the folder-import job; never throws. */
 async function startImport(kind: Kind, update: (run: Run) => void): Promise<void> {
@@ -47,7 +53,7 @@ async function startImport(kind: Kind, update: (run: Run) => void): Promise<void
     }
     const type = kind === "po" ? "po.import-folder" : "srv.import-folder";
     const job = await api.request("jobs.start", { body: { type, stagingId: staged.stagingId } });
-    update({ step: "job", jobId: job.id, tooLarge: staged.tooLarge, ended: false });
+    update({ step: "job", jobId: job.id, tooLarge: staged.tooLarge });
   } catch (error) {
     update({ step: "error", message: error instanceof Error ? error.message : "The import could not start." });
   }
@@ -56,9 +62,9 @@ async function startImport(kind: Kind, update: (run: Run) => void): Promise<void
 function FolderStep(props: {
   readonly kind: Kind;
   readonly run: Run;
+  readonly running: boolean;
   readonly disabled: boolean;
   onPick(): void;
-  onEnd(): void;
 }) {
   const { kind, run } = props;
   const label = LABEL[kind];
@@ -68,7 +74,7 @@ function FolderStep(props: {
         <h3 className="role-section-title">
           {STEP[kind]} {label} folder
         </h3>
-        <Button variant="outline" size="sm" disabled={props.disabled || running(run)} onClick={props.onPick}>
+        <Button variant="outline" size="sm" disabled={props.disabled || props.running} onClick={props.onPick}>
           <FolderOpen aria-hidden />
           Choose {label} folder
         </Button>
@@ -77,7 +83,7 @@ function FolderStep(props: {
       <div className="h-72">
         {run.step === "job" ? (
           <div className="flex h-full flex-col gap-1">
-            <JobProgress key={run.jobId} jobId={run.jobId} onEnd={props.onEnd} />
+            <JobProgress key={run.jobId} jobId={run.jobId} />
             <p className="truncate role-helper-text text-warning" title={run.tooLarge.join(", ")}>
               {run.tooLarge.length > 0 && `Not uploaded (larger than 10 MB): ${run.tooLarge.join(", ")}`}
             </p>
@@ -103,21 +109,16 @@ function FolderStep(props: {
  */
 export function FolderImport({ open, onClose, onImported }: FolderImportProps) {
   const [runs, setRuns] = useState<Record<Kind, Run>>({ po: IDLE, srv: IDLE });
-  const busy = running(runs.po) || running(runs.srv);
+  const running: Record<Kind, boolean> = { po: useRunning(runs.po), srv: useRunning(runs.srv) };
+  const busy = running.po || running.srv;
   const update = (kind: Kind) => (run: Run) => setRuns((all) => ({ ...all, [kind]: run }));
-  const ended = (kind: Kind) => () => {
-    setRuns((all) => {
-      const run = all[kind];
-      return run.step === "job" ? { ...all, [kind]: { ...run, ended: true } } : all;
-    });
-    onImported?.();
-  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
         if (next || busy) return;
+        if (runs.po.step === "job" || runs.srv.step === "job") onImported?.();
         setRuns({ po: IDLE, srv: IDLE });
         onClose();
       }}
@@ -137,9 +138,9 @@ export function FolderImport({ open, onClose, onImported }: FolderImportProps) {
               kind={kind}
               run={runs[kind]}
               // One job runs at a time (INV-98); POs go first so SRV lines find their POs (§7.4).
-              disabled={running(runs[kind === "po" ? "srv" : "po"])}
+              running={running[kind]}
+              disabled={running[kind === "po" ? "srv" : "po"]}
               onPick={() => void startImport(kind, update(kind))}
-              onEnd={ended(kind)}
             />
           ))}
         </div>

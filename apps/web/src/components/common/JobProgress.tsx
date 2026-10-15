@@ -1,6 +1,6 @@
 import { fmtCount, fmtFlagType } from "@senstosales/schemas/formatters";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { api } from "../../lib/api.ts";
 import { cn } from "../../lib/cn.ts";
@@ -11,8 +11,6 @@ import { useToast } from "./Toast.tsx";
 
 export interface JobProgressProps {
   readonly jobId: string;
-  /** Called once, with the job, when it stops running (done, failed or cancelled). */
-  onEnd?(job: Job): void;
 }
 
 const STATUS_TEXT: Record<Job["status"], { text: string; className: string }> = {
@@ -114,22 +112,12 @@ function ProgressBar({ job, active }: { readonly job: Job | undefined; readonly 
  * failed and the current document, with Cancel; once it ends, its summary (skipped and failed files with reasons,
  * flags by type). The panel keeps one footprint throughout, so polling moves nothing (C8). Shared with SPEC-19.
  */
-export function JobProgress({ jobId, onEnd }: JobProgressProps) {
+export function JobProgress({ jobId }: JobProgressProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const query = useQuery(jobQuery(jobId));
   const job = query.data?.job;
   const [cancelling, setCancelling] = useState(false);
-  const ended = useRef(false);
-  const notify = useRef(onEnd);
-  useEffect(() => {
-    notify.current = onEnd;
-  });
-  useEffect(() => {
-    if (job === undefined || isActive(job) || ended.current) return;
-    ended.current = true;
-    notify.current?.(job);
-  }, [job]);
 
   async function cancel() {
     setCancelling(true);

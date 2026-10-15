@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { type Call, renderApp, stubApi } from "./app.tsx";
+import { type Call, renderApp, stubApi } from "./screens.tsx";
 
 const picked = vi.hoisted(() => ({ files: [] as File[] }));
 vi.mock("../src/platform/index.ts", () => ({
@@ -101,7 +101,10 @@ describe("FolderImport and JobProgress (SPEC-16 PR 5)", () => {
   it("polls every 2 s and, when the job ends, shows skipped and failed files with reasons and flags by type", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     picked.files = [page("po-1.html")];
-    const calls = jobApi({ [JOB_PO]: [job(), finished()] });
+    const calls = jobApi({
+      [JOB_PO]: [job(), finished()],
+      [JOB_SRV]: [finished({ id: JOB_SRV, type: "srv.import-folder" })],
+    });
     const queryClient = await openImport();
     const refreshed = vi.spyOn(queryClient, "invalidateQueries");
     fireEvent.click(screen.getByRole("button", { name: "Choose PO folder" }));
@@ -115,8 +118,8 @@ describe("FolderImport and JobProgress (SPEC-16 PR 5)", () => {
     expect(issues.getByText("po-1.html").nextElementSibling?.textContent).toBe("An equal or newer copy is stored");
     expect(issues.getByText("po-3.html").nextElementSibling?.textContent).toBe("Not a BHEL PO page");
     expect(screen.getByText("Flags raised: QTY MISMATCH 2")).toBeTruthy();
-    // The lists behind refresh with what the import stored.
-    expect(refreshed).toHaveBeenCalledOnce();
+    // Nothing behind the dialog refreshes while it is open.
+    expect(refreshed).not.toHaveBeenCalled();
     // An ended job is not polled again.
     await act(() => vi.advanceTimersByTimeAsync(6000));
     expect(polls()).toBe(2);
@@ -129,6 +132,11 @@ describe("FolderImport and JobProgress (SPEC-16 PR 5)", () => {
         "srv.import-folder",
       ]),
     );
+    await waitFor(() => expect(screen.getAllByText("Import Complete")).toHaveLength(2));
+    // Closing the dialog refreshes the lists behind with what the imports stored.
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Import Folders" })).toBeNull());
+    expect(refreshed).toHaveBeenCalledOnce();
   });
 
   it("cancels a running job", async () => {

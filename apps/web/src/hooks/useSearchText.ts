@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 /** The legacy lists searched 300 ms after the last keystroke. */
-export const SEARCH_DELAY_MS = 300;
+const SEARCH_DELAY_MS = 300;
 
 /**
  * A list's search box: the text shows as typed and reaches `commit` once typing pauses. A new value from outside
- * (a link, Back) replaces the text.
+ * (a link, Back) replaces the text. The pending commit is dropped when the input unmounts (its ref's cleanup), so
+ * leaving the list mid-typing never navigates back to it.
  */
 export function useSearchText(current: string | undefined, commit: (q: string | undefined) => void) {
   const [text, setText] = useState(current ?? "");
@@ -14,15 +15,14 @@ export function useSearchText(current: string | undefined, commit: (q: string | 
     setSeen(current);
     setText(current ?? "");
   }
-  // The latest `commit`, so a caller's new function identity on each render does not restart the delay.
-  const latest = useRef(commit);
-  useEffect(() => {
-    latest.current = commit;
-  });
-  useEffect(() => {
-    if (text === (current ?? "")) return;
-    const timer = setTimeout(() => latest.current(text === "" ? undefined : text), SEARCH_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [text, current]);
-  return { value: text, onChange: setText };
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const onChange = (value: string) => {
+    setText(value);
+    clearTimeout(timer.current);
+    if (value === (current ?? "")) return;
+    timer.current = setTimeout(() => commit(value === "" ? undefined : value), SEARCH_DELAY_MS);
+  };
+  // One identity for the input's life: a new ref function each render would run the cleanup on every keystroke.
+  const inputRef = useCallback(() => () => clearTimeout(timer.current), []);
+  return { value: text, onChange, inputRef };
 }
