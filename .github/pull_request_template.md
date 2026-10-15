@@ -20,6 +20,10 @@
 
 <!-- Each decision in the docs/DECISIONS.md template's fields (no ID), marked `decided` or `needs-owner`; or "None". -->
 
+## Bot findings
+
+<!-- After the one bot pass (/implement-pr §6.1): each CodeAnt, CodeRabbit or SonarCloud finding not fixed, as `bot · path:line · rule — reason`; or "None". -->
+
 ## Checklist
 
 - [ ] Every CLAUDE.md §2 rule holds for this diff.
