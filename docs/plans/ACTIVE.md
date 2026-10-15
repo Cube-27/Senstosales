@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-11 PR 2, SPEC-11 PR 3, SPEC-12 PR 1. Next: SPEC-11 PR 4-5, SPEC-13 PR 3. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
+In flight: SPEC-11 PR 3, SPEC-12 PR 1, SPEC-13 PR 1 (re-scoped: legacy-code-derived goldens; H5 confirmation as PR 1b). Next: SPEC-11 PR 4-5, SPEC-13 PR 3-5. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-13 PR 1b (H5).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -98,7 +98,7 @@ In flight: SPEC-11 PR 2, SPEC-11 PR 3, SPEC-12 PR 1. Next: SPEC-11 PR 4-5, SPEC-
 | 4   | D1 executor, dialect step and SQL lint | done (#33) |       |
 | 5   | Version helper and seed                | done (#32) |       |
 
-Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_issue for correlated counts (#44 review); chunk multi-row inserts under D1's 100-bound-parameter limit (#43 review); INV rows for the delivery-tracker and dashboard rules; SRV search with a value range reads all candidate SRVs (#53 review). SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links (#55).
+Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_issue for correlated counts (#44 review); chunk multi-row inserts under D1's 100-bound-parameter limit (#43 review); INV rows for the delivery-tracker and dashboard rules; SRV search with a value range reads all candidate SRVs (#53 review). SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links (#55); a DC create racing a DC edit that frees the same number (SRV items on a third PO) (#59 review).
 
 ## [SPEC-06 — BHEL parsers, anonymised fixtures and the corpus test](../specs/SPEC-06-bhel-parsers-fixtures.md)
 
@@ -157,7 +157,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | PR  | Scope                                            | Status     | Notes |
 | --- | ------------------------------------------------ | ---------- | ----- |
 | 1   | DC create and dispatchable items                 | done (#55) |       |
-| 2   | DC header edit, delete, list, stats, detail      | todo       |       |
+| 2   | DC header edit, delete, list, stats, detail      | done (#59) |       |
 | 3   | DC-sourced invoice                               | todo       |       |
 | 4   | PO-direct invoice and previews                   | todo       |       |
 | 5   | Invoice header edit, delete, list, stats, detail | todo       |       |

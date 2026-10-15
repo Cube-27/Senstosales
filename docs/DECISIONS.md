@@ -2162,3 +2162,67 @@ None.
 - Alternatives: Allow-list the unlicensed `buffers@0.1.1` (weakens C13's check); a different Excel library (exceljs is the named library).
 - Why: exceljs 4.4 pins unzipper 0.10, whose `binary` -> `buffers` chain declares no licence, and the licences job denies it. unzipper 0.12 drops the chain and keeps the `Parse` API exceljs's stream reader uses; exceljs loads unzipper eagerly, so `"-"` is not possible.
 - Reversible: yes — remove the override when exceljs updates.
+
+### D-0264 — DC edit and delete guard the PO version
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: DC edit and delete batches include `updateWithVersion(po, poId, versionRead, {})` for the DC's PO, with the version read in the same statement as the DC (`findDcWithPo`); an edit also guards every other PO it recomputes, each version read before its snapshot. A stale PO is retried (3 attempts); a stale DC on edit is 409.
+- Alternatives: Guard only the DC version, which leaves an edit racing a delete writing an audit row for a deleted DC (EC-25).
+- Why: One guard covers vanished rows and stale snapshots, as D-0220 and D-0247 do.
+- Reversible: yes.
+
+### D-0265 — DC delete fails its batch if a link appears before commit
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: The delete batch starts with `stillUnlinked`, which sets `dc.version` to `CASE WHEN <an invoice or a linked SRV item exists> THEN NULL ELSE version END`; the delete retries on a stale `dc`, and the retry answers the blocked-delete 409.
+- Alternatives: Rely on the invoice foreign key (there is none on `srv_item.resolved_dc_id`).
+- Why: INV-35 must hold when an SRV ingest commits between the delete's read and its commit (D-0124 check).
+- Reversible: yes.
+
+### D-0266 — A DC edit recomputes every PO whose SRV items change link
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: Besides the DC's PO, every PO owning an SRV item whose link the edit changes is recomputed in the same batch, so a dropped link raises `DOC_NUMBER_CONFLICT` there. `reresolveLinks` returns those PO ids.
+- Alternatives: Recompute only the DC's PO, as create does (enough for create, which only adds links).
+- Why: EC-14 and ARCHITECTURE §6.9 flag the SRV item on its own PO.
+- Reversible: yes.
+
+### D-0267 — A DC edit keeping the number and FY skips link re-resolution
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: When the trimmed number and the FY of the new date equal the stored ones, the edit re-resolves no SRV links.
+- Alternatives: Re-resolve on every edit.
+- Why: Links resolve by `(number, FY)` (INV-24), so none can change; this saves the `instr` scan on the common header edit.
+- Reversible: yes.
+
+### D-0268 — DC list columns follow the legacy list
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: Per DC: ordered = Σ of each line's PO item `ord_qty`, dispatched = Σ line `dsp_qty`, received = Σ of each line's PO item `rcd_qty` (EC-38), value = Σ `qtyValue(dsp, rate)`. `q` matches the DC number, PO number and consignee; the date range applies to `dc_date` and the value range to the value. Default order date desc, number desc, id; paged in memory with `paging.ts` (D-0246). `openFlagCount` counts open flags on the DC's lines (`dc_item`), as search's `hasFlags` (D-0245); legacy had no flag count.
+- Alternatives: Received from the SRV items linked to the DC (a new rule).
+- Why: C7 and C18 freeze the legacy output.
+- Reversible: yes.
+
+### D-0269 — DC detail flags and SRVs
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: The detail's `flags` are the open flags on the DC's lines; `srvs` are the SRVs with an item whose `resolved_dc_id` is the DC (INV-37).
+- Alternatives: Legacy matched `challan_no = dc_number` without the FY, which INV-24 forbids.
+- Why: Links are FY-qualified and stored resolved.
+- Reversible: yes.
+
+### D-0270 — DC edit GC defaults follow INV-26
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: A blank GC number or date on edit takes the DC's number or date, as on create.
+- Alternatives: Legacy's full update set a blank GC date to today.
+- Why: INV-26 names the DC date.
+- Reversible: yes.
+
+### D-0271 — DC delete-blocked body
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 2 (#59) · Status: decided
+- Decision: A blocked DC delete is 409 `delete-blocked` with `details.reason` the domain reason (`dc-has-invoice`, `dc-linked-srv`) and a plain message.
+- Alternatives: One code per reason.
+- Why: Matches PO delete; the UI shows the reason.
+- Reversible: yes.
