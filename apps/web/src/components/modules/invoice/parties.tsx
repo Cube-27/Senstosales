@@ -27,7 +27,7 @@ export function PartySection({
   );
 }
 
-export interface PartyBlockProps {
+interface PartyBlockProps {
   readonly title: "Supplier Details" | "Billed To (Buyer)";
   readonly name: string | null;
   readonly address: string | null;

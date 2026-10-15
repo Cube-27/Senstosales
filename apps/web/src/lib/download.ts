@@ -7,7 +7,7 @@ import { useToast } from "../components/common/index.ts";
 import { getPlatform } from "../platform/index.ts";
 
 /** Saves a downloaded file under the name the API gave it. */
-export async function saveDownload(file: Download): Promise<"saved" | "cancelled"> {
+async function saveDownload(file: Download): Promise<"saved" | "cancelled"> {
   const platform = await getPlatform();
   return platform.saveFile({ name: file.fileName, data: new Blob([file.bytes.slice()]) });
 }

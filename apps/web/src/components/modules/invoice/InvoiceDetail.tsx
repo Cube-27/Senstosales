@@ -15,6 +15,8 @@ import {
   DataTable,
   ExcelButton,
   InfoField,
+  MaterialCell,
+  materialTitle,
   PageHeader,
   QueryState,
   useToast,
@@ -40,13 +42,8 @@ function columns(gemc: boolean, sn: (line: Line) => number): Column<Line>[] {
       key: "material",
       header: "Material",
       width: "260px",
-      title: (line) => [line.materialCode, line.description, line.drawingNo].filter(Boolean).join(" · "),
-      render: (line) => (
-        <span className="flex min-w-0 items-baseline gap-2">
-          <span className="shrink-0 role-material-code">{line.materialCode ?? "—"}</span>
-          <span className="truncate role-material-description">{line.description ?? ""}</span>
-        </span>
-      ),
+      title: (line) => materialTitle(line.materialCode, line.description, line.drawingNo),
+      render: (line) => <MaterialCell code={line.materialCode} description={line.description} />,
     },
     // v1 stores no HSN code (EC-50, EC-61).
     { key: "hsn", header: "HSN", width: "72px", render: () => "—" },
@@ -116,8 +113,9 @@ function InvoiceDetailView({ data }: { readonly data: Detail }) {
     try {
       await api.request("invoice.delete", { params: { id: invoice.id } });
       toast("Deleted", `Invoice ${invoice.number} deleted`, "success");
-      await invalidate("invoice", "dc", "po");
-      void navigate({ to: "/invoice" });
+      // Leave first, so the deleted invoice's page is not refetched.
+      await navigate({ to: "/invoice" });
+      void invalidate("invoice", "dc", "po");
     } catch (error) {
       toast("Failed", error instanceof Error ? error.message : "Unknown error", "error");
       setDeleting(false);

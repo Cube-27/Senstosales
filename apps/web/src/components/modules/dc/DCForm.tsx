@@ -9,7 +9,8 @@ import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from
 
 import { useNumberCheck } from "../../../hooks/useNumberCheck.ts";
 import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
-import { todayIst } from "../../../lib/dates.ts";
+import { todayIst } from "../../../lib/today.ts";
+import { blankToNull } from "../../../lib/text.ts";
 import { Save } from "../../../lib/icons.ts";
 import {
   Button,
@@ -18,9 +19,11 @@ import {
   FormAlert,
   FormField,
   Input,
-  type LineColumn,
   LineCell,
+  type LineColumn,
   LineTable,
+  MaterialCell,
+  materialTitle,
   PageHeader,
   QuantityInput,
   QueryState,
@@ -30,7 +33,7 @@ import { DocPicker } from "../DocPicker.tsx";
 type Dispatchable = RouteOutput<"dc.dispatchable">;
 type Item = Dispatchable["items"][number];
 
-export interface DcFormValues {
+interface DcFormValues {
   readonly number: string;
   readonly dcDate: IsoDate | "";
   /** `null` until the user types one: the GC follows the DC number and date (INV-26). */
@@ -43,13 +46,11 @@ export interface DcFormValues {
   readonly notes: readonly { readonly text: string }[];
 }
 
-const text = (s: string): string | null => (s.trim() === "" ? null : s.trim());
-
 /**
  * The create body, or the legacy save check that refuses it, in its order and words. The body is the form over the
  * dispatchable defaults, with only the lines that have a quantity; quantities have no cap (INV-32, C6).
  */
-export function dcCreateBody(data: Dispatchable, v: DcFormValues) {
+function dcCreateBody(data: Dispatchable, v: DcFormValues) {
   const number = v.number.trim();
   if (number === "" || v.dcDate === "") return { error: "DC Number and Date are required" } as const;
   if (!v.qty.some((q) => q > 0)) return { error: "Please dispatch at least one item." } as const;
@@ -60,10 +61,10 @@ export function dcCreateBody(data: Dispatchable, v: DcFormValues) {
     number,
     dcDate: v.dcDate,
     // A blank GC number or date becomes the DC's (INV-26).
-    gcNumber: v.gcNumber === null ? null : text(v.gcNumber),
+    gcNumber: v.gcNumber === null ? null : blankToNull(v.gcNumber),
     gcDate: v.gcDate === "" ? null : v.gcDate,
-    consigneeName: text(v.consigneeName),
-    ourRef: text(v.ourRef),
+    consigneeName: blankToNull(v.consigneeName),
+    ourRef: blankToNull(v.ourRef),
     remarks: remarks.length === 0 ? null : remarks.join("\n\n"),
     items: data.items.flatMap((item, i) => {
       const dspQty = v.qty[i] ?? sumQty([]);
@@ -147,11 +148,8 @@ function DispatchItems({ data }: { readonly data: Dispatchable | null }) {
         {items.map((item, i) => (
           <tr key={item.id} className="border-b border-border/40">
             <LineCell align="center">{item.poItemNo}</LineCell>
-            <LineCell title={[item.materialCode, item.description].filter(Boolean).join(" · ")}>
-              <span className="flex min-w-0 items-baseline gap-2">
-                <span className="shrink-0 role-material-code">{item.materialCode ?? "—"}</span>
-                <span className="truncate role-material-description">{item.description ?? ""}</span>
-              </span>
+            <LineCell title={materialTitle(item.materialCode, item.description)}>
+              <MaterialCell code={item.materialCode} description={item.description} />
             </LineCell>
             <LineCell align="center">{item.unit ?? "—"}</LineCell>
             <LineCell align="right">{fmtRate(item.rate, { gemc })}</LineCell>
@@ -275,8 +273,9 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
     setSaving(true);
     try {
       const dc = await api.request("dc.create", { body });
-      await invalidate("dc", "po");
+      // Leave first: the refetches (the source page, the number check) need not hold the navigation.
       void navigate({ to: "/dc/$id", params: { id: dc.id } });
+      void invalidate("dc", "po");
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
       if (e instanceof ApiError && e.status === 409) setRefused(body.number);

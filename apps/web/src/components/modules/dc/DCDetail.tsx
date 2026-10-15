@@ -16,6 +16,8 @@ import {
   DataTable,
   ExcelButton,
   InfoField,
+  MaterialCell,
+  materialTitle,
   PageHeader,
   QueryState,
   StatusBadge,
@@ -35,13 +37,8 @@ function columns(gemc: boolean): Column<Line>[] {
       key: "material",
       header: "Material",
       width: "320px",
-      title: (line) => [line.materialCode, line.description, line.drawingNo].filter(Boolean).join(" · "),
-      render: (line) => (
-        <span className="flex min-w-0 items-baseline gap-2">
-          <span className="shrink-0 role-material-code">{line.materialCode ?? "—"}</span>
-          <span className="truncate role-material-description">{line.description ?? ""}</span>
-        </span>
-      ),
+      title: (line) => materialTitle(line.materialCode, line.description, line.drawingNo),
+      render: (line) => <MaterialCell code={line.materialCode} description={line.description} />,
     },
     { key: "unit", header: "Unit", width: "64px", render: (line) => line.unit ?? "—" },
     {
@@ -66,7 +63,7 @@ function columns(gemc: boolean): Column<Line>[] {
  * The DC's totals as the legacy page showed them (EC-38): dispatched and value over its lines, and received as each
  * line's PO item received, read from the PO; `null` until the PO has loaded.
  */
-export function dcTotals(lines: readonly Line[], poItems: readonly PoItem[] | undefined) {
+function dcTotals(lines: readonly Line[], poItems: readonly PoItem[] | undefined) {
   const item = new Map((poItems ?? []).map((i) => [i.id, i]));
   const none = sumQty([]);
   const { dspQty, rcdQty, value } = dcListTotals(
@@ -110,8 +107,9 @@ function DCDetailView({ data }: { readonly data: Detail }) {
     try {
       await api.request("dc.delete", { params: { id: dc.id } });
       toast("Deleted", `DC ${dc.number} deleted`, "success");
-      await invalidate("dc", "po");
-      void navigate({ to: "/dc" });
+      // Leave first, so the deleted DC's page is not refetched.
+      await navigate({ to: "/dc" });
+      void invalidate("dc", "po");
     } catch (error) {
       toast("Failed", error instanceof Error ? error.message : "Error", "error");
       setDeleting(false);
@@ -274,7 +272,7 @@ function DCDetailView({ data }: { readonly data: Detail }) {
 }
 
 /** The user's notes as the create form wrote them: one per blank-line-separated block. */
-export const remarkNotes = (remarks: string | null): string[] =>
+const remarkNotes = (remarks: string | null): string[] =>
   (remarks ?? "")
     .trim()
     .split("\n\n")

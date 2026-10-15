@@ -7,7 +7,7 @@ import { Autocomplete, Button } from "../common/index.ts";
 
 export type SearchHit = RouteOutput<"search.query">[number];
 
-export interface DocPickerProps {
+interface DocPickerProps {
   /** The document types offered: POs for a DC, DCs and POs for an invoice. */
   readonly types: readonly ("po" | "dc")[];
   readonly placeholder: string;
@@ -26,7 +26,8 @@ export function DocPicker({ types, placeholder, onLink }: DocPickerProps) {
     ...apiQuery("search.query", { query: { q: query, types: [...types] } }),
     enabled: query !== "",
   });
-  const found = (hits.data ?? []).filter((hit) => types.some((type) => type === hit.type));
+  // The search answers only hits of `types`.
+  const found = hits.data ?? [];
   const options = found.map((hit) => ({
     value: hit.id,
     label: hit.number,

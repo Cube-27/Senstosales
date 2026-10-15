@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Controller, type FieldPathByValue, useForm } from "react-hook-form";
 
 import { api, useInvalidate } from "../../../lib/api.ts";
+import { blankToNull } from "../../../lib/text.ts";
 import { DatePicker, FormDialog, FormField, Input, Textarea, useToast } from "../../common/index.ts";
 
 type Invoice = RouteOutput<"invoice.detail">["invoice"];
@@ -24,11 +25,9 @@ const TEXT = [
 type TextKey = (typeof TEXT)[number][0] | "buyerName" | "buyerAddress" | "buyerGstin" | "buyerState";
 type DateKey = "invoiceDate" | "gemcDate" | "srvDate";
 
-export type InvoiceEditValues = Record<TextKey, string> & Record<DateKey, IsoDate | "">;
+type InvoiceEditValues = Record<TextKey, string> & Record<DateKey, IsoDate | "">;
 
 const orBlank = (s: string | null): string => s ?? "";
-const blankToNull = (s: string): string | null => (s.trim() === "" ? null : s);
-
 function valuesOf(i: Invoice): InvoiceEditValues {
   return {
     invoiceDate: i.invoiceDate,
@@ -51,7 +50,7 @@ function valuesOf(i: Invoice): InvoiceEditValues {
 }
 
 /** The legacy edit checks, in its order and words. */
-export function invoiceEditError(v: InvoiceEditValues): string | null {
+function invoiceEditError(v: InvoiceEditValues): string | null {
   if (v.invoiceDate === "") return "Invoice date is required.";
   if (v.buyerName.trim() === "") return "Buyer name is required.";
   if (v.buyerAddress.trim() === "") return "Buyer address is required.";
@@ -59,7 +58,7 @@ export function invoiceEditError(v: InvoiceEditValues): string | null {
 }
 
 /** The update body: the stored header with the edited fields, the invoice's number and its version (INV-33). */
-export function invoiceUpdateBody(invoice: Invoice, v: InvoiceEditValues, invoiceDate: IsoDate) {
+function invoiceUpdateBody(invoice: Invoice, v: InvoiceEditValues, invoiceDate: IsoDate) {
   return {
     ...zInvoiceHeader.parse(invoice),
     buyerName: blankToNull(v.buyerName),
@@ -108,7 +107,7 @@ function DateField({
   );
 }
 
-export interface InvoiceHeaderEditProps {
+interface InvoiceHeaderEditProps {
   readonly invoice: Invoice;
   readonly open: boolean;
   onClose(): void;
@@ -158,7 +157,6 @@ export function InvoiceHeaderEdit({ invoice, open, onClose }: InvoiceHeaderEditP
       error={error}
       saving={saving}
       onSave={() => void save()}
-      className="max-w-[var(--modal-width-xl)]"
     >
       <div className="grid max-h-[60vh] grid-cols-2 gap-x-4 overflow-y-auto pr-1">
         <DateField name="invoiceDate" label="Dated" control={control} required />

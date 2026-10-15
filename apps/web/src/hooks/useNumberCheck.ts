@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api.ts";
 
 /** The legacy create forms checked the typed number 500 ms after the last keystroke. */
-export const NUMBER_CHECK_DELAY_MS = 500;
+const NUMBER_CHECK_DELAY_MS = 500;
 
 export interface NumberCheck {
   /** A check for the current number and date has not answered yet. */
@@ -16,11 +16,15 @@ export interface NumberCheck {
 /** Resolves after `ms`, or rejects once `signal` aborts. */
 function pause(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => {
+    const abort = (): void => {
       clearTimeout(timer);
       reject(signal.reason);
-    });
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", abort, { once: true });
   });
 }
 

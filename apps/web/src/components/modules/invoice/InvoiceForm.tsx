@@ -8,7 +8,7 @@ import { Controller, FormProvider, useForm, useFormContext } from "react-hook-fo
 
 import { useNumberCheck } from "../../../hooks/useNumberCheck.ts";
 import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
-import { todayIst } from "../../../lib/dates.ts";
+import { todayIst } from "../../../lib/today.ts";
 import { Save } from "../../../lib/icons.ts";
 import {
   Autocomplete,
@@ -19,9 +19,11 @@ import {
   FormField,
   InfoField,
   Input,
-  type LineColumn,
   LineCell,
+  type LineColumn,
   LineTable,
+  MaterialCell,
+  materialTitle,
   PageHeader,
   QuantityInput,
   QueryState,
@@ -225,11 +227,8 @@ function LineItems({ preview, taxes }: { readonly preview: Preview | null; reado
         {lines.map((line, i) => (
           <tr key={line.poItemId + (line.dcItemId ?? "")} className="border-b border-border/40">
             <LineCell align="center">{i + 1}</LineCell>
-            <LineCell title={[line.materialCode, line.description].filter(Boolean).join(" · ")}>
-              <span className="flex min-w-0 items-baseline gap-2">
-                <span className="shrink-0 role-material-code">{line.materialCode ?? "—"}</span>
-                <span className="truncate role-material-description">{line.description ?? ""}</span>
-              </span>
+            <LineCell title={materialTitle(line.materialCode, line.description)}>
+              <MaterialCell code={line.materialCode} description={line.description} />
             </LineCell>
             {/* v1 stores no HSN code (EC-50, EC-61). */}
             <LineCell align="center">—</LineCell>
@@ -328,8 +327,9 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
     setSaving(true);
     try {
       const invoice = await api.request("invoice.create", { body });
-      await invalidate("invoice", "dc", "po");
+      // Leave first: the refetches (the source page, the number check) need not hold the navigation.
       void navigate({ to: "/invoice/$id", params: { id: invoice.id } });
+      void invalidate("invoice", "dc", "po");
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
       if (e instanceof ApiError && e.status === 409) setRefused(body.number);

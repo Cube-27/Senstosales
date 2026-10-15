@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { api, useInvalidate } from "../../../lib/api.ts";
+import { blankToNull } from "../../../lib/text.ts";
 import { DatePicker, FormDialog, FormField, Input, Textarea, useToast } from "../../common/index.ts";
 
 type Dc = RouteOutput<"dc.detail">["dc"];
@@ -27,32 +28,30 @@ const valuesOf = (dc: Dc): Values => ({
 });
 
 /** The legacy edit checks, in its order and words. */
-export function editError(v: Values): string | null {
+function editError(v: Values): string | null {
   if (v.consigneeName.trim() === "") return "Consignee is required.";
   if (v.gcNumber.trim() === "") return "GC number is required.";
   return null;
 }
 
-const text = (s: string): string | null => (s.trim() === "" ? null : s);
-
 /** The update body: the stored header with the edited fields, the DC's own number and date, and its version. */
-export function updateBody(dc: Dc, v: Values) {
+function updateBody(dc: Dc, v: Values) {
   return {
     ...zDcHeader.parse(dc),
     number: dc.number,
     dcDate: dc.dcDate,
     version: dc.version,
-    departmentNo: text(v.departmentNo),
-    ourRef: text(v.ourRef),
-    consigneeName: text(v.consigneeName),
-    consigneeAddress: text(v.consigneeAddress),
+    departmentNo: blankToNull(v.departmentNo),
+    ourRef: blankToNull(v.ourRef),
+    consigneeName: blankToNull(v.consigneeName),
+    consigneeAddress: blankToNull(v.consigneeAddress),
     gcNumber: v.gcNumber.trim(),
     // A cleared GC date takes the DC date (INV-26).
     gcDate: v.gcDate === "" ? null : v.gcDate,
   };
 }
 
-export interface DCHeaderEditProps {
+interface DCHeaderEditProps {
   readonly dc: Dc;
   readonly open: boolean;
   onClose(): void;

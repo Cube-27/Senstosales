@@ -4,8 +4,10 @@
 import { invoiceLineTax, invoiceTotals, type IsoDate, type LineTax, type Qty, sumQty } from "@senstosales/domain";
 import type { RouteOutput } from "@senstosales/schemas";
 
+import { blankToNull } from "../../../lib/text.ts";
+
 export type Preview = RouteOutput<"invoice.previewPo">;
-export type PreviewLine = Preview["lines"][number];
+type PreviewLine = Preview["lines"][number];
 
 /** The header fields the form edits, as typed. */
 export interface InvoiceFormValues {
@@ -30,8 +32,6 @@ export interface InvoiceFormValues {
   /** PO-direct: the typed quantity per preview line, in its order. */
   readonly qty: readonly Qty[];
 }
-
-const blankToNull = (s: string): string | null => (s.trim() === "" ? null : s.trim());
 
 type TextKey = Exclude<keyof InvoiceFormValues, "number" | "invoiceDate" | "gemcDate" | "srvDate" | "qty">;
 
@@ -64,7 +64,7 @@ export function formDefaults(preview: Preview | null, today: IsoDate | ""): Invo
 }
 
 /** Each line's invoiced quantity: the DC's when DC-sourced (locked, INV-29), else the typed one. */
-export const lineQty = (line: PreviewLine, typed: Qty | undefined): Qty => line.qty ?? typed ?? sumQty([]);
+const lineQty = (line: PreviewLine, typed: Qty | undefined): Qty => line.qty ?? typed ?? sumQty([]);
 
 /**
  * Each line's tax and the totals, from the one domain tax implementation (INV-41, C2): the totals the API stores on

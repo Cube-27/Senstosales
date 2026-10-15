@@ -9,6 +9,8 @@ import {
   Button,
   type Column,
   DataTable,
+  MaterialCell,
+  materialTitle,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -67,13 +69,8 @@ function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Colu
       key: "material",
       header: "Material",
       width: "260px",
-      title: (item) => [item.materialCode, item.description, item.drawingNo].filter(Boolean).join(" · "),
-      render: (item) => (
-        <span className="flex min-w-0 items-baseline gap-2">
-          <span className="shrink-0 role-material-code">{item.materialCode ?? "—"}</span>
-          <span className="truncate role-material-description">{item.description ?? ""}</span>
-        </span>
-      ),
+      title: (item) => materialTitle(item.materialCode, item.description, item.drawingNo),
+      render: (item) => <MaterialCell code={item.materialCode} description={item.description} />,
     },
     { key: "unit", header: "Unit", width: "64px", render: (item) => item.unit ?? "—" },
     { key: "rate", header: "Rate", width: "100px", align: "right", render: (item) => fmtRate(item.rate, { gemc }) },

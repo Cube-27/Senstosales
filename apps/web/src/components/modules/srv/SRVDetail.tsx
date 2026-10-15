@@ -8,7 +8,17 @@ import { useMemo } from "react";
 import { useClientPage } from "../../../hooks/useClientPage.ts";
 import { apiQuery } from "../../../lib/api.ts";
 import { rawLookup } from "../../../lib/raw-header.ts";
-import { Badge, type Column, DataTable, InfoField, PageHeader, qtyColumn, QueryState } from "../../common/index.ts";
+import {
+  Badge,
+  type Column,
+  DataTable,
+  InfoField,
+  MaterialCell,
+  materialTitle,
+  PageHeader,
+  qtyColumn,
+  QueryState,
+} from "../../common/index.ts";
 import { PoRef } from "./SRVList.tsx";
 
 type Detail = RouteOutput<"srv.detail">;
@@ -65,13 +75,8 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
       key: "material",
       header: "Material",
       width: "240px",
-      title: (r) => [r.materialCode, r.poItem?.description].filter(Boolean).join(" · "),
-      render: (r) => (
-        <span className="flex min-w-0 items-baseline gap-2">
-          <span className="shrink-0 role-material-code">{r.materialCode ?? "—"}</span>
-          <span className="truncate role-material-description">{r.poItem?.description ?? ""}</span>
-        </span>
-      ),
+      title: (r) => materialTitle(r.materialCode, r.poItem?.description),
+      render: (r) => <MaterialCell code={r.materialCode} description={r.poItem?.description} />,
     },
     {
       key: "rate",

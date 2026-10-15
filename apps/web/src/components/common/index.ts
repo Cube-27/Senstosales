@@ -25,6 +25,7 @@ export { GlobalSearchDialog, type GlobalSearchDialogProps } from "./GlobalSearch
 export { InfoField, type InfoFieldProps } from "./InfoField.tsx";
 export { JobProgress, type JobProgressProps } from "./JobProgress.tsx";
 export { type LineColumn, LineCell, LineTable, type LineTableProps } from "./LineTable.tsx";
+export { MaterialCell, materialTitle } from "./MaterialCell.tsx";
 export { ListFilters, type ListFiltersProps, type RangeFilters } from "./ListFilters.tsx";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar.tsx";
 export { PageHeader, type PageHeaderProps } from "./PageHeader.tsx";
