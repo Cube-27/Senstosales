@@ -32,13 +32,20 @@ export function webSources(root = WEB_SRC): Source[] {
 
 export const lineAt = (text: string, index: number): number => text.slice(0, index).split("\n").length;
 
-/** The custom properties `globals.css` defines in any block, and the `--color-*` theme names (`bg-<name>`). */
-export function designTokens(css: string): { properties: Set<string>; colours: Set<string> } {
+/**
+ * The custom properties `globals.css` defines in any block, the `--color-*` theme names (`bg-<name>`), and the
+ * utility classes it writes out itself (`.text-accent`, `.hover\:text-accent-hover`).
+ */
+export function designTokens(css: string): { properties: Set<string>; colours: Set<string>; classes: Set<string> } {
   const properties = new Set(Array.from(css.matchAll(/^\s*(--[\w-]+)\s*:/gm), (m) => m[1] ?? ""));
   const colours = new Set(
     [...blockTokens(css, "@theme").keys()].filter((n) => n.startsWith("--color-")).map((n) => n.slice(8)),
   );
-  return { properties, colours };
+  // `.hover\:text-accent-hover:hover` defines the class `hover:text-accent-hover`.
+  const classes = new Set(
+    Array.from(css.matchAll(/^\s*\.((?:[\w-]|\\:)+)/gm), (m) => (m[1] ?? "").replaceAll("\\:", ":")),
+  );
+  return { properties, colours, classes };
 }
 
 /** A string of class names in the source, with the line it starts on. */

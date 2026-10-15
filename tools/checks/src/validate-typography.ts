@@ -12,7 +12,8 @@ const STATE_COLOUR = /^text-(success|warning|error|info)(\/\d{1,3})?$/;
 const ROLE_OVERRIDES: ReadonlyArray<[RegExp, string]> = [
   [/^typo-[a-z0-9-]+$/, "role-with-typo"],
   [/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/, "role-with-weight"],
-  [/^text-(xs|sm|base|md|lg|\d?xl|\[[^\]]+\])$/, "role-with-size"],
+  // `text-[color:…]` is a colour by its type hint, not a size.
+  [/^text-(xs|sm|base|md|lg|\d?xl|\[(?!color:)[^\]]+\])$/, "role-with-size"],
   [/^tracking-/, "role-with-letter-spacing"],
   [/^leading-/, "role-with-line-height"],
   [/^(uppercase|lowercase|capitalize|normal-case)$/, "role-with-case"],

@@ -54,12 +54,7 @@ export function checkImports(source: Source, registry: Set<string>): Finding[] {
 }
 
 function main(): number {
-  let registry = new Set<string>();
-  try {
-    registry = registryNames(readFileSync(REGISTRY, "utf8"));
-  } catch {
-    // No registry yet: only the import rules apply.
-  }
+  const registry = registryNames(readFileSync(REGISTRY, "utf8"));
   const sources = webSources();
   return report(
     "validate-imports",

@@ -9,7 +9,10 @@ import "@fontsource-variable/public-sans";
 import "./styles/globals.css";
 
 import { createQueryClient } from "./lib/query.ts";
+import { applyTheme, storedTheme } from "./lib/theme.ts";
 import { createAppRouter } from "./router.ts";
+
+applyTheme(storedTheme());
 
 const queryClient = createQueryClient((to) => void router.navigate({ to }));
 const router = createAppRouter(queryClient);

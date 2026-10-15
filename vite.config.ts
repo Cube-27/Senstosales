@@ -114,7 +114,7 @@ export default defineConfig({
       "packages/schemas/generated/openapi.json",
     ],
   },
-  test: { include: ["{packages,apps,tools}/*/test/**/*.test.ts"] },
+  test: { include: ["{packages,apps,tools}/*/test/**/*.test.{ts,tsx}"] },
   staged: {
     "*.{js,mjs,cjs,ts,tsx,json,jsonc,css,md,yml,yaml}": "vp check --fix",
     // C1: a function task gets no file list appended; the scan reads the staged index itself.

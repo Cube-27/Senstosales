@@ -62,7 +62,7 @@ describe("validate-colors", () => {
   it("fails palette, literal, dark:, important and undefined colours", () => {
     const text = [
       `<p className="text-red-600 bg-[#fafafa] dark:bg-surface border-destructive bg-surface!" />`,
-      `<p className="text-[var(--nope)] placeholder:text-[var(--text-placeholder)]" />`,
+      `<p className="text-[var(--nope)] placeholder:text-[color:var(--text-placeholder)]" />`,
       `const style = { color: "#0057b3", background: "rgb(0 0 0)" };`,
     ].join("\n");
     expect(rules(checkColors(at("apps/web/src/x.tsx", text), tokens))).toEqual([
@@ -78,7 +78,7 @@ describe("validate-colors", () => {
   });
 
   it("passes token colours and the non-colour uses of colour prefixes", () => {
-    const text = `<p className="bg-surface text-error/80 hover:bg-surface text-white border-2 border-x text-sm/6 text-left ring-2 outline-none text-[13px] bg-[var(--surface)] divide-y bg-linear-to-r" />`;
+    const text = `<p className="bg-surface text-error/80 hover:bg-surface text-white border-2 border-x border-b border-t-2 text-sm/6 text-left ring-2 outline-none text-[13px] bg-[var(--surface)] divide-y bg-linear-to-r" />`;
     expect(checkColors(at("apps/web/src/x.tsx", text), tokens)).toEqual([]);
   });
 });

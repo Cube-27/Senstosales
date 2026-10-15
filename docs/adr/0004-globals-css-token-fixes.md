@@ -67,7 +67,7 @@ defines, so they rendered with no colour; the new components use the defined tok
 | `*-app-surface`, `*-app-surface-hover`             | `*-surface`, `*-surface-sunken`                                       |
 | `*-app-border`, `border-hairline`                  | `border-border`, `border-border-subtle`                               |
 | `text-action-primary`, `ring-ring`, `outline-ring` | `text-primary`; focus comes from `--focus-ring`                       |
-| `text-placeholder`                                 | `placeholder:text-[var(--text-placeholder)]`                          |
+| `text-placeholder`                                 | `placeholder:text-[color:var(--text-placeholder)]`                    |
 | `text-tertiary/50`, `bg-text-tertiary`             | `text-subtle/50`, `bg-subtle` (`--color-subtle` is `--text-tertiary`) |
 | `text-*-foreground`                                | `text-*-contrast`                                                     |
 | `text-accent-hover`                                | `hover:text-accent-hover` (as defined)                                |
