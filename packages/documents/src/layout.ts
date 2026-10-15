@@ -1,4 +1,5 @@
 // Cell and row helpers implementing the legacy documents' layout as the goldens show it (SPEC-12 §4.1).
+import { qtyToString, type Qty } from "@senstosales/domain";
 import type ExcelJS from "exceljs";
 
 export type Value = string | number | null;
@@ -78,4 +79,56 @@ export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, lik
 
   for (const m of moving) merge(ws, { ...m, top: m.top + count, bottom: m.bottom + count });
   for (let row = at; row < at + count; row++) for (const m of repeated) merge(ws, { ...m, top: row, bottom: row });
+}
+
+/** The consignee block the DC and GC print: name, then the address lines, blanks dropped; `Consignee` when empty. */
+export function consignee(dc: { consigneeName: string | null; consigneeAddress: string | null }): string {
+  const address = (dc.consigneeAddress ?? "").split(/\r?\n/).map((line) => line.trim());
+  const lines = [(dc.consigneeName ?? "").trim(), ...address].filter((line) => line !== "");
+  return lines.length > 0 ? lines.join("\n") : "Consignee";
+}
+
+export interface ItemRow {
+  poItemNo: number;
+  description: string | null;
+  unit: string | null;
+  dspQty: Qty;
+}
+
+/** Legacy grows an item row by `lineHeight` points for each 95 characters of description. */
+const CHARS_PER_LINE = 95;
+
+/**
+ * The DC and GC item rows from `firstRow` down: PO item number in B, description in C, `<qty>  <UNIT>` (upper-cased,
+ * `NO` when missing) in `qtyColumn`; each row at least as high as the first.
+ */
+export function writeItemRows(
+  ws: ExcelJS.Worksheet,
+  items: readonly ItemRow[],
+  { firstRow, qtyColumn, lineHeight }: { firstRow: number; qtyColumn: string; lineHeight: number },
+): void {
+  const baseHeight = ws.getRow(firstRow).height;
+  items.forEach((item, i) => {
+    const row = firstRow + i;
+    const description = item.description ?? "";
+    put(ws, `B${row}`, item.poItemNo);
+    put(ws, `C${row}`, description);
+    put(ws, `${qtyColumn}${row}`, `${qtyToString(item.dspQty)}  ${(item.unit || "NO").toUpperCase()}`);
+    const lines = Math.floor([...description].length / CHARS_PER_LINE) + 1;
+    ws.getRow(row).height = Math.max(baseHeight, lines * lineHeight);
+  });
+}
+
+/** The DC and GC page: A4 portrait, one page wide, centred, printing B:J down to `lastRow`. */
+export function setPortraitPage(ws: ExcelJS.Worksheet, lastRow: number, fitToHeight: 0 | 1): void {
+  Object.assign(ws.pageSetup, {
+    orientation: "portrait",
+    paperSize: 9, // A4
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight,
+    horizontalCentered: true,
+    margins: { left: 0.3, right: 0.3, top: 0.35, bottom: 0.35, header: 0.2, footer: 0.2 },
+    printArea: `B1:J${lastRow}`,
+  } satisfies Partial<ExcelJS.PageSetup>);
 }

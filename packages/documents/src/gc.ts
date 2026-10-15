@@ -1,11 +1,19 @@
 // The guarantee-certificate workbook (SPEC-12 §4.1): the de-branded template filled as the legacy GC download fills
 // it, for any number of items (A-2, INV-69). Eight item rows fit the template; more are inserted above its bottom row.
-import { qtyToString, type IsoDate } from "@senstosales/domain";
+import type { IsoDate } from "@senstosales/domain";
 import { fmtDate } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
-import { consignee, type DcDocument } from "./dc.ts";
-import { documentFileName, insertRows, put } from "./layout.ts";
+import type { DcDocument } from "./dc.ts";
+import {
+  consignee,
+  documentFileName,
+  insertRows,
+  put,
+  setPortraitPage,
+  writeItemRows,
+  type ItemRow,
+} from "./layout.ts";
 import { fillSupplier, type DocumentSupplier } from "./supplier.ts";
 import { templateBytes } from "./templates.ts";
 
@@ -14,7 +22,7 @@ export interface GcDocument {
   supplier: DocumentSupplier;
   dc: Pick<DcDocument["dc"], "number" | "dcDate" | "gcNumber" | "gcDate" | "consigneeName" | "consigneeAddress">;
   po: Pick<DcDocument["po"], "poNumber" | "poDate">;
-  items: ReadonlyArray<Pick<DcDocument["items"][number], "poItemNo" | "description" | "unit" | "dspQty">>;
+  items: readonly ItemRow[];
 }
 
 const FIRST_ITEM_ROW = 17;
@@ -24,7 +32,6 @@ const ITEM_SLOTS = BOTTOM_ROW - FIRST_ITEM_ROW;
 const GUARANTEE_ROW = 27;
 const SIGN_ROW = 34;
 /** Legacy grows an item row by 17 points for each 95 characters of description. */
-const CHARS_PER_LINE = 95;
 const LINE_HEIGHT = 17;
 // Legacy overwrote the template's text ("24 Month") with this.
 const GUARANTEE =
@@ -41,32 +48,6 @@ function writeHeader(ws: ExcelJS.Worksheet, { dc, po }: GcDocument): void {
   put(ws, "I11", numberAndDate(dc.number, dc.dcDate));
 }
 
-function writeItems(ws: ExcelJS.Worksheet, items: GcDocument["items"]): void {
-  const baseHeight = ws.getRow(FIRST_ITEM_ROW).height;
-  items.forEach((item, i) => {
-    const row = FIRST_ITEM_ROW + i;
-    const description = item.description ?? "";
-    put(ws, `B${row}`, item.poItemNo);
-    put(ws, `C${row}`, description);
-    put(ws, `J${row}`, `${qtyToString(item.dspQty)}  ${(item.unit || "NO").toUpperCase()}`);
-    const lines = Math.floor([...description].length / CHARS_PER_LINE) + 1;
-    ws.getRow(row).height = Math.max(baseHeight, lines * LINE_HEIGHT);
-  });
-}
-
-function setPage(ws: ExcelJS.Worksheet, lastRow: number): void {
-  Object.assign(ws.pageSetup, {
-    orientation: "portrait",
-    paperSize: 9, // A4
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: 0,
-    horizontalCentered: true,
-    margins: { left: 0.3, right: 0.3, top: 0.35, bottom: 0.35, header: 0.2, footer: 0.2 },
-    printArea: `B1:J${lastRow}`,
-  } satisfies Partial<ExcelJS.PageSetup>);
-}
-
 /** The GC as an xlsx file. Items print in PO item order, as legacy listed them. */
 export async function buildGcWorkbook(doc: GcDocument): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
@@ -79,9 +60,9 @@ export async function buildGcWorkbook(doc: GcDocument): Promise<Uint8Array> {
   fillSupplier(ws, doc.supplier);
   writeHeader(ws, doc);
   insertRows(ws, BOTTOM_ROW, extra, BOTTOM_ROW - 1);
-  writeItems(ws, items);
+  writeItemRows(ws, items, { firstRow: FIRST_ITEM_ROW, qtyColumn: "J", lineHeight: LINE_HEIGHT });
   put(ws, `B${GUARANTEE_ROW + extra}`, GUARANTEE);
-  setPage(ws, SIGN_ROW + extra);
+  setPortraitPage(ws, SIGN_ROW + extra, 0);
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }
 

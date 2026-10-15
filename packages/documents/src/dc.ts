@@ -1,11 +1,20 @@
 // The DC workbook (SPEC-12 §4.1): the de-branded template filled as the legacy DC download fills it, for any number
 // of items (A-2, INV-69). Eight item rows fit the template; more are inserted before its last, blank, item row.
-import type { IsoDate, Money, Qty } from "@senstosales/domain";
-import { qtyToString, qtyValue, sumMoney } from "@senstosales/domain";
+import type { IsoDate, Money } from "@senstosales/domain";
+import { qtyValue, sumMoney } from "@senstosales/domain";
 import { fmtDate, fmtFixed } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
-import { documentFileName, insertRows, put, type Value } from "./layout.ts";
+import {
+  consignee,
+  documentFileName,
+  insertRows,
+  put,
+  setPortraitPage,
+  writeItemRows,
+  type ItemRow,
+  type Value,
+} from "./layout.ts";
 import { fillSupplier, type DocumentSupplier } from "./supplier.ts";
 import { templateBytes } from "./templates.ts";
 
@@ -24,13 +33,7 @@ export interface DcDocument {
   po: { poNumber: string; poDate: IsoDate | null; isGemc: boolean };
   /** The invoice made from this DC; legacy prints its number only (EC-47). */
   invoiceNumber: string | null;
-  items: ReadonlyArray<{
-    poItemNo: number;
-    description: string | null;
-    unit: string | null;
-    dspQty: Qty;
-    rate: Money;
-  }>;
+  items: ReadonlyArray<ItemRow & { rate: Money }>;
 }
 
 const FIRST_ITEM_ROW = 21;
@@ -39,23 +42,12 @@ const BLANK_ROW = 29;
 const ITEM_SLOTS = BLANK_ROW - FIRST_ITEM_ROW;
 const REMARKS_ROW = 31;
 /** Legacy grows an item row by 18 points for each 95 characters of description. */
-const CHARS_PER_LINE = 95;
 const LINE_HEIGHT = 18;
 
 /** Legacy's department column held integers, so a number-only value prints as a number (`0456` -> 456). */
 function departmentCell(departmentNo: string | null): Value {
   const number = departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : Number.NaN;
   return Number.isSafeInteger(number) ? number : departmentNo;
-}
-
-/** The consignee block the DC and GC print: name, then the address lines, blanks dropped. */
-export function consignee({
-  consigneeName,
-  consigneeAddress,
-}: Pick<DcDocument["dc"], "consigneeName" | "consigneeAddress">): string {
-  const address = (consigneeAddress ?? "").split(/\r?\n/).map((line) => line.trim());
-  const lines = [(consigneeName ?? "").trim(), ...address].filter((line) => line !== "");
-  return lines.length > 0 ? lines.join("\n") : "Consignee";
 }
 
 function writeHeader(ws: ExcelJS.Worksheet, { dc, po, invoiceNumber }: DcDocument): void {
@@ -67,19 +59,6 @@ function writeHeader(ws: ExcelJS.Worksheet, { dc, po, invoiceNumber }: DcDocumen
   put(ws, "F14", po.poDate === null ? "Date:" : `Date: ${fmtDate(po.poDate)}`);
   put(ws, "F15", departmentCell(dc.departmentNo));
   put(ws, "I17", invoiceNumber === null ? "Dt." : `${invoiceNumber}  Dt.`);
-}
-
-function writeItems(ws: ExcelJS.Worksheet, items: DcDocument["items"]): void {
-  const baseHeight = ws.getRow(FIRST_ITEM_ROW).height;
-  items.forEach((item, i) => {
-    const row = FIRST_ITEM_ROW + i;
-    const description = item.description ?? "";
-    put(ws, `B${row}`, item.poItemNo);
-    put(ws, `C${row}`, description);
-    put(ws, `I${row}`, `${qtyToString(item.dspQty)}  ${(item.unit || "NO").toUpperCase()}`);
-    const lines = Math.floor([...description].length / CHARS_PER_LINE) + 1;
-    ws.getRow(row).height = Math.max(baseHeight, lines * LINE_HEIGHT);
-  });
 }
 
 /**
@@ -104,19 +83,6 @@ function writeFooter(ws: ExcelJS.Worksheet, { dc, po, invoiceNumber, items }: Dc
   return at + 11;
 }
 
-function setPage(ws: ExcelJS.Worksheet, lastRow: number, onePage: boolean): void {
-  Object.assign(ws.pageSetup, {
-    orientation: "portrait",
-    paperSize: 9, // A4
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: onePage ? 1 : 0,
-    horizontalCentered: true,
-    margins: { left: 0.3, right: 0.3, top: 0.35, bottom: 0.35, header: 0.2, footer: 0.2 },
-    printArea: `B1:J${lastRow}`,
-  } satisfies Partial<ExcelJS.PageSetup>);
-}
-
 /** The DC as an xlsx file. Items print in PO item order, as legacy listed them. */
 export async function buildDcWorkbook(doc: DcDocument): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
@@ -133,9 +99,9 @@ export async function buildDcWorkbook(doc: DcDocument): Promise<Uint8Array> {
   for (let row = FIRST_ITEM_ROW; row <= BLANK_ROW + extra; row++) {
     ws.getRow(row).hidden = extra === 0 && row >= FIRST_ITEM_ROW + items.length && row < BLANK_ROW;
   }
-  writeItems(ws, items);
+  writeItemRows(ws, items, { firstRow: FIRST_ITEM_ROW, qtyColumn: "I", lineHeight: LINE_HEIGHT });
   const lastRow = writeFooter(ws, doc, REMARKS_ROW + extra);
-  setPage(ws, lastRow, extra === 0);
+  setPortraitPage(ws, lastRow, extra === 0 ? 1 : 0);
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }
 

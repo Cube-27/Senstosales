@@ -1,19 +1,14 @@
 // The DC workbook against goldens derived from the legacy DC download (SPEC-12 §4.2, INV-69): every value, merge,
 // row height and page-setup field, and each cell's style taken from the template row the legacy writer copies it
 // from. Inputs and goldens are synthetic (C1, INV-75); SPEC-12 PR 2 confirms the goldens against legacy output (H5).
-import { parseMoney, parseQty, type Result } from "@senstosales/domain";
+import { parseMoney, parseQty } from "@senstosales/domain";
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vite-plus/test";
 
 import { buildDcWorkbook, dcFileName, type DcDocument } from "../src/dc.ts";
 import { insertRows } from "../src/layout.ts";
-import { describeGoldens, readInput } from "./golden.ts";
+import { describeGoldens, readInput, unwrap } from "./golden.ts";
 import { xlsxSnapshot, type SheetSnapshot } from "./xlsx-snapshot.ts";
-
-function unwrap<T>(r: Result<T>): T {
-  if (!r.ok) throw new Error(r.error);
-  return r.value;
-}
 
 const input = readInput<DcDocument>;
 

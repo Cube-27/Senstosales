@@ -3,6 +3,7 @@
 // taken from the template row the legacy writer copies it from, with the formats and fonts legacy set over it.
 import { readFileSync } from "node:fs";
 
+import type { Result } from "@senstosales/domain";
 import { describe, expect, it } from "vite-plus/test";
 
 import { templateBytes, type TemplateName } from "../src/templates.ts";
@@ -22,6 +23,11 @@ export interface Golden {
   merges: string[];
   rows: SheetSnapshot["rows"];
   values: Record<string, unknown>;
+}
+
+export function unwrap<T>(r: Result<T>): T {
+  if (!r.ok) throw new Error(r.error);
+  return r.value;
 }
 
 export const readJson = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as T;
