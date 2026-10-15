@@ -134,6 +134,52 @@ const wire = (id: string, type: FlagType, poId: string, poNumber: string, opened
   acknowledgedAt: ack ? "2025-05-04T00:00:00.000Z" : null,
 });
 
+const S1 = "01J9Z8Q4S5T6V7W8X9Y0S10000";
+const SI1 = "01J9Z8Q4S5T6V7W8X9Y0S20000";
+const F4 = "01J9Z8Q4S5T6V7W8X9Y0F40000";
+
+/** F4: QTY_MISMATCH on line 1 of SRV 7000001 (S1) of P2, open, opened 2025-05-06, ord_qty 40 expected, 37 actual. */
+async function addSrvFlag(app: App): Promise<void> {
+  const { db } = app;
+  const [row] = await db.query(db.build.select({ id: supplier.id }).from(supplier));
+  const supplierId = row?.id ?? "";
+  await db.batch([
+    db.build.insert(srv).values({
+      id: S1,
+      supplierId,
+      poNumber: "4500002",
+      poId: P2,
+      srvNumber: "7000001",
+      srvDate: "2025-05-05" as IsoDate,
+      financialYear: "2025-26" as Fy,
+      rawHeader: {},
+    }),
+    db.build.insert(srvItem).values({
+      id: SI1,
+      supplierId,
+      srvId: S1,
+      poItemNo: 10,
+      lotNo: 1,
+      srvItemNo: 1,
+      ordQty: 5000 as Qty,
+    }),
+    db.build.insert(reconciliationIssue).values({
+      supplierId,
+      id: F4,
+      type: "QTY_MISMATCH",
+      scopeType: "srv_item",
+      scopeId: SI1,
+      poId: P2,
+      fingerprint: F4,
+      details: { field: "ord_qty", expected: "40", actual: "37", docIds: [] },
+      status: "open",
+      note: null,
+      openedAt: "2025-05-06T00:00:00.000Z" as Instant,
+      acknowledgedAt: null,
+    }),
+  ]);
+}
+
 describe("GET /api/flags", () => {
   it("lists every flag with its PO number, newest first", async () => {
     const app = await seeded();
@@ -168,47 +214,22 @@ describe("GET /api/flags", () => {
     expect(await ids(app, `/api/flags${query}`)).toEqual({ status: 200, ids: expected, total });
   });
 
+  it.each([
+    ["?q=7000001", [F4], 1],
+    ["?q=DOC_NUMBER", [F3], 1],
+    ["?q=srv_item", [F4], 1],
+    ["?q=dsp_qty", [F2, F3, F1], 3],
+    ["?q=37", [F4], 1],
+    ["?q=0002", [F4, F2, F3], 3],
+  ])("searches as legacy did: the SRV number, codes and details values: %s -> %j", async (query, expected, total) => {
+    const app = await seeded();
+    await addSrvFlag(app);
+    expect(await ids(app, `/api/flags${query}`)).toEqual({ status: 200, ids: expected, total });
+  });
+
   it("carries the SRV of a flag on an SRV line, for the deviations screen's link", async () => {
     const app = await seeded();
-    const { db } = app;
-    const [row] = await db.query(db.build.select({ id: supplier.id }).from(supplier));
-    const supplierId = row?.id ?? "";
-    const [S1, SI1, F4] = ["01J9Z8Q4S5T6V7W8X9Y0S10000", "01J9Z8Q4S5T6V7W8X9Y0S20000", "01J9Z8Q4S5T6V7W8X9Y0F40000"];
-    await db.batch([
-      db.build.insert(srv).values({
-        id: S1,
-        supplierId,
-        poNumber: "4500002",
-        poId: P2,
-        srvNumber: "7000001",
-        srvDate: "2025-05-05" as IsoDate,
-        financialYear: "2025-26" as Fy,
-        rawHeader: {},
-      }),
-      db.build.insert(srvItem).values({
-        id: SI1,
-        supplierId,
-        srvId: S1,
-        poItemNo: 10,
-        lotNo: 1,
-        srvItemNo: 1,
-        ordQty: 5000 as Qty,
-      }),
-      db.build.insert(reconciliationIssue).values({
-        supplierId,
-        id: F4,
-        type: "QTY_MISMATCH",
-        scopeType: "srv_item",
-        scopeId: SI1,
-        poId: P2,
-        fingerprint: F4,
-        details: { field: "ord_qty", expected: "10", actual: "5", docIds: [] },
-        status: "open",
-        note: null,
-        openedAt: "2025-05-06T00:00:00.000Z" as Instant,
-        acknowledgedAt: null,
-      }),
-    ]);
+    await addSrvFlag(app);
     const { body } = await get(app, "/api/flags?pageSize=10");
     const { items } = body as { items: { id: string; srvId: string | null; srvNumber: string | null }[] };
     expect(items.map(({ id, srvId, srvNumber }) => ({ id, srvId, srvNumber }))).toEqual([
