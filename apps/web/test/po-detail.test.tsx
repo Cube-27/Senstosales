@@ -105,16 +105,25 @@ describe("/po/:id (SPEC-16 PR 2)", () => {
     expect(calls.find((c) => c.method === "PUT")?.body).toEqual({ qty: "3", note: "Sent by hand" });
   });
 
-  it("resolves a flag in place (INV-59)", async () => {
+  it("resolves a flag in place, though the refetched page no longer lists it (INV-59, C8)", async () => {
+    let acknowledged = false;
     const calls = stubApi({
-      [DETAIL_PATH]: () => detail({ flags: [flag()] }),
-      "POST /api/flags/01J00000000000000000000013/acknowledge": () => ({ ...flag(), status: "acknowledged" }),
+      // The API lists open flags only: once acknowledged, the flag is gone from the detail.
+      [DETAIL_PATH]: () => detail({ flags: acknowledged ? [] : [flag()] }),
+      "POST /api/flags/01J00000000000000000000013/acknowledge": () => {
+        acknowledged = true;
+        return { ...flag(), status: "acknowledged" };
+      },
     });
     renderApp(`/po/${PO_ID}`);
     expect(await screen.findByText("Dsp Qty mismatch")).toBeTruthy();
     expect(screen.getByText(/Detected: 02\/02\/2025/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "MARK RESOLVED" }));
     expect(await screen.findByText("Resolved")).toBeTruthy();
+    await waitFor(() => expect(calls.filter((c) => c.path === `/api/po/${PO_ID}`).length).toBeGreaterThan(1));
+    expect(screen.getByRole("region", { name: "Discrepancies" })).toBeTruthy();
+    expect(screen.getByText("Dsp Qty mismatch")).toBeTruthy();
+    expect(screen.getByText("Resolved")).toBeTruthy();
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ note: null });
   });
 

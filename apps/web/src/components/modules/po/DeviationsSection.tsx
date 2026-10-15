@@ -35,14 +35,18 @@ export interface DeviationsSectionProps {
 }
 
 /**
- * The PO page's open flags (spec §8, A-7) with MARK RESOLVED (acknowledge, INV-59). A resolved flag stays in its
- * row, marked resolved, until the page is opened again, so resolving moves nothing (C8).
+ * The PO page's open flags (spec §8, A-7) with MARK RESOLVED (acknowledge, INV-59). Every flag shown on this visit
+ * keeps its row: the refetched page no longer lists a resolved flag, but it stays here, marked resolved, until the
+ * page is opened again, so resolving moves nothing (C8). Flags opened meanwhile are added at the end.
  */
 export function DeviationsSection({ flags, itemNo }: DeviationsSectionProps) {
   const invalidate = useInvalidate();
   const { toast } = useToast();
   const [resolved, setResolved] = useState<ReadonlySet<string>>(new Set());
-  if (flags.length === 0) return null;
+  const [shown, setShown] = useState(flags);
+  const added = flags.filter((f) => !shown.some((s) => s.id === f.id));
+  if (added.length > 0) setShown([...shown, ...added]);
+  if (shown.length === 0) return null;
 
   async function resolve(flag: Flag) {
     try {
@@ -68,7 +72,7 @@ export function DeviationsSection({ flags, itemNo }: DeviationsSectionProps) {
         </div>
       </div>
       <ul className="space-y-3">
-        {flags.map((flag) => {
+        {shown.map((flag) => {
           const item = flag.scopeType === "po_item" ? itemNo(flag.scopeId) : undefined;
           const { field, expected, actual } = flag.details;
           return (
