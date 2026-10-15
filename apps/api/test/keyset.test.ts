@@ -5,8 +5,8 @@ import type { SQL } from "drizzle-orm";
 import { and, gte, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
-import type { KeyPart, KeysetPage } from "../src/repositories/keyset.ts";
-import { keysetRows } from "../src/repositories/keyset.ts";
+import type { Keyset, KeysetPage } from "../src/repositories/keyset.ts";
+import { keysetRows, listKey } from "../src/repositories/keyset.ts";
 import { byPoNumber } from "../src/repositories/sql.ts";
 import { d, id, rows } from "./seed-rows.ts";
 import { supplierDb } from "./service-deps.ts";
@@ -35,11 +35,13 @@ function pages(where?: SQL) {
         .limit(page.limit),
     );
   };
-  const key: KeyPart<Awaited<ReturnType<typeof fetch>>[number]>[] = [
-    { by: dateKey, dir: "desc", field: "dateKey" },
-    { by: numberKey, dir: "asc", field: "numberKey" },
-    { by: po.id, dir: "asc", field: "id" },
-  ];
+  const key: Keyset<Awaited<ReturnType<typeof fetch>>[number]> = {
+    parts: [
+      { by: dateKey, dir: "desc", field: "dateKey" },
+      { by: numberKey, dir: "asc", field: "numberKey" },
+    ],
+    id: { by: po.id, dir: "asc", field: "id" },
+  };
   return { key, fetch, fetched };
 }
 
@@ -97,6 +99,16 @@ describe("keysetRows", () => {
     expect(fetched.length).toBe(2);
   });
 
+  // #58 review: the tie-break must be unique, so the type admits only a primary-key column there.
+  it("takes only a primary-key column as the tie-break", () => {
+    const { key } = pages();
+    // @ts-expect-error -- po_number is not the primary key.
+    const byNumber: typeof key = { ...key, id: { by: po.poNumber, dir: "asc", field: "poNumber" } };
+    // @ts-expect-error -- an expression is not a column.
+    const byExpression: typeof key = { ...key, id: { by: numberKey, dir: "asc", field: "numberKey" } };
+    expect([byNumber.id.field, byExpression.id.field]).toEqual(["poNumber", "numberKey"]);
+  });
+
   it("returns nothing from an empty table after one fetch", async () => {
     await db.batch([db.build.delete(po)]);
     const { key, fetch, fetched } = pages();
@@ -118,4 +130,36 @@ it("returns 1,000 rows in pages of 50, each page after the one before", async ()
   expect(all.length).toBe(1000);
   expect([all[0], all[49], all[50], all[999]]).toEqual(["1", "50", "51", "1000"]);
   expect(fetched.length).toBe(21);
+});
+
+describe("listKey", () => {
+  const parts = (key: Keyset<{ a: number; b: number; c: number; id: string }>) => [
+    ...key.parts.map((p) => `${String(p.field)} ${p.dir}`),
+    `${String(key.id.field)} ${key.id.dir}`,
+  ];
+  const defaults = {
+    parts: [
+      { by: po.poDate, field: "a", dir: "desc" },
+      { by: po.poNumber, field: "b", dir: "asc" },
+    ],
+    id: { by: po.id, field: "id", dir: "asc" },
+  } satisfies Keyset<{ a: number; b: number; c: number; id: string }>;
+  const sorts = { b: [{ by: po.poNumber, field: "b" }], c: [{ by: po.amendNo, field: "c" }] } as const;
+
+  it("puts the chosen sort first in its direction, then the defaults, then the id", () => {
+    expect(parts(listKey(sorts, defaults, { sort: "c", dir: "desc" }))).toEqual([
+      "c desc",
+      "a desc",
+      "b asc",
+      "id asc",
+    ]);
+  });
+
+  it("drops a default part the chosen sort already orders by", () => {
+    expect(parts(listKey(sorts, defaults, { sort: "b", dir: "desc" }))).toEqual(["b desc", "a desc", "id asc"]);
+  });
+
+  it("is the defaults without a chosen sort", () => {
+    expect(parts(listKey(sorts, defaults, { dir: "asc" }))).toEqual(["a desc", "b asc", "id asc"]);
+  });
 });

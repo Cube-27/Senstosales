@@ -4,6 +4,7 @@ export {
   fmtCount,
   fmtDate,
   fmtDateMonthName,
+  fmtDaysToDue,
   fmtFixed,
   fmtFy,
   fmtMoney,
@@ -11,6 +12,8 @@ export {
   fmtMoneyCompactSpaced,
   fmtQty,
   fmtRate,
+  moneyNumber,
+  qtyNumber,
 } from "./formatters.ts";
 export { type ErrorBody, zErrorBody, zListQuery, zOk, zPaged } from "./api/common.ts";
 export { type PathParams, type RouteDef, routes } from "./routes.ts";

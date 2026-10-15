@@ -5,9 +5,19 @@ import { csvChunks } from "../../src/index.ts";
 import type { Key } from "./rows.ts";
 import { collect, COLUMNS, of, source } from "./rows.ts";
 
-const csv = async (...rows: Row<Key>[]) => (await collect(csvChunks(COLUMNS, of(...rows)))).join("");
+const BOM = "\uFEFF";
+/** The CSV text after its BOM; a missing BOM fails the test (D-0287). */
+async function csv(...rows: Row<Key>[]) {
+  const text = (await collect(csvChunks(COLUMNS, of(...rows)))).join("");
+  expect(text.slice(0, 1)).toBe(BOM);
+  return text.slice(1);
+}
 
 describe("csvChunks", () => {
+  it("starts with a UTF-8 BOM, as the legacy CSV writer did (D-0287)", async () => {
+    expect((await collect(csvChunks(COLUMNS, of()))).join("")).toBe(`${BOM}Doc No,Note,Qty\r\n`);
+  });
+
   it("writes the header and one CRLF line per row in column order", async () => {
     expect(await csv({ qty: 2, note: "plain", number: "DOC-1" }, { number: "DOC-2", note: null, qty: null })).toBe(
       "Doc No,Note,Qty\r\nDOC-1,plain,2\r\nDOC-2,,\r\n",
@@ -42,7 +52,7 @@ describe("csvChunks", () => {
   it("pulls rows only as its output is read (INV-99)", async () => {
     const { rows, state } = source(10_000);
     const chunks = csvChunks(COLUMNS, rows);
-    expect((await chunks.next()).value).toBe("Doc No,Note,Qty\r\n");
+    expect((await chunks.next()).value).toBe(`${BOM}Doc No,Note,Qty\r\n`);
     expect(state.read).toBe(0);
     expect((await chunks.next()).value).toBe("DOC-1,synthetic note 1 63z,1.5\r\n");
     expect(state.read).toBe(1);

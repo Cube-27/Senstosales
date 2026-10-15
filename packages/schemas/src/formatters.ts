@@ -28,6 +28,15 @@ function roundDiv(n: number, unit: number): number {
   return up * 2 >= unit ? floor + 1 : floor;
 }
 
+/** `n / unit` as a number to 2 dp, half up as {@link roundDiv}: what the legacy exports wrote for quantities and money. */
+const hundredthsNumber = (n: number, unit: number): number => roundDiv(n, unit / 100) / 100;
+
+/** A quantity as an export's number cell: `1.255` -> `1.26` (SPEC-13, legacy `round(x, 2)`). */
+export const qtyNumber = (q: Qty): number => hundredthsNumber(q, ONE_UNIT);
+
+/** An amount as an export's number cell: `826.004` -> `826`. */
+export const moneyNumber = (m: Money): number => hundredthsNumber(m, ONE_RUPEE);
+
 /** A count of records or items: `1234567` -> `"12,34,567"`. */
 export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-n))}` : groupIndian(String(n)));
 
@@ -100,3 +109,9 @@ export const fmtDateMonthName = (d: IsoDate | null): string =>
 
 /** `2024-25` -> `"FY 2024-25"`. */
 export const fmtFy = (fy: Fy): string => `FY ${fy}`;
+
+/** Days to a delivery date as the tracker export words them: `-12` -> `"12 days overdue"`, `0` -> `"Due Today"`. */
+export function fmtDaysToDue(days: number): string {
+  if (days < 0) return `${-days} days overdue`;
+  return days === 0 ? "Due Today" : `Due in ${days} days`;
+}

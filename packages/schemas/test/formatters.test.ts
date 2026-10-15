@@ -6,6 +6,7 @@ import {
   fmtCount,
   fmtDate,
   fmtDateMonthName,
+  fmtDaysToDue,
   fmtFixed,
   fmtFy,
   fmtMoney,
@@ -13,6 +14,8 @@ import {
   fmtMoneyCompactSpaced,
   fmtQty,
   fmtRate,
+  moneyNumber,
+  qtyNumber,
 } from "../src/index.ts";
 
 function unwrap<T>(r: Result<T>): T {
@@ -44,6 +47,30 @@ describe("fmtQty: whole units, Indian grouping", () => {
     ["-9007199254740.501", "-90,07,19,92,54,741"],
   ])("%s -> %s", (q, expected) => {
     expect(fmtQty(qty(q))).toBe(expected);
+  });
+});
+
+describe("qtyNumber and moneyNumber: export number cells, 2 dp half up", () => {
+  it.each([
+    ["0", 0],
+    ["1.25", 1.25],
+    ["2.5", 2.5],
+    ["1.254", 1.25],
+    ["1.255", 1.26],
+    ["-1.255", -1.25],
+    ["15", 15],
+  ])("qty %s -> %d", (q, expected) => {
+    expect(qtyNumber(qty(q))).toBe(expected);
+  });
+
+  it.each([
+    ["826", 826],
+    ["400.00499", 400],
+    ["400.005", 400.01],
+    ["0.1", 0.1],
+    ["1180.5", 1180.5],
+  ])("money %s -> %d", (m, expected) => {
+    expect(moneyNumber(money(m))).toBe(expected);
   });
 });
 
@@ -189,5 +216,17 @@ describe("fmtFy", () => {
     ["2000-03-31", "FY 1999-00"],
   ])("FY of %s -> %s", (d, expected) => {
     expect(fmtFy(fyOf(date(d)))).toBe(expected);
+  });
+});
+
+describe("fmtDaysToDue: the tracker export's Days Overdue, as legacy (no singular)", () => {
+  it.each([
+    [-12, "12 days overdue"],
+    [-1, "1 days overdue"],
+    [0, "Due Today"],
+    [1, "Due in 1 days"],
+    [14, "Due in 14 days"],
+  ])("%i -> %s", (days, expected) => {
+    expect(fmtDaysToDue(days)).toBe(expected);
   });
 });

@@ -43,3 +43,21 @@ export function page<T, K extends string>(
   const start = (query.page - 1) * query.pageSize;
   return { items: rows.slice(start, start + query.pageSize), total: rows.length };
 }
+
+/**
+ * The keyset page size a list reads with: one query for an ordinary list, whose pages and total need every row, and
+ * bounded pages past that. Exports stream with the smaller default (INV-99).
+ */
+export const LIST_READ_PAGE = 5000;
+
+/** One page of rows that arrive in list order, and how many there are in all; only the page is kept. */
+export async function pageOfRows<T>(rows: AsyncIterable<T>, { page, pageSize }: { page: number; pageSize: number }) {
+  const start = (page - 1) * pageSize;
+  const items: T[] = [];
+  let total = 0;
+  for await (const row of rows) {
+    if (total >= start && items.length < pageSize) items.push(row);
+    total += 1;
+  }
+  return { items, total };
+}

@@ -2558,3 +2558,83 @@ None.
 - Alternatives: Copy them into `invoice.ts`.
 - Why: The D-0220 guard and the link remap live in one place (invoice create previously had its own copy).
 - Reversible: yes.
+
+### D-0313 — Lists and exports read one keyset order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: `listKey` builds the key (the chosen sort, then the default order, then the id) and `pageOfRows` counts the rows and keeps one page. The pending and reconciliation lists and the tracker list read rows this way; the tracker list moves from the in-memory comparator sort onto it, keeping D-0241's order. A default part the chosen sort already has is dropped.
+- Alternatives: Keep in-memory sorting for lists and keyset only for exports, then test that they agree.
+- Why: A list's rows equal its export's rows by construction (SPEC-13 PR 5's done-when).
+- Reversible: yes.
+
+### D-0314 — Lists read in 5,000-row keyset pages
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: `LIST_READ_PAGE = 5000`; exports keep the 500 default.
+- Alternatives: `COUNT(*)` plus an OFFSET page (only possible where nothing is filtered in JS).
+- Why: One query for an ordinary list, as before; bounded memory past that.
+- Reversible: yes.
+
+### D-0315 — Report rows carry the export columns
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: `zPendingRow` and `zReconciliationRow` gain `poItemNo` and `poDate`; pending gains `unit` and reconciliation gains `balanceQty`.
+- Alternatives: Keep the SPEC-04 shapes, so exports could not be built from the list rows.
+- Why: SPEC-13 §2: the lists have the same columns as the exports.
+- Reversible: yes.
+
+### D-0316 — Reconciliation range defaults to the 30 days to today
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: Without both `from` and `to`, the range is today − 30 to today. With `poId`, the range is ignored.
+- Alternatives: No default, which would list every PO.
+- Why: C18: the legacy tab's behaviour where the spec is silent.
+- Reversible: yes.
+
+### D-0317 — Pending means balance > TOL, tested in SQL
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: `balance_qty > TOL`, i.e. `gtTol(balance, 0)` (INV-02), legacy's `> 0.001`.
+- Alternatives: Test in JS after reading every dated item.
+- Why: Items with nothing to supply are never fetched, and the tolerance still comes from the domain.
+- Reversible: yes.
+
+### D-0318 — Report default orders
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: Pending: PO number as a number, then item number. Reconciliation: PO date newest first, then PO number and item number. Both break ties on the item id, and a chosen sort goes first.
+- Alternatives: Legacy's single sort column with no tie-break.
+- Why: Matches the goldens and gives stable pages.
+- Reversible: yes.
+
+### D-0319 — Tracker pending-value sort key is a REAL product
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: Sort by `CAST(balance_qty AS REAL) * rate_u5` in SQL, used only for ordering; the value shown is `qtyValue`.
+- Alternatives: An integer product (can pass 2^63, and comes back to the cursor inexactly past 2^53); a stored pending-value column (a schema change).
+- Why: The export streams in SQL order (INV-99).
+- Reversible: yes.
+
+### D-0320 — Pending documents and GEMC numbers
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: A row's DCs and invoices are those with a line on the item, oldest first. Its GEMC numbers are the item's invoices' distinct non-blank numbers, else the PO's.
+- Alternatives: None in the spec.
+- Why: The legacy pending query does this.
+- Reversible: yes.
+
+### D-0321 — IST date and minute helper beside the Clock port
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: `istDateTime(instant)` and `IST_OFFSET_MINUTES` in `ports/clock.ts`. The node clock's `today()`, `istDayStart` and the tracker file name use them; one clock reading names the file and dates its rows.
+- Alternatives: A `nowIst()` port method, which every fake clock would need.
+- Why: The tracker file name needs the IST minute, and the offset lives in one place.
+- Reversible: yes.
+
+### D-0322 — Days Overdue wording
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 5 (#66) · Status: decided
+- Decision: `N days overdue`, `Due Today`, `Due in N days`, always plural, as legacy (`fmtDaysToDue`).
+- Alternatives: Singular for one day.
+- Why: Frozen export text (INV-68).
+- Reversible: yes.

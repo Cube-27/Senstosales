@@ -1,7 +1,9 @@
 // SPEC-07 PR 2: the system clock's "today" is the IST calendar date (C3).
+import type { Instant } from "@senstosales/db";
 import { describe, expect, it } from "vite-plus/test";
 
 import { createClock } from "../../src/platform/node/clock.ts";
+import { istDateTime } from "../../src/ports/clock.ts";
 
 const at = (iso: string) => () => Date.parse(iso);
 
@@ -24,5 +26,15 @@ describe("createClock", () => {
     const now = Date.parse(createClock().now());
     expect(now).toBeGreaterThanOrEqual(before);
     expect(now).toBeLessThanOrEqual(Date.now());
+  });
+});
+
+describe("istDateTime", () => {
+  it.each([
+    ["2025-06-01T05:30:00.000Z", { date: "2025-06-01", time: "11:00" }],
+    ["2025-03-31T18:29:59.999Z", { date: "2025-03-31", time: "23:59" }],
+    ["2025-03-31T18:30:00.000Z", { date: "2025-04-01", time: "00:00" }],
+  ])("%s is %o in IST", (instant, expected) => {
+    expect(istDateTime(instant as Instant)).toEqual(expected);
   });
 });

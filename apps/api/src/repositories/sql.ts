@@ -4,6 +4,8 @@ import type { IsoDate } from "@senstosales/domain";
 import type { SQLWrapper, Table } from "drizzle-orm";
 import { getTableColumns, sql } from "drizzle-orm";
 
+import { IST_OFFSET_MINUTES } from "../ports/clock.ts";
+
 /** A table's columns without `supplier_id`, which no API shape carries. */
 export function apiColumns<T extends Table>(table: T) {
   const { supplierId: _, ...columns } = getTableColumns(table);
@@ -31,4 +33,14 @@ export const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber] as
  * +05:30 (C3). Built on the constant side so a filter compares the stored column as it is.
  */
 export const istDayStart = (date: IsoDate, days = 0) =>
-  sql`strftime('%Y-%m-%dT%H:%M:%fZ', ${date}, ${`${days} days`}, '-330 minutes')`;
+  sql`strftime('%Y-%m-%dT%H:%M:%fZ', ${date}, ${`${days} days`}, ${sql.raw(`'-${IST_OFFSET_MINUTES} minutes'`)})`;
+
+/** {@link byPoNumber} as keyset sort parts: select `kPoNumber: PO_NUMBER_KEY` and `poNumber` (D-0262). */
+export const PO_NUMBER_KEY = sql<number>`${byPoNumber[0]}`;
+export const PO_NUMBER_SORT = [
+  { by: PO_NUMBER_KEY, field: "kPoNumber" },
+  { by: po.poNumber, field: "poNumber" },
+] as const;
+
+/** A nullable column as a NOT NULL sort value; a missing value sorts first ascending. */
+export const orEmpty = (column: SQLWrapper) => sql<string>`COALESCE(${column}, '')`;

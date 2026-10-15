@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-11 PR 6, SPEC-12 PR 4, SPEC-13 PR 3, SPEC-13 PR 5. Next: SPEC-12 PR 5-6, SPEC-13 PR 4, then SPEC-07 PR 6 once every route (SPEC-11 to SPEC-13) is mounted. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
+In flight: SPEC-11 PR 6, SPEC-12 PR 4, SPEC-13 PR 3. Paused by the owner after these: no new rows start until resumed. Then: SPEC-12 PR 5-6, SPEC-13 PR 4, SPEC-07 PR 6. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -183,7 +183,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 2   | Streaming writers and keyset paging                 | done (#58) |                                                                                                |
 | 3   | Registers and list CSVs                             | todo       | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
 | 4   | Pending, reconciliation, export-selected, GC report | todo       |                                                                                                |
-| 5   | Report lists and delivery-tracker export            | todo       |                                                                                                |
+| 5   | Report lists and delivery-tracker export            | done (#66) |                                                                                                |
 
 ## [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md)
 

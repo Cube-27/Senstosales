@@ -37,10 +37,19 @@ export interface HandlerInput<N extends RouteName> {
   readonly body: Decoded<Def<N>, "body">;
 }
 
+/** A download streamed as its chunks are pulled (INV-99); an error mid-stream aborts the response (SPEC-13 §4.3). */
+export interface StreamedFile {
+  readonly fileName: string;
+  readonly chunks: AsyncIterable<Uint8Array | string>;
+}
+
+/** What a handler returns: a file route answers a whole or a streamed download. */
+type HandlerOutput<N extends RouteName> = Def<N>["response"] extends "file" ? Download | StreamedFile : RouteOutput<N>;
+
 export type Handler<N extends RouteName> = (
   input: HandlerInput<N>,
   c: Context,
-) => RouteOutput<N> | Promise<RouteOutput<N>>;
+) => HandlerOutput<N> | Promise<HandlerOutput<N>>;
 
 export type Handlers = { readonly [N in RouteName]?: Handler<N> };
 
@@ -90,7 +99,9 @@ function mount(app: Hono, def: RouteDef, handler: AnyHandler, guard: ((c: Contex
       body: def.body && decode("body", def.body, await readJson(c)),
     };
     const output = await handler(input, c);
-    return def.response === "file" ? sendFile(c, output as Download) : c.json(z.encode(def.response, output));
+    return def.response === "file"
+      ? sendFile(c, output as Download | StreamedFile)
+      : c.json(z.encode(def.response, output));
   });
 }
 
@@ -122,12 +133,37 @@ async function readJson(c: Context): Promise<unknown> {
   }
 }
 
+/**
+ * The chunks as a response body, each pulled only when the client reads (INV-99). A source error errors the body, so
+ * the client sees a failed download rather than a short file; a client that goes away closes the source.
+ */
+function body(chunks: AsyncIterable<Uint8Array | string>): ReadableStream<Uint8Array> {
+  const source = chunks[Symbol.asyncIterator]();
+  const encoder = new TextEncoder();
+  return new ReadableStream(
+    {
+      async pull(controller) {
+        const next = await source.next();
+        if (next.done) controller.close();
+        else controller.enqueue(typeof next.value === "string" ? encoder.encode(next.value) : next.value);
+      },
+      async cancel() {
+        await source.return?.();
+      },
+    },
+    // Nothing is read ahead of the client.
+    { highWaterMark: 0 },
+  );
+}
+
 /** A download named by `Content-Disposition` (D-0105). */
-function sendFile(c: Context, file: Download): Response {
-  // `Response` takes only bytes backed by a plain ArrayBuffer; copy only a view of a shared one.
-  const bytes = file.bytes.buffer instanceof ArrayBuffer ? (file.bytes as Uint8Array<ArrayBuffer>) : file.bytes.slice();
-  return c.body(bytes, 200, {
+function sendFile(c: Context, file: Download | StreamedFile): Response {
+  const headers = {
     "content-type": "application/octet-stream",
     "content-disposition": contentDisposition(file.fileName),
-  });
+  };
+  if ("chunks" in file) return c.body(body(file.chunks), 200, headers);
+  // `Response` takes only bytes backed by a plain ArrayBuffer; copy only a view of a shared one.
+  const bytes = file.bytes.buffer instanceof ArrayBuffer ? (file.bytes as Uint8Array<ArrayBuffer>) : file.bytes.slice();
+  return c.body(bytes, 200, headers);
 }

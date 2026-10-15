@@ -12,13 +12,16 @@ function field(cell: Cell): string {
   return typeof cell === "number" ? String(cell) : quoted(safe(cell));
 }
 
+/** Spreadsheet programs read a CSV with a BOM as UTF-8, as the legacy files were (D-0287). */
+const BOM = "\uFEFF";
+
 const line = (fields: readonly string[]) => `${fields.join(",")}\r\n`;
 
-/** The header line, then one CRLF-terminated line per row in column order. */
+/** The BOM and the header line, then one CRLF-terminated line per row in column order. */
 export async function* csvChunks<K extends string>(
   columns: readonly Pick<Column<K>, "key" | "header">[],
   rows: AsyncIterable<Row<K>>,
 ): AsyncGenerator<string> {
-  yield line(columns.map((c) => quoted(c.header)));
+  yield BOM + line(columns.map((c) => quoted(c.header)));
   for await (const row of rows) yield line(columns.map((c) => field(row[c.key])));
 }
