@@ -1954,3 +1954,75 @@ None.
 - Alternatives: Delete it after the run.
 - Why: PR 2's report and PR 3's second import read it.
 - Reversible: yes.
+
+### D-0238 — Tracker rows
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: One row per lot with a delivery date, carrying its item's stored quantities; the item is open while Pending or Delivered. Overdue: before today and Pending. Due soon: today to today + 7 and Pending. Due this month: in today's month and open.
+- Alternatives: The legacy per-lot FIFO allocation of dispatched and received quantities.
+- Why: No quantity is allocated to a lot (INV-06); the buckets keep the legacy tracker's date rules and its not-dispatched and not-received tests, read from the stored item status.
+- Reversible: yes.
+
+### D-0239 — Tracker value filter and pending value
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: `valueMin`/`valueMax` compare the lot's scheduled value (lot qty × rate), as the legacy filter does. A row's `pendingValue` is its item's balance × rate; stats sum the pending value once per item.
+- Alternatives: Filter on the pending value; sum the row values.
+- Why: Legacy filter semantics; with item-level balances a per-lot sum would count an item with several lots more than once.
+- Reversible: yes.
+
+### D-0240 — Tracker stats and the status toggle
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: The three counts ignore `status`; `pendingValue` follows it; the other filters narrow both.
+- Alternatives: Apply `status` to everything.
+- Why: As legacy: the cards are the toggles and keep their counts while one is active.
+- Reversible: yes.
+
+### D-0241 — Tracker default order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: Delivery date descending, then PO number (numeric), item number, lot number and lot id; a chosen sort breaks ties by that order. A missing entry date or material code sorts first ascending.
+- Alternatives: Ties in the chosen direction.
+- Why: The legacy default is `dely_date DESC`; stable pages need a total order (as D-0173, D-0200).
+- Reversible: yes.
+
+### D-0242 — Dashboard periods and counts
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: `month` starts on the 1st of today's month, `30d` 30 days back. PO value, ordered, dispatched and pending dispatch value cover POs dated in the period; invoiced value and quantity cover invoices dated in it; received covers SRV lines dated in it (INV-11); lead time covers POs dated in it. Overdue lots, DCs without an invoice and open flags are as of today.
+- Alternatives: Apply the range to everything.
+- Why: The legacy dashboard's queries.
+- Reversible: yes.
+
+### D-0243 — Dashboard activity
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: The five POs, DCs and invoices that entered the system last, newest first. A PO's time is its first `po.ingest` or `po.create` audit row; SRVs are not listed (`zActivity`).
+- Alternatives: A `created_at` column on `po` (a schema change).
+- Why: Legacy sorted by `created_at` and showed five; `po` has no creation column and the audit row records when the PO entered.
+- Reversible: yes.
+
+### D-0244 — Search matching and ranking
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: Numbers match from their start; item code and drawing number from their start and description anywhere; DC consignee and invoice buyer anywhere; an SRV also by its PO number (from the start for digits). Digits alone skip party names, one digit skips items, `*` is no text, and no text with no filter finds nothing. Five per type, then a stable merge by exact number, number prefix, other. `match` is the matched value as stored.
+- Alternatives: The legacy six-level ranking over display strings; labelled match text such as `Code: X`.
+- Why: The same visible results without building display strings in the API (C7).
+- Reversible: yes.
+
+### D-0245 — Search values and flags
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: PO: stored PO value and ordered total. DC: Σ line qty × rate and dispatched qty. Invoice: stored total and invoiced qty. SRV: accepted value and qty from `srvTotals`. The value range applies to PO, invoice and SRV, not DC, as legacy. `hasFlags`: an open flag on the PO, or on one of the document's lines. `party` is null for PO and SRV (the supplier is always ours).
+- Alternatives: Flags through SRV links as well.
+- Why: Legacy fields; flags are scoped to lines in this schema (§6.9).
+- Reversible: yes.
+
+### D-0246 — Shared paging helpers
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 6 (#53) · Status: decided
+- Decision: `apps/api/src/services/paging.ts` holds the comparator and page helpers that the SRV lists and the tracker use.
+- Alternatives: A copy per service.
+- Why: One implementation of the list convention for lists sorted in memory.
+- Reversible: yes.
