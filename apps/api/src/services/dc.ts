@@ -3,8 +3,7 @@
 // or DC (404), a DC or GC number taken in the FY, a stale version and a blocked delete (409). Each write is one
 // batch: the version guards, the DC rows, the SRV links to its numbers, the recompute of every PO whose rows or flags
 // change, and the audit row (C4).
-import type { Statement } from "@senstosales/db";
-import { dc, dcItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
+import { dc, dcItem, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
@@ -37,15 +36,14 @@ import {
   srvsOfDc,
   stillUnlinked,
 } from "../repositories/dc.ts";
-import { findPoRow, itemsOfPo } from "../repositories/po-list.ts";
+import { itemsOfPo } from "../repositories/po-list.ts";
 import { findSupplier, supplierSnapshotOf } from "../repositories/supplier.ts";
 import { audit } from "./audit.ts";
+import { commit, docWrites, loadPo, NO_LINKS } from "./doc-writes.ts";
 import type { SupplierDeps } from "./index.ts";
-import { reresolveLinks } from "./links.ts";
 import type { Comparator } from "./paging.ts";
 import { byNum, byNumber, byText, desc, inValueRange, on, page } from "./paging.ts";
-import type { PoSnapshot } from "./recompute.ts";
-import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
+import { loadPoSnapshot } from "./recompute.ts";
 import { retrying } from "./retry.ts";
 
 export type DcCreate = z.output<(typeof routes)["dc.create"]["body"]>;
@@ -69,11 +67,6 @@ const BLANK_HEADER = {
   modeOfTransport: null,
   remarks: null,
 } satisfies Partial<DcCreate>;
-
-type Doc = { id: string; number: string; date: DcCreate["dcDate"] };
-
-/** No SRV link changes: an edit that keeps the DC's number and FY. */
-const NO_LINKS = { changes: new Map<string, string | null>(), poIds: new Set<string>(), statements: [] };
 
 /** The plain reason a DC delete is refused (INV-35). */
 const DELETE_BLOCKED: Partial<Record<DeleteBlockReason, string>> = {
@@ -129,61 +122,18 @@ function toRows(lines: readonly Line[], filters: DcFilters): Row[] {
 }
 
 export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
-  async function loadPo(poId: string) {
-    const row = await findPoRow(db, poId);
-    if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
-    return row;
-  }
-
   async function loadDc(id: string) {
     const row = await findDcWithPo(db, id);
     if (row === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
     return row;
   }
 
-  /**
-   * The PO's version guard and the recompute of its derived columns and flags from `snapshot`, which was read after
-   * `version` (D-0220), with this batch's SRV link changes applied.
-   */
-  function guardedRecompute(snapshot: PoSnapshot, version: number, links: ReadonlyMap<string, string | null>) {
-    const srvLines = snapshot.srvLines.map((l) =>
-      links.has(l.id) ? { ...l, resolvedDcId: links.get(l.id) ?? null } : l,
-    );
-    return [
-      updateWithVersion(db, po, snapshot.po.id, version, {}),
-      ...recomputeStatements({ db, clock }, { ...snapshot, srvLines }),
-    ];
-  }
-
-  /** The recompute of every other PO with an SRV item whose link changes: its DOC_NUMBER_CONFLICT may change. */
-  async function otherPos(poIds: ReadonlySet<string>, own: string, links: ReadonlyMap<string, string | null>) {
-    const others = [...poIds].filter((poId) => poId !== own);
-    const statements = await Promise.all(
-      others.map(async (poId) => {
-        const { version } = await loadPo(poId);
-        return guardedRecompute(await loadPoSnapshot(db, poId), version, links);
-      }),
-    );
-    return statements.flat();
-  }
-
-  /**
-   * The SRV link changes for `numbers` once DC `id` is stored as `doc`, or removed when `doc` is null: every DC of
-   * those numbers is read in any FY and the domain resolves each citing item (INV-37).
-   */
-  async function relink(supplier: string, id: string, numbers: readonly string[], doc: Doc | null) {
-    const stored = (await dcsNumbered(db, supplier, [...new Set(numbers)])).filter((d) => d.id !== id);
-    const docs = doc === null ? stored : [...stored, doc];
-    return reresolveLinks(db, { supplierId: supplier, kind: "dc", numbers: [...new Set(numbers)], docs });
-  }
-
-  const commit = (statements: readonly Statement[]) =>
-    statements.reduce((batch, s) => batch.add(s), new WriteBatch(db)).commit();
+  const { guardedRecompute, otherPos, relink } = docWrites({ db, clock }, "dc");
 
   /** One create attempt: reads the PO, then builds and commits the batch. */
   async function createOnce(supplier: string, body: DcCreate, number: string) {
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
-    const row = await loadPo(body.poId);
+    const row = await loadPo(db, body.poId);
     const id = newId();
     const [snapshot, links] = await Promise.all([
       loadPoSnapshot(db, body.poId),
@@ -201,7 +151,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     const dcRow = { ...fields, ...gc, id, supplierId: supplier, number, financialYear, createdAt: now };
     const itemRows = items.map((item) => ({ id: newId(), supplierId: supplier, dcId: id, ...item, createdAt: now }));
 
-    await commit([
+    await commit(db, [
       db.build.insert(dc).values(dcRow),
       db.build.insert(dcItem).values(itemRows),
       ...links.statements,
@@ -237,7 +187,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     ];
     const { id: _id, poId: _poId, createdAt: _createdAt, version: _version, ...before } = stored;
 
-    await commit([
+    await commit(db, [
       // First, so a stale version is reported as the DC's (INV-95), not retried as the PO's.
       updateWithVersion(db, dc, id, version, fields),
       ...links.statements,
@@ -268,7 +218,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     const recompute = guardedRecompute({ ...snapshot, dcLines: kept }, poVersion, links.changes);
     const { poId, number, dcDate, financialYear, gcNumber, gcDate, version } = row;
 
-    await commit([
+    await commit(db, [
       stillUnlinked(db, id),
       db.build.delete(dcItem).where(eq(dcItem.dcId, id)),
       db.build.delete(dc).where(eq(dc.id, id)),
@@ -331,7 +281,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
   return {
     /** The create form: the PO, header defaults and the PO's items with their balances (no cap, INV-32). */
     async dispatchable(poId: string) {
-      const [row, items, supplier] = await Promise.all([loadPo(poId), itemsOfPo(db, poId), findSupplier(db)]);
+      const [row, items, supplier] = await Promise.all([loadPo(db, poId), itemsOfPo(db, poId), findSupplier(db)]);
       const defaults = { ...BLANK_HEADER, ...supplierSnapshotOf(supplier) };
       return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, defaults, items };
     },

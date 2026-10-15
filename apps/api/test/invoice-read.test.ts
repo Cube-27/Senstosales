@@ -27,7 +27,9 @@ async function twoInvoices() {
     buyerName: "Other Unit",
     lines: [{ poItemId: r.item10, qty: "1" }],
   });
-  const html = srvPage("4500001", [{ srv: "S-1", date: "25/04/2025", item: 10, code: "M-10", invoice: "31", rcd: "3" }]);
+  const html = srvPage("4500001", [
+    { srv: "S-1", date: "25/04/2025", item: 10, code: "M-10", invoice: "31", rcd: "3" },
+  ]);
   await r.app.client.request("srv.upload", { body: { files: [{ name: "srv.html", html }] } });
   return { ...r, inv31: inv31.body.id, inv32: inv32.body.id };
 }
