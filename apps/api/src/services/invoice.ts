@@ -1,18 +1,26 @@
 // GST invoices (SPEC-11 §2, §4.2). A DC-sourced invoice carries exactly the DC's lines at the DC qty and PO rate, else
-// 400 and nothing written (INV-29, A-8); a DC has one invoice (INV-28). Tax uses the settings' GST rates, copied onto
+// 400 and nothing written (INV-29, A-8); a DC has one invoice (INV-28). A PO-direct invoice has lines on items of its
+// one PO, each qty > 0 and no cap, at the PO item's rate (INV-30, INV-31). Tax uses the settings' GST rates, copied onto
 // the invoice (INV-41, A2-4). A create is one batch: the PO version guard, the invoice and its lines, the SRV links to
 // its number, the PO recompute with its flags, and the audit row (C4).
 import type { Statement } from "@senstosales/db";
 import { invoice, invoiceItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
-import { fyOf, invoiceLineTax, invoiceTotals, validateDcInvoiceLines } from "@senstosales/domain";
+import type { Money, Qty } from "@senstosales/domain";
+import {
+  fyOf,
+  invoiceLineTax,
+  invoiceTotals,
+  validateDcInvoiceLines,
+  validateDirectInvoiceLines,
+} from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
-import { ConflictError, fieldError, linesError, NotFoundError, ValidationError } from "../errors.ts";
+import { ConflictError, dcHasInvoice, dcNotFound, fieldError, linesError, NotFoundError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import { findDc } from "../repositories/dc.ts";
 import { dcLinesToInvoice, findInvoice, invoiceCollision, invoicesNumbered } from "../repositories/invoice.ts";
-import { findPoRow } from "../repositories/po-list.ts";
+import { findPoRow, itemsOfPo } from "../repositories/po-list.ts";
 import { audit } from "./audit.ts";
 import type { SupplierDeps } from "./index.ts";
 import { reresolveLinks } from "./links.ts";
@@ -22,47 +30,75 @@ import { gstRatesOf } from "./settings.ts";
 
 export type InvoiceCreate = z.output<(typeof routes)["invoice.create"]["body"]>;
 type DcInvoiceCreate = Extract<InvoiceCreate, { kind: "dc" }>;
+type DirectInvoiceCreate = Extract<InvoiceCreate, { kind: "direct" }>;
+
+/** A line before tax. */
+type Line = { poItemId: string; dcItemId: string | null; qty: Qty; rate: Money };
+
+/**
+ * Where an invoice comes from: its PO, its DC if any, and its lines. A PO-direct invoice's lines are checked against
+ * the PO's items, which are read with the snapshot after the PO's version, so `lines` runs then.
+ */
+type Source = { poId: string; dc: { id: string; number: string } | null; lines: () => Promise<Line[]> };
 
 export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
-  /**
-   * One attempt: reads the DC and its PO, then builds and commits the batch. A retry reads the DC again, so a DC
-   * deleted meanwhile is a 404.
-   */
-  async function createOnce(supplier: string, body: DcInvoiceCreate, number: string) {
-    const [stored, dcLines, rates] = await Promise.all([
-      findDc(db, body.dcId),
-      dcLinesToInvoice(db, body.dcId),
-      gstRatesOf(db, supplier),
-    ]);
-    if (stored === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
+  /** INV-29: exactly the DC's lines at the DC qty and PO rate, else 400; checked before the PO is read. */
+  async function dcSource(body: DcInvoiceCreate): Promise<Source> {
+    const [stored, dcLines] = await Promise.all([findDc(db, body.dcId), dcLinesToInvoice(db, body.dcId)]);
+    if (stored === undefined) throw dcNotFound();
     const issues = validateDcInvoiceLines({ dcLines, lines: body.lines });
     if (issues.length > 0) throw linesError(issues);
-    const { poId } = stored;
+    // The lines equal the DC's (INV-29), so they are built from the DC's in its order.
+    const lines = dcLines.map(({ dcItemId, poItemId, qty, poRate }) => ({ poItemId, dcItemId, qty, rate: poRate }));
+    return { poId: stored.poId, dc: { id: stored.id, number: stored.number }, lines: async () => lines };
+  }
+
+  /** INV-30, INV-31: lines on items of the PO, at least one, each qty > 0, at the PO item's rate. */
+  const directSource = (body: DirectInvoiceCreate): Source => ({
+    poId: body.poId,
+    dc: null,
+    async lines() {
+      const items = await itemsOfPo(db, body.poId);
+      const issues = validateDirectInvoiceLines({ poItemIds: new Set(items.map((i) => i.id)), lines: body.lines });
+      if (issues.length > 0) throw linesError(issues);
+      const rates = new Map(items.map((i) => [i.id, i.rate]));
+      return body.lines.map(({ poItemId, qty }) => ({ poItemId, dcItemId: null, qty, rate: rates.get(poItemId)! }));
+    },
+  });
+
+  /**
+   * One attempt: reads the source and its PO, then builds and commits the batch. A retry reads them again, so a DC
+   * deleted meanwhile is a 404.
+   */
+  async function createOnce(supplier: string, body: InvoiceCreate, number: string) {
+    const [source, rates] = await Promise.all([
+      body.kind === "dc" ? dcSource(body) : directSource(body),
+      gstRatesOf(db, supplier),
+    ]);
+    const { poId, dc } = source;
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
     const row = await findPoRow(db, poId);
     if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
-    const [snapshot, numbered] = await Promise.all([
+    const [snapshot, numbered, lines] = await Promise.all([
       loadPoSnapshot(db, poId),
       invoicesNumbered(db, supplier, [number]),
+      source.lines(),
     ]);
 
     const now = clock.now();
     const id = newId();
     const financialYear = fyOf(body.invoiceDate);
     const { cgstPct, sgstPct } = rates;
-    // The lines equal the DC's (INV-29), so they are built from the DC's in its order.
-    const itemRows = dcLines.map((line) => ({
+    const itemRows = lines.map((line) => ({
       id: newId(),
       supplierId: supplier,
       invoiceId: id,
-      poItemId: line.poItemId,
-      dcItemId: line.dcItemId,
-      qty: line.qty,
-      rate: line.poRate,
-      ...invoiceLineTax({ qty: line.qty, rate: line.poRate, cgstPct, sgstPct, gemc: row.isGemc }),
+      ...line,
+      ...invoiceLineTax({ ...line, cgstPct, sgstPct, gemc: row.isGemc }),
     }));
     const totals = invoiceTotals(itemRows);
-    const { kind, dcId, lines: _, ...header } = body;
+    const { kind, lines: _, ...header } = body;
+    const dcId = dc?.id ?? null;
     const invoiceRow = {
       ...header,
       ...totals,
@@ -112,7 +148,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
           cgstPct,
           sgstPct,
           total: totals.total,
-          lines: itemRows.map((r) => ({ dcItemId: r.dcItemId, qty: r.qty, rate: r.rate })),
+          lines: itemRows.map((r) => ({ poItemId: r.poItemId, dcItemId: r.dcItemId, qty: r.qty, rate: r.rate })),
         },
       }),
     ];
@@ -124,18 +160,17 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       if (collision === "number") {
         throw new ConflictError("invoice-number-taken", `Invoice ${number} already exists in FY ${financialYear}.`);
       }
-      if (collision === "dc") throw new ConflictError("dc-has-invoice", `DC ${stored.number} already has an invoice.`);
+      if (collision === "dc" && dc !== null) throw dcHasInvoice(dc.number);
       throw err;
     }
     return id;
   }
 
   return {
-    /** INV-28, INV-29, INV-41: stores the invoice in its date's FY, or answers 400, 404 or 409 and writes nothing. */
+    /**
+     * INV-28 to INV-31, INV-41: stores the invoice in its date's FY, or answers 400, 404 or 409 and writes nothing.
+     */
     async create(body: InvoiceCreate) {
-      // PO-direct invoices arrive with SPEC-11 PR 4.
-      if (body.kind !== "dc")
-        throw new ValidationError("kind-unavailable", "PO-direct invoices are not available yet.");
       const supplier = await supplierId.require();
       // Numbers are looked up trimmed (INV-24), so they are stored trimmed (D-0248).
       const number = body.number.trim();
