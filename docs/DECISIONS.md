@@ -1906,3 +1906,51 @@ None.
 - Alternatives: Rely on the RECURRING.md row alone.
 - Why: Reviewers then apply it to every write use case.
 - Reversible: yes.
+
+### D-0232 — Corpus folder layout
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 1 (#54) · Status: decided
+- Decision: `SENSTO_CORPUS_DIR` holds a `po/` and an `srv/` folder; the runner takes the `*.html`/`*.htm` files under each, subfolders included, in path order, named by their path inside the folder. A folder with no pages refuses the run before a database is made.
+- Alternatives: One mixed folder, with each page's kind detected by trying both parsers.
+- Why: The UI picks one folder per kind (ARCHITECTURE §7.4), and the parser fixtures already use `po/` and `srv/`. Detecting the kind would be invented behaviour.
+- Reversible: yes.
+
+### D-0233 — The corpus runner calls the services in process
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 1 (#54) · Status: decided
+- Decision: `importCorpus` calls `folderImport.stage`, `jobs.start` and `jobs.detail` on the services from `openRuntime` and waits on the job runner's `idle()`, not over HTTP. Staging requests are split with `splitUpload`, as the web client splits them.
+- Alternatives: Start the server and drive the HTTP API.
+- Why: SPEC-09 §4.1 says it "uses `createServices` with node platform adapters". The routes only validate and forward to these same services.
+- Reversible: yes.
+
+### D-0234 — `openRuntime` is shared with `startServer`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 1 (#54) · Status: decided
+- Decision: The node wiring (data folder, upgrade gate, storage, job handlers, job runner, services) moves out of `startServer` into `platform/node/runtime.ts`, exported as `@senstosales/api/node`.
+- Alternatives: Copy the wiring into the tool.
+- Why: The corpus import must exercise the same adapters and job handlers the app runs.
+- Reversible: yes.
+
+### D-0235 — Corpus tool files sit in `tools/corpus/src` and `tools/corpus/test`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 1 (#54) · Status: decided
+- Decision: The runner and its tests live in `tools/corpus/src` and `tools/corpus/test`, not at `tools/corpus/*.ts` as SPEC-09 §4.1 lists them.
+- Alternatives: The spec's paths.
+- Why: Vitest only collects `{packages,apps,tools}/*/test/**/*.test.ts`, and every other tool uses `src/` and `test/`.
+- Reversible: yes.
+
+### D-0236 — What a passing corpus import means
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 1 (#54) · Status: decided
+- Decision: A run passes when both jobs end `done` and no service logged a warning or error (such as a job summary that could not be built). Pages skipped or failed with a typed reason do not fail the run; the report (PR 2) lists them. Pages over the 10 MB request cap are not sent, as the web client does not send them, and are returned in `tooLarge`.
+- Alternatives: Fail on any failed page.
+- Why: The L4 exit is "no unexpected exception"; typed failures are expected outcomes.
+- Reversible: yes.
+
+### D-0237 — The corpus data folder is kept
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 1 (#54) · Status: decided
+- Decision: The data folder stays in the OS temp folder after the run, and its path is printed.
+- Alternatives: Delete it after the run.
+- Why: PR 2's report and PR 3's second import read it.
+- Reversible: yes.
