@@ -1,4 +1,5 @@
 // Sorting and paging of list rows the service has already totalled with the domain (SPEC-10 §4.2).
+import type { Money } from "@senstosales/domain";
 
 export type Comparator<T> = (a: T, b: T) => number;
 
@@ -16,6 +17,12 @@ export const desc =
 export const byNumber = new Intl.Collator("en", { numeric: true }).compare;
 export const byNum = (a: number, b: number) => a - b;
 export const byText = (a: string, b: string) => Number(a > b) - Number(a < b);
+
+/** The list filter panels' inclusive value range; an absent bound does not limit. */
+export const inValueRange = (
+  value: Money,
+  { valueMin, valueMax }: { valueMin?: Money | undefined; valueMax?: Money | undefined },
+) => (valueMin === undefined || value >= valueMin) && (valueMax === undefined || value <= valueMax);
 
 /** One page, sorted by the chosen column in `dir`, then by the default order. */
 export function page<T, K extends string>(

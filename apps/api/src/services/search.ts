@@ -2,7 +2,7 @@
 // and party names, as the legacy search finds them; FY on DC and invoice hits (INV-24). At most five hits of each
 // type, the exact number first. Quantities and values come from the domain or stored columns (C2).
 import type { Db } from "@senstosales/db";
-import type { IsoDate, Money } from "@senstosales/domain";
+import type { IsoDate } from "@senstosales/domain";
 import { qtyValue, srvTotals, sumMoney, sumQty } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
@@ -10,6 +10,7 @@ import type { z } from "zod";
 import { linkedDocsOfPo } from "../repositories/po-list.ts";
 import type { SearchQuery, Terms } from "../repositories/search.ts";
 import * as repo from "../repositories/search.ts";
+import { inValueRange } from "./paging.ts";
 
 type Hit = z.output<(typeof routes)["search.query"]["response"]>[number];
 type DocType = Hit["type"];
@@ -44,9 +45,6 @@ const rankOf = (t: Terms, hit: Hit) => (hit.number === t.q ? 0 : startsWithText(
 /** A PO link carries a date; a PO without one (never from a BHEL page) is shown without the link. */
 const poLink = (ref: { id: string; number: string; date: IsoDate | null } | null) =>
   ref?.date ? { id: ref.id, number: ref.number, date: ref.date } : null;
-
-const inRange = (value: Money, f: SearchQuery) =>
-  (f.valueMin === undefined || value >= f.valueMin) && (f.valueMax === undefined || value <= f.valueMax);
 
 export function searchService({ db }: { db: Db }) {
   async function pos(t: Terms, f: SearchQuery): Promise<Hit[]> {
@@ -110,7 +108,7 @@ export function searchService({ db }: { db: Db }) {
       (line) => line.srvId,
     );
     const totalled = rows.map((row) => ({ row, totals: srvTotals(lines.get(row.id) ?? []) }));
-    const kept = totalled.filter(({ totals }) => inRange(totals.value, f)).slice(0, PER_TYPE);
+    const kept = totalled.filter(({ totals }) => inValueRange(totals.value, f)).slice(0, PER_TYPE);
     return Promise.all(
       kept.map(async ({ row: { itemMatch, po, poNumber, ...row }, totals }) => {
         const [dcs, invoices] = await repo.srvLinks(db, row.id);

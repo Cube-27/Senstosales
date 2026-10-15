@@ -75,14 +75,14 @@ export const CITATIONS = {
 } as const;
 
 /**
- * The supplier's SRV items whose cited number of `kind` contains one of `numbers`, with the SRV date. Containment is
+ * The supplier's SRV items whose cited number of `kind` contains one of `numbers`, with the SRV's date and PO. Containment is
  * a superset of every number that trims to one of them; the domain decides the link (INV-24).
  */
 export function srvItemsCiting(db: Db, supplierId: string, kind: keyof typeof CITATIONS, numbers: readonly string[]) {
   const { raw, resolved } = CITATIONS[kind];
   return db.query(
     db.build
-      .select({ id: srvItem.id, raw, resolved, srvDate: srv.srvDate })
+      .select({ id: srvItem.id, raw, resolved, srvDate: srv.srvDate, poId: srv.poId })
       .from(srvItem)
       .innerJoin(srv, eq(srv.id, srvItem.srvId))
       .where(and(eq(srvItem.supplierId, supplierId), or(...numbers.map((n) => sql`instr(${raw}, ${n}) > 0`))))

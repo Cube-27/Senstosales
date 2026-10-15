@@ -18,9 +18,13 @@ interface Relink {
   readonly docs: readonly { id: string; number: string; date: IsoDate }[];
 }
 
-/** The SRV items whose link changes, by id, and the statements that store the new links. */
+/**
+ * The SRV items whose link changes, by id; the POs those items are on, whose flags may change with them; and the
+ * statements that store the new links.
+ */
 export async function reresolveLinks(db: Db, { supplierId, kind, numbers, docs }: Relink) {
   const changes = new Map<string, string | null>();
+  const poIds = new Set<string>();
   for (const item of await srvItemsCiting(db, supplierId, kind, numbers)) {
     // The read is a superset ("17" contains "7"): only an item citing one of `numbers` is ours to re-resolve, compared
     // through `docKey` as links are (INV-24).
@@ -28,7 +32,9 @@ export async function reresolveLinks(db: Db, { supplierId, kind, numbers, docs }
     const cited = item.raw === null ? undefined : docKey(item.raw, fy);
     if (!numbers.some((n) => docKey(n, fy) === cited)) continue;
     const next = resolveDocLink(item.raw, item.srvDate, docs);
-    if (next !== item.resolved) changes.set(item.id, next);
+    if (next === item.resolved) continue;
+    changes.set(item.id, next);
+    if (item.poId !== null) poIds.add(item.poId);
   }
   const statements: Statement[] = [...changes].map(([id, next]) =>
     db.build
@@ -36,5 +42,5 @@ export async function reresolveLinks(db: Db, { supplierId, kind, numbers, docs }
       .set({ [CITATIONS[kind].key]: next })
       .where(eq(srvItem.id, id)),
   );
-  return { changes, statements };
+  return { changes, poIds, statements };
 }
