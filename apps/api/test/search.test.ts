@@ -4,6 +4,7 @@
 import type { NodeDb } from "@senstosales/db/node";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
+import { mostBoundParams } from "./helpers.ts";
 import { id, readApp, recompute, rows } from "./seed-rows.ts";
 import { supplierDb } from "./service-deps.ts";
 
@@ -270,19 +271,11 @@ describe("a value bound over 150 SRVs", () => {
         ];
       }).flat(),
     ]);
-    let most = 0;
-    const query = db.query.bind(db);
-    db.query = ((statement: Parameters<typeof query>[0]) => {
-      const { params } = (statement as unknown as { toSQL(): { params: unknown[] } }).toSQL();
-      most = Math.max(most, params.length);
-      return query(statement);
-    }) as typeof db.query;
-    try {
+    const most = await mostBoundParams(db, async () => {
       const hits = await search("q=77&types=srv&valueMin=0");
       expect(hits.map((h) => h.type)).toEqual(["srv", "srv", "srv", "srv", "srv"]);
-    } finally {
-      db.query = query;
-    }
+    });
+    expect(most).toBeGreaterThan(0);
     expect(most).toBeLessThanOrEqual(100);
   });
 });

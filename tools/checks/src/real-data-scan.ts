@@ -125,8 +125,8 @@ export function selectFiles(staged: boolean): Array<{ path: string; read: () => 
     .map((path) => ({ path, read: () => (staged ? git(["show", `:${path}`]) : readFileSync(path)) }));
 }
 
-/** The allowlist the commit or checkout holds: staged, the index copy (an unstaged edit must not excuse a staged file),
- * empty when the index has none. */
+/** The allowlist being checked: with `staged`, the index copy (empty if none is staged), so an unstaged edit can't
+ * excuse a staged file; else the working-tree file. */
 function readAllowlist(staged: boolean): string {
   if (!staged) return readFileSync(ALLOWLIST_PATH, "utf8");
   const inIndex = git(["ls-files", "-z", "--", ALLOWLIST_PATH]).length > 0;

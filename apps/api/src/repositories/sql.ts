@@ -35,7 +35,7 @@ export async function inBatches<T>(ids: readonly string[], read: (batch: string[
   return out;
 }
 
-/** A document number as a number:PO, DC, invoice and SRV numbers are digit strings and sort as numbers (as legacy). */
+/** A document number as a number: PO, DC, invoice and SRV numbers are digit strings and sort as numbers (as legacy). */
 export const asNumber = (column: SQLWrapper) => sql<number>`CAST(${column} AS INTEGER)`;
 
 /** PO numbers sort as numbers; the text breaks ties for any that are not digits. */

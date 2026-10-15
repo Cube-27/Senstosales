@@ -143,7 +143,7 @@ export function heldBatches() {
 /** A `Db` whose batch after `close()` waits until `open()`; every other batch runs at once. */
 export function gatedBatch() {
   let held: { reached: () => void; gate: Promise<void> } | undefined;
-  const wrap = (db: NodeDb): Db => ({
+  const wrap = (db: Db): Db => ({
     build: db.build,
     query: (statement) => db.query(statement),
     batch: async (statements) => {

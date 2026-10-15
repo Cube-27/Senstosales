@@ -5,6 +5,7 @@ import { downloadFileName } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
+import { mostBoundParams } from "../helpers.ts";
 import { id, routesOver, rows } from "../seed-rows.ts";
 import { supplierDb } from "../service-deps.ts";
 import { reportDb } from "./dataset-db.ts";
@@ -187,20 +188,10 @@ describe("150 DCs and invoices", () => {
     "/api/dc/export",
     "/api/invoice/export",
   ])("%s binds at most 100 parameters per statement and exports every document", async (path) => {
-    let most = 0;
-    const query = db.query.bind(db);
-    db.query = ((statement: Parameters<typeof query>[0]) => {
-      // Every statement the repositories send is a drizzle query builder.
-      const { params } = (statement as unknown as { toSQL(): { params: unknown[] } }).toSQL();
-      most = Math.max(most, params.length);
-      return query(statement);
-    }) as typeof db.query;
-    try {
+    const most = await mostBoundParams(db, async () => {
       const { bytes } = await download(send, path);
       expect(bytes.length).toBeGreaterThan(0);
-    } finally {
-      db.query = query;
-    }
+    });
     expect(most).toBeGreaterThan(0);
     expect(most).toBeLessThanOrEqual(100);
   });

@@ -8,6 +8,7 @@ import type { Clock } from "../src/ports/clock.ts";
 import { authRoutes } from "../src/routes/auth.ts";
 import { createServices } from "../src/services/index.ts";
 import { migratedDb } from "./db.ts";
+import { gatedBatch } from "./dc-fixtures.ts";
 import { json, testApp } from "./helpers.ts";
 import { memoryStorage } from "./service-deps.ts";
 
@@ -186,40 +187,20 @@ describe("overlapping first logins", () => {
   });
 });
 
-/** `wrap` holds the first batch after `hold()` until it is released; `hold()` resolves, with the release, once that
- * batch is waiting. */
-function holdOneBatch() {
-  let waiting: ((release: () => void) => void) | undefined;
-  const wrap = (db: Db): Db => ({
-    ...db,
-    async batch(statements) {
-      const notify = waiting;
-      waiting = undefined;
-      if (notify) await new Promise<void>((release) => notify(release));
-      await db.batch(statements);
-    },
-  });
-  const hold = () =>
-    new Promise<() => void>((resolve) => {
-      waiting = resolve;
-    });
-  return { wrap, hold };
-}
-
 // CodeAnt on #38: a login checked before a password change committed after it, leaving a session the
 // change should have ended.
 describe("a login racing a password change", () => {
   const CHANGE = { currentPassword: "admin", newPassword: "x", confirmPassword: "x" };
 
   it("starts no session when the password it checked changed before it commits", async () => {
-    const { wrap, hold } = holdOneBatch();
-    const { db, signIn, login, post } = await setup(wrap);
+    const gate = gatedBatch();
+    const { db, signIn, login, post } = await setup(gate.wrap);
     const cookie = await signIn();
-    const held = hold();
+    const { reached, open } = gate.close();
     const late = login("admin");
-    const release = await held;
+    await reached;
     expect((await post("/api/auth/change-password", CHANGE, cookie)).status).toBe(200);
-    release();
+    open();
     const res = await late;
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual(WRONG_LOGIN);
@@ -227,14 +208,14 @@ describe("a login racing a password change", () => {
   });
 
   it("starts no session when a first login checked the default that another login then changed", async () => {
-    const { wrap, hold } = holdOneBatch();
-    const { db, signIn, login, post } = await setup(wrap);
-    const held = hold();
+    const gate = gatedBatch();
+    const { db, signIn, login, post } = await setup(gate.wrap);
+    const { reached, open } = gate.close();
     const late = login("admin");
-    const release = await held;
+    await reached;
     const cookie = await signIn();
     expect((await post("/api/auth/change-password", CHANGE, cookie)).status).toBe(200);
-    release();
+    open();
     expect((await late).status).toBe(401);
     expect(await db.query(db.build.select({ id: session.id }).from(session))).toEqual([]);
   });

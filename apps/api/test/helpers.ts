@@ -1,3 +1,4 @@
+import type { NodeDb } from "@senstosales/db/node";
 import { createClient } from "@senstosales/schemas";
 
 import type { AppDeps, Handlers } from "../src/app.ts";
@@ -50,6 +51,24 @@ export const json = (method: string, body: unknown): RequestInit => ({
   headers: { "content-type": "application/json" },
   body: JSON.stringify(body),
 });
+
+/** The most parameters one statement bound while `run` ran; D1 binds at most 100 (C4). */
+export async function mostBoundParams(db: NodeDb, run: () => Promise<unknown>): Promise<number> {
+  let most = 0;
+  const query = db.query.bind(db);
+  db.query = ((statement: Parameters<typeof query>[0]) => {
+    // Every statement the repositories send is a drizzle query builder.
+    const { params } = (statement as unknown as { toSQL(): { params: unknown[] } }).toSQL();
+    most = Math.max(most, params.length);
+    return query(statement);
+  }) as typeof db.query;
+  try {
+    await run();
+  } finally {
+    db.query = query;
+  }
+  return most;
+}
 
 /** A promise the test resolves, to hold work at a point until it calls `open`. */
 export function gate() {
