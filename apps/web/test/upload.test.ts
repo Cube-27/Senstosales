@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
+import { MAX_BODY_BYTES } from "@senstosales/schemas";
+
 import { stageFolder, TOO_LARGE, uploadHtml } from "../src/lib/upload.ts";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -50,6 +52,21 @@ describe("stageFolder", () => {
       ["po", ULID_A, 10],
     ]);
     expect(bodies.flatMap((b) => b.files.map((f) => f.name))).toEqual(files.map((f) => f.name));
+  });
+
+  it("keeps every staging body, kind and staging id included, within the 10 MB cap", async () => {
+    // Together the two files fill a {"files":[…]} body to 4 bytes under the cap: packed into one request, kind and
+    // stagingId would take it over.
+    const half =
+      (MAX_BODY_BYTES - '{"files":[{"name":"a.html","html":""},{"name":"bb.html","html":""}]}'.length - 4) / 2;
+    const files = [page("a.html", "x".repeat(half)), page("bb.html", "x".repeat(half))];
+    const sent: string[] = [];
+    vi.stubGlobal("fetch", (_url: string, init: { body: string }) => {
+      sent.push(init.body);
+      return Promise.resolve(new Response(JSON.stringify({ stagingId: ULID_A, count: 1 })));
+    });
+    expect(await stageFolder("srv", files)).toEqual({ stagingId: ULID_A, tooLarge: [] });
+    expect(sent.map((body) => new TextEncoder().encode(body).length <= MAX_BODY_BYTES)).toEqual([true, true]);
   });
 
   it("leaves out a file over the cap and stages the rest", async () => {

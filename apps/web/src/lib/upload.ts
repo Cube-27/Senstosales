@@ -1,7 +1,7 @@
 // BHEL HTML uploads from the browser (SPEC-16 §4.2, D-0131): each file is read as text and sent as JSON (INV-102), and
 // every request body stays within the API's 10 MB cap (INV-110). A file that alone would pass the cap is never sent;
 // it fails in place with a plain reason, as the API would have refused its whole request.
-import { splitUpload } from "@senstosales/schemas";
+import { MAX_BODY_BYTES, splitUpload } from "@senstosales/schemas";
 
 import type { UploadOutcome } from "../components/common/index.ts";
 import { getPlatform } from "../platform/index.ts";
@@ -40,6 +40,13 @@ export async function uploadHtml(route: "po.upload" | "srv.upload", file: File):
 /** Files read and sent per round, so a large folder is never held in memory at once. */
 const READ_AHEAD = 50;
 
+/**
+ * What a staging body carries beside its files: `,"kind":"srv","stagingId":"<ULID>"` at most. `splitUpload` budgets
+ * `{"files":[…]}` only, so the files get the cap less this.
+ */
+const STAGE_FIELDS_BYTES = JSON.stringify({ kind: "srv", stagingId: "0".repeat(26) }).length - 1;
+const STAGE_FILES_BYTES = MAX_BODY_BYTES - STAGE_FIELDS_BYTES;
+
 /** What staging a folder produced: the staging area (none when nothing could be sent) and the files left out. */
 export interface Staged {
   readonly stagingId: string | null;
@@ -50,13 +57,19 @@ export interface Staged {
  * Stages a folder's files for a folder-import job (SPEC-08 §2): in rounds of {@link READ_AHEAD} files, each round
  * split into requests within the cap; the first request opens the staging area and the rest add to it.
  */
+const partition = <T>(items: readonly T[], keep: (item: T) => boolean): [T[], T[]] => [
+  items.filter(keep),
+  items.filter((item) => !keep(item)),
+];
+
 export async function stageFolder(kind: "po" | "srv", files: readonly File[]): Promise<Staged> {
   let stagingId: string | null = null;
   const tooLarge: string[] = [];
   for (let start = 0; start < files.length; start += READ_AHEAD) {
-    const round = await Promise.all(files.slice(start, start + READ_AHEAD).map(read));
-    const split = splitUpload(round);
-    tooLarge.push(...split.tooLarge.map((file) => file.name));
+    // A file larger than the cap in bytes can never be sent; it is not read.
+    const [fits, over] = partition(files.slice(start, start + READ_AHEAD), (file) => file.size <= STAGE_FILES_BYTES);
+    const split = splitUpload(await Promise.all(fits.map(read)), STAGE_FILES_BYTES);
+    tooLarge.push(...over.map((file) => file.name), ...split.tooLarge.map((file) => file.name));
     for (const batch of split.requests) {
       const staged: { stagingId: string } = await api.request("jobs.stage", {
         body: { kind, files: batch, ...(stagingId === null ? {} : { stagingId }) },
