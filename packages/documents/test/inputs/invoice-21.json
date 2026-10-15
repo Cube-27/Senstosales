@@ -1,0 +1,273 @@
+{
+  "supplier": {
+    "name": "EXAMPLE PRECISION WORKS",
+    "description": "Manufacturers of Example Machined Components",
+    "address": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "gstin": "TESTGSTIN0000X1",
+    "contact": "0000-000000",
+    "state": "Example State",
+    "stateCode": "00",
+    "jurisdiction": "EXAMPLE CITY"
+  },
+  "invoice": {
+    "number": "21",
+    "invoiceDate": "2025-07-01",
+    "buyerName": "The Example Manager (Stores)",
+    "buyerAddress": "Example Unit\nExample Road\nExample City - 000000",
+    "buyerGstin": "TESTGSTIN0000B1",
+    "buyerState": "Example State",
+    "placeOfSupply": "Example City",
+    "buyersOrderDate": "2025-04-15",
+    "gemcNumber": "GEMC-5100000001",
+    "gemcDate": "2025-03-20",
+    "paymentTerms": "45 Days",
+    "despatchDocNo": "DD-0001",
+    "srvNo": "SRV-0001",
+    "srvDate": "2025-06-20",
+    "destination": "Example City",
+    "cgstPct": 900000,
+    "sgstPct": 900000
+  },
+  "po": {
+    "poNumber": "4500000003",
+    "poDate": "2025-03-25",
+    "isGemc": true
+  },
+  "dc": {
+    "number": "21",
+    "dcDate": "2025-06-28"
+  },
+  "items": [
+    {
+      "poItemNo": 210,
+      "description": "Bracket, mild steel, 5 x 2 mm, drawing EX-1000",
+      "unit": "NOS",
+      "qty": 1000,
+      "rate": 71927966,
+      "taxable": 71927966,
+      "cgst": 6473517,
+      "sgst": 6473517,
+      "total": 84875000
+    },
+    {
+      "poItemNo": 200,
+      "description": "Flange, mild steel, 6 x 3 mm, drawing EX-1001",
+      "unit": "Kg",
+      "qty": 2500,
+      "rate": 8474576,
+      "taxable": 21186440,
+      "cgst": 1906780,
+      "sgst": 1906780,
+      "total": 25000000
+    },
+    {
+      "poItemNo": 190,
+      "description": "Bush, mild steel, 7 x 4 mm, drawing EX-1002",
+      "unit": "SET",
+      "qty": 12000,
+      "rate": 127033898,
+      "taxable": 1524406776,
+      "cgst": 137196610,
+      "sgst": 137196610,
+      "total": 1798799996
+    },
+    {
+      "poItemNo": 180,
+      "description": "Spacer, mild steel, 8 x 5 mm, drawing EX-1003",
+      "unit": "NOS",
+      "qty": 750,
+      "rate": 71927966,
+      "taxable": 53945975,
+      "cgst": 4855138,
+      "sgst": 4855138,
+      "total": 63656251
+    },
+    {
+      "poItemNo": 170,
+      "description": "Shaft, mild steel, 9 x 6 mm, drawing EX-1004",
+      "unit": "Kg",
+      "qty": 100000,
+      "rate": 8474576,
+      "taxable": 847457600,
+      "cgst": 76271184,
+      "sgst": 76271184,
+      "total": 999999968
+    },
+    {
+      "poItemNo": 160,
+      "description": "Plate, mild steel, 10 x 7 mm, drawing EX-1005",
+      "unit": "SET",
+      "qty": 3000,
+      "rate": 127033898,
+      "taxable": 381101694,
+      "cgst": 34299152,
+      "sgst": 34299152,
+      "total": 449699998
+    },
+    {
+      "poItemNo": 150,
+      "description": "Gasket, mild steel, 11 x 8 mm, drawing EX-1006",
+      "unit": "NOS",
+      "qty": 1000,
+      "rate": 71927966,
+      "taxable": 71927966,
+      "cgst": 6473517,
+      "sgst": 6473517,
+      "total": 84875000
+    },
+    {
+      "poItemNo": 140,
+      "description": "Washer, mild steel, 12 x 9 mm, drawing EX-1007",
+      "unit": "Kg",
+      "qty": 2500,
+      "rate": 8474576,
+      "taxable": 21186440,
+      "cgst": 1906780,
+      "sgst": 1906780,
+      "total": 25000000
+    },
+    {
+      "poItemNo": 130,
+      "description": "Pin, mild steel, 13 x 10 mm, drawing EX-1008",
+      "unit": "SET",
+      "qty": 12000,
+      "rate": 127033898,
+      "taxable": 1524406776,
+      "cgst": 137196610,
+      "sgst": 137196610,
+      "total": 1798799996
+    },
+    {
+      "poItemNo": 120,
+      "description": "Collar, mild steel, 14 x 11 mm, drawing EX-1009",
+      "unit": "NOS",
+      "qty": 750,
+      "rate": 71927966,
+      "taxable": 53945975,
+      "cgst": 4855138,
+      "sgst": 4855138,
+      "total": 63656251
+    },
+    {
+      "poItemNo": 110,
+      "description": "Bracket, mild steel, 15 x 12 mm, drawing EX-1010",
+      "unit": "Kg",
+      "qty": 100000,
+      "rate": 8474576,
+      "taxable": 847457600,
+      "cgst": 76271184,
+      "sgst": 76271184,
+      "total": 999999968
+    },
+    {
+      "poItemNo": 100,
+      "description": "Flange, mild steel, 16 x 13 mm, drawing EX-1011",
+      "unit": "SET",
+      "qty": 3000,
+      "rate": 127033898,
+      "taxable": 381101694,
+      "cgst": 34299152,
+      "sgst": 34299152,
+      "total": 449699998
+    },
+    {
+      "poItemNo": 90,
+      "description": "Bush, mild steel, 17 x 14 mm, drawing EX-1012",
+      "unit": "NOS",
+      "qty": 1000,
+      "rate": 71927966,
+      "taxable": 71927966,
+      "cgst": 6473517,
+      "sgst": 6473517,
+      "total": 84875000
+    },
+    {
+      "poItemNo": 80,
+      "description": "Spacer, mild steel, 18 x 15 mm, drawing EX-1013",
+      "unit": "Kg",
+      "qty": 2500,
+      "rate": 8474576,
+      "taxable": 21186440,
+      "cgst": 1906780,
+      "sgst": 1906780,
+      "total": 25000000
+    },
+    {
+      "poItemNo": 70,
+      "description": "Shaft, mild steel, 19 x 16 mm, drawing EX-1014",
+      "unit": "SET",
+      "qty": 12000,
+      "rate": 127033898,
+      "taxable": 1524406776,
+      "cgst": 137196610,
+      "sgst": 137196610,
+      "total": 1798799996
+    },
+    {
+      "poItemNo": 60,
+      "description": "Plate, mild steel, 20 x 17 mm, drawing EX-1015",
+      "unit": "NOS",
+      "qty": 750,
+      "rate": 71927966,
+      "taxable": 53945975,
+      "cgst": 4855138,
+      "sgst": 4855138,
+      "total": 63656251
+    },
+    {
+      "poItemNo": 50,
+      "description": "Gasket, mild steel, 21 x 18 mm, drawing EX-1016",
+      "unit": "Kg",
+      "qty": 100000,
+      "rate": 8474576,
+      "taxable": 847457600,
+      "cgst": 76271184,
+      "sgst": 76271184,
+      "total": 999999968
+    },
+    {
+      "poItemNo": 40,
+      "description": "Washer, mild steel, 22 x 19 mm, drawing EX-1017",
+      "unit": "SET",
+      "qty": 3000,
+      "rate": 127033898,
+      "taxable": 381101694,
+      "cgst": 34299152,
+      "sgst": 34299152,
+      "total": 449699998
+    },
+    {
+      "poItemNo": 30,
+      "description": "Pin, mild steel, 23 x 20 mm, drawing EX-1018",
+      "unit": "NOS",
+      "qty": 1000,
+      "rate": 71927966,
+      "taxable": 71927966,
+      "cgst": 6473517,
+      "sgst": 6473517,
+      "total": 84875000
+    },
+    {
+      "poItemNo": 20,
+      "description": "Collar, mild steel, 24 x 21 mm, drawing EX-1019",
+      "unit": "Kg",
+      "qty": 2500,
+      "rate": 8474576,
+      "taxable": 21186440,
+      "cgst": 1906780,
+      "sgst": 1906780,
+      "total": 25000000
+    },
+    {
+      "poItemNo": 10,
+      "description": "Bracket, mild steel, 25 x 22 mm, drawing EX-1020",
+      "unit": "SET",
+      "qty": 12000,
+      "rate": 127033898,
+      "taxable": 1524406776,
+      "cgst": 137196610,
+      "sgst": 137196610,
+      "total": 1798799996
+    }
+  ]
+}
