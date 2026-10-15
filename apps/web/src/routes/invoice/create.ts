@@ -1,3 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/invoice/create")();
+import { zInvoiceCreateSearch } from "../../components/modules/invoice/search.ts";
+
+export const Route = createFileRoute("/invoice/create")({ validateSearch: zInvoiceCreateSearch });
