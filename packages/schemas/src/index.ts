@@ -10,6 +10,7 @@ export {
   fmtDaysToDue,
   fmtFixed,
   fmtFy,
+  fmtInstantDate,
   fmtMoney,
   fmtMoneyCompact,
   fmtMoneyCompactSpaced,

@@ -151,6 +151,13 @@ export function fmtAmountWords(m: Money): string {
 export const fmtDate = (d: IsoDate | null): string =>
   d === null ? "—" : `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 
+/** India has one time zone and no daylight saving: IST is UTC+05:30. */
+const IST_OFFSET_MS = 330 * 60 * 1000;
+
+/** An instant (`*_at`, UTC) as its IST calendar date: `2025-06-01T20:00:00.000Z` -> `"02/06/2025"`. */
+export const fmtInstantDate = (at: string): string =>
+  fmtDate(new Date(Date.parse(at) + IST_OFFSET_MS).toISOString().slice(0, 10) as IsoDate);
+
 /** The pending summary's export date: `2025-06-01` -> `"01-06-2025"`. */
 export const fmtDateDashed = (d: IsoDate): string => `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}`;
 
