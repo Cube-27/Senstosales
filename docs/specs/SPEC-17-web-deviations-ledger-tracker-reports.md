@@ -14,7 +14,7 @@ the platform adapter (Save-as in the desktop shell, a browser download otherwise
 
 Core:
 
-- `/deviations`: flags list (type, status, PO filters), the six v1 types with plain labels (INV-58), acknowledge
+- `/deviations`: flags list (type, status, PO filters), the nine v1 types with plain labels (INV-58, revised 2026-10-15), acknowledge
   with an optional note (INV-59), links to the PO and SRV.
 - `/system/ledger`: audit list with filters; read-only; no delete or prune control (INV-83).
 - `/delivery-tracker`: list, stats, smart filter chips, export button (SPEC-13).

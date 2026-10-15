@@ -104,7 +104,8 @@ API tests with in-memory node:sqlite and the anonymised parser fixtures plus syn
   `DOC_ON_CANCELLED_ITEM` (SPEC-11).
 - An SRV file none of whose SRVs can be read fails and keeps the previous SRV data; one unreadable SRV fails
   alone (INV-50, A2-10).
-- Cross-FY challan not linked and `DOC_NUMBER_CONFLICT` raised (INV-37, EC-03); SRV `ord_qty` differing →
+- Cross-FY challan not linked and no flag; a number resolved to another PO's DC → `DOC_NUMBER_CONFLICT` (INV-37,
+  EC-03, INV-53 (revised 2026-10-15, owner; ARCHITECTURE rev 1.11)); SRV `ord_qty` differing →
   `QTY_MISMATCH`.
 - SRV for an unknown PO stored, listed "PO not found", no flag (INV-40).
 - Second job start → 409; cancel stops between documents; progress counts match.
