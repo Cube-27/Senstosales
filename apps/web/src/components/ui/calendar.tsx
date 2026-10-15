@@ -9,11 +9,15 @@ import { cn } from "../../lib/cn.ts";
 const NAV_BUTTON =
   "inline-flex size-8 items-center justify-center rounded-sm text-[var(--dp-icon-color)] hover:bg-[var(--dp-cell-hover-bg)] aria-disabled:opacity-50";
 
-// As before: only left and right differ; up, down and none show the down chevron.
-const CHEVRON = { left: ChevronLeft, right: ChevronRight, up: ChevronDown, down: ChevronDown };
+// Only left and right differ; any other orientation, or none, shows the down chevron.
+function chevronIcon(orientation: ChevronProps["orientation"]) {
+  if (orientation === "left") return ChevronLeft;
+  if (orientation === "right") return ChevronRight;
+  return ChevronDown;
+}
 
-function Chevron({ className, orientation = "down" }: Readonly<ChevronProps>) {
-  const Icon = CHEVRON[orientation];
+function Chevron({ className, orientation }: Readonly<ChevronProps>) {
+  const Icon = chevronIcon(orientation);
   return <Icon className={cn("size-4", className)} aria-hidden />;
 }
 
