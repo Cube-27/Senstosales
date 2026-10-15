@@ -4,12 +4,11 @@
 // its number, the PO recompute with its flags, and the audit row (C4).
 import type { Statement } from "@senstosales/db";
 import { invoice, invoiceItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
-import type { Issue } from "@senstosales/domain";
 import { fyOf, invoiceLineTax, invoiceTotals, validateDcInvoiceLines } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
-import { ConflictError, fieldError, NotFoundError, ValidationError } from "../errors.ts";
+import { ConflictError, fieldError, linesError, NotFoundError, ValidationError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import { findDc } from "../repositories/dc.ts";
 import { dcLinesToInvoice, findInvoice, invoiceCollision, invoicesNumbered } from "../repositories/invoice.ts";
@@ -148,9 +147,3 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
 }
 
 export type InvoiceService = ReturnType<typeof invoiceService>;
-
-/** The 400 for invalid lines: the first issue's code, and every issue at its body path (SPEC-11 §4.3, D-0250). */
-function linesError(issues: readonly Issue[]): ValidationError {
-  const fields = issues.map((issue) => ({ path: `body.${issue.path}`, message: issue.message }));
-  return new ValidationError(issues[0]!.code, issues[0]!.message, { fields });
-}

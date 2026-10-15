@@ -2,75 +2,30 @@
 // PO rate, else 400 and nothing written (INV-29); one invoice per DC (INV-28); tax from the settings' GST rates copied
 // onto the invoice (INV-41, INV-18). Each create is one batch with recompute, flags, SRV link re-resolution and an
 // audit row (C4). Expected values are worked by hand from ARCHITECTURE §6.2, §6.5 and §6.10. Synthetic values only (C1).
-import type { Db } from "@senstosales/db";
-import { dcItem, invoice, invoiceItem, poItem, srvItem } from "@senstosales/db";
-import type { NodeDb } from "@senstosales/db/node";
+import { dcItem, invoice, invoiceItem, srvItem } from "@senstosales/db";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
 import type { AppOverrides } from "./api-app.ts";
-import { closeApiApps, onboardedApp } from "./api-app.ts";
+import { closeApiApps } from "./api-app.ts";
+import type { Json } from "./dc-fixtures.ts";
+import { heldBatches, line, PO as DC_PO, ready as dcReady } from "./dc-fixtures.ts";
 import { ID, json } from "./helpers.ts";
 import { NOW } from "./service-deps.ts";
 import { srvPage } from "./srv-pages.ts";
 
 afterEach(closeApiApps);
 
-type App = Awaited<ReturnType<typeof onboardedApp>>;
-type Json = Record<string, unknown>;
-
-/** The JSON fields these tests read; each test asserts the values. */
-interface Wire extends Json {
-  id: string;
-  code: string;
-  items: (Json & { id: string })[];
-}
-
-const line = (poItemNo: number, ordQty: string, rateSource: string) => ({
-  poItemNo,
-  materialCode: `M-${poItemNo}`,
-  description: "Example part",
-  drawingNo: null,
-  unit: "NOS",
-  ordQty,
-  rateSource,
-  lots: [{ lotNo: 1, delyQty: ordQty, delyDate: "2025-05-15", destCode: "D1" }],
-});
+const rated = (poItemNo: number, ordQty: string, rateSource: string) => ({ ...line(poItemNo, ordQty), rateSource });
 
 /** PO 4500001: item 10 of ord 10 at 100 and item 20 of ord 5 at 33.333. */
-const PO = {
-  poNumber: "4500001",
-  poDate: "2025-03-10",
-  enquiry: null,
-  quotation: null,
-  orderType: "SUPPLY",
-  gemcNumber: null,
-  remarks: null,
-  rawHeader: {},
-  items: [line(10, "10", "100"), line(20, "5", "33.333")],
-};
+const PO = { ...DC_PO, items: [rated(10, "10", "100"), rated(20, "5", "33.333")] };
 
 /** A GEMC PO: the GST-inclusive 848.75 is stored as the net 719.27966 (INV-16). */
-const GEMC_PO = { ...PO, poNumber: "4500002", gemcNumber: "GEMC-77", items: [line(10, "10", "848.75")] };
-
-const DC_HEADER = {
-  gcNumber: null,
-  gcDate: null,
-  ourRef: null,
-  departmentNo: null,
-  consigneeName: null,
-  consigneeGstin: null,
-  consigneeAddress: null,
-  inspectionCompany: null,
-  ewayBillNo: null,
-  vehicleNo: null,
-  lrNo: null,
-  transporter: null,
-  modeOfTransport: null,
-  remarks: null,
-  supplierName: null,
-  supplierAddress: null,
-  supplierGstin: null,
-  supplierContact: null,
+const GEMC_PO = {
+  ...PO,
+  poNumber: "4500002",
+  gemcNumber: "GEMC-77",
+  items: [rated(10, "10", "848.75"), rated(20, "5", "118")],
 };
 
 /** Every invoice header field: a synthetic buyer snapshot, the rest blank. */
@@ -100,39 +55,25 @@ const HEADER = {
   supplierContact: "Example Contact",
 };
 
-function setup(app: App) {
-  const send = async (path: string, init?: RequestInit) => {
-    const res = await app.send(path, init);
-    return { status: res.status, body: (await res.json()) as Wire };
-  };
-  /** The stored PO's id and its item ids by item number. */
-  async function storedPo(po: Json = PO) {
-    const created = await send("/api/po", json("POST", po));
-    const { body } = await send(`/api/po/${created.body.id}`);
-    const itemId = (no: number) => body.items.find((i) => i["poItemNo"] === no)?.id ?? "";
-    return { poId: created.body.id, item10: itemId(10), item20: itemId(20) };
-  }
+/** The DC tests' app with this file's PO, and the invoice reads and writes. */
+async function ready(overrides?: AppOverrides) {
+  const r = await dcReady(overrides);
+  const { app, send, createDc, items, auditOf } = r;
+  const storedPo = (po: Json = PO) => r.storedPo(po);
   /** A stored DC with its line ids in the order given. */
-  async function storedDc(poId: string, number: string, dcDate: string, items: { poItemId: string; dspQty: string }[]) {
-    const created = await send("/api/dc", json("POST", { ...DC_HEADER, poId, number, dcDate, items }));
+  async function storedDc(poId: string, number: string, dcDate: string, lines: { poItemId: string; dspQty: string }[]) {
+    const created = await createDc({ poId, number, dcDate, items: lines });
     expect(created.status).toBe(200);
     const rows = await app.db.query(app.db.build.select().from(dcItem).orderBy(dcItem.id));
-    const lineIds = rows.filter((r) => r.dcId === created.body.id).map((r) => r.id);
-    return { dcId: created.body.id, lineIds };
+    return { dcId: created.body.id, lineIds: rows.filter((row) => row.dcId === created.body.id).map((row) => row.id) };
   }
   const createInvoice = (body: Json) => send("/api/invoice", json("POST", { kind: "dc", ...HEADER, ...body }));
-  const items = () => app.db.query(app.db.build.select().from(poItem).orderBy(poItem.poItemNo));
   const invoices = () => app.db.query(app.db.build.select().from(invoice).orderBy(invoice.id));
   const invoiceLines = () => app.db.query(app.db.build.select().from(invoiceItem).orderBy(invoiceItem.id));
-  const invoiceAudit = async () => (await app.audit()).filter((row) => row.action === "invoice.create");
+  const invoiceAudit = () => auditOf("invoice.create");
   /** Everything an invoice create writes; a refused create leaves it as it was. */
   const written = async () => [await invoices(), await invoiceLines(), await invoiceAudit(), await items()];
-  return { send, storedPo, storedDc, createInvoice, items, invoices, invoiceLines, invoiceAudit, written };
-}
-
-async function ready(overrides?: AppOverrides) {
-  const app = await onboardedApp(overrides);
-  return { app, ...setup(app) };
+  return { app, send, storedPo, storedDc, createInvoice, items, invoices, invoiceLines, invoiceAudit, written };
 }
 
 /** PO 4500001 with DC 7 of 4 on item 10 and 2 on item 20, in FY 2025-26. */
@@ -387,29 +328,6 @@ describe("POST /api/invoice from a DC", () => {
     expect(linked).toEqual([{ resolvedInvoiceId: res.body.id }, { resolvedInvoiceId: null }]);
   });
 });
-
-/** A `Db` whose next `count` batches wait until all of them are built, then run in turn; later batches run at once. */
-function heldBatches() {
-  let count = 0;
-  const waiting: (() => void)[] = [];
-  const wrap = (db: NodeDb): Db => ({
-    build: db.build,
-    query: (statement) => db.query(statement),
-    batch: async (statements) => {
-      if (count > 0) {
-        await new Promise<void>((release) => {
-          waiting.push(release);
-          if (waiting.length === count) {
-            count = 0;
-            for (const r of waiting.splice(0)) r();
-          }
-        });
-      }
-      return db.batch(statements);
-    },
-  });
-  return { wrap, hold: (n: number) => void (count = n) };
-}
 
 describe("two creates built from the same read before either commits", () => {
   test("the same DC: one saves, the other is a 409 and writes nothing", async () => {
