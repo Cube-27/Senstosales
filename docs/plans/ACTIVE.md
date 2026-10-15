@@ -250,13 +250,13 @@ Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules
 
 ## [SPEC-20 — Desktop packaging and release](../specs/SPEC-20-desktop-packaging-release.md)
 
-| PR  | Scope                                    | Status | Notes  |
-| --- | ---------------------------------------- | ------ | ------ |
-| 1   | Sidecar build                            | todo   |        |
-| 2   | Tauri shell and sidecar lifecycle        | todo   |        |
-| 3   | Plugin capabilities and tray             | todo   |        |
-| 4   | NSIS installer and `desktop` job         | todo   |        |
-| 5   | Versioning, updater and release workflow | todo   | H6, H7 |
+| PR  | Scope                                    | Status     | Notes  |
+| --- | ---------------------------------------- | ---------- | ------ |
+| 1   | Sidecar build                            | done (#81) |        |
+| 2   | Tauri shell and sidecar lifecycle        | done (#81) |        |
+| 3   | Plugin capabilities and tray             | done (#81) |        |
+| 4   | NSIS installer and `desktop` job         | done (#81) |        |
+| 5   | Versioning, updater and release workflow | todo       | H6, H7 |
 
 ## [SPEC-21 — Operations: backups, restore, logs and the operations guide](../specs/SPEC-21-operations-backup-logs.md)
 
@@ -265,7 +265,7 @@ Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules
 | 1   | Backup job and rotation | done (#79) |                                            |
 | 2   | Restore                 | done (#79) | Shell reload after restore pending SPEC-20 |
 | 3   | Settings backup panel   | todo       |                                            |
-| 4   | Logs                    | done (#79) | Shell log plugin pending SPEC-20           |
+| 4   | Logs                    | done (#79) | Shell log plugin: SPEC-20 (#81)            |
 | 5   | Operations guide        | todo       | H7                                         |
 
 ## [SPEC-22 — Cutover](../specs/SPEC-22-cutover.md)
