@@ -1,6 +1,6 @@
 // SPEC-10 PR 5: flags list, stats and acknowledge; the read-only audit list. Expected values worked by hand from the
 // seeded rows below. Synthetic values only (C1).
-import type { Instant } from "@senstosales/db";
+import type { Db, Instant } from "@senstosales/db";
 import * as tables from "@senstosales/db";
 import { auditLog, po, reconciliationIssue, supplier } from "@senstosales/db";
 import type { FlagType, IsoDate, Qty } from "@senstosales/domain";
@@ -8,10 +8,12 @@ import { is } from "drizzle-orm";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
+import { flagsRoutes } from "../src/routes/flags.ts";
 import { apiRoutes } from "../src/routes/index.ts";
+import { flagsService } from "../src/services/flags.ts";
 import { closeApiApps, onboardedApp } from "./api-app.ts";
-import { ID, json, testApp } from "./helpers.ts";
-import { NOW } from "./service-deps.ts";
+import { gate, ID, json, testApp } from "./helpers.ts";
+import { fixedClock, NOW } from "./service-deps.ts";
 
 afterEach(closeApiApps);
 
@@ -249,6 +251,45 @@ describe("POST /api/flags/:id/acknowledge", () => {
     const res = await acknowledge(app, F3, null);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ id: F3, status: "acknowledged", note: null, acknowledgedAt: NOW });
+  });
+
+  it("lets one of two concurrent acknowledges win; the other answers 409 and writes nothing", async () => {
+    const app = await seeded();
+    // Both requests read the open flag and build their batch before either commits; then they commit in turn.
+    const pending: (() => void)[] = [];
+    const bothBuilt = gate();
+    const held: Db = {
+      build: app.db.build,
+      query: (statement) => app.db.query(statement),
+      batch: async (statements) => {
+        await new Promise<void>((resolve) => {
+          pending.push(resolve);
+          if (pending.length === 2) bothBuilt.open();
+        });
+        return app.db.batch(statements);
+      },
+    };
+    const { send } = testApp(flagsRoutes(flagsService({ db: held, clock: fixedClock })));
+    const ack = (note: string) => send(`/api/flags/${F1}/acknowledge`, json("POST", { note }));
+
+    const first = ack("first");
+    const second = ack("second");
+    await bothBuilt.opened;
+    for (const resolve of pending) resolve();
+    const [a, b] = await Promise.all([first, second]);
+
+    expect([a.status, b.status]).toEqual([200, 409]);
+    expect(await b.json()).toMatchObject({ code: "flag-acknowledged" });
+    const [f1] = await flagRows(app);
+    expect(f1).toMatchObject({ status: "acknowledged", note: "first", acknowledgedAt: NOW });
+    const audit = await app.audit();
+    expect(audit.slice(3)).toEqual([
+      expect.objectContaining({
+        action: "flag.acknowledge",
+        entityId: F1,
+        after: { status: "acknowledged", note: "first" },
+      }),
+    ]);
   });
 
   it("answers 409 for an acknowledged flag and keeps its note and time", async () => {
