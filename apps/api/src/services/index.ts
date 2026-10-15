@@ -13,6 +13,7 @@ import { deliveryTrackerService } from "./delivery-tracker.ts";
 import { dcService } from "./dc.ts";
 import { flagsService } from "./flags.ts";
 import { folderImportService } from "./folder-import.ts";
+import { invoiceService } from "./invoice.ts";
 import { jobsService } from "./jobs.ts";
 import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
@@ -40,11 +41,12 @@ export interface SupplierDeps extends ServiceDeps {
 export function createServices(deps: ServiceDeps) {
   const withSupplier: SupplierDeps = { ...deps, supplierId: supplierRef(deps.db) };
   const tracker = deliveryTrackerService(deps);
+  const settings = createSettingsService(withSupplier);
   return {
     auth: createAuthService(deps),
     onboarding: createOnboardingService(withSupplier),
     supplier: createSupplierService(withSupplier),
-    settings: createSettingsService(withSupplier),
+    settings,
     buyers: createBuyersService(withSupplier),
     secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
@@ -55,6 +57,7 @@ export function createServices(deps: ServiceDeps) {
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),
     dc: dcService(withSupplier),
+    invoice: invoiceService({ ...withSupplier, settings }),
     flags: flagsService(deps),
     audit: auditService(deps),
     deliveryTracker: tracker,

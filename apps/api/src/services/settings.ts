@@ -64,3 +64,5 @@ export function createSettingsService({ db, clock, supplierId }: SupplierDeps) {
     },
   };
 }
+
+export type SettingsService = ReturnType<typeof createSettingsService>;
