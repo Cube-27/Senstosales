@@ -182,7 +182,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 1b  | Confirm goldens against H5 legacy output            | todo       | H5                                                                                             |
 | 2   | Streaming writers and keyset paging                 | done (#58) |                                                                                                |
 | 3   | Registers and list CSVs                             | done (#69) | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
-| 4   | Pending, reconciliation, export-selected, GC report | todo       |                                                                                                |
+| 4   | Pending, reconciliation, export-selected, GC report | done (#75) |                                                                                                |
 | 5   | Report lists and delivery-tracker export            | done (#66) |                                                                                                |
 
 ## [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md)
