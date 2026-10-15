@@ -25,8 +25,8 @@ Core:
 Out of scope:
 
 - Route handlers (SPEC-07, -08, -10, -11, -13, -19); report column definitions (SPEC-13).
-- Dropped endpoints (INV-87): procurement/analytics, dashboard insights and forecast, daily-dispatch, HTTP
-  reconcile-all, audit delete, health aliases, download-folder preferences.
+- Dropped endpoints (INV-87): procurement/analytics, dashboard insights and forecast, HTTP reconcile-all,
+  audit delete, health aliases, download-folder preferences.
 
 ## 3. Dependencies
 

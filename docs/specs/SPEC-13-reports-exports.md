@@ -9,7 +9,7 @@ The report data behind `/reports` and `/delivery-tracker` and every CSV/Excel ex
 order, headers, number and date formats, file type and file name (A-2, INV-68). Exports stream: keyset-paged
 queries feed an exceljs `WorkbookWriter` or a CSV writer through `hono/streaming`, with no row cap (INV-99). Exports
 never gain a flag column (INV-60) and show data as it stands, clamping nothing except `balance >= 0` (INV-61).
-Daily-dispatch is dropped (A-16, INV-87). Formatters come from `packages/schemas` so screen and export agree.
+The daily dispatch summary is back (ARCHITECTURE rev 1.12, INV-120). Formatters come from `packages/schemas` so screen and export agree.
 
 ## 2. Scope
 
@@ -38,7 +38,7 @@ Core — the kept exports (§11.2), each pinned by a golden:
 
 Out of scope:
 
-- Daily-dispatch, procurement/analytics (A-16); new columns or formats (A-2); flag columns (A-2).
+- Procurement/analytics (A-16); new columns or formats (A-2); flag columns (A-2).
 - The `/reports` and `/delivery-tracker` screens (SPEC-17).
 
 ## 3. Dependencies
