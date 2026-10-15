@@ -44,13 +44,13 @@ afterEach(() => db.close());
 const file = (name: string, html: string) => ({ name, html });
 
 /** PO 4500001 (items 10 and 20, ord 10 each) with an SRV that wins and cites 12 ordered on item 10 (one
- * QTY_MISMATCH); PO 4500002 with one item and nothing else. */
+ * QTY_MISMATCH); PO 999999, a shorter number, with one item and nothing else. */
 async function seed(): Promise<void> {
   await http.client.request("po.upload", {
     body: {
       files: [
         file("a.html", poPage({ number: "4500001", date: "10/04/2025", items: [{ no: 10 }, { no: 20 }] })),
-        file("b.html", poPage({ number: "4500002", date: "10/04/2025", items: [{ no: 10 }] })),
+        file("b.html", poPage({ number: "999999", date: "10/04/2025", items: [{ no: 10 }] })),
       ],
     },
   });
@@ -161,7 +161,7 @@ describe("recompute-all", () => {
     expect(await derived()).toEqual(good);
   });
 
-  test("works through the POs in PO-number order, one audit row per PO naming the job", async () => {
+  test("works through the POs in numeric PO-number order, one audit row per PO naming the job", async () => {
     await seed();
     const ids = Object.fromEntries(
       (await db.query(db.build.select({ id: po.id, n: po.poNumber }).from(po))).map((r) => [r.n, r.id]),
@@ -170,8 +170,8 @@ describe("recompute-all", () => {
     const { job } = await runRecomputeAll();
 
     expect(await recomputeAudits()).toEqual([
+      { entityId: ids["999999"], jobId: job.id, before: null, after: null },
       { entityId: ids["4500001"], jobId: job.id, before: null, after: null },
-      { entityId: ids["4500002"], jobId: job.id, before: null, after: null },
     ]);
   });
 
@@ -186,10 +186,11 @@ describe("recompute-all", () => {
 
     const reason = "Could not be recomputed. Its stored values were kept.";
     expect(job.progress).toEqual({ total: 2, done: 1, skipped: 0, failed: 1, current: null });
-    expect(events.map((e) => [e.level, e.documentKey, e.message])).toEqual([["error", "4500001", reason]]);
-    expect(job.summary).toMatchObject({ failedDocuments: [{ document: "4500001", reason }] });
+    expect(events.map((e) => [e.level, e.documentKey, e.message])).toEqual([["error", "999999", reason]]);
+    expect(job.summary).toMatchObject({ failedDocuments: [{ document: "999999", reason }] });
+    // `derived()` lists 4500001 first: it orders by the text.
     const after = await derived();
-    expect(after.pos).toEqual([corrupted.pos[0], good.pos[1]]);
+    expect(after.pos).toEqual([good.pos[0], corrupted.pos[1]]);
   });
 
   test("with no POs it ends done with nothing to do", async () => {

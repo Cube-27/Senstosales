@@ -29,6 +29,15 @@ const links = {
 /** PO numbers are digit strings, so they sort as numbers (as legacy); the text breaks ties for any that are not. */
 const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber];
 
+/** Every PO's id and number, in PO-number order. */
+export const allPoRefs = (db: Db) =>
+  db.query(
+    db.build
+      .select({ id: po.id, poNumber: po.poNumber })
+      .from(po)
+      .orderBy(...byPoNumber),
+  );
+
 /** The legacy status order: Pending, then Delivered, then Closed. */
 const statusRank = sql`CASE ${po.status} WHEN 'Pending' THEN 1 WHEN 'Delivered' THEN 2 ELSE 3 END`;
 

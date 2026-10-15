@@ -23,7 +23,8 @@ import type { DocumentResult, JobHandlers } from "../ports/jobs.ts";
 import { dcLinesOfPo } from "../repositories/dc.ts";
 import { flagFingerprintsOfPo } from "../repositories/flags.ts";
 import { invoiceLinesOfPo } from "../repositories/invoice.ts";
-import { allPoRefs, findPo, poItemsOf } from "../repositories/po.ts";
+import { findPo, poItemsOf } from "../repositories/po.ts";
+import { allPoRefs } from "../repositories/po-list.ts";
 import { srvLinesOfPo } from "../repositories/srv.ts";
 import { audit } from "./audit.ts";
 
@@ -90,8 +91,10 @@ export function recomputeAllHandlers(deps: RecomputeDeps): JobHandlers {
             return { outcome: "skipped", reason: "This PO was deleted after the job started." };
           }
           // A refused statement fails this PO only and the job goes on (SPEC-08 §4.3). The event names the PO.
-          if (!(err instanceof DbError)) throw err;
-          return { outcome: "failed", reason: "Could not be recomputed. Its stored values were kept." };
+          if (err instanceof DbError) {
+            return { outcome: "failed", reason: "Could not be recomputed. Its stored values were kept." };
+          }
+          throw err;
         }
         return { outcome: "done" };
       },
