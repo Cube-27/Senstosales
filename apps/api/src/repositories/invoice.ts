@@ -16,7 +16,7 @@ import type { routes } from "@senstosales/schemas";
 import { and, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import { srvRefs, srvsResolvedTo } from "./po-list.ts";
+import { dcRefColumns, srvRefs, srvsResolvedTo } from "./po-list.ts";
 import { apiColumns, contains, flagColumns } from "./sql.ts";
 
 /** The filters of the invoice list and its stats. */
@@ -107,7 +107,7 @@ export async function findInvoiceWithPo(db: Db, id: string) {
         invoice: invoiceColumns,
         po: { id: po.id, poNumber: po.poNumber, isGemc: po.isGemc },
         poVersion: po.version,
-        dc: dcRef,
+        dc: dcRefColumns,
       })
       .from(invoice)
       .innerJoin(po, eq(po.id, invoice.poId))
@@ -116,9 +116,6 @@ export async function findInvoiceWithPo(db: Db, id: string) {
   );
   return row === undefined ? undefined : { ...row, invoice: paired(row.invoice) };
 }
-
-/** A DC reference with its FY (INV-24). */
-const dcRef = { id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear };
 
 /** The legacy filter panel: text in the invoice, PO or DC number or the buyer, invoice date range, total range. */
 const where = (f: InvoiceFilters) =>
@@ -149,7 +146,7 @@ export const invoiceListLines = (db: Db, filters: InvoiceFilters) =>
         poId: invoice.poId,
         poNumber: po.poNumber,
         kind: invoice.kind,
-        dc: dcRef,
+        dc: dcRefColumns,
         taxable: invoice.taxable,
         cgst: invoice.cgst,
         sgst: invoice.sgst,

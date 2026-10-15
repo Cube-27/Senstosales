@@ -19,7 +19,7 @@ import type { routes } from "@senstosales/schemas";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 
-import { ConflictError, fieldError, linesError, NotFoundError } from "../errors.ts";
+import { ConflictError, dcNotFound, fieldError, linesError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import type { DcFilters } from "../repositories/dc.ts";
 import {
@@ -124,7 +124,7 @@ function toRows(lines: readonly Line[], filters: DcFilters): Row[] {
 export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
   async function loadDc(id: string) {
     const row = await findDcWithPo(db, id);
-    if (row === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
+    if (row === undefined) throw dcNotFound();
     return row;
   }
 

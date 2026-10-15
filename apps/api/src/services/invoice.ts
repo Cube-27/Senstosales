@@ -5,7 +5,7 @@
 // its number, the PO recompute with its flags, and the audit row (C4). An edit changes header fields only (INV-33) and
 // moves the invoice to its date's FY (INV-25); a delete is refused while an SRV item links the invoice (INV-35).
 import type { Statement } from "@senstosales/db";
-import { invoice, invoiceItem, po, updateWithVersion } from "@senstosales/db";
+import { invoice, invoiceItem, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
@@ -22,15 +22,7 @@ import type { routes } from "@senstosales/schemas";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 
-import {
-  ConflictError,
-  dcHasInvoice,
-  dcNotFound,
-  fieldError,
-  invoiceNotFound,
-  linesError,
-  NotFoundError,
-} from "../errors.ts";
+import { ConflictError, dcHasInvoice, dcNotFound, fieldError, invoiceNotFound, linesError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import { findDc } from "../repositories/dc.ts";
 import type { InvoiceFilters } from "../repositories/invoice.ts";
@@ -41,20 +33,18 @@ import {
   findInvoiceWithPo,
   invoiceCollision,
   invoiceListLines,
-  invoicesNumbered,
   invoiceStillUnlinked,
   itemsOfInvoice,
   openFlagsOfInvoice,
   srvsOfInvoice,
 } from "../repositories/invoice.ts";
-import { findPoRow, itemsOfPo } from "../repositories/po-list.ts";
+import { itemsOfPo } from "../repositories/po-list.ts";
 import { audit } from "./audit.ts";
-import { commit, docWrites, NO_LINKS } from "./doc-writes.ts";
+import { commit, docWrites, loadPo, NO_LINKS } from "./doc-writes.ts";
 import type { SupplierDeps } from "./index.ts";
-import { reresolveLinks } from "./links.ts";
 import type { Comparator } from "./paging.ts";
 import { byNum, byNumber, byText, desc, on, page } from "./paging.ts";
-import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
+import { loadPoSnapshot } from "./recompute.ts";
 import { retrying } from "./retry.ts";
 import { gstRatesOf } from "./settings.ts";
 
@@ -144,16 +134,15 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     ]);
     const { poId, dc } = source;
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
-    const row = await findPoRow(db, poId);
-    if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
-    const [snapshot, numbered, lines] = await Promise.all([
+    const row = await loadPo(db, poId);
+    const id = newId();
+    const [snapshot, links, lines] = await Promise.all([
       loadPoSnapshot(db, poId),
-      invoicesNumbered(db, supplier, [number]),
+      relink(supplier, id, [number], { id, number, date: body.invoiceDate }),
       source.lines(),
     ]);
 
     const now = clock.now();
-    const id = newId();
     const financialYear = fyOf(body.invoiceDate);
     const { cgstPct, sgstPct } = rates;
     const itemRows = lines.map((line) => ({
@@ -181,26 +170,17 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       createdAt: now,
     };
 
-    const links = await reresolveLinks(db, {
-      supplierId: supplier,
-      kind: "invoice",
-      numbers: [number],
-      docs: [...numbered, { id, number, date: body.invoiceDate }],
-    });
-    const srvLines = snapshot.srvLines.map((l) =>
-      links.changes.has(l.id) ? { ...l, resolvedInvoiceId: links.changes.get(l.id)! } : l,
-    );
     const invoiceLines = itemRows.map((r) => ({ id: r.id, invoiceId: id, poItemId: r.poItemId, qty: r.qty, kind }));
 
     const statements: Statement[] = [
-      // An invoice changes the PO's quantities: an edit or create built from the PO before it fails (D-0220).
-      updateWithVersion(db, po, poId, row.version, {}),
       db.build.insert(invoice).values(invoiceRow),
       db.build.insert(invoiceItem).values(itemRows),
       ...links.statements,
-      ...recomputeStatements(
-        { db, clock },
-        { ...snapshot, invoiceLines: [...snapshot.invoiceLines, ...invoiceLines], srvLines },
+      // An invoice changes the PO's quantities: an edit or create built from the PO before it fails (D-0220).
+      ...guardedRecompute(
+        { ...snapshot, invoiceLines: [...snapshot.invoiceLines, ...invoiceLines] },
+        row.version,
+        links.changes,
       ),
       audit(db, now, {
         action: "invoice.create",
@@ -275,8 +255,8 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
 
   /** One delete attempt: refused while an SRV item links the invoice (INV-35). */
   async function deleteOnce(supplier: string, id: string) {
-    const { invoice: row, poVersion } = await loadInvoice(id);
-    const reason = deleteBlock("invoice", await deleteLinksOfInvoice(db, id));
+    const [{ invoice: row, poVersion }, blocking] = await Promise.all([loadInvoice(id), deleteLinksOfInvoice(db, id)]);
+    const reason = deleteBlock("invoice", blocking);
     if (reason !== null) throw new ConflictError("delete-blocked", DELETE_BLOCKED[reason]!, { reason });
 
     const [snapshot, links, lines] = await Promise.all([
@@ -361,8 +341,8 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     },
 
     async detail(id: string) {
-      const { invoice: row, po: poRef, dc } = await loadInvoice(id);
-      const [items, srvs, flags] = await Promise.all([
+      const [{ invoice: row, po: poRef, dc }, items, srvs, flags] = await Promise.all([
+        loadInvoice(id),
         itemsOfInvoice(db, id),
         srvsOfInvoice(db, id),
         openFlagsOfInvoice(db, id),

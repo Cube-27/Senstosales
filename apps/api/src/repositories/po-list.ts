@@ -155,15 +155,12 @@ export function openFlagsOfPo(db: Db, poId: string) {
   );
 }
 
+/** A DC reference with its FY (INV-24). */
+export const dcRefColumns = { id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear };
+
 /** DC references as links and popovers show them, with their FY (INV-24), oldest first. */
 export const dcRefs = (db: Db, where: SQL | undefined) =>
-  db.query(
-    db.build
-      .select({ id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear })
-      .from(dc)
-      .where(where)
-      .orderBy(dc.dcDate, dc.id),
-  );
+  db.query(db.build.select(dcRefColumns).from(dc).where(where).orderBy(dc.dcDate, dc.id));
 
 /** Invoice references as links and popovers show them, with their FY (INV-24), oldest first. */
 export const invoiceRefs = (db: Db, where: SQL | undefined) =>

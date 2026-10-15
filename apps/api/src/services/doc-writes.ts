@@ -4,7 +4,7 @@ import type { Db, Statement } from "@senstosales/db";
 import { po, updateWithVersion, WriteBatch } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
 
-import { NotFoundError } from "../errors.ts";
+import { poNotFound } from "../errors.ts";
 import type { Clock } from "../ports/clock.ts";
 import { dcsNumbered } from "../repositories/dc.ts";
 import { invoicesNumbered } from "../repositories/invoice.ts";
@@ -24,7 +24,7 @@ const NUMBERED = { dc: dcsNumbered, invoice: invoicesNumbered };
 
 export async function loadPo(db: Db, poId: string) {
   const row = await findPoRow(db, poId);
-  if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
+  if (row === undefined) throw poNotFound();
   return row;
 }
 
