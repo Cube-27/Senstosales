@@ -3,6 +3,8 @@
 // the first label of each field, so a manual PO reads back like a parsed one. Fields the BHEL page never has (Our
 // Ref, Supplier GSTIN, GEMC Date, Consignee) are keyed by the legacy form's own label.
 
+import { normalLabel as normal, rawLookup } from "../../../lib/raw-header.ts";
+
 /** A raw-header field: the labels the page may print for it, the first one being the one the form writes. */
 export const RAW_FIELDS = {
   supplierName: ["SUPP NAME M/S"],
@@ -32,18 +34,9 @@ export const RAW_FIELDS = {
 
 export type RawField = keyof typeof RAW_FIELDS;
 
-/** A label as printed, compared without case, dots, colons or repeated spaces: `R.C. NO:` is `RC NO`. */
-const normal = (label: string): string => label.toUpperCase().replaceAll(/[.:]/g, "").replaceAll(/\s+/g, " ").trim();
-
 /** The field's text in a raw header, or `""` when the page has none. */
-export function rawValue(raw: Readonly<Record<string, string>>, field: RawField): string {
-  const wanted = new Set<string>(RAW_FIELDS[field].map(normal));
-  return (
-    Object.entries(raw)
-      .find(([label]) => wanted.has(normal(label)))?.[1]
-      .trim() ?? ""
-  );
-}
+export const rawValue = (raw: Readonly<Record<string, string>>, field: RawField): string =>
+  rawLookup(raw, RAW_FIELDS[field]);
 
 /**
  * A raw header with `values` set under each field's first label. Labels of the same field printed another way are

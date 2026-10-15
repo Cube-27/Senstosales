@@ -1,10 +1,9 @@
 import type { Qty } from "@senstosales/domain";
 import type { RouteOutput } from "@senstosales/schemas";
 import { fmtQty } from "@senstosales/schemas";
-import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { api } from "../../../lib/api.ts";
+import { api, useInvalidate } from "../../../lib/api.ts";
 import { AlertTriangle, Edit } from "../../../lib/icons.ts";
 import {
   Button,
@@ -31,7 +30,7 @@ export interface ManualQtyCellProps {
  * the screen shows the new Dispatched and Pending from the server.
  */
 export function ManualQtyCell({ poId, item, overlap }: ManualQtyCellProps) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidate();
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState<Qty>(item.manualDispatchedQty);
   const [note, setNote] = useState(item.manualNote ?? "");
@@ -54,7 +53,7 @@ export function ManualQtyCell({ poId, item, overlap }: ManualQtyCellProps) {
         params: { id: poId, itemId: item.id },
         body: { qty, ...(note.trim() === "" ? {} : { note: note.trim() }) },
       });
-      await queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("po.") });
+      await invalidate("po");
       setOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save. Try again.");

@@ -1,16 +1,15 @@
 import type { RouteOutput } from "@senstosales/schemas";
 import { fmtCount, fmtDate, fmtMoney, fmtQty } from "@senstosales/schemas";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
-import { api, apiQuery } from "../../../lib/api.ts";
+import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
 import { AlertCircle, CheckCircle, Delete, Loading, Package, Upload } from "../../../lib/icons.ts";
 import { rangeQuery } from "../../../lib/search.ts";
-import { uploadHtml } from "../../../lib/upload.ts";
-import { getPlatform } from "../../../platform/index.ts";
+import { pickHtmlPages, uploadHtml } from "../../../lib/upload.ts";
 import {
   Badge,
   Button,
@@ -25,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   StatCard,
+  qtyColumn,
   StatCardRow,
   useToast,
 } from "../../common/index.ts";
@@ -62,14 +62,7 @@ const totalsColumns = <R extends Totals>(): Column<R>[] => [
       ["acceptedQty", "Accepted"],
       ["rejQty", "Rejected"],
     ] as const
-  ).map(([key, header]): Column<R> => ({
-    key,
-    header,
-    width: "90px",
-    align: "right",
-    sortable: true,
-    render: (row) => <span className="tabular-nums">{fmtQty(row[key])}</span>,
-  })),
+  ).map(([key, header]) => qtyColumn<R>(key, header, (row) => row[key], { sortable: true })),
   {
     key: "value",
     header: "Value",
@@ -277,15 +270,13 @@ function DeleteSrvDialog({
   );
 }
 
-const pickSrvPages = async () => (await getPlatform()).pickFiles({ accept: ".html,.htm", multiple: true });
-
 /** `/srv` (SPEC-16 §2): the legacy SRV list and its by-PO view, with upload and delete (never blocked, INV-35). */
 export function SRVList() {
   const list = useListSearch<SrvSearch>();
   const { search, setFilters } = list;
   const byPo = search.view === "po";
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidate();
   const paging = { page: search.page, pageSize: search.pageSize, dir: search.dir };
   const ranges = rangeQuery(search);
   const srvRows = useQuery({
@@ -299,7 +290,9 @@ export function SRVList() {
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
   const [files, setFiles] = useState<readonly File[]>([]);
   const [deleting, setDeleting] = useState<SrvRow | null>(null);
-  const refresh = () => queryClient.invalidateQueries({ predicate: (q) => /^(srv|po)\./.test(String(q.queryKey[0])) });
+  const refresh = () => invalidate("srv", "po");
+  const srvCols = useMemo(() => srvColumns(setDeleting), []);
+  const byPoCols = useMemo(() => poColumns(search), [search]);
 
   const showView = (view: "po" | undefined) =>
     void navigate({ to: "/srv", search: (prev) => ({ ...prev, view, sort: undefined, page: 1 }), replace: true });
@@ -341,26 +334,16 @@ export function SRVList() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void pickSrvPages().then((picked) => picked && setFiles(picked))}
+            onClick={() => void pickHtmlPages().then((picked) => picked && setFiles(picked))}
           >
             <Upload aria-hidden />
             Upload
           </Button>
         </ListToolbar>
         {byPo ? (
-          <DataTable
-            columns={poColumns(search)}
-            rows={poRows.data?.items}
-            emptyText="No grouped PO records found."
-            {...table}
-          />
+          <DataTable columns={byPoCols} rows={poRows.data?.items} emptyText="No grouped PO records found." {...table} />
         ) : (
-          <DataTable
-            columns={srvColumns(setDeleting)}
-            rows={srvRows.data?.items}
-            emptyText="No SRV records found."
-            {...table}
-          />
+          <DataTable columns={srvCols} rows={srvRows.data?.items} emptyText="No SRV records found." {...table} />
         )}
       </div>
       <FileUploadModal

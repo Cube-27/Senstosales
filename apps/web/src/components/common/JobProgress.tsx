@@ -1,4 +1,4 @@
-import { fmtCount } from "@senstosales/schemas/formatters";
+import { fmtCount, fmtFlagType } from "@senstosales/schemas/formatters";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
@@ -43,7 +43,7 @@ function Details({ job }: { readonly job: Job }) {
       <p className="role-body-text-sm">
         {flags.length === 0
           ? "No flags raised"
-          : `Flags raised: ${flags.map(([type, count]) => `${type.replaceAll("_", " ")} ${fmtCount(count)}`).join(", ")}`}
+          : `Flags raised: ${flags.map(([type, count]) => `${fmtFlagType(type)} ${fmtCount(count)}`).join(", ")}`}
       </p>
       <ul aria-label="Files not imported" className="space-y-1">
         {issues.map((issue) => (
@@ -62,11 +62,10 @@ function Details({ job }: { readonly job: Job }) {
 const NOT_STARTED: Job["progress"] = { total: 0, done: 0, skipped: 0, failed: 0, current: null };
 
 /** The status line, the bar and the four counts; before the first poll, a queued job with nothing done. */
-function ProgressBar({ job }: { readonly job: Job | undefined }) {
+function ProgressBar({ job, active }: { readonly job: Job | undefined; readonly active: boolean }) {
   const progress = job?.progress ?? NOT_STARTED;
   const processed = progress.done + progress.skipped + progress.failed;
   const percent = progress.total === 0 ? 0 : Math.floor((processed * 100) / progress.total);
-  const active = job === undefined || isActive(job);
   const status = STATUS_TEXT[job?.status ?? "queued"];
   const stats = [
     { label: "Total", value: progress.total, className: "text-foreground" },
@@ -147,7 +146,7 @@ export function JobProgress({ jobId, onEnd }: JobProgressProps) {
   const active = job === undefined || isActive(job);
   return (
     <div className="flex flex-col gap-3" aria-busy={active}>
-      <ProgressBar job={job} />
+      <ProgressBar job={job} active={active} />
       <div className="h-24 overflow-y-auto rounded-lg border border-border">{job && <Details job={job} />}</div>
       <Button
         variant="outline"

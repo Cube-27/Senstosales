@@ -2,13 +2,13 @@ import type { IsoDate } from "@senstosales/domain";
 import type { RouteOutput } from "@senstosales/schemas";
 import { fmtCount, fmtInstantDate, fmtMoney } from "@senstosales/schemas";
 import { parseDateInput } from "@senstosales/schemas/formatters";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { Controller, type FieldPathByValue, useFieldArray, useForm, type UseFormRegister } from "react-hook-form";
 
-import { api, apiQuery } from "../../../lib/api.ts";
-import { AlertCircle, Delete, Loading, Plus, Save } from "../../../lib/icons.ts";
+import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
+import { AlertCircle, Delete, Plus, Save } from "../../../lib/icons.ts";
 import {
   Button,
   ConfirmDialog,
@@ -17,6 +17,7 @@ import {
   Input,
   PageHeader,
   QuantityInput,
+  QueryState,
   Textarea,
 } from "../../common/index.ts";
 import {
@@ -28,7 +29,6 @@ import {
   formTotal,
   itemValue,
   newItem,
-  type Stored,
 } from "./po-form.ts";
 
 type Detail = RouteOutput<"po.detail">;
@@ -77,7 +77,7 @@ interface POFormProps {
 function POFormView({ detail }: POFormProps) {
   const navigate = useNavigate();
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidate();
   const editing = detail !== undefined;
   const form = useForm<FormValues>({ defaultValues: detail ? formFromDetail(detail) : emptyForm(today()) });
   const { register, control, watch, getValues } = form;
@@ -93,15 +93,14 @@ function POFormView({ detail }: POFormProps) {
     setConfirming(false);
     setSaving(true);
     try {
-      const stored: Stored | undefined = detail && { enquiry: detail.po.enquiry, rawHeader: detail.po.rawHeader };
-      const body = formBody(getValues(), stored);
+      const body = formBody(getValues(), detail?.po);
       const po = detail
         ? await api.request("po.update", {
             params: { id: detail.po.id },
             body: { ...body, version: detail.po.version },
           })
         : await api.request("po.create", { body });
-      await queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("po.") });
+      await invalidate("po");
       void navigate({ to: "/po/$id", params: { id: po.id } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save Purchase Order");
@@ -335,18 +334,6 @@ function POFormView({ detail }: POFormProps) {
 export function POForm({ id }: { readonly id?: string | undefined }) {
   const detail = useQuery({ ...apiQuery("po.detail", { params: { id: id ?? "" } }), enabled: id !== undefined });
   if (id === undefined) return <POFormView />;
-  if (!detail.data) {
-    return (
-      <div className="flex min-h-96 items-center justify-center">
-        {detail.isError ? (
-          <p role="alert" className="role-empty-text text-error">
-            {detail.error.message}
-          </p>
-        ) : (
-          <Loading className="size-6 animate-spin text-accent" aria-label="Loading" />
-        )}
-      </div>
-    );
-  }
+  if (!detail.data) return <QueryState error={detail.error} />;
   return <POFormView key={detail.data.po.version} detail={detail.data} />;
 }

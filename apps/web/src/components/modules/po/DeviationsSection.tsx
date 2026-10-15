@@ -1,9 +1,8 @@
 import type { RouteOutput } from "@senstosales/schemas";
-import { fmtInstantDate } from "@senstosales/schemas";
-import { useQueryClient } from "@tanstack/react-query";
+import { fmtFlagType, fmtInstantDate } from "@senstosales/schemas";
 import { useState } from "react";
 
-import { api } from "../../../lib/api.ts";
+import { api, useInvalidate } from "../../../lib/api.ts";
 import { AlertCircle, CheckCircle } from "../../../lib/icons.ts";
 import { Badge, Button, useToast } from "../../common/index.ts";
 
@@ -40,7 +39,7 @@ export interface DeviationsSectionProps {
  * row, marked resolved, until the page is opened again, so resolving moves nothing (C8).
  */
 export function DeviationsSection({ flags, itemNo }: DeviationsSectionProps) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidate();
   const { toast } = useToast();
   const [resolved, setResolved] = useState<ReadonlySet<string>>(new Set());
   if (flags.length === 0) return null;
@@ -49,7 +48,7 @@ export function DeviationsSection({ flags, itemNo }: DeviationsSectionProps) {
     try {
       await api.request("flags.acknowledge", { params: { id: flag.id }, body: { note: null } });
       setResolved((done) => new Set(done).add(flag.id));
-      await queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("flags.") });
+      await invalidate("flags", "po");
     } catch (error) {
       toast("Could not resolve", error instanceof Error ? error.message : "Try again.", "error");
     }
@@ -79,7 +78,7 @@ export function DeviationsSection({ flags, itemNo }: DeviationsSectionProps) {
             >
               <div className="flex min-w-0 items-start gap-4">
                 <Badge color={flag.type === "QTY_MISMATCH" ? "error" : "warning"} size="sm" className="mt-1">
-                  {flag.type.replaceAll("_", " ")}
+                  {fmtFlagType(flag.type)}
                 </Badge>
                 <div className="min-w-0">
                   <p className="mb-1 role-field-value">{summary(flag, item)}</p>

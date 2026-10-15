@@ -9,6 +9,7 @@ export {
   fmtDateMonthName,
   fmtDaysToDue,
   fmtFixed,
+  fmtFlagType,
   fmtFy,
   fmtInstantDate,
   fmtMoney,

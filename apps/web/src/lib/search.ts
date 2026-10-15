@@ -26,12 +26,15 @@ export const zRangeSearch = {
 
 export type RangeSearch = z.output<z.ZodObject<typeof zRangeSearch>>;
 
-/** An amount typed in a filter, or no filter when the text is not an amount. */
-const money = (text: string | undefined): Money | undefined => {
-  if (text === undefined || text.trim() === "") return undefined;
+/** A typed amount as money, or null when it is not an amount. */
+export const moneyOf = (text: string): Money | null => {
   const parsed = parseMoney(text.trim());
-  return parsed.ok ? parsed.value : undefined;
+  return parsed.ok ? parsed.value : null;
 };
+
+/** An amount typed in a filter, or no filter when the text is not an amount. */
+const money = (text: string | undefined): Money | undefined =>
+  text === undefined ? undefined : (moneyOf(text) ?? undefined);
 
 /** The range filters of a list query (`zRangeFilters`) from the URL's. */
 export const rangeQuery = ({ q, from, to, valueMin, valueMax }: RangeSearch) => ({

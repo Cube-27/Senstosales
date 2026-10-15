@@ -3,8 +3,7 @@ import { useState } from "react";
 
 import { api } from "../../lib/api.ts";
 import { FolderOpen, Loading } from "../../lib/icons.ts";
-import { stageFolder } from "../../lib/upload.ts";
-import { getPlatform } from "../../platform/index.ts";
+import { pickHtmlFolder, stageFolder } from "../../lib/upload.ts";
 import { Button } from "../ui/button.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog.tsx";
 import { JobProgress } from "./JobProgress.tsx";
@@ -27,14 +26,15 @@ type Run =
 
 const IDLE: Run = { step: "idle" };
 const LABEL: Record<Kind, string> = { po: "PO", srv: "SRV" };
-const isHtml = (file: File) => /\.html?$/i.test(file.name);
+const STEP: Record<Kind, string> = { po: "1.", srv: "2." };
+
+const running = (run: Run) => run.step === "staging" || (run.step === "job" && !run.ended);
 
 /** Picks a folder, stages its HTML files and starts the folder-import job; never throws. */
 async function startImport(kind: Kind, update: (run: Run) => void): Promise<void> {
   try {
-    const picked = await (await getPlatform()).pickFolder();
-    if (picked === null) return;
-    const files = picked.filter(isHtml);
+    const files = await pickHtmlFolder();
+    if (files === null) return;
     if (files.length === 0) {
       update({ step: "error", message: "No HTML files found in this folder." });
       return;
@@ -66,14 +66,9 @@ function FolderStep(props: {
     <section aria-label={`${label} folder`} className="flex flex-col gap-2 rounded-lg border border-border p-3">
       <div className="flex items-center justify-between">
         <h3 className="role-section-title">
-          {kind === "po" ? "1." : "2."} {label} folder
+          {STEP[kind]} {label} folder
         </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={props.disabled || run.step === "staging" || (run.step === "job" && !run.ended)}
-          onClick={props.onPick}
-        >
+        <Button variant="outline" size="sm" disabled={props.disabled || running(run)} onClick={props.onPick}>
           <FolderOpen aria-hidden />
           Choose {label} folder
         </Button>
@@ -101,8 +96,6 @@ function FolderStep(props: {
     </section>
   );
 }
-
-const running = (run: Run) => run.step === "staging" || (run.step === "job" && !run.ended);
 
 /**
  * Folder import (ARCHITECTURE §7.4, SPEC-16): pick a folder of PO pages, then one of SRV pages; each is staged and

@@ -12,6 +12,7 @@ import {
   fmtDaysToDue,
   fmtFixed,
   fmtFy,
+  fmtFlagType,
   fmtInstantDate,
   fmtMoney,
   fmtMoneyCompact,
@@ -366,6 +367,15 @@ describe("parseDateInput: the legacy picker's typed formats", () => {
     ["tomorrow", null],
   ])("%j -> %s", (text, expected) => {
     expect(parseDateInput(text)).toBe(expected);
+  });
+});
+
+describe("fmtFlagType", () => {
+  it.each([
+    ["QTY_MISMATCH", "QTY MISMATCH"],
+    ["MANUAL_ADJUSTMENT_OVERLAP", "MANUAL ADJUSTMENT OVERLAP"],
+  ])("%s", (type, expected) => {
+    expect(fmtFlagType(type)).toBe(expected);
   });
 });
 

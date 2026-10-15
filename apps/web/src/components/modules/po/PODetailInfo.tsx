@@ -3,7 +3,7 @@ import { fmtDate, fmtMoney } from "@senstosales/schemas";
 import { type ReactNode, useState } from "react";
 
 import { FileText, Info, Receipt, ShieldCheck } from "../../../lib/icons.ts";
-import { DetailTabs } from "../../common/index.ts";
+import { DetailTabs, InfoField } from "../../common/index.ts";
 import { type RawField, rawValue } from "./header-fields.ts";
 import { StatusCell } from "./status.tsx";
 
@@ -17,23 +17,6 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
-
-function InfoItem({
-  label,
-  value,
-  wide = false,
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-  readonly wide?: boolean | undefined;
-}) {
-  return (
-    <div className={wide ? "col-span-2 min-w-0" : "min-w-0"}>
-      <div className="mb-1 role-field-label">{label}</div>
-      <div className="truncate role-field-value">{value === "" || value === null ? "—" : value}</div>
-    </div>
-  );
-}
 
 /** Each tab's fields as legacy labelled them: a label, its value and whether it spans two columns. */
 function fields(po: Po): Record<TabId, readonly [string, ReactNode, boolean?][]> {
@@ -95,7 +78,7 @@ export function PODetailInfo({ po }: { readonly po: Po }) {
       <div role="tabpanel" id={`${tab}-panel`} aria-labelledby={`${tab}-tab`} className="h-52 overflow-y-auto p-6">
         <div className="grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-4 lg:grid-cols-6">
           {fields(po)[tab].map(([label, value, wide]) => (
-            <InfoItem key={label} label={label} value={value} wide={wide} />
+            <InfoField key={label} label={label} value={value} wide={wide} />
           ))}
         </div>
         {tab === "issuer" && (

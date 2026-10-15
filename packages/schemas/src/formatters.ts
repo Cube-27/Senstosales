@@ -183,6 +183,9 @@ export function foldRepeatedLines(text: string): string {
 export const fmtDateMonthName = (d: IsoDate | null): string =>
   d === null ? "-" : `${d.slice(8, 10)} ${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}`;
 
+/** A flag or job type as the screens print it: `QTY_MISMATCH` -> `"QTY MISMATCH"`. */
+export const fmtFlagType = (type: string): string => type.replaceAll("_", " ");
+
 /** `2024-25` -> `"FY 2024-25"`. */
 export const fmtFy = (fy: Fy): string => `FY ${fy}`;
 

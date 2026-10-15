@@ -1,14 +1,28 @@
 import type { RouteOutput } from "@senstosales/schemas";
 import { fmtCount, fmtDate, fmtQty, fmtRate } from "@senstosales/schemas";
-import { useState } from "react";
+import { useMemo } from "react";
 
-import { Badge, Button, type Column, DataTable, Popover, PopoverContent, PopoverTrigger } from "../../common/index.ts";
+import { useClientPage } from "../../../hooks/useClientPage.ts";
+
+import {
+  Badge,
+  Button,
+  type Column,
+  DataTable,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  qtyColumn,
+} from "../../common/index.ts";
 import { ManualQtyCell } from "./ManualQtyCell.tsx";
 import { StatusCell } from "./status.tsx";
 
 type Detail = RouteOutput<"po.detail">;
 type Item = Detail["items"][number];
 type Lot = Item["lots"][number];
+type Flag = Detail["flags"][number];
+
+const NO_FLAGS: readonly Flag[] = [];
 
 /** A lot's entry-allow cell: the date, or the page's note in its place (INV-46). */
 export const entryAllow = (lot: Pick<Lot, "entryAllowDate" | "entryAllowNote">): string =>
@@ -43,15 +57,9 @@ function LotsCell({ item }: { readonly item: Item }) {
 }
 
 const qty = (key: "ordQty" | "balanceQty" | "rcdQty" | "rejQty", header: string, colKey: string = key) =>
-  ({
-    key: colKey,
-    header,
-    width: "88px",
-    align: "right",
-    render: (item: Item) => <span className="tabular-nums">{fmtQty(item[key])}</span>,
-  }) satisfies Column<Item>;
+  qtyColumn<Item>(colKey, header, (item) => item[key], { width: "88px" });
 
-function columns(detail: Detail, flagsOf: (id: string) => Detail["flags"]): Column<Item>[] {
+function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Column<Item>[] {
   const gemc = detail.po.isGemc;
   return [
     { key: "poItemNo", header: "#", width: "56px", render: (item) => `#${item.poItemNo}` },
@@ -111,11 +119,16 @@ function columns(detail: Detail, flagsOf: (id: string) => Detail["flags"]): Colu
  * items highlighted (INV-57, INV-60), paged on the client in the shared table's fixed footprint (C8).
  */
 export function PODetailItems({ detail }: { readonly detail: Detail }) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const flagsOf = (id: string) => detail.flags.filter((f) => f.scopeType === "po_item" && f.scopeId === id);
+  const flagsOf = useMemo(() => {
+    const byItem = new Map<string, Flag[]>();
+    for (const f of detail.flags) {
+      if (f.scopeType === "po_item") byItem.set(f.scopeId, [...(byItem.get(f.scopeId) ?? []), f]);
+    }
+    return (id: string) => byItem.get(id) ?? NO_FLAGS;
+  }, [detail.flags]);
+  const cols = useMemo(() => columns(detail, flagsOf), [detail, flagsOf]);
+  const paged = useClientPage(detail.items);
   const { ordQty, dspQty, balanceQty, rcdQty } = detail.po;
-  const start = (page - 1) * pageSize;
   return (
     <section aria-label="Line items" className="flex flex-col gap-2">
       <div className="flex items-center gap-6 px-1">
@@ -133,22 +146,7 @@ export function PODetailItems({ detail }: { readonly detail: Detail }) {
           </span>
         ))}
       </div>
-      <DataTable
-        columns={columns(detail, flagsOf)}
-        rows={detail.items.slice(start, start + pageSize)}
-        total={detail.items.length}
-        page={page}
-        pageSize={pageSize}
-        state="ready"
-        emptyText="No items"
-        onPage={setPage}
-        onPageSize={(size) => {
-          setPage(Math.floor(start / size) + 1);
-          setPageSize(size);
-        }}
-        onSort={() => {}}
-        rowHighlight={(item) => flagsOf(item.id).length > 0}
-      />
+      <DataTable columns={cols} emptyText="No items" rowHighlight={(item) => flagsOf(item.id).length > 0} {...paged} />
     </section>
   );
 }

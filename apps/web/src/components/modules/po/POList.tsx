@@ -1,14 +1,14 @@
 import { deleteBlock } from "@senstosales/domain";
 import type { RouteOutput, zPoStatus } from "@senstosales/schemas";
 import { fmtCount, fmtDate, fmtMoney, fmtMoneyCompact, fmtQty } from "@senstosales/schemas";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { z } from "zod";
 
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
-import { api, apiQuery } from "../../../lib/api.ts";
+import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
 import {
   AlertCircle,
   Delete,
@@ -24,8 +24,7 @@ import {
   Upload,
 } from "../../../lib/icons.ts";
 import { rangeQuery } from "../../../lib/search.ts";
-import { uploadHtml } from "../../../lib/upload.ts";
-import { getPlatform } from "../../../platform/index.ts";
+import { pickHtmlPages, uploadHtml } from "../../../lib/upload.ts";
 import {
   Badge,
   Button,
@@ -41,6 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   StatCard,
+  qtyColumn,
   StatCardRow,
   useToast,
 } from "../../common/index.ts";
@@ -70,25 +70,11 @@ export function deleteBlockedReason({ dcCount, invoiceCount }: Pick<Row, "dcCoun
   return `Cannot delete - linked to ${parts.join(" and ")}`;
 }
 
-const qtyColumn = (key: "ordQty" | "balanceQty" | "rcdQty" | "rejQty", header: string, sortable = true) =>
-  ({
-    key,
-    header,
-    width: "90px",
-    align: "right",
-    sortable,
-    render: (row: Row) => <span className="tabular-nums">{fmtQty(row[key])}</span>,
-  }) satisfies Column<Row>;
+const qty = (key: "ordQty" | "balanceQty" | "rcdQty" | "rejQty", header: string, sortable = true) =>
+  qtyColumn<Row>(key, header, (row) => row[key], { sortable });
 
-/** BHEL pages the user picks for upload. */
-const pickPages = async () => (await getPlatform()).pickFiles({ accept: ".html,.htm", multiple: true });
-
-/** The API's list query from the URL's search. */
-const listQuery = ({ page, pageSize, sort, dir, status, gemc, ...ranges }: PoSearch) => ({
-  page,
-  pageSize,
-  sort,
-  dir,
+/** The API's list and stats filters from the URL's search, without its paging and sort. */
+const filtersOf = ({ status, gemc, ...ranges }: Omit<PoSearch, "page" | "pageSize" | "sort" | "dir">) => ({
   status,
   gemc,
   ...rangeQuery(ranges),
@@ -179,8 +165,8 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
       sortable: true,
       render: (row) => fmtCount(row.itemCount),
     },
-    qtyColumn("ordQty", "Ordered"),
-    qtyColumn("balanceQty", "Pending", false),
+    qty("ordQty", "Ordered"),
+    qty("balanceQty", "Pending", false),
     {
       key: "dspQty",
       header: "Dispatched",
@@ -194,10 +180,10 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
         </span>
       ),
     },
-    qtyColumn("rcdQty", "Received"),
+    qty("rcdQty", "Received"),
     // Accepted is shown as received (INV-09).
-    { ...qtyColumn("rcdQty", "Accepted", false), key: "acceptedQty" },
-    qtyColumn("rejQty", "Rejected"),
+    { ...qty("rcdQty", "Accepted", false), key: "acceptedQty" },
+    qty("rejQty", "Rejected"),
     {
       key: "poValue",
       header: "Value",
@@ -244,11 +230,11 @@ export function POList() {
   const list = useListSearch<PoSearch>();
   const { search, setFilters } = list;
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidate();
   const { toast } = useToast();
-  const query = listQuery(search);
-  const rows = useQuery(apiQuery("po.list", { query }));
-  const { page: _p, pageSize: _s, sort: _o, dir: _d, ...filters } = query;
+  const { page, pageSize, sort, dir, ...rest } = search;
+  const filters = filtersOf(rest);
+  const rows = useQuery(apiQuery("po.list", { query: { page, pageSize, sort, dir, ...filters } }));
   const stats = useQuery(apiQuery("po.stats", { query: filters }));
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
 
@@ -256,7 +242,8 @@ export function POList() {
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [busy, setBusy] = useState(false);
-  const refresh = () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("po.") });
+  const refresh = () => invalidate("po");
+  const cols = useMemo(() => columns(setDeleting), []);
 
   async function confirmDelete(row: Row) {
     setBusy(true);
@@ -351,7 +338,7 @@ export function POList() {
                   variant="ghost"
                   size="sm"
                   className="justify-start"
-                  onClick={() => void pickPages().then((picked) => picked && setFiles(picked))}
+                  onClick={() => void pickHtmlPages().then((picked) => picked && setFiles(picked))}
                 >
                   <Upload aria-hidden />
                   Upload PO HTML
@@ -365,7 +352,7 @@ export function POList() {
           </Popover>
         </ListToolbar>
         <DataTable
-          columns={columns(setDeleting)}
+          columns={cols}
           rows={rows.data?.items}
           total={rows.data?.total ?? 0}
           state={rows.isError ? "error" : rows.isFetching ? "loading" : "ready"}
@@ -378,9 +365,7 @@ export function POList() {
       <FolderImport
         open={importing}
         onClose={() => setImporting(false)}
-        onImported={() =>
-          void queryClient.invalidateQueries({ predicate: (q) => /^(po|srv)\./.test(String(q.queryKey[0])) })
-        }
+        onImported={() => void invalidate("po", "srv")}
       />
       <FileUploadModal
         open={files.length > 0}

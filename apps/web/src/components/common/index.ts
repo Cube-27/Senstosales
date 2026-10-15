@@ -3,6 +3,7 @@
 export { AppChrome } from "./AppChrome.tsx";
 export { Autocomplete, type AutocompleteOption, type AutocompleteProps } from "./Autocomplete.tsx";
 export { ButtonGroup, type ButtonGroupOption, type ButtonGroupProps } from "./ButtonGroup.tsx";
+export { qtyColumn } from "./columns.tsx";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog.tsx";
 export { type Column, DataTable, type DataTableProps } from "./DataTable.tsx";
 export { DatePicker, type DatePickerProps } from "./DatePicker.tsx";
@@ -11,11 +12,13 @@ export { FileUploadModal, type FileUploadModalProps, type UploadOutcome } from "
 export { FolderImport, type FolderImportProps } from "./FolderImport.tsx";
 export { FormField, type FormFieldProps } from "./FormField.tsx";
 export { GlobalSearchDialog, type GlobalSearchDialogProps } from "./GlobalSearchDialog.tsx";
+export { InfoField, type InfoFieldProps } from "./InfoField.tsx";
 export { JobProgress, type JobProgressProps } from "./JobProgress.tsx";
 export { ListFilters, type ListFiltersProps, type RangeFilters } from "./ListFilters.tsx";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar.tsx";
 export { PageHeader, type PageHeaderProps } from "./PageHeader.tsx";
 export { Pagination, type PaginationProps } from "./Pagination.tsx";
+export { QueryState, type QueryStateProps } from "./QueryState.tsx";
 export { QuantityInput, type QuantityInputProps } from "./QuantityInput.tsx";
 export { StatCard, type StatCardProps, StatCardRow, type StatColor } from "./StatCard.tsx";
 export { type Status, StatusBadge, type StatusBadgeProps } from "./StatusBadge.tsx";

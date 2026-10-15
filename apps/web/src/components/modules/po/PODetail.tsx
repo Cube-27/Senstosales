@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { apiQuery } from "../../../lib/api.ts";
-import { DeliveryChallan, Edit, Invoice, Link2, Loading } from "../../../lib/icons.ts";
-import { Badge, Button, PageHeader } from "../../common/index.ts";
+import { DeliveryChallan, Edit, Invoice, Link2 } from "../../../lib/icons.ts";
+import { Badge, Button, PageHeader, QueryState } from "../../common/index.ts";
 import { DeviationsSection } from "./DeviationsSection.tsx";
 import { LinkedDocsPopover } from "./LinkedDocsPopover.tsx";
 import { PODetailInfo } from "./PODetailInfo.tsx";
@@ -14,22 +14,7 @@ import { PODetailItems } from "./PODetailItems.tsx";
 export function PODetail({ id }: { readonly id: string }) {
   const detail = useQuery(apiQuery("po.detail", { params: { id } }));
 
-  if (!detail.data) {
-    return (
-      <div className="flex min-h-96 items-center justify-center">
-        {detail.isError ? (
-          <p role="alert" className="role-empty-text text-error">
-            {detail.error.message}
-          </p>
-        ) : (
-          <span role="status" className="inline-flex items-center gap-2 role-empty-text">
-            <Loading className="size-4 animate-spin" aria-hidden />
-            Loading...
-          </span>
-        )}
-      </div>
-    );
-  }
+  if (!detail.data) return <QueryState error={detail.error} />;
 
   const data = detail.data;
   const { po, items, linked } = data;

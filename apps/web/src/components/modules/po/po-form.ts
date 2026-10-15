@@ -1,10 +1,11 @@
 // The legacy manual PO form's values, its checks and the body it sends (SPEC-16 §2, SPEC-10 §2). Amounts are typed
 // text until saved; a GEMC item's rate is the GST-inclusive one and the API stores the net derived from it (INV-20).
 import type { IsoDate, Money, Qty } from "@senstosales/domain";
-import { moneyToString, parseMoney, qtyValue, sumMoney } from "@senstosales/domain";
+import { moneyToString, qtyValue, sumMoney } from "@senstosales/domain";
 import type { RouteInput, RouteOutput } from "@senstosales/schemas";
 import { fmtDate, parseDateInput } from "@senstosales/schemas/formatters";
 
+import { moneyOf } from "../../../lib/search.ts";
 import { type RawField, rawValue, withRawValues } from "./header-fields.ts";
 
 type Detail = RouteOutput<"po.detail">;
@@ -53,20 +54,9 @@ export interface FormValues {
   readonly items: FormItem[];
 }
 
-const noRaw = (): Record<FormRawField, string> => ({
-  department: "",
-  supplierCode: "",
-  supplierName: "",
-  supplierGstin: "",
-  rcNo: "",
-  tinNo: "",
-  eccNo: "",
-  mpctNo: "",
-  ourRef: "",
-  inspectionAt: "",
-  consignee: "",
-  consigneeAddress: "",
-});
+/** The form's raw-header fields, each read by `get`. */
+const rawOf = (get: (field: FormRawField) => string) =>
+  Object.fromEntries(FORM_RAW_FIELDS.map((field) => [field, get(field)])) as Record<FormRawField, string>;
 
 /** A new PO: today's date, as legacy defaulted it, and no items. */
 export const emptyForm = (today: IsoDate | ""): FormValues => ({
@@ -77,7 +67,7 @@ export const emptyForm = (today: IsoDate | ""): FormValues => ({
   gemcNumber: "",
   gemcDate: "",
   remarks: "",
-  raw: noRaw(),
+  raw: rawOf(() => ""),
   items: [],
 });
 
@@ -98,8 +88,6 @@ export const newItem = (items: readonly FormItem[]): FormItem => ({
 
 /** A stored PO as the form shows it for editing; rates are the GST-inclusive source rates (INV-17). */
 export function formFromDetail({ po, items }: Detail): FormValues {
-  const raw = noRaw();
-  for (const field of FORM_RAW_FIELDS) raw[field] = rawValue(po.rawHeader, field);
   return {
     poNumber: po.poNumber,
     poDate: po.poDate ?? "",
@@ -108,7 +96,7 @@ export function formFromDetail({ po, items }: Detail): FormValues {
     gemcNumber: po.gemcNumber ?? "",
     gemcDate: parseDateInput(rawValue(po.rawHeader, "gemcDate")) ?? "",
     remarks: po.remarks ?? "",
-    raw,
+    raw: rawOf((field) => rawValue(po.rawHeader, field)),
     items: items.map((item) => ({
       poItemNo: item.poItemNo,
       description: item.description ?? "",
@@ -123,10 +111,7 @@ export function formFromDetail({ po, items }: Detail): FormValues {
 }
 
 /** A typed rate as money, or null when it is not an amount. */
-export const rateOf = (text: string): Money | null => {
-  const parsed = parseMoney(text.trim());
-  return parsed.ok ? parsed.value : null;
-};
+export const rateOf = moneyOf;
 
 /** An item's value, quantity × rate, as legacy showed it beside the line. */
 export const itemValue = (item: Pick<FormItem, "ordQty" | "rate">): Money =>

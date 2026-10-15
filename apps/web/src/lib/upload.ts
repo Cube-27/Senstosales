@@ -3,12 +3,20 @@
 // it fails in place with a plain reason, as the API would have refused its whole request.
 import { splitUpload } from "@senstosales/schemas";
 
+import type { UploadOutcome } from "../components/common/index.ts";
+import { getPlatform } from "../platform/index.ts";
 import { api } from "./api.ts";
 
-/** One file's outcome, as the upload API reports it: accepted, skipped as older (INV-42, INV-43) or failed. */
-export interface UploadOutcome {
-  readonly status: "accepted" | "skipped" | "failed";
-  readonly reason: string | null;
+const isHtml = (file: File): boolean => /\.html?$/i.test(file.name);
+
+/** The saved BHEL pages the user picks, or null on cancel. */
+export const pickHtmlPages = async (): Promise<File[] | null> =>
+  (await getPlatform()).pickFiles({ accept: ".html,.htm", multiple: true });
+
+/** The HTML pages in the folder the user picks (none when it holds no pages), or null on cancel. */
+export async function pickHtmlFolder(): Promise<File[] | null> {
+  const picked = await (await getPlatform()).pickFolder();
+  return picked && picked.filter(isHtml);
 }
 
 export const TOO_LARGE = "This file is larger than 10 MB, so it cannot be uploaded.";
