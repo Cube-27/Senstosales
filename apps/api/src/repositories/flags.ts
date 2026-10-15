@@ -4,7 +4,7 @@ import type { Db, Instant } from "@senstosales/db";
 import { po, reconciliationIssue } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { AnyColumn, SQLWrapper } from "drizzle-orm";
-import { and, asc, count, desc, eq, gte } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { byPoNumber, contains, flagColumns } from "./sql.ts";
@@ -91,9 +91,16 @@ export async function findFlag(db: Db, id: string) {
   return rows[0];
 }
 
-/** Marks an open flag acknowledged; the status guard keeps a flag acknowledged once (INV-59). */
+/**
+ * Marks an open flag acknowledged. A flag no longer open (acknowledged by a concurrent request) gets `status = NULL`,
+ * fails its NOT NULL constraint and rolls back the whole batch, its audit row included (the check of D-0124).
+ */
 export const acknowledgeFlag = (db: Db, id: string, note: string | null, at: Instant) =>
   db.build
     .update(reconciliationIssue)
-    .set({ status: "acknowledged", note, acknowledgedAt: at })
-    .where(and(eq(reconciliationIssue.id, id), eq(reconciliationIssue.status, "open")));
+    .set({
+      status: sql`CASE WHEN ${reconciliationIssue.status} = 'open' THEN 'acknowledged' ELSE NULL END`,
+      note,
+      acknowledgedAt: at,
+    })
+    .where(eq(reconciliationIssue.id, id));
