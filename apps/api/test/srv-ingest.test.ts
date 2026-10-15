@@ -143,8 +143,8 @@ describe("an SRV of a stored PO", () => {
     expect((await lines())[0]?.poItemId).toBe(item30);
   });
 
-  test("EC-12: a material code on no item of the PO is stored unmatched and changes no item", async () => {
-    await uploadOne([{ ...S1, code: "SYN-NONE" }]);
+  test("EC-12: a PO item number on no item of the PO is stored unmatched and changes no item", async () => {
+    await uploadOne([{ ...S1, item: 50 }]);
 
     expect((await lines())[0]?.poItemId).toBeNull();
     expect((await itemQty()).map((i) => i.rcd)).toEqual([0, 0]);

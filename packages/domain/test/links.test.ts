@@ -49,24 +49,25 @@ const poItems = [
   { id: "item-40", materialCode: null, poItemNo: 40 },
 ];
 
-// INV-39: match by material code; when the code is on several items, the SRV row's PO item number decides (A2-7).
+// INV-39 (revised 2026-10-15, owner): an SRV row links to the PO item with its PO item number; the material code
+// and lot play no part (A2-7).
 describe("INV-39: matchSrvItem", () => {
   it.each([
-    ["M-100", 10, "item-10"],
-    // The code is on one item: the code decides, whatever the item number says.
-    ["M-100", 20, "item-10"],
-    // The code is on several items: the PO item number decides.
-    ["M-200", 20, "item-20"],
-    ["M-200", 30, "item-30"],
-    // EC-19: several items and no item number among them: unmatched, never a guess.
-    ["M-200", 10, null],
-    // EC-12: the code is on no item of the PO, even if the item number exists.
-    ["9000001", 10, null],
-    // Codes are compared exactly.
-    ["m-100", 10, null],
-    // EC-12: an SRV line with no material code matches nothing, not even an item that has none.
-    [null, 40, null],
-  ])("material %j, PO item %i -> %s", (materialCode, poItemNo, expected) => {
-    expect(matchSrvItem({ materialCode, poItemNo }, poItems)).toBe(expected);
+    [10, "item-10"],
+    // Two items share a material code: the item number still decides.
+    [20, "item-20"],
+    [30, "item-30"],
+    // An item without a material code links like any other.
+    [40, "item-40"],
+    // No item with that number on the PO (the row is flagged, EC-12): unmatched, never a guess.
+    [50, null],
+    // PO ITM 0 as BHEL printed it: no item 0 on this PO.
+    [0, null],
+  ])("PO item %i -> %s", (poItemNo, expected) => {
+    expect(matchSrvItem({ poItemNo }, poItems)).toBe(expected);
+  });
+
+  it("links PO ITM 0 to a stored item 0", () => {
+    expect(matchSrvItem({ poItemNo: 0 }, [...poItems, { id: "item-0", poItemNo: 0 }])).toBe("item-0");
   });
 });

@@ -278,7 +278,7 @@ describe("re-ingest never writes dispatch (INV-47)", () => {
 });
 
 describe("the date winner after accept (INV-45)", () => {
-  async function srvOn(poId: string | null, poItemId: string | null, srvDate: string, code = "SYN-10"): Promise<void> {
+  async function srvOn(poId: string | null, poItemId: string | null, srvDate: string, poItemNo = 10): Promise<void> {
     await db.batch([
       db.build.insert(srv).values({
         id: "V1",
@@ -295,8 +295,8 @@ describe("the date winner after accept (INV-45)", () => {
         supplierId: SUPPLIER,
         srvId: "V1",
         poItemId,
-        materialCode: code,
-        poItemNo: 10,
+        materialCode: "SYN-10",
+        poItemNo,
         lotNo: 1,
         rowNo: 1,
         srvItemNo: 1,
@@ -334,10 +334,10 @@ describe("the date winner after accept (INV-45)", () => {
     expect((await items()).map((i) => [i.rcdQty, i.rejQty])).toEqual([[3000, 1000]]);
   });
 
-  test("an attached SRV line left unmatched is matched once an amendment adds its material code", async () => {
+  test("an attached SRV line left unmatched is matched once an amendment adds its PO item", async () => {
     await uploadOne(page("10/04/2025"));
-    // EC-12: SYN-30 is on no item yet.
-    await srvOn((await poRow())?.id ?? null, null, "2025-05-01", "SYN-30");
+    // EC-12: the PO has no item 30 yet.
+    await srvOn((await poRow())?.id ?? null, null, "2025-05-01", 30);
 
     await uploadOne({ date: "11/04/2025", items: [{ no: 10 }, { no: 30 }] });
 
