@@ -55,6 +55,7 @@ Full rows are in git history.
 - [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md): PRs 1–5 (#83)
 - [SPEC-16 — Web: PO and SRV screens, uploads and folder import](../specs/SPEC-16-web-po-srv-import.md): PRs 1–5 (#84)
 - [SPEC-17 — Web: deviations, ledger, delivery tracker and reports](../specs/SPEC-17-web-deviations-ledger-tracker-reports.md): PRs 1–4 (#87)
+- [SPEC-18 — Web: DC and invoice screens](../specs/SPEC-18-web-dc-invoice.md): PRs 1–5 (#88)
 
 ## Follow-ups
 
@@ -75,6 +76,9 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-17 (#87): `hooks/useSearchText.ts` (from #84, used by every list screen) still has a `useEffect`; the no-effects lint check will flag it.
 - SPEC-17 (#87): `apps/api/test/d1-params.test.ts` "the DC list at 100 a page" creates 100 DCs one after another and timed out once at 5.4 s (5 s limit) in a cold `pnpm verify`; it ran in 1.1-2.9 s on reruns.
 - SPEC-17 (#87): `validate-colors` reads an apostrophe in a comment inside `cn(...)` as a string start and flags the next class string.
+- SPEC-18 (#88): static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review).
+- SPEC-18 (#88 review): `LineTable` clips its right-hand columns in a narrow window (`overflow-x-auto`); DC and invoice list values format every row as non-GEMC (list rows carry no `isGemc`).
+- SPEC-18 (#88): DC detail reads `po.detail` only for Received; `dc.detail` could carry it (D-0486).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -135,16 +139,6 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 | 3   | Registers and list CSVs                             | done (#69) | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
 | 4   | Pending, reconciliation, export-selected, GC report | done (#75) |                                                                                                |
 | 5   | Report lists and delivery-tracker export            | done (#66) |                                                                                                |
-
-## [SPEC-18 — Web: DC and invoice screens](../specs/SPEC-18-web-dc-invoice.md)
-
-| PR  | Scope                       | Status | Notes                                                                                                                |
-| --- | --------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| 1   | DC list and detail          | todo   | static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review) |
-| 2   | DC create                   | todo   |                                                                                                                      |
-| 3   | Invoice list and detail     | todo   |                                                                                                                      |
-| 4   | Invoice create (both modes) | todo   |                                                                                                                      |
-| 5   | Document flow e2e           | todo   |                                                                                                                      |
 
 ## [SPEC-19 — BHEL scraper and sync](../specs/SPEC-19-bhel-scraper-sync.md)
 
