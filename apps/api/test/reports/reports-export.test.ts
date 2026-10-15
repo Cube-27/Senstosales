@@ -182,7 +182,7 @@ describe("pending rows the dataset does not have", () => {
     const r = rows(db);
     await db.batch([
       r.po({ id: id("P1"), poNumber: "4600001", poDate: "2025-04-01" }),
-      // No description: the material code, as legacy. No unit: the quantity alone (EC-55).
+      // No description: the material code, as legacy. No unit: the quantity alone (EC-54).
       r.item({
         id: id("I1"),
         poId: id("P1"),
