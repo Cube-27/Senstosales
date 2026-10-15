@@ -3,7 +3,7 @@
 import type { IsoDate } from "./dates.ts";
 import { compareIsoDate } from "./dates.ts";
 import type { Money, Qty } from "./units.ts";
-import { MONEY_DP, QTY_DP, roundToMoney, sumMoney, sumQty } from "./units.ts";
+import { qtyValue, sumMoney, sumQty } from "./units.ts";
 
 export type Winner = "po" | "srv";
 
@@ -74,7 +74,7 @@ export function srvTotals(lines: readonly SrvTotalsLine[]): SrvTotals {
     shown.push(qty);
     if (line.poItem === null) continue;
     ordered.set(line.poItem.id, line.poItem.ordQty);
-    values.push(roundToMoney(BigInt(qty.rcdQty) * BigInt(line.poItem.rate), QTY_DP + MONEY_DP, 5));
+    values.push(qtyValue(qty.rcdQty, line.poItem.rate));
   }
   const sum = (key: keyof SrvLineShown) => sumQty(shown.map((q) => q[key]));
   return {

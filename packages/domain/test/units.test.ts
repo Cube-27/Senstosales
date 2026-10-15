@@ -10,6 +10,7 @@ import {
   parseMoney,
   parseQty,
   qtyToString,
+  qtyValue,
   roundMoney,
   sumMoney,
   sumQty,
@@ -160,5 +161,19 @@ describe("INV-02: tolerance 0.001", () => {
     ["0.002", "0", true],
   ])("gtTol(%s, %s) -> %s", (a, b, expected) => {
     expect(gtTol(qty(a), qty(b))).toBe(expected);
+  });
+});
+
+describe("qtyValue: quantity × rate at 5 dp", () => {
+  it.each([
+    ["2.5", "848.75", "2121.875"],
+    ["10", "100", "1000"],
+    ["0.001", "0.00001", "0"],
+    ["0.001", "0.00500", "0.00001"],
+    ["0.001", "0.00499", "0"],
+    ["3", "719.27966", "2157.83898"],
+    ["0", "848.75", "0"],
+  ])("%s × %s -> %s", (q, rate, expected) => {
+    expect(moneyToString(qtyValue(qty(q), money(rate)))).toBe(expected);
   });
 });
