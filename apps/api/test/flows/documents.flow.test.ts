@@ -449,7 +449,7 @@ test("one PO through every document and back: links block deletes with a reason 
 
   await d.client.request("srv.delete", { params: { id: srvAgain } });
   await deleteDc();
-  expect(await d.itemsOf(d.po.id)).toEqual(start);
+  expect([await d.itemsOf(d.po.id), await d.flagsOf(d.po.id)]).toEqual([start, []]);
   const lists = [
     await d.client.request("dc.list", { query: {} }),
     await d.client.request("invoice.list", { query: {} }),
