@@ -4,7 +4,7 @@ import { secret, settings } from "@senstosales/db";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { closeApiApps, onboardedApp, SUPPLIER_WIRE } from "./api-app.ts";
-import { ID, json, testApp } from "./helpers.ts";
+import { ID, json, mostBoundParams, testApp } from "./helpers.ts";
 import { apiRoutes } from "../src/routes/index.ts";
 
 afterEach(closeApiApps);
@@ -49,6 +49,19 @@ describe("settings", () => {
   it("returns the onboarding rates and no preferences", async () => {
     const { send } = await onboardedApp();
     expect(await (await send("/api/settings")).json()).toEqual({ cgstPct: "6", sgstPct: "6", preferences: {} });
+  });
+
+  it("saves 40 preferences, binding at most 100 parameters per statement (D1)", async () => {
+    const { send, db } = await onboardedApp();
+    const preferences = Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`pref${i}`, `value ${i}`]));
+    const next = { cgstPct: "9", sgstPct: "9", preferences };
+    let status = 0;
+    const most = await mostBoundParams(db, async () => {
+      status = (await send("/api/settings", json("PUT", next))).status;
+    });
+    expect(status).toBe(200);
+    expect(most).toBeLessThanOrEqual(100);
+    expect(await (await send("/api/settings")).json()).toEqual(next);
   });
 
   it("replaces the rates and preferences with one audit row", async () => {

@@ -1,6 +1,6 @@
 // The supplier row, its settings rows and its secret (ARCHITECTURE §8.2): reads return plain rows, writes return
 // statements for the service's batch.
-import { DbError, secret, settings, supplier, type Db, type Statement } from "@senstosales/db";
+import { DbError, insertRows, secret, settings, supplier, type Db, type Statement } from "@senstosales/db";
 import { and, eq, sql } from "drizzle-orm";
 
 export type Supplier = typeof supplier.$inferSelect;
@@ -50,7 +50,8 @@ export const settingsOf = (db: Db, supplierId: string): Promise<SettingRow[]> =>
 export const deleteSettings = (db: Db, supplierId: string): Statement =>
   db.build.delete(settings).where(eq(settings.supplierId, supplierId));
 
-export const insertSettings = (db: Db, rows: SettingRow[]): Statement => db.build.insert(settings).values(rows);
+/** Any number of preferences: as many rows to a statement as D1 binds. */
+export const insertSettings = (db: Db, rows: SettingRow[]): Statement[] => insertRows(db, settings, rows);
 
 export async function findSecret(db: Db, supplierId: string, name: string): Promise<string | null> {
   const rows = await db.query(
