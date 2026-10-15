@@ -42,7 +42,7 @@ describe("onboarding (SPEC-15 PR 2, INV-78)", () => {
       "State",
       "State Code",
       "Jurisdiction (City)",
-      "Place of Supply",
+      "Default Place of Supply",
       "Default HSN",
       "CGST %",
       "SGST %",

@@ -67,7 +67,7 @@ export function SupplierProfileFields() {
       <TextField name="supplier.state" label="State" placeholder="e.g. Example State" />
       <TextField name="supplier.stateCode" label="State Code" placeholder="e.g. 00" />
       <TextField name="supplier.jurisdiction" label="Jurisdiction (City)" placeholder="e.g. EXAMPLE CITY" />
-      <TextField name="supplier.placeOfSupply" label="Place of Supply" placeholder="e.g. Example City" />
+      <TextField name="supplier.placeOfSupply" label="Default Place of Supply" placeholder="e.g. Example City" />
       <TextField name="supplier.hsn" label="Default HSN" placeholder="e.g. 0000" />
     </div>
   );
