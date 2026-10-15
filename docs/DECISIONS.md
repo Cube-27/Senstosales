@@ -12,7 +12,9 @@ them in its tracker commit before `READY`, under the IDs the orchestrator gave a
   file of the spec the decision is about.
 - Cross-cutting and process decisions (tooling, CI, orchestration, rules for every spec) and every `needs-owner` or
   `pending-owner` entry go in Entries below; open ones are also listed in the index of open items.
-- D-IDs are one sequence across all files. Older text that says "DECISIONS.md" means this log as a whole.
+- D-IDs are one sequence across all files; the highest in use is
+  `grep -rho "^### D-[0-9]*" docs/DECISIONS.md docs/decisions | sort | tail -1`. Older text that says "DECISIONS.md"
+  means this log as a whole.
 
 **Statuses:**
 
