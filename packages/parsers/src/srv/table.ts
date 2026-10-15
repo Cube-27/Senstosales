@@ -143,7 +143,10 @@ function itemNo(cells: Cells, column: "poItemNo" | "lotNo" | "srvItemNo"): Parse
   const text = cells.text(column);
   if (text === "") return cells.fail("missing-field", column, `is empty`);
   const value = /^\d+$/.test(text) ? Number(text) : 0;
-  return value > 0 ? { ok: true, value } : cells.fail("bad-number", column, `is not an item number: "${text}"`);
+  // A number past 2^53 would be read rounded and could match another item.
+  return Number.isSafeInteger(value) && value > 0
+    ? { ok: true, value }
+    : cells.fail("bad-number", column, `is not an item number: "${text}"`);
 }
 
 /** Received and rejected read an empty cell as 0, ordered and accepted as null (legacy). */

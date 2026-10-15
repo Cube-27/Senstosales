@@ -1,7 +1,7 @@
 // The `admin` row and its sessions (ARCHITECTURE §10.1): reads return plain rows, writes return statements for the
 // service's batch.
-import { appUser, session, type Db, type Instant, type Statement } from "@senstosales/db";
-import { and, eq, gt, lte, sql, type SQL } from "drizzle-orm";
+import { appUser, DbError, session, type Db, type Instant, type Statement } from "@senstosales/db";
+import { and, eq, gt, isNull, lte, sql, type SQL } from "drizzle-orm";
 import type { SQLiteInsertValue } from "drizzle-orm/sqlite-core";
 
 export type User = typeof appUser.$inferSelect;
@@ -36,6 +36,23 @@ export const updatePassword = (
   userId: string,
   values: Pick<User, "passwordHash" | "passwordChangedAt">,
 ): Statement => db.build.update(appUser).set(values).where(eq(appUser.id, userId));
+
+/**
+ * Fails the batch it is in when the password is no longer the one a login checked: `passwordHash` as read, or the
+ * never-changed default when there was no row. The hash becomes NULL, its NOT NULL constraint fails and the whole
+ * batch rolls back (D-0124), so a login racing a password change starts no session.
+ */
+export function assertPasswordUnchanged(db: Db, username: string, passwordHash: string | null): Statement {
+  const same = passwordHash === null ? isNull(appUser.passwordChangedAt) : eq(appUser.passwordHash, passwordHash);
+  return db.build
+    .update(appUser)
+    .set({ passwordHash: sql`CASE WHEN ${same} THEN ${appUser.passwordHash} ELSE NULL END` })
+    .where(eq(appUser.username, username));
+}
+
+/** Whether `err` is the failure `assertPasswordUnchanged` causes. */
+export const isPasswordChanged = (err: unknown): boolean =>
+  err instanceof DbError && err.message.includes("NOT NULL constraint failed: app_user.password_hash");
 
 export const deleteUser = (db: Db, userId: string): Statement => db.build.delete(appUser).where(eq(appUser.id, userId));
 

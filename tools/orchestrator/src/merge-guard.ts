@@ -44,8 +44,17 @@ const LITERAL_HERE_STRING = /@'\r?\n[\s\S]*?\r?\n'@/g;
 
 class TokenizeError extends Error {}
 
+// Line continuations join a command split across lines: a bash backslash-newline is removed, a PowerShell
+// backtick-newline reads as a space. CodeAnt on #10: both passed `gh pr <continuation> merge`.
+const LINE_CONTINUATION = /\\\r?\n/g;
+const BACKTICK_CONTINUATION = /`\r?\n/g;
+
 const withoutLiteralBodies = (command: string): string =>
-  command.replace(QUOTED_HEREDOC, "$1").replace(LITERAL_HERE_STRING, "''");
+  command
+    .replace(QUOTED_HEREDOC, "$1")
+    .replace(LITERAL_HERE_STRING, "''")
+    .replace(LINE_CONTINUATION, "")
+    .replace(BACKTICK_CONTINUATION, " ");
 
 type Lexer = { tokens: string[]; token: string; quoted: boolean };
 

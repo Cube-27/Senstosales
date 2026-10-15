@@ -2798,3 +2798,19 @@ None.
 - Alternatives: Rounding in the writer per column.
 - Why: D-0260 says services scale through the shared formatters, so screen and export agree.
 - Reversible: yes.
+
+### D-0343 — SPEC-00 §4.7 drops the `tools` required check
+
+- Date: 2026-10-15 · Spec/PR: CodeAnt triage · Status: decided
+- Decision: The ruleset's required checks are `check`, `licenses`, `real-data-scan`, then `build`, `audit`, `e2e`, `desktop` as each exists. `tools` is removed from SPEC-00 §4.7; the PR 1 row keeps its historical job list.
+- Alternatives: Leave the spec as written (H1 applied from it would wait forever on a job nobody runs).
+- Why: D-0018 folded the `tools` CI job into `check`; `ci.yml` has no `tools` job (CodeAnt on #10).
+- Reversible: yes.
+
+### D-0344 — Reviewers judge every CodeAnt inline finding
+
+- Date: 2026-10-15 · Spec/PR: CodeAnt triage · Status: decided
+- Decision: `/review-pr` §2.8: the reviewer waits for CodeAnt's review of the head commit, judges each inline finding (Nitpicks and PR Risk summaries skipped) with the same buckets as its own, and replies on each thread. A backfill triage of the 90 inline findings on merged PRs fixed the nine still valid (D-0343 among them) and logged two edge cases (EC-52, EC-53) in one PR.
+- Alternatives: A merge-script check for unanswered bot threads (a second gate on a third-party bot's comment format).
+- Why: Findings were triaged only when an agent happened to read them; CodeAnt caught defects our review missed (#37, #40, #50).
+- Reversible: yes.

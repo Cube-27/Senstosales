@@ -108,7 +108,10 @@ function readIds(found: Found): ParseResult<Pick<PoHeader, "poNumber" | "poDate"
 /** Amounts and the amendment number, comma grouping removed; an empty amendment number is 0 (legacy). */
 function readNumbers(found: Found): ParseResult<Pick<PoHeader, "amendNo" | "poValue" | "netPoValue">> {
   const amend = (text(found, "AMEND NO") ?? "0").replaceAll(",", "");
-  if (!/^\d+$/.test(amend)) return fail(found, "bad-number", "AMEND NO", `AMEND NO is not a whole number: "${amend}"`);
+  // A number past 2^53 would be read rounded, so it is malformed too.
+  if (!/^\d+$/.test(amend) || !Number.isSafeInteger(Number(amend))) {
+    return fail(found, "bad-number", "AMEND NO", `AMEND NO is not a whole number: "${amend}"`);
+  }
   const poValue = readMoney(found, "PO-VALUE");
   if (!poValue.ok) return poValue;
   const netPoValue = readMoney(found, "NET PO VAL");

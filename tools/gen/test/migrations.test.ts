@@ -27,6 +27,10 @@ describe("renderMigrations", () => {
     );
   });
 
+  it("accepts a hyphenated name, as drizzle-kit writes it", () => {
+    expect(renderMigrations([{ file: "0001_add-x.sql", sql: "SELECT 1" }])).toContain('name: "add-x"');
+  });
+
   it("orders files by version", () => {
     const out = renderMigrations([
       { file: "0002_b.sql", sql: "SELECT 2" },

@@ -8,6 +8,7 @@ import type { Clock } from "../src/ports/clock.ts";
 import { authRoutes } from "../src/routes/auth.ts";
 import { createServices } from "../src/services/index.ts";
 import { migratedDb } from "./db.ts";
+import { gatedBatch } from "./dc-fixtures.ts";
 import { json, testApp } from "./helpers.ts";
 import { memoryStorage } from "./service-deps.ts";
 
@@ -183,6 +184,40 @@ describe("overlapping first logins", () => {
     expect(sessions.map((s) => s.userId)).toEqual([users[0]?.id, users[0]?.id]);
     expect(audits.map((a) => a.entityId)).toEqual([users[0]?.id, users[0]?.id]);
     expect(await auditActions()).toEqual(["login", "login"]);
+  });
+});
+
+// CodeAnt on #38: a login checked before a password change committed after it, leaving a session the
+// change should have ended.
+describe("a login racing a password change", () => {
+  const CHANGE = { currentPassword: "admin", newPassword: "x", confirmPassword: "x" };
+
+  it("starts no session when the password it checked changed before it commits", async () => {
+    const gate = gatedBatch();
+    const { db, signIn, login, post } = await setup(gate.wrap);
+    const cookie = await signIn();
+    const { reached, open } = gate.close();
+    const late = login("admin");
+    await reached;
+    expect((await post("/api/auth/change-password", CHANGE, cookie)).status).toBe(200);
+    open();
+    const res = await late;
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual(WRONG_LOGIN);
+    expect(await db.query(db.build.select({ id: session.id }).from(session))).toEqual([]);
+  });
+
+  it("starts no session when a first login checked the default that another login then changed", async () => {
+    const gate = gatedBatch();
+    const { db, signIn, login, post } = await setup(gate.wrap);
+    const { reached, open } = gate.close();
+    const late = login("admin");
+    await reached;
+    const cookie = await signIn();
+    expect((await post("/api/auth/change-password", CHANGE, cookie)).status).toBe(200);
+    open();
+    expect((await late).status).toBe(401);
+    expect(await db.query(db.build.select({ id: session.id }).from(session))).toEqual([]);
   });
 });
 

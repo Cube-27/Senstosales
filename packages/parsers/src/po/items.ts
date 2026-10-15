@@ -38,6 +38,10 @@ const DRAWING = /(?:DRG|DRAWING)[ .-]*(?:NO[.-]*\s*)?(?::\s*)?([A-Z0-9][A-Z0-9./
 const RUN_IN = /^(?:ITEM|VAR|REV)/i;
 const WHOLE = /^\d+$/;
 
+/** A whole number above 0 that reads exactly: one past 2^53 would be rounded and could match another lot. */
+const isLotNumber = (text: string): boolean =>
+  WHOLE.test(text) && Number.isSafeInteger(Number(text)) && Number(text) > 0;
+
 /** One table row, read by column; a column the table lacks reads as "". */
 type Cells = (column: Column) => string;
 
@@ -82,9 +86,12 @@ function itemTable(page: Page): string[][] | undefined {
 
 /** A new item, or a repeated item row: its lot is added if new and the larger ordered quantity kept (legacy). */
 function readItemRow(cells: Cells, items: PoItem[], hasRej: boolean): ParseResult<PoItem> {
-  const poItemNo = Number(cells("poItemNo"));
-  const where = `item ${poItemNo}`;
-  if (poItemNo === 0) return fail("bad-number", `${where}, PO ITM is not an item number`, `${where}, PO ITM`);
+  const text = cells("poItemNo");
+  const poItemNo = Number(text);
+  // A number past 2^53 would be read rounded and could match another item.
+  const whole = Number.isSafeInteger(poItemNo);
+  const where = `item ${whole ? poItemNo : text}`;
+  if (!whole || poItemNo === 0) return fail("bad-number", `${where}, PO ITM is not an item number`, `${where}, PO ITM`);
   const existing = items.find((item) => item.poItemNo === poItemNo);
   const item = existing ? mergeOrdQty(existing, cells, where) : readItem(cells, poItemNo, where, hasRej);
   if (!item.ok) return item;
@@ -169,7 +176,7 @@ function appendDescription(row: readonly string[], items: readonly PoItem[], cur
 
 function readLot(cells: Cells, item: string): ParseResult<PoLot> {
   const lotText = cells("lotNo");
-  if (!WHOLE.test(lotText) || Number(lotText) === 0) {
+  if (!isLotNumber(lotText)) {
     return fail("bad-number", `${item}, LOT NO is not a lot number: "${lotText}"`, `${item}, LOT NO`);
   }
   const where = `${item} lot ${Number(lotText)}`;

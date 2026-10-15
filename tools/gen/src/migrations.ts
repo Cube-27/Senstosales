@@ -8,7 +8,8 @@ import { join } from "node:path";
 export const MIGRATIONS_DIR = "packages/db/migrations";
 export const OUTPUT = "packages/db/src/migrations.generated.ts";
 
-const FILE = /^(\d{4})_(\w+)\.sql$/;
+// drizzle-kit keeps `--name` as given, so a name may hold hyphens (`0002_add-x.sql`).
+const FILE = /^(\d{4})_([\w-]+)\.sql$/;
 export const BREAKPOINT = "--> statement-breakpoint";
 
 export interface MigrationFile {

@@ -4,6 +4,7 @@
 import type { NodeDb } from "@senstosales/db/node";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
+import { mostBoundParams } from "./helpers.ts";
 import { id, readApp, recompute, rows } from "./seed-rows.ts";
 import { supplierDb } from "./service-deps.ts";
 
@@ -250,5 +251,31 @@ describe("GET /api/search", () => {
 
   test("signed out -> 401", async () => {
     expect((await get("/api/search?q=45", false)).status).toBe(401);
+  });
+});
+
+// C4: D1 binds at most 100 parameters to a statement. A value bound reads every matching SRV to total it, so the
+// line read takes the SRVs 100 at a time (CodeAnt on #53).
+describe("a value bound over 150 SRVs", () => {
+  test("binds at most 100 parameters per statement and keeps five hits", async () => {
+    const r = rows(db);
+    const tag = (n: number) => String(n).padStart(4, "0");
+    await db.batch([
+      r.po({ id: PA, poNumber: "4500001", poDate: "2025-04-10" }),
+      r.item({ id: id("A1"), poId: PA, poItemNo: 10, ordQty: 1_000_000 }),
+      ...Array.from({ length: 150 }, (_, i) => {
+        const srvId = `01J9Z8Q4S5T6V7W8X9Y0R0${tag(i)}`;
+        return [
+          r.srv({ id: srvId, poNumber: "4500001", poId: PA, srvNumber: `77${tag(i)}`, srvDate: "2025-05-01" }),
+          r.srvItem({ id: `01J9Z8Q4S5T6V7W8X9Y0S0${tag(i)}`, srvId, poItemId: id("A1"), rcdQty: 1_000 }),
+        ];
+      }).flat(),
+    ]);
+    const most = await mostBoundParams(db, async () => {
+      const hits = await search("q=77&types=srv&valueMin=0");
+      expect(hits.map((h) => h.type)).toEqual(["srv", "srv", "srv", "srv", "srv"]);
+    });
+    expect(most).toBeGreaterThan(0);
+    expect(most).toBeLessThanOrEqual(100);
   });
 });
