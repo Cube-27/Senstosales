@@ -4,9 +4,12 @@
 import { z } from "zod";
 
 import { type ErrorBody, zErrorBody } from "./api/common.ts";
+import { ApiError } from "./errors.ts";
 import { type PathParams, type RouteDef, routes } from "./routes.ts";
 
 export type RouteName = keyof typeof routes;
+/** The routes that only read (`GET`): the ones a query may call. */
+export type ReadRouteName = { [K in RouteName]: (typeof routes)[K]["method"] extends "GET" ? K : never }[RouteName];
 type Def<N extends RouteName> = (typeof routes)[N];
 
 /**
@@ -43,24 +46,13 @@ export type FetchLike = (
   init: { method: string; headers: Record<string, string>; body?: string },
 ) => Promise<FetchResponse>;
 
-/** A non-2xx answer, with the API's error body (`{ code, message, details? }`). */
-export class ApiError extends Error {
-  readonly status: number;
-  readonly body: ErrorBody;
-
-  constructor(status: number, body: ErrorBody) {
-    super(body.message);
-    this.status = status;
-    this.body = body;
-    this.name = "ApiError";
-  }
-}
-
-type Args<N extends RouteName> = object extends RouteInput<N> ? [input?: RouteInput<N>] : [input: RouteInput<N>];
+/** A call's arguments after the route name: the input is optional when every part of it is. */
+export type RouteArgs<N extends RouteName> =
+  object extends RouteInput<N> ? [input?: RouteInput<N>] : [input: RouteInput<N>];
 
 export function createClient(fetchImpl: FetchLike) {
   return {
-    async request<N extends RouteName>(name: N, ...[input]: Args<N>): Promise<RouteOutput<N>> {
+    async request<N extends RouteName>(name: N, ...[input]: RouteArgs<N>): Promise<RouteOutput<N>> {
       const def: RouteDef = routes[name];
       const { params, query, body } = (input ?? {}) as {
         params?: object;

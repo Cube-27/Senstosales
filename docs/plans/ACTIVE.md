@@ -187,16 +187,16 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 
 ## [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md)
 
-| PR  | Scope                                 | Status | Notes                                                                                                                |
-| --- | ------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| 1   | App skeleton, router and query        | todo   | static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review) |
-| 2   | Frozen design carry-over              | todo   |                                                                                                                      |
-| 3   | Design validators                     | todo   |                                                                                                                      |
-| 4   | Shell components                      | todo   |                                                                                                                      |
-| 5   | Primitives and FormField              | todo   |                                                                                                                      |
-| 6   | DataTable, Pagination and list search | todo   |                                                                                                                      |
-| 7   | Platform adapter                      | todo   |                                                                                                                      |
-| 8   | Playwright harness and `e2e` job      | todo   |                                                                                                                      |
+| PR  | Scope                                 | Status     | Notes                                                                                                                |
+| --- | ------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | App skeleton, router and query        | done (#78) | static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review) |
+| 2   | Frozen design carry-over              | done (#78) |                                                                                                                      |
+| 3   | Design validators                     | done (#78) |                                                                                                                      |
+| 4   | Shell components                      | done (#78) |                                                                                                                      |
+| 5   | Primitives and FormField              | todo       |                                                                                                                      |
+| 6   | DataTable, Pagination and list search | todo       |                                                                                                                      |
+| 7   | Platform adapter                      | todo       |                                                                                                                      |
+| 8   | Playwright harness and `e2e` job      | todo       |                                                                                                                      |
 
 ## [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md)
 

@@ -1,0 +1,1178 @@
+@import "tailwindcss";
+
+@theme {
+  /* Defined in :root from the self-hosted @fontsource families. Keep fallback stack after these vars. */
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-display:
+    var(--font-bricolage-grotesque), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  /* ─── Font Weights ────────────────────────────── */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700; /* [ADDED] was missing, referenced in @font-face but no token */
+
+  /* ─── Line Heights ────────────────────────────── */
+  --line-height-tight: 1.2; /* headings, KPIs */
+  --line-height-snug: 1.375; /* subheadings, labels */
+  --line-height-normal: 1.5; /* body text */
+
+  /* ─── Letter Spacing ──────────────────────────── */
+  /* [ADDED] was entirely missing — needed for headings, uppercase labels */
+  --letter-spacing-tighter: 0em;
+  --letter-spacing-tight: 0em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0em;
+  --letter-spacing-wider: 0.02em; /* for uppercase/small-caps labels */
+  --letter-spacing-widest: 0.05em;
+
+  /* Shared spacing tokens consumed directly by custom CSS below. */
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+
+  /* ─── Colors ──────────────────────────────────── */
+  /* Tailwind v4 theme color tokens: these mainly generate utilities like bg-primary/text-primary/border-primary. */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-excel: #217346;
+  --color-excel-hover: #1a5c38;
+  --color-excel-light: #e6f4ea;
+  --color-pdf: #f40f02;
+  --color-pdf-hover: #c40a02;
+  --color-word: #2b579a;
+  --color-word-hover: #1e3d6e;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-sidebar-panel-bg: var(--sidebar-panel-bg);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-muted: var(--primary-muted);
+  --color-primary-contrast: var(--primary-contrast);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-subtle: var(--secondary-subtle);
+  --color-secondary-contrast: var(--secondary-contrast);
+
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-contrast: var(--success-contrast);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-contrast: var(--warning-contrast);
+  --color-error: var(--error);
+  --color-error-subtle: var(--error-subtle);
+  --color-error-contrast: var(--error-contrast);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-contrast: var(--info-contrast);
+
+  --color-muted: var(--text-secondary);
+  --color-subtle: var(--text-tertiary);
+  --color-placeholder: var(--text-placeholder);
+  --color-disabled: var(--text-disabled);
+  --color-inverse: var(--text-inverse);
+
+  /* ─── Type Scale ──────────────────────────────── */
+  --font-size-2xs: 0.625rem; /* 10px */
+  --font-size-2xs--line-height: 0.875rem;
+
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-xs--line-height: 1rem;
+
+  --font-size-sm: 0.8125rem; /* 13px */
+  --font-size-sm--line-height: 1.125rem;
+
+  --font-size-base: 0.875rem; /* 14px */
+  --font-size-base--line-height: 1.25rem;
+
+  --font-size-md: 1rem; /* 16px */
+  --font-size-md--line-height: 1.5rem;
+
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-lg--line-height: 1.625rem;
+
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-xl--line-height: 1.75rem;
+
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-2xl--line-height: 1.875rem;
+
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-3xl--line-height: 2.25rem;
+
+  --font-size-4xl: 2.25rem; /* 36px */
+  --font-size-4xl--line-height: 2.625rem;
+
+  /* ─── Radius ──────────────────────────────────── */
+  --radius-none: 0;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.5rem;
+  --radius-full: 9999px;
+
+  /* ─── Shadows ─────────────────────────────────── */
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-elevated: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-dropdown: 0 8px 24px rgb(0 0 0 / 0.12);
+
+  /* ─── Motion ──────────────────────────────────── */
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;
+  --duration-interactive: 150ms; /* [ADDED] was used in Select.tsx but never defined */
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+:root {
+  /* ─── v2 — warm stone, calm enterprise ─────────── */
+  /* Source: SenstoSales_DesignSystem.jsx (light) + docs/DESIGN.md v2 */
+
+  --font-public-sans: "Public Sans Variable";
+  --font-bricolage-grotesque: "Bricolage Grotesque Variable";
+  --font-jetbrains-mono: "JetBrains Mono Variable";
+
+  --background: #ecebea;
+  --foreground: #1a1917;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-sunken: #e3e1dd;
+  --surface-overlay: rgba(255, 255, 255, 0.96);
+  --surface-glass: rgba(0, 0, 0, 0.045);
+
+  --border: #d4d1ca;
+  --border-subtle: #dedbd5;
+  --border-strong: #b8b3aa;
+
+  --primary: #0057b3;
+  --primary-hover: #004899;
+  --primary-active: #003e84;
+  --primary-subtle: #eaf2fb;
+  --primary-muted: #d6e4f4;
+  --primary-contrast: #ffffff;
+
+  --secondary: #e3e1dd;
+  --secondary-hover: #d4d1ca;
+  --secondary-subtle: #f3f2ef;
+  --secondary-muted: #dedbd5;
+  --secondary-contrast: #1a1917;
+
+  --success: #15803d;
+  --success-subtle: #f0fdf4;
+  --success-muted: #dcfce7;
+  --success-contrast: #ffffff;
+
+  --warning: #ac4f09;
+  --warning-subtle: #fffbeb;
+  --warning-muted: #fef3c7;
+  --warning-contrast: #ffffff;
+
+  --error: #b91c1c;
+  --error-subtle: #fef2f2;
+  --error-muted: #fee2e2;
+  --error-contrast: #ffffff;
+
+  --info: #1d4ed8;
+  --info-subtle: #eff6ff;
+  --info-muted: #dbeafe;
+  --info-contrast: #ffffff;
+
+  /*
+    v2 text scale — warm-stone neutrals, distinct steps:
+      primary:    #1a1917  near-black stone        — values, headings
+      secondary:  #56524d  medium stone            — labels, supporting copy
+      tertiary:   #66625c  muted stone             — captions (4.5:1 on surface-sunken)
+      placeholder:#68645e  muted                   — input placeholders (4.5:1 on surface-sunken)
+  */
+  --text-primary: #1a1917;
+  --text-secondary: #56524d;
+  --text-form-label: #56524d;
+  --text-tertiary: #66625c;
+  --text-placeholder: #68645e;
+  --text-disabled: #aaa59d;
+  --text-inverse: #ffffff;
+  --text-link: #0057b3;
+  --text-link-hover: #004899;
+  --text-success: #15532b;
+  --text-warning: #92400e;
+  --text-info: #1e3a8a;
+  --text-error: #991b1b;
+
+  /* WCAG-compliant badge text colors for subtle backgrounds */
+  --text-success-badge: #14532d;
+  --text-warning-badge: #92400e;
+  --text-info-badge: #1e3a8a;
+
+  --shell-bar: #ffffff;
+  --sidebar-panel-bg: #ffffff;
+
+  /* The one keyboard-focus indicator, 3:1 or better against every surface in both themes. */
+  --focus-ring: var(--primary);
+
+  --shadow-glow-primary: 0 0 0 3px var(--primary-muted), 0 4px 12px rgb(0 112 242 / 0.15);
+  --shadow-glow-success: 0 0 0 3px var(--success-muted), 0 4px 12px rgb(16 185 129 / 0.15);
+  --shadow-glow-warning: 0 0 0 3px var(--warning-muted), 0 4px 12px rgb(245 158 11 / 0.15);
+  --shadow-glow-error: 0 0 0 3px var(--error-muted), 0 4px 12px rgb(239 68 68 / 0.15);
+
+  --shadow-card: 0 1px 2px rgb(26 25 23 / 0.08), 0 8px 18px -16px rgb(26 25 23 / 0.22);
+  --shadow-card-hover: 0 8px 18px -12px rgb(26 25 23 / 0.24), 0 1px 2px rgb(26 25 23 / 0.08);
+  --shadow-elevated: 0 14px 32px -22px rgb(26 25 23 / 0.32), 0 2px 4px rgb(26 25 23 / 0.08);
+  --shadow-dropdown: 0 12px 32px rgb(26 25 23 / 0.16);
+
+  --container-max: 1440px;
+  --container-padding: 1.5rem;
+  --container-main-padding-y: 1.5rem;
+  --container-main-padding-x: 1.5rem;
+
+  --shell-page-gutter: 1.5rem;
+  --shell-section-gap: 1rem;
+  --control-height-compact: 2rem;
+  --control-height-cozy: 2.25rem;
+
+  --size-xs: 1.5rem;
+  --size-sm: 2rem;
+  --size-md: 2.25rem;
+  --size-lg: 2.75rem;
+  --size-xl: 3rem;
+  --size-2xl: 3.5rem;
+
+  --input-width-xs: 8rem;
+  --input-width-sm: 12rem;
+  --input-width-md: 16rem;
+  --input-width-lg: 20rem;
+  --input-width-xl: 24rem;
+
+  --modal-width-sm: 24rem;
+  --modal-width-md: 28rem;
+  --modal-width-lg: 32rem;
+  --modal-width-xl: 40rem;
+
+  --table-col-xs: 3rem;
+  --table-col-sm: 5rem;
+  --table-col-md: 7rem;
+  --table-col-lg: 9rem;
+  --table-col-xl: 12rem;
+  --table-col-2xl: 16rem;
+
+  --header-height: 3rem;
+  --sidebar-width: 14rem;
+  --sidebar-width-collapsed: 4rem;
+
+  --min-height-xs: 6rem;
+  --min-height-sm: 10rem;
+  --min-height-md: 16rem;
+  --min-height-lg: 20rem;
+  --min-height-xl: 24rem;
+
+  --width-action: 3.5rem;
+  --width-checkbox: 2.5rem;
+  --width-row-num: 3.5rem;
+  --width-hsn: 5rem;
+  --width-unit: 4rem;
+  --width-quantity: 5.5rem;
+  --width-rate: 6.5rem;
+  --width-value: 7rem;
+  --width-reference: 7.5rem;
+  --width-date: 6rem;
+  --width-status: 6.5rem;
+
+  /* Date Picker (Fiori-aligned, v2 warm stone) */
+  --dp-field-bg: #ffffff;
+  --dp-field-border: #ccc9c3;
+  --dp-field-border-hover: #0057b3;
+  --dp-field-border-active: #0057b3;
+  --dp-field-text: #1a1917;
+  --dp-icon-color: #0057b3;
+  --dp-trigger-bg: #eaf2fb;
+  --dp-trigger-bg-hover: #d6e4f4;
+
+  --dp-panel-bg: #ffffff;
+  --dp-panel-border: #e4e2de;
+  --dp-header-text: #1a1917;
+  --dp-header-muted: #6b6863;
+
+  --dp-cell-bg: #f7f6f4;
+  --dp-cell-hover-bg: #ecebe7;
+  --dp-cell-text: #1a1917;
+  --dp-cell-muted-text: #9e9b96;
+  --dp-cell-selected-bg: #0057b3;
+  --dp-cell-selected-text: #ffffff;
+  --dp-cell-today-ring: #b45309;
+}
+
+.dark {
+  /* ─── v2 — stone dark, solid surfaces ─────────── */
+  /* Source: SenstoSales_DesignSystem.jsx (dark) + docs/DESIGN.md v2 */
+
+  --background: #0e0e0c;
+  --foreground: #e8e6e1;
+  --surface: #161614;
+  --surface-elevated: #1a1a17;
+  --surface-sunken: #0a0a09;
+  --surface-overlay: rgba(22, 22, 20, 0.96);
+  --surface-glass: rgba(255, 255, 255, 0.04);
+
+  --border: #2a2a27;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: #3a3a36;
+
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-active: #2563eb;
+  --primary-subtle: rgba(59, 130, 246, 0.12);
+  --primary-muted: rgba(59, 130, 246, 0.22);
+  --primary-contrast: #0a0a09;
+
+  --secondary: #232320;
+  --secondary-hover: #2a2a27;
+  --secondary-subtle: rgba(255, 255, 255, 0.05);
+  --secondary-muted: rgba(255, 255, 255, 0.08);
+  --secondary-contrast: #e8e6e1;
+
+  --success: #4ade80;
+  --success-subtle: rgba(74, 222, 128, 0.12);
+  --success-muted: rgba(74, 222, 128, 0.2);
+  --success-contrast: #0a0a09;
+
+  --warning: #fbbf24;
+  --warning-subtle: rgba(251, 191, 36, 0.12);
+  --warning-muted: rgba(251, 191, 36, 0.2);
+  --warning-contrast: #0a0a09;
+
+  --error: #f87171;
+  --error-subtle: rgba(248, 113, 113, 0.12);
+  --error-muted: rgba(248, 113, 113, 0.2);
+  --error-contrast: #0a0a09;
+
+  --info: #60a5fa;
+  --info-subtle: rgba(96, 165, 250, 0.12);
+  --info-muted: rgba(96, 165, 250, 0.2);
+  --info-contrast: #0a0a09;
+
+  --text-primary: #e8e6e1;
+  --text-secondary: #9e9b94;
+  --text-form-label: #9e9b94;
+  --text-tertiary: #85837f;
+  --text-placeholder: #85837f;
+  --text-disabled: #3e3c38;
+  --text-inverse: #0a0a09;
+  --text-link: #60a5fa;
+  --text-link-hover: #93c5fd;
+  --text-success: #86efac;
+  --text-warning: #fcd34d;
+  --text-info: #93c5fd;
+  --text-error: #fca5a5;
+
+  --text-success-badge: #86efac;
+  --text-warning-badge: #fcd34d;
+  --text-info-badge: #93c5fd;
+
+  --shell-bar: rgba(22, 22, 20, 0.96);
+  --sidebar-panel-bg: var(--surface);
+  --shadow-glow-primary: 0 0 0 2px var(--primary-muted);
+  --shadow-glow-success: 0 0 0 2px var(--success-muted);
+  --shadow-glow-warning: 0 0 0 2px var(--warning-muted);
+  --shadow-glow-error: 0 0 0 2px var(--error-muted);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.42), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-elevated: 0 14px 32px rgb(0 0 0 / 0.48), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-dropdown: 0 18px 40px rgb(0 0 0 / 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* Date Picker (dark adaptation) */
+  --dp-field-bg: var(--surface-elevated);
+  --dp-field-border: var(--border-strong);
+  --dp-field-border-hover: var(--primary-hover);
+  --dp-field-border-active: var(--primary-hover);
+  --dp-field-text: var(--text-primary);
+  --dp-icon-color: var(--primary-hover);
+  --dp-trigger-bg: color-mix(in srgb, var(--primary) 18%, transparent);
+  --dp-trigger-bg-hover: color-mix(in srgb, var(--primary) 28%, transparent);
+
+  --dp-panel-bg: var(--surface-elevated);
+  --dp-panel-border: var(--border-strong);
+  --dp-header-text: var(--text-primary);
+  --dp-header-muted: var(--text-secondary);
+
+  --dp-cell-bg: color-mix(in srgb, var(--surface) 65%, var(--surface-sunken));
+  --dp-cell-hover-bg: color-mix(in srgb, var(--surface) 45%, var(--surface-sunken));
+  --dp-cell-text: var(--text-primary);
+  --dp-cell-muted-text: var(--text-tertiary);
+  --dp-cell-selected-bg: var(--primary);
+  --dp-cell-selected-text: var(--primary-contrast);
+  --dp-cell-today-ring: #f472b6;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* [REVISED] Dark mode: grayscale smoothing → auto.
+     antialiased is already set on html above, so dark only needs the override. */
+  html.dark {
+    -moz-osx-font-smoothing: auto;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular); /* [FIXED] was hardcoded 400 */
+    line-height: var(--line-height-normal); /* [FIXED] was hardcoded 1.5 */
+    font-synthesis: none;
+  }
+
+  .dark body {
+    background:
+      radial-gradient(ellipse 90% 60% at 50% -20%, rgba(255, 255, 255, 0.09), transparent 58%),
+      radial-gradient(ellipse 70% 44% at 100% 0%, rgba(255, 255, 255, 0.045), transparent 55%),
+      linear-gradient(180deg, var(--background) 0%, var(--background) 42%, var(--background) 100%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    /* [ADDED] Tight & dense feel: slight negative tracking on all headings */
+    letter-spacing: var(--letter-spacing-tight);
+    font-feature-settings: "kern", "liga";
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--primary-muted);
+    color: var(--text-primary);
+  }
+
+  .dark ::selection {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: var(--text-primary);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-full);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* [CLEANED] Removed duplicate width/height — already set above */
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  a[href],
+  button:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label[for],
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .dark .app-shell-header,
+  .dark .app-shell-sidebar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 42%), var(--surface);
+    border-color: var(--border);
+  }
+
+  .dark .app-shell-main {
+    background:
+      radial-gradient(ellipse 85% 55% at 50% -12%, rgba(255, 255, 255, 0.075), transparent 56%),
+      radial-gradient(ellipse 70% 46% at 105% 0%, rgba(255, 255, 255, 0.04), transparent 55%),
+      linear-gradient(180deg, var(--background) 0%, var(--background) 44%, var(--background) 100%);
+  }
+
+  /* Solid popover background - no transparency */
+  .dark .popover-solid {
+    background-color: var(--surface);
+    border-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .erp-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .erp-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .dark .erp-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent 48%), var(--surface);
+    border-color: var(--border);
+    box-shadow: var(--shadow-card);
+  }
+
+  .dark .erp-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .erp-select {
+    height: var(--control-height-compact);
+    width: 100%;
+    appearance: none;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-sunken);
+    padding-left: 2rem;
+    padding-right: 1rem;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-snug);
+    font-weight: var(--font-weight-regular); /* [FIXED] was hardcoded 400 */
+    color: var(--text-primary);
+    outline: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .erp-select:hover {
+    border-color: var(--border-strong);
+  }
+
+  .erp-select:focus {
+    border-color: var(--primary);
+  }
+
+  button[data-delete="true"] svg,
+  button[title*="Delete"] svg,
+  button[aria-label*="Delete"] svg {
+    color: var(--color-error);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .text-foreground {
+    color: var(--text-primary);
+  }
+  .text-muted {
+    color: var(--text-secondary);
+  }
+  .text-tertiary {
+    color: var(--text-tertiary);
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  body:has([data-auth-screen="true"]) .app-shell-sidebar,
+  body:has([data-auth-screen="true"]) .app-shell-header {
+    display: none;
+  }
+
+  body:has([data-auth-screen="true"]) .app-shell-root {
+    min-width: 100%;
+  }
+
+  body:has([data-auth-screen="true"]) .app-shell-main {
+    overflow: visible;
+  }
+
+  body:has([data-auth-screen="true"]) .app-shell-container {
+    max-width: none;
+    padding: 0;
+    min-height: 100%;
+  }
+
+  .bg-excel {
+    background-color: var(--color-excel);
+  }
+  .hover\:bg-excel-hover:hover {
+    background-color: var(--color-excel-hover);
+  }
+  .border-excel {
+    border-color: var(--color-excel);
+  }
+  .hover\:border-excel-hover:hover {
+    border-color: var(--color-excel-hover);
+  }
+  .text-accent {
+    color: var(--primary);
+  }
+  .hover\:text-accent-hover:hover {
+    color: var(--primary-hover);
+  }
+
+  .text-primary-contrast {
+    color: var(--primary-contrast);
+  }
+
+  /* ─── Role Classes ────────────────────────────── */
+  /*
+    [REVISED] Unified logic for all role-* typographic classes.
+
+    Hierarchy rules applied consistently:
+      • Display (Montserrat) for headings, page titles, KPIs
+      • Sans (Inter) for body, labels, metadata, UI text
+      • Mono (JetBrains Mono) for reference numbers, codes, links with ID
+
+      • Color follows role, not randomness:
+          primary text   → text-primary   (headings, values, KPIs)
+          secondary text → text-secondary (subtitles, metadata, pagination)
+          tertiary text  → text-tertiary  (labels, captions, empty states)
+
+      • Weight is now meaningful:
+          regular → body text, values, metadata
+          medium  → section headers, field labels, interactive elements
+          semibold→ headings
+
+      • Letter spacing added where missing:
+          headings         → letter-spacing-tight    (dense/ERP feel)
+          uppercase labels → letter-spacing-wider    (readability)
+          KPI numbers      → letter-spacing-tighter  (large figures look tight)
+  */
+
+  /* KPI roles — mono digits for fast numeric comparison */
+  .role-kpi-xl {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tighter); /* [ADDED] */
+    color: var(--text-primary);
+  }
+
+  .role-kpi-lg {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold); /* [FIXED] was medium — kpis should be bold */
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tighter); /* [ADDED] */
+    color: var(--text-primary);
+  }
+
+  .role-kpi-md {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tighter); /* [ADDED] */
+    color: var(--text-primary);
+  }
+
+  /* Page structure roles */
+  .role-page-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--text-primary);
+  }
+
+  .role-page-subtitle {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--text-secondary);
+  }
+
+  .role-section-title {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-normal);
+    text-transform: uppercase;
+    line-height: var(--line-height-tight);
+    color: var(--text-secondary);
+  }
+
+  .role-section-header {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-tight); /* [ADDED] */
+    color: var(--text-primary);
+  }
+
+  /* Heading roles */
+  .role-heading-xl {
+    font-family: var(--font-display);
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight); /* [ADDED] */
+  }
+
+  .role-heading-lg {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight); /* [ADDED] */
+  }
+
+  .role-heading-md {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-tight); /* [ADDED] */
+  }
+
+  .role-heading-sm {
+    font-family: var(--font-display);
+    font-size: var(--font-size-md); /* [FIXED] was font-size-base — heading was same size as body text */
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-tight); /* [ADDED] */
+  }
+
+  /* Field roles */
+  .role-field-label {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-normal);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .role-field-value {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--text-primary);
+  }
+
+  .role-field-value-link {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--text-link);
+  }
+
+  .role-field-value-link:hover {
+    color: var(--text-link-hover);
+    text-decoration: underline;
+  }
+
+  /* Reference/mono roles */
+  .role-reference-link {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-normal);
+    color: var(--primary);
+  }
+
+  .role-reference-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+  }
+
+  .role-reference-number {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+
+  .role-reference-number-sm {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+
+  .role-reference-number-lg {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+
+  .role-currency-symbol {
+    font-family: var(--font-sans);
+    font-size: 0.96em;
+    font-weight: var(--font-weight-regular);
+    line-height: 1;
+    vertical-align: baseline;
+  }
+
+  .role-code-block {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm); /* [FIXED] was base — code is conventionally 1 step smaller than body */
+    font-weight: var(--font-weight-regular); /* [FIXED] was medium — code should read at regular weight */
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-normal);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Table roles */
+  .role-table-header {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-normal);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .role-table-cell {
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .role-datepicker-header-button {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-normal);
+    color: var(--dp-header-text);
+  }
+
+  .role-datepicker-weekday {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-normal);
+    text-transform: uppercase;
+    color: var(--dp-header-muted);
+  }
+
+  /* Material cell roles */
+  .role-material-code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .role-material-description {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-normal);
+    color: var(--text-primary);
+  }
+
+  .role-material-meta {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--text-tertiary);
+  }
+
+  /* Auxiliary text roles */
+  .role-helper-text {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--text-secondary);
+  }
+
+  .role-empty-text {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--text-tertiary);
+  }
+
+  .role-metadata {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm); /* [FIXED] was base — metadata is supporting content, should be smaller */
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--text-secondary);
+  }
+
+  .role-pagination-text {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-snug);
+    color: var(--text-secondary);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+
+  .role-pagination-number {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    color: var(--text-primary);
+  }
+
+  /* Dialog/Modal title — semantically distinct from section titles */
+  .role-dialog-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--text-primary);
+  }
+
+  /* Body text roles */
+  .role-body-text {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+  }
+
+  .role-body-text-sm {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+  }
+
+  .role-body-text-xs {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+  }
+
+  .role-body-text-lg {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+  }
+
+  .dark .role-field-value,
+  .dark .role-field-value-link,
+  .dark .role-table-cell,
+  .dark .role-body-text,
+  .dark .role-body-text-sm,
+  .dark .role-body-text-xs,
+  .dark .role-body-text-lg,
+  .dark .role-helper-text,
+  .dark .role-empty-text,
+  .dark .role-metadata {
+    font-weight: 350;
+  }
+
+  .dark .role-reference-number,
+  .dark .role-reference-number-sm,
+  .dark .role-reference-number-lg,
+  .dark .role-material-code,
+  .dark .role-material-description,
+  .dark .role-material-meta {
+    font-weight: var(--font-weight-regular);
+  }
+
+  /* UI label */
+  .role-ui-label {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+  }
+
+  /* Invoice header metadata block (create/view): softer labels and compact values */
+  .invoice-meta-section .role-field-value,
+  .invoice-meta-section .role-field-value-link {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-snug);
+  }
+
+  /* Invoice supplier/buyer column (create/view): unify label/value hierarchy */
+  .invoice-party-section .role-field-value {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-snug);
+    color: var(--text-primary);
+  }
+
+  .invoice-party-section .role-helper-text {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+  }
+
+  .invoice-party-section .role-supplier-id {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    letter-spacing: var(--letter-spacing-normal);
+    color: var(--text-primary);
+  }
+
+  /* Semantic color utilities */
+  .text-success {
+    color: var(--text-success);
+  }
+  .text-warning {
+    color: var(--text-warning);
+  }
+  .text-error {
+    color: var(--text-error);
+  }
+  .text-info {
+    color: var(--text-info);
+  }
+
+  /* WCAG-compliant badge text colors */
+  .text-success-badge {
+    color: var(--text-success-badge);
+  }
+  .text-warning-badge {
+    color: var(--text-warning-badge);
+  }
+  .text-info-badge {
+    color: var(--text-info-badge);
+  }
+
+  .dark .border-subtle {
+    border-color: rgba(255, 255, 255, 0.04);
+  }
+
+  .dark [class*="badge"] {
+    border-color: transparent;
+  }
+
+  .dark [data-state="open"][data-radix-dialog-overlay] {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+
+  .dark [data-radix-tooltip-content] {
+    background-color: var(--surface-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ─── App Shell Spacing ───────────────────────────── */
+.app-shell-main {
+  overflow-y: auto;
+  flex: 1 1 0%;
+}

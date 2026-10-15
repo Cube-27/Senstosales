@@ -53,7 +53,7 @@ export default defineConfig({
     options: { denyWarnings: true, reportUnusedDisableDirectives: "error" },
     categories: { correctness: "error" },
     env: { builtin: true, node: true },
-    ignorePatterns: ["**/generated/**", "**/coverage/**"],
+    ignorePatterns: ["**/generated/**", "**/coverage/**", "**/*.generated.ts"],
     rules: {
       "max-lines": ["error", 800],
       complexity: ["error", 15],
@@ -114,7 +114,7 @@ export default defineConfig({
       "packages/schemas/generated/openapi.json",
     ],
   },
-  test: { include: ["{packages,apps,tools}/*/test/**/*.test.ts"] },
+  test: { include: ["{packages,apps,tools}/*/test/**/*.test.{ts,tsx}"] },
   staged: {
     "*.{js,mjs,cjs,ts,tsx,json,jsonc,css,md,yml,yaml}": "vp check --fix",
     // C1: a function task gets no file list appended; the scan reads the staged index itself.
