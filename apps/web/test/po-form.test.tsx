@@ -149,9 +149,10 @@ describe("/po/create (SPEC-16 PR 3)", () => {
     fireEvent.change(await screen.findByLabelText(/PO Number/), { target: { value: "4100000101" } });
     fireEvent.click(screen.getByRole("button", { name: "Add Item" }));
     fireEvent.click(screen.getByRole("button", { name: "Save PO" }));
-    expect(screen.getByRole("alert").textContent).toBe(
-      "Item 10 has missing mandatory fields (Description, Code, Unit, Qty, Rate)",
-    );
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toBe("Item 10 has missing mandatory fields (Description, Code, Unit, Qty, Rate)");
+    // In the header beside Save, not in a band of its own over the form (UI-MISC).
+    expect(screen.getByRole("button", { name: "Save PO" }).parentElement?.contains(alert)).toBe(true);
     expect(calls).toEqual([]);
   });
 

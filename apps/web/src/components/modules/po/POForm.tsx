@@ -12,7 +12,7 @@ import {
   Button,
   ConfirmDialog,
   DatePicker,
-  FormAlert,
+  HeaderAlert,
   FormField,
   Input,
   PageHeader,
@@ -123,6 +123,7 @@ function POFormView({ detail }: POFormProps) {
         onBack={() => router.history.back()}
         action={
           <>
+            <HeaderAlert message={error} />
             <Button variant="outline" size="sm" onClick={() => router.history.back()} disabled={saving}>
               Cancel
             </Button>
@@ -138,7 +139,6 @@ function POFormView({ detail }: POFormProps) {
           </>
         }
       />
-      <FormAlert message={error} />
       <section aria-label="Header Information" className="rounded-md border border-border bg-surface p-4">
         <h2 className="mb-3 role-section-title">Header Information</h2>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4 lg:grid-cols-6">

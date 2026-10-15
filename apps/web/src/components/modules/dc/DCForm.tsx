@@ -15,7 +15,7 @@ import {
   Button,
   ConfirmDialog,
   DatePicker,
-  FormAlert,
+  HeaderAlert,
   FormField,
   Input,
   LineCell,
@@ -310,6 +310,7 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
           subtitle={<Subtitle data={data} total={total} />}
           action={
             <>
+              <HeaderAlert message={error} />
               {data === null && (
                 <DocPicker
                   types={["po"]}
@@ -332,7 +333,6 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
             </>
           }
         />
-        <FormAlert message={error} />
         <ChallanFields duplicate={duplicate} />
         <DispatchItems data={data} />
         <DcNotes total={total} />

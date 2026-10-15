@@ -14,7 +14,7 @@ import {
   Button,
   ConfirmDialog,
   DatePicker,
-  FormAlert,
+  HeaderAlert,
   FormField,
   InfoField,
   Input,
@@ -362,6 +362,7 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
           subtitle={<Subtitle preview={preview} total={fmtMoney(totals.total, { gemc })} />}
           action={
             <>
+              <HeaderAlert message={error} />
               {preview === null && (
                 <DocPicker
                   types={["dc", "po"]}
@@ -389,7 +390,6 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
             </>
           }
         />
-        <FormAlert message={error} />
         <section aria-label="Invoice Details" className="overflow-hidden rounded-md border border-border bg-surface">
           <h2 className="border-b border-border px-4 py-3 role-section-title">Invoice Details</h2>
           <div className="grid grid-cols-12">

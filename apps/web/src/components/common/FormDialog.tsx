@@ -35,13 +35,14 @@ export function FormDialog({
   };
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !saving && onClose()}>
-      <DialogContent className="max-w-[var(--modal-width-xl)]">
+      {/* No taller than the window: the fields scroll between the title and the buttons, never cut off (UI-MISC). */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-[var(--modal-width-xl)] grid-rows-[auto_minmax(0,1fr)]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className={description ? undefined : "sr-only"}>{description ?? title}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          {children}
+        <form onSubmit={submit} className="flex min-h-0 flex-col gap-3">
+          <div className="-mx-1 min-h-0 overflow-y-auto px-1">{children}</div>
           <FormAlert message={error} />
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving}>
