@@ -17,18 +17,44 @@ const PRAGMAS = [
 
 const STATEMENT_CACHE_SIZE = 500;
 
+/** Pages per backup step: all of them, so a restore is one step and no statement sees a half-copied database. */
+const ONE_STEP = 2 ** 31 - 1;
+
+/**
+ * Awaits a node:sqlite backup with a short timer running. Seen with Node 26 on Windows: a backup's completion does
+ * not wake an event loop that is otherwise only waiting (a test worker, a server between requests), so the promise
+ * settled seconds later, at the next unrelated event. The timer keeps the loop turning while the copy runs.
+ */
+async function awake(copy: Promise<unknown>): Promise<void> {
+  const timer = setInterval(() => {}, 10);
+  try {
+    await copy;
+  } finally {
+    clearInterval(timer);
+  }
+}
+
 type Method = "run" | "all" | "values" | "get";
 type Query = { sql: string; params: unknown[]; method: Method };
 
 export interface NodeDb extends Db {
   /** Copies the live database to `path` with SQLite's online backup API. */
   backupTo(path: string): Promise<void>;
+  /** Replaces the live database's content with the database at `path`, through the online backup API in the other
+   * direction. This connection stays open and sees the restored rows. */
+  restoreFrom(path: string): Promise<void>;
   close(): void;
 }
 
 export function openNodeDb(path: string): NodeDb {
   const conn = new DatabaseSync(path);
-  for (const pragma of PRAGMAS) conn.exec(`PRAGMA ${pragma}`);
+  try {
+    for (const pragma of PRAGMAS) conn.exec(`PRAGMA ${pragma}`);
+  } catch (err) {
+    // A file that is not a database fails here; closing lets the caller delete or replace it (Windows locks it).
+    conn.close();
+    throw err;
+  }
 
   // Drizzle maps rows by position, so statements return arrays. Most SQL texts repeat, but multi-row inserts and
   // `inArray` vary with their length, so the cache is emptied when full instead of growing for the process's life.
@@ -77,7 +103,15 @@ export function openNodeDb(path: string): NodeDb {
   return {
     ...wrapDrizzle(drizzleDb, (statements) => drizzleDb.batch(statements)),
     async backupTo(path) {
-      await backup(conn, path);
+      await awake(backup(conn, path));
+    },
+    async restoreFrom(source) {
+      const from = new DatabaseSync(source, { readOnly: true });
+      try {
+        await awake(backup(from, path, { rate: ONE_STEP }));
+      } finally {
+        from.close();
+      }
     },
     close() {
       conn.close();

@@ -1,6 +1,6 @@
 // SPEC-05 PR 1: the Db port over the node:sqlite executor. A failing statement rolls the whole batch back, the §8.3
-// PRAGMAs are set, and backupTo writes a readable copy. Real node:sqlite throughout; nothing of ours is mocked.
-import { mkdtempSync, rmSync } from "node:fs";
+// PRAGMAs are set, backupTo writes a readable copy and restoreFrom puts one back. Real node:sqlite throughout; nothing of ours is mocked.
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -194,6 +194,27 @@ describe("node executor", () => {
     const copy = open("backup-copy");
     expect(await parentIds(copy)).toEqual([["P1"], ["P2"]]);
     expect(await copy.query(copy.build.values(sql`PRAGMA integrity_check`))).toEqual([["ok"]]);
+  });
+
+  test("a file that is not a database is refused and left closed, so it can be deleted", () => {
+    const path = join(dir, "not-a-db.db");
+    writeFileSync(path, "not a database");
+    expect(() => openNodeDb(path)).toThrow("file is not a database");
+    rmSync(path);
+    expect(existsSync(path)).toBe(false);
+  });
+
+  test("restoreFrom puts a backup's rows back into the live database, which stays open and writable", async () => {
+    const db = await withTables("restore-live");
+    await db.batch([insertParent(db, "P1", 1)]);
+    await db.backupTo(join(dir, "restore-copy.db"));
+    await db.batch([insertParent(db, "P2", 2)]);
+
+    await db.restoreFrom(join(dir, "restore-copy.db"));
+    expect(await parentIds(db)).toEqual([["P1"]]);
+    await db.batch([insertParent(db, "P3", 3)]);
+    expect(await parentIds(db)).toEqual([["P1"], ["P3"]]);
+    expect(await db.query(db.build.values(sql`PRAGMA integrity_check`))).toEqual([["ok"]]);
   });
 });
 
