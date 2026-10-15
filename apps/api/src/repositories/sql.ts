@@ -24,7 +24,7 @@ const { fingerprint: _, ...flagApiColumns } = apiColumns(reconciliationIssue);
 export const flagColumns = flagApiColumns;
 
 /** PO numbers are digit strings, so they sort as numbers (as legacy); the text breaks ties for any that are not. */
-export const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber];
+export const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber] as const;
 
 /**
  * The UTC instant (ISO-8601, as stored) at which the IST calendar date `date` begins, `days` after it. IST is a fixed

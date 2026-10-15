@@ -9,9 +9,11 @@ allowBuilds:
   workerd: false
 
 # miniflare (local D1 for the dialect check) imports sharp only for its Images binding; sharp's native libvips
-# packages are LGPL, which C13 avoids.
+# packages are LGPL, which C13 avoids. exceljs 4.4 pins unzipper 0.10, whose `binary` -> `buffers` chain declares no
+# licence (C13 denies it); unzipper 0.12 drops that chain and keeps the `Parse` API exceljs uses for streaming reads.
 overrides:
   miniflare>sharp: "-"
+  exceljs>unzipper: ^0.12.3
 
 # Supply chain: trust signals (provenance, signatures) may not weaken between updates. No release-age quarantine
 # (pnpm defaults to one day): the Vite+ toolchain ships new dependencies that a quarantine blocks (D-0001).

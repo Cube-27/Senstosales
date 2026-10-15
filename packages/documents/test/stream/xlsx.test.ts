@@ -1,0 +1,85 @@
+import { Readable } from "node:stream";
+
+import ExcelJS from "exceljs";
+import { describe, expect, it } from "vite-plus/test";
+
+import type { Sheet } from "../../src/index.ts";
+import { xlsxChunks } from "../../src/index.ts";
+import type { Key } from "./rows.ts";
+import { collect, COLUMNS, of, settle, source } from "./rows.ts";
+
+const SHEET: Sheet<Key> = { name: "Register", columns: COLUMNS, pageSetup: { orientation: "landscape" } };
+
+async function read(chunks: AsyncIterable<Uint8Array>) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.read(Readable.from(chunks));
+  const sheet = workbook.getWorksheet("Register");
+  if (sheet === undefined) throw new Error("no Register sheet");
+  return sheet;
+}
+
+describe("xlsxChunks", () => {
+  it("writes the header row, then each row in column order with widths and number formats", async () => {
+    const sheet = await read(
+      xlsxChunks(SHEET, of({ qty: 2.5, note: "plain", number: "DOC-1" }, { number: "DOC-2", note: null, qty: null })),
+    );
+    expect(sheet.getSheetValues()).toEqual([
+      undefined,
+      [undefined, "Doc No", "Note", "Qty"],
+      [undefined, "DOC-1", "plain", 2.5],
+      [undefined, "DOC-2"],
+    ]);
+    expect([1, 2, 3].map((n) => sheet.getColumn(n).width)).toEqual([12, 30, 10]);
+    expect(sheet.getCell("C2").numFmt).toBe("0.000");
+    expect(sheet.getCell("A2").numFmt).toBeUndefined();
+    expect(sheet.getCell("C1").numFmt).toBeUndefined();
+    expect(sheet.pageSetup.orientation).toBe("landscape");
+  });
+
+  // INV-94: text is a string cell, never a formula, and keeps its text unprefixed.
+  it.each(["=1+1", "+91", "-2", "@SUM(A1)", '=HYPERLINK("x")'])("writes text %j as a string cell", async (text) => {
+    const cell = (await read(xlsxChunks(SHEET, of({ number: text, note: null, qty: -1 })))).getCell("A2");
+    expect(cell.type).toBe(ExcelJS.ValueType.String);
+    expect(cell.value).toBe(text);
+    expect(cell.formula).toBeUndefined();
+  });
+
+  it("keeps a negative number numeric", async () => {
+    const cell = (await read(xlsxChunks(SHEET, of({ number: "N", note: null, qty: -1.5 })))).getCell("C2");
+    expect(cell.type).toBe(ExcelJS.ValueType.Number);
+    expect(cell.value).toBe(-1.5);
+  });
+
+  it("streams 10k rows with no row cap (INV-99)", async () => {
+    const sheet = await read(xlsxChunks(SHEET, source(10_000).rows));
+    expect(sheet.rowCount).toBe(10_001);
+    expect(sheet.getRow(10_001).values).toEqual([undefined, "DOC-10000", "synthetic note 10000 1b5be8", 10_000.5]);
+  });
+
+  // INV-99: memory stays flat because the writer stops pulling rows while its output is not read.
+  it("stops pulling rows while the reader is not reading", async () => {
+    const { rows, state } = source(10_000);
+    const chunks = xlsxChunks(SHEET, rows);
+    const first = await chunks.next();
+    expect(first.done).toBe(false);
+    const stalledAt = await settle(() => state.read);
+    expect(stalledAt).toBeLessThan(10_000);
+    const rest = await collect({ [Symbol.asyncIterator]: () => chunks });
+    expect(rest.length).toBeGreaterThan(0);
+    expect(state.read).toBe(10_000);
+  });
+
+  it("passes a source error to the reader", async () => {
+    const { rows } = source(500, { at: 300, error: new Error("page failed") });
+    await expect(collect(xlsxChunks(SHEET, rows))).rejects.toThrow("page failed");
+  });
+
+  it("closes the source when the reader stops early", async () => {
+    const { rows, state } = source(10_000);
+    const chunks = xlsxChunks(SHEET, rows);
+    await chunks.next();
+    await chunks.return(undefined);
+    expect(state.closed).toBe(true);
+    expect(state.read).toBeLessThan(10_000);
+  });
+});
