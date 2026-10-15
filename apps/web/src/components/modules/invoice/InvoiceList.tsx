@@ -109,7 +109,7 @@ function columns({ busy, onDownload, onDelete }: Actions): Column<Row>[] {
           >
             <FileText aria-hidden />
           </Button>
-          {/* The list row knows no SRV links; an SRV-linked invoice is refused by the API with its reason (EC-61). */}
+          {/* The list row knows no SRV links; an SRV-linked invoice is refused by the API with its reason (EC-62). */}
           <Button
             variant="outline"
             size="icon"

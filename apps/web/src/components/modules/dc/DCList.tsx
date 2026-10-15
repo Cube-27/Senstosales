@@ -39,7 +39,7 @@ interface RowActionsProps {
 
 /** Generate Invoice (kept in its slot once invoiced, C8), the DC's Excel, and delete with its reason (INV-35). */
 function RowActions({ row, downloading, onDownload, onDelete }: RowActionsProps) {
-  // The list row knows the invoice only; an SRV-linked DC is refused by the API with its reason (EC-61).
+  // The list row knows the invoice only; an SRV-linked DC is refused by the API with its reason (EC-62).
   const blocked = dcDeleteReason({ invoice: row.invoice, srvs: [] });
   return (
     <div className="flex items-center justify-end gap-1">
