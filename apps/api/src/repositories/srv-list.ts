@@ -66,7 +66,7 @@ export const itemsOfSrv = (db: Db, srvId: string) =>
       .select(apiColumns(srvItem))
       .from(srvItem)
       .where(eq(srvItem.srvId, srvId))
-      .orderBy(srvItem.poItemNo, srvItem.lotNo, srvItem.srvItemNo),
+      .orderBy(srvItem.poItemNo, srvItem.lotNo, srvItem.srvItemNo, srvItem.rowNo),
   );
 
 const itemIdsOf = (db: Db, srvId: string) =>
