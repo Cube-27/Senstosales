@@ -15,8 +15,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const istDate = (days = 0): string => new Date(Date.now() + IST_MS + days * DAY_MS).toISOString().slice(0, 10);
 /** 1 April of today's FY, where the reports' default range starts (INV-113). */
 const fyStart = (): string => {
-  const [year, month] = istDate().split("-").map(Number);
-  return `${month >= 4 ? year : year - 1}-04-01`;
+  const today = istDate();
+  const year = Number(today.slice(0, 4));
+  return `${Number(today.slice(5, 7)) >= 4 ? year : year - 1}-04-01`;
 };
 
 async function post(page: Page, path: string, data: unknown): Promise<unknown> {
