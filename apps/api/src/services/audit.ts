@@ -4,7 +4,8 @@ import type { Db, Instant, Statement } from "@senstosales/db";
 import type { SQL } from "drizzle-orm";
 
 import { newId } from "../ids.ts";
-import { insertAudit } from "../repositories/audit.ts";
+import type { AuditListQuery } from "../repositories/audit.ts";
+import { insertAudit, listAudit } from "../repositories/audit.ts";
 
 /** The one user (INV-80): every audit row's actor and the login's username. */
 export const ACTOR = "admin";
@@ -22,3 +23,10 @@ export interface AuditEntry {
 
 export const audit = (db: Db, at: Instant, entry: AuditEntry): Statement =>
   insertAudit(db, { id: newId(), at, actor: ACTOR, ...entry });
+
+/** The ledger: the audit log read-only; no route updates, deletes or prunes it (INV-83). */
+export const auditService = ({ db }: { db: Db }) => ({
+  list: (query: AuditListQuery) => listAudit(db, query),
+});
+
+export type AuditService = ReturnType<typeof auditService>;

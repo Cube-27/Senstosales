@@ -7,7 +7,7 @@ import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
 import { and, asc, count, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import { apiColumns, contains } from "./sql.ts";
+import { apiColumns, byPoNumber, contains, flagColumns } from "./sql.ts";
 
 type PoListQuery = z.output<(typeof routes)["po.list"]["query"]>;
 export type PoFilters = z.output<(typeof routes)["po.stats"]["query"]>;
@@ -25,9 +25,6 @@ const links = {
   srvCount: countOf(sql`${srv} WHERE ${srv.poId} = ${po.id}`),
   openFlagCount: countOf(openFlagsOf),
 };
-
-/** PO numbers are digit strings, so they sort as numbers (as legacy); the text breaks ties for any that are not. */
-const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber];
 
 /** Every PO's id and number, in PO-number order. */
 export const allPoRefs = (db: Db) =>
@@ -149,11 +146,9 @@ export const lotsOfPo = (db: Db, poId: string) =>
   );
 
 export function openFlagsOfPo(db: Db, poId: string) {
-  // The fingerprint is storage only; `zFlag` does not carry it.
-  const { fingerprint: _, ...columns } = apiColumns(reconciliationIssue);
   return db.query(
     db.build
-      .select(columns)
+      .select(flagColumns)
       .from(reconciliationIssue)
       .where(and(eq(reconciliationIssue.poId, poId), eq(reconciliationIssue.status, "open")))
       .orderBy(reconciliationIssue.openedAt, reconciliationIssue.id),

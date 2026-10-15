@@ -7,7 +7,7 @@ import type { SQL } from "drizzle-orm";
 import { and, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import { apiColumns, contains } from "./sql.ts";
+import { apiColumns, contains, flagColumns } from "./sql.ts";
 
 /** The filters of both SRV views; the value range is applied to the totals by the service. */
 export type SrvFilters = z.output<(typeof routes)["srv.stats"]["query"]>;
@@ -77,11 +77,9 @@ export const itemIdsOfSrv = (db: Db, srvId: string) => db.query(itemIdsOf(db, sr
 
 /** The open flags raised on the SRV's items (QTY_MISMATCH, DOC_NUMBER_CONFLICT). */
 export function openFlagsOfSrv(db: Db, srvId: string) {
-  // The fingerprint is storage only; `zFlag` does not carry it.
-  const { fingerprint: _, ...columns } = apiColumns(reconciliationIssue);
   return db.query(
     db.build
-      .select(columns)
+      .select(flagColumns)
       .from(reconciliationIssue)
       .where(
         and(

@@ -5,8 +5,10 @@ import type { Db } from "@senstosales/db";
 import type { Clock } from "../ports/clock.ts";
 import type { Jobs } from "../ports/jobs.ts";
 import type { Storage } from "../ports/storage.ts";
+import { auditService } from "./audit.ts";
 import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
+import { flagsService } from "./flags.ts";
 import { folderImportService } from "./folder-import.ts";
 import { jobsService } from "./jobs.ts";
 import { poIngestService } from "./po-ingest.ts";
@@ -47,6 +49,8 @@ export function createServices(deps: ServiceDeps) {
     poIngest: poIngestService(deps),
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),
+    flags: flagsService(deps),
+    audit: auditService(deps),
   };
 }
 

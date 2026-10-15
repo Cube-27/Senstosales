@@ -1858,3 +1858,35 @@ None.
 - Alternatives: Id order; text order.
 - Why: The progress panel walks the POs in the order the PO list shows them.
 - Reversible: yes.
+
+### D-0226 — Acknowledging an acknowledged flag is a 409 that writes nothing
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 5 (#50) · Status: decided
+- Decision: Acknowledging a flag that is already acknowledged answers 409 `flag-acknowledged` and writes nothing; the first note and time stay. This holds for concurrent requests too: the update sets `status = CASE WHEN status = 'open' THEN 'acknowledged' ELSE NULL END`, so a losing request fails its NOT NULL constraint and its batch, audit row included, rolls back (the check of D-0124). The port reports it as stale `reconciliation_issue`, and the service maps that to the same 409.
+- Alternatives: Overwrite the note and time; answer 200 with no change; guard the update in its WHERE clause only (a losing request would still write an audit row and answer 200).
+- Why: INV-59 makes acknowledgement a one-way `open -> acknowledged` step. Overwriting would lose the first acknowledgement, and a silent 200 would hide that the note was not saved.
+- Reversible: yes.
+
+### D-0227 — Flag and audit text filters
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 5 (#50) · Status: decided
+- Decision: The flags list `q` matches the PO number. The audit list `q` matches the action, entity type or entity id.
+- Alternatives: Also match the flag details or the audit before/after values.
+- Why: These are the identifying text columns each screen shows; the JSON values are not searchable columns.
+- Reversible: yes.
+
+### D-0228 — Audit date filter uses IST calendar dates
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 5 (#50) · Status: decided
+- Decision: The audit list's `from`/`to` are IST calendar dates (C3), applied to the stored UTC `at` as `[from 00:00 IST, to + 1 day 00:00 IST)`. The bounds are computed on the constant side, so the column is compared as stored.
+- Alternatives: UTC dates.
+- Why: Every date the user sees is an IST calendar date.
+- Reversible: yes.
+
+### D-0229 — Audit row for acknowledging a flag
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 5 (#50) · Status: decided
+- Decision: Action `flag.acknowledge`, entity type `reconciliation_issue`, entity id the flag id; before and after are `{ status, note }`.
+- Alternatives: `acknowledge-flag`; entity type `flag`.
+- Why: Matches the `<entity>.<verb>` actions of the newer services and the table name as entity type.
+- Reversible: yes.

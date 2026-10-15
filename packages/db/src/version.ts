@@ -1,7 +1,8 @@
 // Optimistic concurrency for `po`, `dc` and `invoice` (INV-95, ARCHITECTURE §8.1). The port has no transaction to
 // read the version and then decide (C4), and SQLite's RAISE() works only in triggers (none: INV-84), so the check
 // lives in the statement itself: a stale row gets `version = NULL`, its NOT NULL constraint fails, and the whole
-// batch rolls back. `staleTable` recognises that failure so the port can raise ConflictError.
+// batch rolls back. `staleTable` recognises that failure so the port can raise ConflictError. Acknowledging a flag
+// uses the same check on `reconciliation_issue.status`: a flag no longer open fails its batch the same way.
 import { eq, sql } from "drizzle-orm";
 import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
 
@@ -12,10 +13,13 @@ import type { po } from "./schema/po.ts";
 
 export type Versioned = typeof po | typeof dc | typeof invoice;
 
-const STALE = /NOT NULL constraint failed: (po|dc|invoice)\.version\b/;
+const STALE = /NOT NULL constraint failed: (?:(po|dc|invoice)\.version|(reconciliation_issue)\.status)\b/;
 
-/** The versioned table a database error message reports as stale, if the message is that failure. */
-export const staleTable = (message: string): string | undefined => STALE.exec(message)?.[1];
+/** The table a database error message reports as stale, if the message is that failure. */
+export const staleTable = (message: string): string | undefined => {
+  const match = STALE.exec(message);
+  return match?.[1] ?? match?.[2];
+};
 
 /**
  * Updates row `id` of `table` with `set` and bumps its version, if its version is still `expected`. Otherwise the
