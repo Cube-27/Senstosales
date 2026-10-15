@@ -12,6 +12,8 @@ import {
   fmtDaysToDue,
   fmtFixed,
   fmtFy,
+  fmtFlagType,
+  fmtInstantDate,
   fmtMoney,
   fmtMoneyCompact,
   fmtMoneyCompactSpaced,
@@ -365,5 +367,26 @@ describe("parseDateInput: the legacy picker's typed formats", () => {
     ["tomorrow", null],
   ])("%j -> %s", (text, expected) => {
     expect(parseDateInput(text)).toBe(expected);
+  });
+});
+
+describe("fmtFlagType", () => {
+  it.each([
+    ["QTY_MISMATCH", "QTY MISMATCH"],
+    ["MANUAL_ADJUSTMENT_OVERLAP", "MANUAL ADJUSTMENT OVERLAP"],
+  ])("%s", (type, expected) => {
+    expect(fmtFlagType(type)).toBe(expected);
+  });
+});
+
+describe("fmtInstantDate: an instant's IST calendar date", () => {
+  it.each([
+    ["2025-06-01T05:30:00.000Z", "01/06/2025"],
+    // 18:30 UTC is midnight IST: the next day.
+    ["2025-06-01T18:29:59.999Z", "01/06/2025"],
+    ["2025-06-01T18:30:00.000Z", "02/06/2025"],
+    ["2024-12-31T20:00:00.000Z", "01/01/2025"],
+  ])("%s -> %s", (at, expected) => {
+    expect(fmtInstantDate(at)).toBe(expected);
   });
 });

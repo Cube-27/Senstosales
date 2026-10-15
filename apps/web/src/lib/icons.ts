@@ -47,3 +47,16 @@ export {
   Truck as DeliveryChallan,
 } from "lucide-react";
 export type { LucideIcon as Icon } from "lucide-react";
+// The PO and SRV screens and folder import (SPEC-16).
+export {
+  ArrowRight as Forward,
+  FileText,
+  FolderOpen,
+  IndianRupee,
+  Link2,
+  MoreHorizontal,
+  Pencil as Edit,
+  Receipt,
+  Save,
+  Trash2 as Delete,
+} from "lucide-react";

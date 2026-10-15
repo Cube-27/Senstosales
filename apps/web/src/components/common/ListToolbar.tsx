@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 import { cn } from "../../lib/cn.ts";
 
@@ -8,6 +8,8 @@ export interface ListToolbarProps {
     readonly value: string;
     onChange(value: string): void;
     readonly placeholder?: string;
+    /** The input element, for a caller that ties work to its lifetime. */
+    readonly inputRef?: Ref<HTMLInputElement>;
   };
   /** Filters, toggles and buttons on the right. Each keeps its slot when idle (C8). */
   readonly children?: ReactNode;
@@ -20,6 +22,7 @@ export function ListToolbar({ search, children }: ListToolbarProps) {
       {search && (
         <div className="min-w-0 flex-1">
           <input
+            ref={search.inputRef}
             type="text"
             value={search.value}
             onChange={(e) => search.onChange(e.target.value)}

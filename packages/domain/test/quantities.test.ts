@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ItemQuantityInput, PoTotalsItem, Qty } from "../src/index.ts";
-import { computeItemQuantities, computePoTotals, poUninvoicedQty } from "../src/index.ts";
+import { computeItemQuantities, computePoTotals, poUninvoicedQty, supplyProgressPct } from "../src/index.ts";
 import { qty } from "./unwrap.ts";
 
 const qtys = (...ss: string[]): Qty[] => ss.map(qty);
@@ -129,5 +129,20 @@ describe("INV-05, INV-07: PO uninvoiced = sum of active items' uninvoiced, negat
     ["no items -> 0", [], 0],
   ])("%s", (_, items, expected) => {
     expect(poUninvoicedQty(items)).toBe(expected);
+  });
+});
+
+describe("INV-73: supply progress = max(dispatched, accepted) / ordered, whole percent half up", () => {
+  it.each([
+    ["dispatched leads: 4 of 10", "10", "4", "0", 40],
+    ["accepted leads: 7 of 10", "10", "3", "7", 70],
+    ["half a percent rounds up: 1 of 200", "200", "1", "0", 1],
+    ["just under half rounds down: 0.009 of 2", "2", "0.009", "0", 0],
+    ["one third", "3", "1", "0", 33],
+    ["two thirds", "3", "2", "0", 67],
+    ["over-supply is not clamped: 12 of 10", "10", "12", "0", 120],
+    ["nothing ordered -> 0", "0", "5", "5", 0],
+  ])("%s", (_, ord, dsp, rcd, expected) => {
+    expect(supplyProgressPct({ ordQty: qty(ord), dspQty: qty(dsp), rcdQty: qty(rcd) })).toBe(expected);
   });
 });
