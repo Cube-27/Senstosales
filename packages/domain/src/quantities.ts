@@ -1,6 +1,6 @@
 // Per-item quantities and PO header totals (ARCHITECTURE §6.2). Quantities are tracked per PO item only; nothing
 // here takes lots, so nothing is ever allocated to one (INV-06).
-import { sumQty, type Qty } from "./units.ts";
+import { qtyValue, sumMoney, sumQty, type Money, type Qty } from "./units.ts";
 
 export type ItemQuantityInput = {
   ordQty: Qty;
@@ -68,3 +68,10 @@ export function supplyProgressPct({ ordQty, dspQty, rcdQty }: { ordQty: Qty; dsp
   const supplied = Math.max(dspQty, rcdQty, 0);
   return Math.floor((supplied * 200 + ordQty) / (2 * ordQty));
 }
+
+/**
+ * A manual PO's value (owner, 2026-10-15): the sum of its lines, ordered × the rate as entered, each line rounded to
+ * 5 dp. A PO read from a BHEL page keeps the page's PO-VALUE instead.
+ */
+export const manualPoValue = (lines: readonly { ordQty: Qty; rate: Money }[]): Money =>
+  sumMoney(lines.map((line) => qtyValue(line.ordQty, line.rate)));

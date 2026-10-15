@@ -91,7 +91,8 @@ describe("POST /api/po (manual create)", () => {
       orderType: "SUPPLY",
       bhelStatusCode: null,
       amendNo: 0,
-      poValue: null,
+      // A manual PO's value is the sum of its lines: 10 × 100 (owner, 2026-10-15).
+      poValue: "1000",
       netPoValue: null,
       isGemc: false,
       gemcNumber: null,
@@ -135,6 +136,17 @@ describe("POST /api/po (manual create)", () => {
     const { body } = await detail(id);
     expect(body.po).toMatchObject({ isGemc: true, gemcNumber: "GEMC-77" });
     expect(body.items[0]).toMatchObject({ rateSource: "848.75", rate: "719.27966" });
+  });
+
+  test("GEMC also from the remarks when the GEMC number field is blank (A2-3)", async () => {
+    const id = await created({ ...BODY, gemcNumber: " ", remarks: "Supply against GEMC- 5116 only" });
+    expect((await detail(id)).body.po).toMatchObject({ isGemc: true, gemcNumber: "5116" });
+  });
+
+  test("an edit of a manual PO recomputes its value from the lines", async () => {
+    const id = await created();
+    const res = await update(id, { ...BODY, items: [{ ...LINE, ordQty: "12" }], version: 1 });
+    expect(res.body).toMatchObject({ poValue: "1200" });
   });
 
   test("an item without lots gets the legacy default lot: lot 1 of the ordered quantity on the PO date", async () => {
@@ -251,18 +263,22 @@ describe("PUT /api/po/:id (manual edit)", () => {
     expect(items.map((i) => i["cancelledAt"])).toEqual([null, null]);
   });
 
-  test("keeps what the form does not carry: amendment, BHEL status, value, document rcd/rej, manual qty, entry-allow", async () => {
+  test("keeps what the form does not carry: amendment, BHEL status, page value, document rcd/rej, manual qty, entry-allow", async () => {
     const id = await created();
     await app.db.batch([
-      // A PO first stored by upload carries these; the form has no fields for them.
-      app.db.build.run(sql`UPDATE po SET amend_no = 2, bhel_status_code = 'O', po_value_u5 = 100000000`),
+      // A PO first stored by upload carries these and its page; the form has no fields for them.
+      app.db.build.run(sql`UPDATE po SET amend_no = 2, bhel_status_code = 'O', po_value_u5 = 77700000`),
+      app.db.build.run(
+        sql`INSERT INTO source_document (id, supplier_id, kind, key, storage_key, sha256, ingested_at)
+            SELECT 'SD1', supplier_id, 'po', po_number, 'html/po/4500001.html', 'x', '2025-04-10T00:00:00.000Z' FROM po`,
+      ),
       app.db.build.run(
         sql`UPDATE po_item SET po_rcd_qty_m = 4000, po_rej_qty_m = 1000, manual_dispatched_qty_m = 3000`,
       ),
       app.db.build.run(sql`UPDATE po_lot SET entry_allow_note = 'On request'`),
     ]);
     const res = await update(id, { ...BODY, version: 1 });
-    expect(res.body).toMatchObject({ amendNo: 2, bhelStatusCode: "O", poValue: "1000", dspQty: "3", rcdQty: "4" });
+    expect(res.body).toMatchObject({ amendNo: 2, bhelStatusCode: "O", poValue: "777", dspQty: "3", rcdQty: "4" });
     const { body } = await detail(id);
     // balance = ord 10 - max(rcd 4, dsp 3) = 6 (ARCHITECTURE §6.2).
     expect(body.items[0]).toMatchObject({ poRcdQty: "4", poRejQty: "1", manualDispatchedQty: "3", balanceQty: "6" });

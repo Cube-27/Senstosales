@@ -1,6 +1,6 @@
 // PO and PO item rows (ARCHITECTURE §8.2). Plain rows only; derived values come from the domain (C2).
 import type { Db, Statement } from "@senstosales/db";
-import { po, poItem, poLot, reconciliationIssue, srv, srvItem, UniqueViolation } from "@senstosales/db";
+import { po, poItem, poLot, reconciliationIssue, sourceDocument, srv, srvItem, UniqueViolation } from "@senstosales/db";
 import { and, eq, inArray } from "drizzle-orm";
 
 /** Whether `err` is the unique index refusing a second PO with the same number. */
@@ -13,6 +13,20 @@ export async function findPo(db: Db, poId: string) {
     db.build.select({ id: po.id, supplierId: po.supplierId, poDate: po.poDate }).from(po).where(eq(po.id, poId)),
   );
   return rows[0];
+}
+
+/** Whether the PO was read from a BHEL page: its page is stored (INV-107). A manual PO has none. */
+export async function hasPoPage(db: Db, supplierId: string, poNumber: string): Promise<boolean> {
+  const rows = await db.query(
+    db.build
+      .select({ id: sourceDocument.id })
+      .from(sourceDocument)
+      .where(
+        and(eq(sourceDocument.supplierId, supplierId), eq(sourceDocument.kind, "po"), eq(sourceDocument.key, poNumber)),
+      )
+      .limit(1),
+  );
+  return rows.length > 0;
 }
 
 /** The supplier's PO with this BHEL number, with what the ingest guard, its version check and the audit read, or `undefined`. */

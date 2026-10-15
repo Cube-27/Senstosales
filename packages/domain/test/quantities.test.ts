@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ItemQuantityInput, PoTotalsItem, Qty } from "../src/index.ts";
-import { computeItemQuantities, computePoTotals, poUninvoicedQty, supplyProgressPct } from "../src/index.ts";
-import { qty } from "./unwrap.ts";
+import {
+  computeItemQuantities,
+  computePoTotals,
+  manualPoValue,
+  poUninvoicedQty,
+  supplyProgressPct,
+} from "../src/index.ts";
+import { money, qty } from "./unwrap.ts";
 
 const qtys = (...ss: string[]): Qty[] => ss.map(qty);
 
@@ -144,5 +150,21 @@ describe("INV-73: supply progress = max(dispatched, accepted) / ordered, whole p
     ["nothing ordered -> 0", "0", "5", "5", 0],
   ])("%s", (_, ord, dsp, rcd, expected) => {
     expect(supplyProgressPct({ ordQty: qty(ord), dspQty: qty(dsp), rcdQty: qty(rcd) })).toBe(expected);
+  });
+});
+
+// A manual PO's value is the sum of its lines, ordered × rate as entered, each line rounded to 5 dp (owner,
+// 2026-10-15); a PO read from a BHEL page keeps the page's PO-VALUE.
+describe("manualPoValue", () => {
+  const line = (ordQty: string, rate: string) => ({ ordQty: qty(ordQty), rate: money(rate) });
+
+  it.each([
+    ["no lines", [], 0],
+    ["one line", [line("10", "100")], 1000_00000],
+    ["two lines", [line("10", "100"), line("2.5", "848.75")], 3121_87500],
+    // 0.333 × 719.27966 = 239.52012678 -> 239.52013.
+    ["a line rounded to 5 dp", [line("0.333", "719.27966")], 239_52013],
+  ])("%s -> %i", (_, lines, expected) => {
+    expect(manualPoValue(lines)).toBe(expected);
   });
 });
