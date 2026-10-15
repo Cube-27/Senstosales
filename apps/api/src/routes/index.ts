@@ -34,7 +34,7 @@ export function apiRoutes(services: Services): Handlers {
     ...srvUploadRoutes(services.srvIngest),
     ...srvRoutes(services.srv),
     ...dcRoutes(services.dc),
-    ...invoiceRoutes(services.invoice),
+    ...invoiceRoutes(services.invoice, services.invoicePreview),
     ...flagsRoutes(services.flags),
     ...auditRoutes(services.audit),
     ...deliveryTrackerRoutes(services.deliveryTracker),

@@ -2,7 +2,8 @@
 // cap (INV-31); its quantities count in dsp_qty (INV-03) and lower uninvoiced_qty (INV-05). Lines take the PO item's
 // rate. Each create is one batch with recompute, flags, SRV link re-resolution and an audit row (C4). Expected values
 // are worked by hand from ARCHITECTURE §6.2, §6.5 and §6.10. Synthetic values only (C1).
-import type { Instant, IsoDate } from "@senstosales/domain";
+import type { Instant } from "@senstosales/db";
+import type { IsoDate } from "@senstosales/domain";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
 import { closeApiApps } from "./api-app.ts";
@@ -103,21 +104,38 @@ describe("POST /api/invoice for a PO", () => {
     ]);
   });
 
-  test("DC 10 and a PO-direct invoice of 10 on ord 10: dsp 20, OVER_DISPATCH and OVER_INVOICE (EC-13)", async () => {
-    const { storedDc, createDirect, poId, item10, items, flags } = await withPo();
-    await storedDc(poId, "1", "2025-04-02", [{ poItemId: item10, dspQty: "10" }]);
-    const res = await createDirect({
-      poId,
-      number: "1",
-      invoiceDate: "2025-04-03",
-      lines: [{ poItemId: item10, qty: "10" }],
+  describe("DC 10 and a PO-direct invoice of 10 on ord 10: dsp 20 (EC-13)", () => {
+    const direct10 = (c: Awaited<ReturnType<typeof withPo>>) =>
+      c.createDirect({
+        poId: c.poId,
+        number: "2",
+        invoiceDate: "2025-04-03",
+        lines: [{ poItemId: c.item10, qty: "10" }],
+      });
+
+    test("with the DC not invoiced, invoiced 10 is not over ord: OVER_DISPATCH only", async () => {
+      const c = await withPo();
+      await c.storedDc(c.poId, "1", "2025-04-02", [{ poItemId: c.item10, dspQty: "10" }]);
+      expect((await direct10(c)).status).toBe(200);
+      expect((await c.items())[0]).toMatchObject({ dspQty: 20000, uninvoicedQty: 0 });
+      expect((await c.flags()).map((f) => [f.type, f.scopeId, f.details])).toEqual([
+        ["OVER_DISPATCH", c.item10, { field: "dsp_qty", expected: "10", actual: "20", docIds: [] }],
+      ]);
     });
-    expect(res.status).toBe(200);
-    expect((await items())[0]).toMatchObject({ dspQty: 20000, uninvoicedQty: 0 });
-    expect((await flags()).map((f) => [f.type, f.scopeId, f.details])).toEqual([
-      ["OVER_DISPATCH", item10, { field: "dsp_qty", expected: "10", actual: "20", docIds: [] }],
-      ["OVER_INVOICE", item10, { field: "invoiced_qty", expected: "10", actual: "10", docIds: [] }],
-    ]);
+
+    test("with the DC invoiced too, invoiced 20: OVER_DISPATCH and OVER_INVOICE", async () => {
+      const c = await withPo();
+      const { dcId, lineIds } = await c.storedDc(c.poId, "1", "2025-04-02", [{ poItemId: c.item10, dspQty: "10" }]);
+      const lines = [{ dcItemId: lineIds[0], qty: "10", rate: "100" }];
+      expect((await c.createInvoice({ dcId, number: "1", invoiceDate: "2025-04-03", lines })).status).toBe(200);
+      expect((await direct10(c)).status).toBe(200);
+      // A DC-sourced invoice adds nothing to dsp (INV-03); both invoices lower uninvoiced (INV-05).
+      expect((await c.items())[0]).toMatchObject({ dspQty: 20000, uninvoicedQty: -10000 });
+      expect((await c.flags()).map((f) => [f.type, f.scopeId, f.details])).toEqual([
+        ["OVER_DISPATCH", c.item10, { field: "dsp_qty", expected: "10", actual: "20", docIds: [] }],
+        ["OVER_INVOICE", c.item10, { field: "invoiced_qty", expected: "10", actual: "20", docIds: [] }],
+      ]);
+    });
   });
 
   test("a manual dispatched quantity then a PO-direct invoice: dsp counts both, no overlap flag (EC-10)", async () => {
