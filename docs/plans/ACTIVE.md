@@ -98,7 +98,7 @@ In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 
 | 4   | D1 executor, dialect step and SQL lint | done (#33) |       |
 | 5   | Version helper and seed                | done (#32) |       |
 
-Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_issue for correlated counts (#44 review); chunk multi-row inserts under D1's 100-bound-parameter limit (#43 review); INV rows for the delivery-tracker and dashboard rules; SRV search with a value range reads all candidate SRVs (#53 review). SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links (#55); a DC create racing a DC edit that frees the same number (SRV items on a third PO) (#59 review); held-batch test for a DC delete committing between an invoice create's read and commit (#60 review); rename audit action delete-srv to srv.delete and align the buyer/settings action names (#67 review); move tickingClock into service-deps.ts (#67 review). Indexes on dc_item(dc_id), dc_item(po_item_id), invoice_item(invoice_id), srv_item(resolved_*) (#69 review).
+Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules; SRV search with a value range reads all candidate SRVs (#53 review). SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links (#55); a DC create racing a DC edit that frees the same number (SRV items on a third PO) (#59 review); held-batch test for a DC delete committing between an invoice create's read and commit (#60 review). Indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id) (#80 simplify).
 
 ## [SPEC-06 — BHEL parsers, anonymised fixtures and the corpus test](../specs/SPEC-06-bhel-parsers-fixtures.md)
 
@@ -120,7 +120,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 3   | Startup upgrade gate                                  | done (#39) |       |
 | 4   | Simple login                                          | done (#38) |       |
 | 5   | Onboarding, supplier, settings, buyers, BHEL password | done (#41) |       |
-| 6   | Route conformance                                     | todo       |       |
+| 6   | Route conformance                                     | done (#80) |       |
 
 ## [SPEC-08 — Ingestion services and the job model](../specs/SPEC-08-ingestion-jobs.md)
 
