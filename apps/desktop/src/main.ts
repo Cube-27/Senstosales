@@ -23,9 +23,16 @@ const HEALTH = { attempts: 200, intervalMs: 50 };
 
 let quitting = false;
 
+/** Closes the app window, if open, then this one; with no window left the app exits. Runs once: destroying `main`
+ * calls it again. */
 async function quit(): Promise<void> {
+  if (quitting) return;
   quitting = true;
-  await getCurrentWindow().destroy();
+  try {
+    await (await WebviewWindow.getByLabel("main"))?.destroy();
+  } finally {
+    await getCurrentWindow().destroy();
+  }
 }
 
 /** The sidecar's log folder (`%LOCALAPPDATA%\SenstoSales\logs`, INV-82); the shell log is written beside it. */
@@ -54,9 +61,14 @@ async function start(): Promise<void> {
   if (startup.kind === "exited") return fail(COULD_NOT_START_TITLE, startup.message);
   const base = `http://127.0.0.1:${startup.port}`;
   const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-  if (!(await waitForHealth({ base, fetch: (url, init) => fetch(url, init), sleep, ...HEALTH }))) {
-    return fail(COULD_NOT_START_TITLE, NOT_ANSWERING);
-  }
+  // A sidecar that exits during the wait is reported in its own words, not as a timeout.
+  const problem = await Promise.race([
+    waitForHealth({ base, fetch: (url, init) => fetch(url, init), sleep, ...HEALTH }).then((ok) =>
+      ok ? null : NOT_ANSWERING,
+    ),
+    watch.exit,
+  ]);
+  if (problem !== null) return fail(COULD_NOT_START_TITLE, problem);
   await info(`sidecar ready on port ${startup.port}`);
   void watch.exit.then((message) => (quitting ? undefined : fail(STOPPED_TITLE, message)));
 
