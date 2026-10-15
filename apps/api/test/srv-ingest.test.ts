@@ -225,7 +225,14 @@ describe("references (INV-37, INV-38, INV-53)", () => {
         }),
         db.build
           .insert(dcItem)
-          .values({ id: `${dcId}-1`, supplierId: SUPPLIER, dcId, poItemId: itemOf(id), dspQty: 0 as Qty, createdAt: created(date) }),
+          .values({
+            id: `${dcId}-1`,
+            supplierId: SUPPLIER,
+            dcId,
+            poItemId: itemOf(id),
+            dspQty: 0 as Qty,
+            createdAt: created(date),
+          }),
       ];
     };
     const invoiceRows = (invoiceId: string, poNumber: string, dcId: string, number: string, date: string) => {
