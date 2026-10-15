@@ -50,3 +50,51 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: A stub scraper that always answers `edge-unavailable`.
 - Why: Saying Edge is missing before the adapter exists would be untrue.
 - Reversible: yes.
+
+### D-0503 — BHEL credentials come from Settings
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: The Authentication card shows the supplier code read-only and the BHEL password as Saved/Not saved with a "Change in Settings" link; the legacy code and password inputs, their Save and the show-password toggle are not built.
+- Alternatives: Keep the inputs.
+- Why: A-17 and INV-81: the password is stored once in Settings and never returned to a page; SPEC-19 §2 names a stored-password status with a link to Settings.
+- Reversible: yes.
+
+### D-0504 — Auto-Ingest and Sync Before Start are not built
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: Pipeline Configuration keeps only Batch Limit and the PO filter.
+- Alternatives: Inert toggles.
+- Why: Every scraped page is stored and then ingested (ARCHITECTURE §7.3, D-0379) and there is no download folder to sync from; the schema has only `poIds`/`limit` (SPEC-04). Same precedent as the Download Folders section (SPEC-15).
+- Reversible: yes.
+
+### D-0505 — What a scrape request sends
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: The filter's ids when it names any (split on commas and white space, each `^\d{1,10}$`, INV-97), else Batch Limit 1-5000 with the legacy default 1; an invalid entry blocks Start with its reason in a reserved line.
+- Alternatives: Send both.
+- Why: `zScrape`: specific PO ids, or the first `limit` found.
+- Reversible: yes.
+
+### D-0506 — Wizard login state, cancel and labels
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: The login is a union (idle, connecting, captcha, otp, failed, ready). Authenticated is derived: ready, and the session's run has not ended; Reset ends a login on the run's session. Each attempt has a number and Cancel starts a new one, so a late answer changes nothing and a session opened after Cancel is closed. Stop is `JobProgress`'s Cancel. Labels: queued Connecting, running Downloading (PO) or Checking Portal (SRV), then Done, Cancelled or Error; `PO|SRV Standby` before a run.
+- Alternatives: Store a logged-out flag when the job ends.
+- Why: D-0379 closes the session at job end; deriving it needs no effect (owner rule); #86 review.
+- Reversible: yes.
+
+### D-0507 — Tray status from /api/health
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: Inside the shell only, a `QueryObserver` polls health (every 2 s while a job runs, 10 s otherwise, also with the window hidden) and sets the tooltip to `SenstoSales` or `SenstoSales: <job> running|waiting`, each text once.
+- Alternatives: Follow only jobs this page started.
+- Why: ARCHITECTURE §7.3: the tray shows the current job, including the daily backup and jobs started on other screens.
+- Reversible: yes.
+
+### D-0508 — How e2e selects the fake scraper
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: A separate entry, `apps/api/test/e2e-server.ts`, runs `run(web, fakeScraper)` for the whole e2e harness; `startServer`/`run` take an optional `scraper`; the BHEL spec runs on its own worker server.
+- Alternatives: An env flag in `main.ts` (SPEC-19 §9).
+- Why: No flag exists for production to read: the sidecar entry never imports the fake.
+- Reversible: yes.

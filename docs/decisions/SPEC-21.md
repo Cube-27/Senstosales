@@ -66,3 +66,27 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: None at our level.
 - Why: With Node 26 on Windows a backup's completion did not wake an idle loop: 8-30 s per copy in the test worker without it, about 10 ms with it.
 - Reversible: yes, remove when Node fixes it.
+
+### D-0500 — Backups panel placement and list
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: The Backups panel sits in Settings → System Defaults below Access Control; its list is a `DataTable` (Backup, Type, Action) paged in memory, with types Daily, Before upgrade, Before restore.
+- Alternatives: A new settings section.
+- Why: SPEC-21 §2 says "in the existing settings layout"; a new section would add a frozen element (C7).
+- Reversible: yes.
+
+### D-0501 — Restore reloads the page
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: After `backups.restore` succeeds the page reloads (`lib/reload.ts`), in a browser and in the shell.
+- Alternatives: A shell IPC reload (SPEC-20).
+- Why: The shell loads the same loopback page (ARCHITECTURE §13.1), so a page reload is the app reload; the restored data's sessions then apply (EC-61).
+- Reversible: yes.
+
+### D-0502 — Backup now follows its job like any job
+
+- Date: 2026-10-15 · Spec/PR: SPEC-21 PR 3 + SPEC-19 PR 5 (#86) · Status: decided
+- Decision: The mutation only starts the `backup` job; the status line is derived from `jobQuery`, and the list's query key holds the finished job id so the new copy is read without an effect. A job read that fails says why and frees the buttons.
+- Alternatives: A polling loop inside the mutation.
+- Why: The shared 2 s poll rule (§7.3) and the owner's no-effects rule.
+- Reversible: yes.

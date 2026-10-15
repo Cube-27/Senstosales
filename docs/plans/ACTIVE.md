@@ -157,7 +157,7 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 | 2   | Playwright adapter: launch and login | todo       |       |
 | 3   | HTTP session listing and fetch       | todo       |       |
 | 4   | Scrape jobs and wizard API           | done (#77) |       |
-| 5   | Sync wizard UI and tray status       | todo       |       |
+| 5   | Sync wizard UI and tray status       | done (#86) |       |
 | 6   | Live sync acceptance (human)         | todo       | H3    |
 
 ## [SPEC-20 — Desktop packaging and release](../specs/SPEC-20-desktop-packaging-release.md)
@@ -176,7 +176,7 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 | --- | ----------------------- | ---------- | ------------------------------------------ |
 | 1   | Backup job and rotation | done (#79) |                                            |
 | 2   | Restore                 | done (#79) | Shell reload after restore pending SPEC-20 |
-| 3   | Settings backup panel   | todo       |                                            |
+| 3   | Settings backup panel   | done (#86) |                                            |
 | 4   | Logs                    | done (#79) | Shell log plugin: SPEC-20 (#81)            |
 | 5   | Operations guide        | todo       | H7                                         |
 
