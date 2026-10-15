@@ -5,6 +5,6 @@ import { TEMPLATES_BASE64 } from "./templates.generated.ts";
 export type TemplateName = keyof typeof TEMPLATES_BASE64;
 
 /** A fresh copy of the template's xlsx bytes. */
-export function templateBytes(name: TemplateName): Uint8Array {
+export function templateBytes(name: TemplateName): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(TEMPLATES_BASE64[name]), (char) => char.codePointAt(0) ?? 0);
 }
