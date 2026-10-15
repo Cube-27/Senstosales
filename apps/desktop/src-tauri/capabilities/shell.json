@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "shell",
+  "description": "The bundled shell page: starts the sidecar, opens the app window, shows startup errors and writes the shell log. The loopback app origin gets none of this (ADR 0001).",
+  "windows": ["shell"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-destroy",
+    "core:webview:allow-create-webview-window",
+    "dialog:allow-ask",
+    "log:default",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [{ "name": "binaries/sensto-sidecar", "sidecar": true }]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "explorer",
+          "cmd": "explorer",
+          "args": [{ "validator": "^[A-Za-z]:\\[^\"]*\\SenstoSales\\logs$" }]
+        }
+      ]
+    }
+  ]
+}

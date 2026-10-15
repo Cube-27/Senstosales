@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    // `dist` is the built shell page that Tauri bundles; declarations go where `vp build` never empties them.
+    "outDir": "node_modules/.cache/tsc",
+    "emitDeclarationOnly": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "types": ["vite-plus/client", "node"]
+  },
+  "include": ["src", "test"]
+}

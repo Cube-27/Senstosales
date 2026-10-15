@@ -10,6 +10,7 @@
     { "path": "packages/scraper" },
     { "path": "apps/api" },
     { "path": "apps/web" },
+    { "path": "apps/desktop" },
     { "path": "tools/checks" },
     { "path": "tools/corpus" },
     { "path": "tools/gen" },
