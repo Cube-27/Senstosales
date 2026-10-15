@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { useNumberCheck } from "../../../hooks/useNumberCheck.ts";
-import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
+import { api, apiQuery, useMarkStale } from "../../../lib/api.ts";
 import { todayIst } from "../../../lib/today.ts";
 import { Save } from "../../../lib/icons.ts";
 import {
@@ -14,7 +14,7 @@ import {
   Button,
   ConfirmDialog,
   DatePicker,
-  FormAlert,
+  HeaderAlert,
   FormField,
   InfoField,
   Input,
@@ -315,7 +315,7 @@ function Subtitle({ preview, total }: { readonly preview: Preview | null; readon
 function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
   const navigate = useNavigate();
   const router = useRouter();
-  const invalidate = useInvalidate();
+  const markStale = useMarkStale();
   const form = useForm<InvoiceFormValues>({ defaultValues: formDefaults(preview, todayIst()) });
   const [number, invoiceDate, qty] = form.watch(["number", "invoiceDate", "qty"]);
   const [error, setError] = useState<string | null>(null);
@@ -340,9 +340,8 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
     setSaving(true);
     try {
       const invoice = await api.request("invoice.create", { body });
-      // Leave first: the refetches (the source page, the number check) need not hold the navigation.
+      markStale("invoice", "dc", "po");
       void navigate({ to: "/invoice/$id", params: { id: invoice.id } });
-      void invalidate("invoice", "dc", "po");
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
       check.refused(e, { number: body.number, date: body.invoiceDate });
@@ -362,6 +361,7 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
           subtitle={<Subtitle preview={preview} total={fmtMoney(totals.total, { gemc })} />}
           action={
             <>
+              <HeaderAlert message={error} />
               {preview === null && (
                 <DocPicker
                   types={["dc", "po"]}
@@ -389,7 +389,6 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
             </>
           }
         />
-        <FormAlert message={error} />
         <section aria-label="Invoice Details" className="overflow-hidden rounded-md border border-border bg-surface">
           <h2 className="border-b border-border px-4 py-3 role-section-title">Invoice Details</h2>
           <div className="grid grid-cols-12">

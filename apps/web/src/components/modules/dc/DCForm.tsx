@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from "react-hook-form";
 
 import { useNumberCheck } from "../../../hooks/useNumberCheck.ts";
-import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
+import { api, apiQuery, useMarkStale } from "../../../lib/api.ts";
 import { todayIst } from "../../../lib/today.ts";
 import { blankToNull, countOrNull } from "../../../lib/text.ts";
 import { Save } from "../../../lib/icons.ts";
@@ -15,7 +15,7 @@ import {
   Button,
   ConfirmDialog,
   DatePicker,
-  FormAlert,
+  HeaderAlert,
   FormField,
   Input,
   LineCell,
@@ -265,7 +265,7 @@ const defaultsOf = (data: Dispatchable | null): DcFormValues => ({
 function DCFormView({ data }: { readonly data: Dispatchable | null }) {
   const navigate = useNavigate();
   const router = useRouter();
-  const invalidate = useInvalidate();
+  const markStale = useMarkStale();
   const form = useForm<DcFormValues>({ defaultValues: defaultsOf(data) });
   const [number, dcDate, qty] = form.watch(["number", "dcDate", "qty"]);
   const [error, setError] = useState<string | null>(null);
@@ -288,9 +288,8 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
     setSaving(true);
     try {
       const dc = await api.request("dc.create", { body });
-      // Leave first: the refetches (the source page, the number check) need not hold the navigation.
+      markStale("dc", "po");
       void navigate({ to: "/dc/$id", params: { id: dc.id } });
-      void invalidate("dc", "po");
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
       check.refused(e, { number: body.number, date: body.dcDate });
@@ -310,6 +309,7 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
           subtitle={<Subtitle data={data} total={total} />}
           action={
             <>
+              <HeaderAlert message={error} />
               {data === null && (
                 <DocPicker
                   types={["po"]}
@@ -332,7 +332,6 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
             </>
           }
         />
-        <FormAlert message={error} />
         <ChallanFields duplicate={duplicate} />
         <DispatchItems data={data} />
         <DcNotes total={total} />

@@ -49,8 +49,8 @@ describe("/invoice/:id (SPEC-18 PR 3)", () => {
       within(line)
         .getAllByRole("cell")
         .map((td) => td.textContent),
-    ).toEqual(["2", "SYN100020Synthetic part 20", "0000", "NOS", "2", "40", "₹80", "₹7.2", "₹7.2", "₹94.4"]);
-    expect(screen.getByText("₹566.4")).toBeTruthy();
+    ).toEqual(["2", "SYN100020Synthetic part 20", "0000", "NOS", "2", "40.00", "₹80.00", "₹7.20", "₹7.20", "₹94.40"]);
+    expect(screen.getByText("₹566.40")).toBeTruthy();
   });
 
   it("names a PO-direct invoice's source PO", async () => {

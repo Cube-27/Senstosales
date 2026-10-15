@@ -24,6 +24,7 @@ const backupsQuery = (after: string | null) =>
 
 const KIND_LABEL: Record<Backup["kind"], string> = {
   daily: "Daily",
+  manual: "Manual",
   "pre-upgrade": "Before upgrade",
   safety: "Before restore",
 };
@@ -45,9 +46,12 @@ function panelOutcome(error: Error | null, idle: boolean, job: Job | undefined):
   return { text: job.error ?? "The backup did not finish. Try again.", failed: true };
 }
 
-/** Backup now: starts the `backup` job and follows it through the shared job query. */
+/** Backup now: starts the `backup` job for a manual copy, which never replaces the daily one, and follows it through
+ * the shared job query. */
 function useBackupNow() {
-  const start = useMutation({ mutationFn: () => api.request("jobs.start", { body: { type: "backup" } }) });
+  const start = useMutation({
+    mutationFn: () => api.request("jobs.start", { body: { type: "backup", manual: true } }),
+  });
   const jobId = start.data?.id;
   const detail = useQuery({ ...jobQuery(jobId ?? ""), enabled: jobId !== undefined });
   const job = detail.data?.job;

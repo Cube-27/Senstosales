@@ -17,8 +17,8 @@ export const zChangePasswordBody = z
     message: "The two new passwords do not match.",
   });
 
-/** The legacy reset asks for the confirmation phrase, and the current password once it was changed (EC-08). */
-export const zResetDefaultsBody = z.object({ confirmation: z.string(), currentPassword: z.string().optional() });
+/** The reset to defaults asks for the confirmation phrase only (owner answer 19, EC-08). */
+export const zResetDefaultsBody = z.object({ confirmation: z.string() });
 
 export const zOnboardingStatus = z.object({ required: z.boolean() });
 
@@ -36,9 +36,9 @@ export const zBhelPasswordBody = z.object({ password: z.string().min(1) });
 
 export const zBuyerBody = zBuyer.omit({ id: true });
 
-/** A database backup in Settings (SPEC-21): `daily` copies rotate; `pre-upgrade` and `safety` (taken before a
- * restore) are kept. */
-export const zBackup = z.object({ name: z.string(), kind: z.enum(["daily", "pre-upgrade", "safety"]) });
+/** A database backup in Settings (SPEC-21): `daily` copies rotate; `manual` (Backup now), `pre-upgrade` and
+ * `safety` (taken before a restore) are kept. */
+export const zBackup = z.object({ name: z.string(), kind: z.enum(["daily", "manual", "pre-upgrade", "safety"]) });
 
 /** Restore names one of the listed backups; the API never takes a path (C17). */
 export const zRestoreBody = z.object({ name: z.string().min(1) });

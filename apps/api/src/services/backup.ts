@@ -1,6 +1,7 @@
 // Backups (SPEC-21 §2, ARCHITECTURE §13.3, INV-103): the `backup` job copies the database to `daily-<date>.db` on the
-// first launch of each day and on Backup now, then rotates the daily copies. Pre-upgrade copies (SPEC-07) and the
-// safety copy a restore takes first have their own names and are never rotated away.
+// first launch of each day, or to `manual-<stamp>.db` on Backup now, then rotates the daily copies. Manual copies,
+// pre-upgrade copies (SPEC-07) and the safety copy a restore takes first have their own names and are never rotated
+// away, so Backup now never replaces the day's daily copy.
 import type { Instant } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
@@ -19,6 +20,7 @@ export type BackupKind = z.output<(typeof routes)["backups.list"]["response"]>[n
 
 const NAMES: readonly [BackupKind, RegExp][] = [
   ["daily", /^daily-(\d{4}-\d{2}-\d{2})\.db$/],
+  ["manual", /^manual-(\d{8}T\d{6}Z)\.db$/],
   ["pre-upgrade", /^pre-upgrade-\d+-(\d{8}T\d{6}Z)\.db$/],
   ["safety", /^safety-(\d{8}T\d{6}Z)\.db$/],
 ];
@@ -38,6 +40,8 @@ export const fileStamp = (now: Instant): string => now.replace(/[-:]|\.\d+/g, ""
 export const dailyBackupName = (today: IsoDate): string => `daily-${today}.db`;
 
 export const safetyBackupName = (now: Instant): string => `safety-${fileStamp(now)}.db`;
+
+export const manualBackupName = (now: Instant): string => `manual-${fileStamp(now)}.db`;
 
 /** The daily backups rotation removes: all but the newest 14 and the newest of each of the 12 newest months that
  * have one (INV-103). Other files are never removed. */
@@ -60,12 +64,12 @@ interface BackupDeps {
   readonly backups: BackupFiles;
 }
 
-/** The `backup` job: one document, today's daily copy, made and then rotated. Backup now replaces today's copy. */
+/** The `backup` job: one document, today's daily copy or Backup now's manual copy, made and then rotated. */
 export function backupHandlers({ clock, backups }: BackupDeps): JobHandlers {
   return {
     backup: {
-      documents: () => {
-        const name = dailyBackupName(clock.today());
+      documents: ({ manual }) => {
+        const name = manual === true ? manualBackupName(clock.now()) : dailyBackupName(clock.today());
         return Promise.resolve([{ key: name, label: name }]);
       },
       async process(name) {

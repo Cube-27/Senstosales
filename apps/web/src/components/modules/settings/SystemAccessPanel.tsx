@@ -1,6 +1,7 @@
-// The legacy Access Control panel (INV-80): the default-password notice, change password and reset to defaults, each
-// with its own button, plus the BHEL portal password, shown only as saved or not (INV-81). Change password and reset
-// end every session, so both return to the login. No length or complexity rule (C11).
+// The legacy Access Control panel (INV-80): the default-password notice, change password and reset to defaults (the
+// confirmation phrase only, owner answer 19), each with its own button, plus the BHEL portal password, shown only as
+// saved or not (INV-81). Change password and reset end every session, so both return to the login. No length or
+// complexity rule (C11).
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -55,7 +56,8 @@ function DefaultPasswordNotice() {
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0" />
       <span className="role-helper-text">
-        Default credentials `{DEFAULT_CREDENTIALS}` are still active. Change the password when convenient.
+        Default credentials <strong>{DEFAULT_CREDENTIALS}</strong> are still active. Change the password when
+        convenient.
       </span>
     </div>
   );
@@ -110,13 +112,12 @@ function ResetDefaultsForm() {
   const reset = useResetDefaults();
   const toLogin = useBackToLogin();
   const { toast } = useToast();
-  const form = useForm({ defaultValues: { currentPassword: "", confirmation: "" } });
-  const submit = form.handleSubmit(async ({ currentPassword, confirmation }) => {
+  const form = useForm({ defaultValues: { confirmation: "" } });
+  const submit = form.handleSubmit(async (body) => {
     try {
-      // The API asks for the current password only once it was changed (EC-08); blank sends none.
-      await reset.mutateAsync(currentPassword === "" ? { confirmation } : { confirmation, currentPassword });
+      await reset.mutateAsync(body);
     } catch (error) {
-      showServerErrors(form.setError, error, { currentPassword: "currentPassword", confirmation: "confirmation" });
+      showServerErrors(form.setError, error, { confirmation: "confirmation" });
       return;
     }
     toast("Credentials Reset", `System defaults restored to ${DEFAULT_CREDENTIALS}.`, "success");
@@ -127,10 +128,9 @@ function ResetDefaultsForm() {
       <form className={CARD} onSubmit={(e) => void submit(e)} noValidate>
         <p className="role-field-label">Reset Credentials to Defaults</p>
         <p className="mb-3 role-helper-text">
-          Restores the fixed single-user credentials to `{DEFAULT_CREDENTIALS}`. Requires the current password and the
-          confirmation phrase `{RESET_PHRASE}`.
+          Restores the fixed single-user credentials to <strong>{DEFAULT_CREDENTIALS}</strong>. Requires the
+          confirmation phrase <strong>{RESET_PHRASE}</strong>.
         </p>
-        <TextField name="currentPassword" label="Current Password" type="password" />
         <TextField name="confirmation" label="Confirmation Phrase" placeholder={RESET_PHRASE} />
         <FormRootError />
         <Button type="submit" variant="outline" className="mt-1 w-full" loading={form.formState.isSubmitting}>

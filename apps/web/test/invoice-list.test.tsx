@@ -62,7 +62,7 @@ describe("/invoice (SPEC-18 PR 3)", () => {
       "4100000101",
       "2",
       "6",
-      "₹566.4",
+      "₹566.40",
     ]);
     expect(cells(rowOf("INV-18"))[3]).toBe("Direct");
     expect(within(rowOf("INV-17")).getByRole("link", { name: "17" }).getAttribute("href")).toBe(`/dc/${DC_ID}`);

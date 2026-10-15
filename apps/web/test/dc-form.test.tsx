@@ -88,7 +88,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
       within(row)
         .getAllByRole("cell")
         .map((td) => td.textContent),
-    ).toEqual(["10", "SYN100010Synthetic part 10", "NOS", "100", "10", "4", "6", "", "", "₹0"]);
+    ).toEqual(["10", "SYN100010Synthetic part 10", "NOS", "100.00", "10", "4", "6", "", "", "₹0.00"]);
     expect((screen.getByLabelText("Consignee") as HTMLInputElement).value).toBe("Example Consignee");
   });
 
@@ -107,7 +107,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
     fireEvent.change(screen.getByLabelText("Dispatch qty of item 10"), { target: { value: "12" } });
     fireEvent.change(screen.getByLabelText("Packets of item 10"), { target: { value: "3" } });
     expect(screen.getByText("Guarantee Certificate No. 17 Dt. 02/05/2025")).toBeTruthy();
-    expect(screen.getByText("Consignment value of BHEL PO: ₹1,200")).toBeTruthy();
+    expect(screen.getByText("Consignment value of BHEL PO: ₹1,200.00")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Add Note" }));
     fireEvent.change(screen.getByLabelText("Note 1"), { target: { value: "Packed in two cases" } });
     await waitFor(() =>

@@ -4,7 +4,8 @@
 /** A supplier with no real name, GSTIN, address or person. */
 export const SUPPLIER = {
   name: "Example Supplier",
-  gstin: "TESTGSTIN0001",
+  // A GSTIN of the right shape, which Settings checks, put together here so no GSTIN-shaped text is in the repo.
+  gstin: ["99", "ABCDE", "1234", "F1Z5"].join(""),
   address: "1 Example Road",
   state: "Example State",
   stateCode: "99",

@@ -40,6 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   StatCard,
+  DATE_WIDTH,
   qtyColumn,
   StatCardRow,
   startUpload,
@@ -74,7 +75,7 @@ export function deleteBlockedReason({ dcCount, invoiceCount }: Pick<Row, "dcCoun
 }
 
 const qty = (key: "ordQty" | "balanceQty" | "rcdQty" | "rejQty", header: string, sortable = true) =>
-  qtyColumn<Row>(key, header, (row) => row[key], { sortable });
+  qtyColumn<Row>(key, header, (row) => row[key], { sortable, width: "88px" });
 
 /** The API's list and stats filters from the URL's search, without its paging and sort. */
 const filtersOf = ({ status, gemc, ...ranges }: Omit<PoSearch, "page" | "pageSize" | "sort" | "dir">) => ({
@@ -140,7 +141,7 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     {
       key: "poNumber",
       header: "Reference",
-      width: "120px",
+      width: "100px",
       sortable: true,
       title: (row) => row.poNumber,
       render: (row) => (
@@ -149,11 +150,11 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
         </Link>
       ),
     },
-    { key: "poDate", header: "Date", width: "96px", sortable: true, render: (row) => fmtDate(row.poDate) },
+    { key: "poDate", header: "Date", width: DATE_WIDTH, sortable: true, render: (row) => fmtDate(row.poDate) },
     {
       key: "isGemc",
       header: "Tags",
-      width: "70px",
+      width: "80px",
       render: (row) => (
         <Badge color="primary" size="sm" className={row.isGemc ? undefined : "invisible"} aria-hidden={!row.isGemc}>
           GEMC
@@ -173,7 +174,7 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     {
       key: "dspQty",
       header: "Dispatched",
-      width: "130px",
+      width: "146px",
       align: "right",
       sortable: true,
       render: (row) => (
@@ -185,12 +186,12 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     },
     qty("rcdQty", "Received"),
     // Accepted is shown as received (INV-09).
-    { ...qty("rcdQty", "Accepted", false), key: "acceptedQty" },
+    { ...qty("rcdQty", "Accepted", false), key: "acceptedQty", width: "92px" },
     qty("rejQty", "Rejected"),
     {
       key: "poValue",
       header: "Value",
-      width: "120px",
+      width: "136px",
       align: "right",
       sortable: true,
       render: (row) => (row.poValue === null ? "—" : fmtMoney(row.poValue, { gemc: row.isGemc })),
@@ -205,7 +206,7 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     {
       key: "openFlagCount",
       header: "Flags",
-      width: "64px",
+      width: "68px",
       // The badge keeps its slot when there is nothing to flag (C8, INV-71).
       render: (row) => (
         <Badge
@@ -221,7 +222,7 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     {
       key: "actions",
       header: "Actions",
-      width: "96px",
+      width: "80px",
       align: "right",
       render: (row) => <RowActions row={row} onDelete={onDelete} />,
     },

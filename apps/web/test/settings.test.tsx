@@ -76,6 +76,23 @@ describe("settings save (SPEC-15 PR 3, INV-72)", () => {
     expect((save() as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it("a GSTIN of the wrong shape is refused at its field (UI-SET-02)", async () => {
+    const calls = stubApi(settingsApi());
+    renderApp("/settings");
+    await userEvent.type(await screen.findByLabelText("GSTIN (Tax ID)"), "BADGSTIN");
+    expect(await screen.findByText("A GSTIN has 15 characters: the state code, the PAN, then 3 more.")).toBeTruthy();
+    expect((save() as HTMLButtonElement).disabled).toBe(true);
+    expect(routes(calls)).toEqual([]);
+  });
+
+  it("System Defaults offers no Base Currency (owner answer 18)", async () => {
+    stubApi(settingsApi());
+    renderApp("/settings");
+    await userEvent.click(await screen.findByRole("button", { name: "System Defaults" }));
+    expect(await screen.findByText("Fiscal Year Cycle")).toBeTruthy();
+    expect(screen.queryByText("Base Currency")).toBeNull();
+  });
+
   it("switching sections keeps unsaved edits", async () => {
     stubApi(settingsApi());
     renderApp("/settings");
@@ -109,12 +126,12 @@ describe("settings save (SPEC-15 PR 3, INV-72)", () => {
 });
 
 describe("system access (SPEC-15 PR 1 and 3, INV-80, INV-81)", () => {
-  it("shows the legacy default-password notice while the default is in use", async () => {
+  it("shows the legacy default-password notice while the default is in use, with no literal backticks", async () => {
     stubApi(settingsApi({}, true));
     renderApp("/settings");
     await userEvent.click(await screen.findByRole("button", { name: "System Defaults" }));
     expect((await screen.findByRole("note")).textContent).toBe(
-      "Default credentials `admin/admin` are still active. Change the password when convenient.",
+      "Default credentials admin/admin are still active. Change the password when convenient.",
     );
   });
 
@@ -154,9 +171,9 @@ describe("system access (SPEC-15 PR 1 and 3, INV-80, INV-81)", () => {
     });
   });
 
-  it("a reset with unsaved profile edits goes to the login without the unsaved-changes prompt", async () => {
+  it("a reset with unsaved profile edits sends the phrase alone and goes to the login without the prompt", async () => {
     let authenticated = true;
-    stubApi(
+    const calls = stubApi(
       settingsApi({
         "GET /api/auth/session": () => ({ authenticated, isDefaultPassword: false }),
         "POST /api/auth/reset-defaults": () => ((authenticated = false), { ok: true }),
@@ -169,6 +186,9 @@ describe("system access (SPEC-15 PR 1 and 3, INV-80, INV-81)", () => {
     await userEvent.click(screen.getByRole("button", { name: "Reset to Defaults" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/auth/login"));
     expect(screen.queryByText("Unsaved changes")).toBeNull();
+    expect(calls.filter((c) => c.route === "POST /api/auth/reset-defaults").map((c) => c.body)).toEqual([
+      { confirmation: "RESET TO DEFAULTS" },
+    ]);
   });
 
   it("the BHEL password shows only as saved; Change sends it once and it never stays in the page", async () => {

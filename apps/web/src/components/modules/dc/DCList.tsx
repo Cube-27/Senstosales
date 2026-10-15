@@ -18,6 +18,7 @@ import {
   ListFilters,
   ListToolbar,
   PageHeader,
+  DATE_WIDTH,
   qtyColumn,
   StatCard,
   StatCardRow,
@@ -97,7 +98,7 @@ function columns(actions: Actions): Column<Row>[] {
         </Link>
       ),
     },
-    { key: "dcDate", header: "Date", width: "96px", sortable: true, render: (row) => fmtDate(row.dcDate) },
+    { key: "dcDate", header: "Date", width: DATE_WIDTH, sortable: true, render: (row) => fmtDate(row.dcDate) },
     {
       key: "poNumber",
       header: "Linked PO",

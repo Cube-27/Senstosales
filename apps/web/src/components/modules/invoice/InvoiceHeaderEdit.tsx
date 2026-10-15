@@ -157,7 +157,7 @@ export function InvoiceHeaderEdit({ invoice, open, onClose }: Readonly<InvoiceHe
       saving={saving}
       onSave={() => void save()}
     >
-      <div className="grid max-h-[60vh] grid-cols-2 gap-x-4 overflow-y-auto pr-1">
+      <div className="grid grid-cols-2 gap-x-4">
         <DateField name="invoiceDate" label="Dated" control={control} required />
         <FormField label="Buyer Name" required>
           <Input {...register("buyerName")} />

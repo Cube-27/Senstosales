@@ -137,3 +137,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Warm the module graph in a setup file.
 - Why: The 1 s wait timed out only under load; the assertion is unchanged.
 - Reversible: yes.
+
+### D-0601 — FY select keeps one option; currency removed
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: The Base Currency select is removed and the FY select offers only April-March.
+- Alternatives: Keep both selects with all options.
+- Why: Owner answer 18 (rev 1.9); C7 keeps the FY element.
+- Reversible: yes.
+
+### D-0602 — GSTIN format checked in the Settings form
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: The supplier GSTIN is trimmed, upper-cased and checked against the 15-character shape in the web form; blank is allowed. The API is unchanged.
+- Alternatives: Check it in `packages/schemas` for the API too.
+- Why: Fixtures use placeholder GSTINs (C1) and FIX-3 owned the document goldens; the form is where the user types it.
+- Reversible: yes.

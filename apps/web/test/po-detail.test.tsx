@@ -37,7 +37,7 @@ describe("/po/:id (SPEC-16 PR 2)", () => {
       "#10",
       "SYN100010Synthetic valve body",
       "NOS",
-      "100",
+      "100.00",
       "10",
       "6",
       "4",

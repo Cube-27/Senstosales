@@ -100,7 +100,8 @@ function LoginForm() {
   );
 }
 
-/** "Forgot the password?": the legacy reset to the default credentials with the confirmation phrase (INV-80). */
+/** "Forgot the password?": the legacy reset to the default credentials with the confirmation phrase alone, so a
+ * forgotten changed password is recovered here (INV-80, owner answer 19). Data is untouched. */
 function ResetPanel({ onRestored }: { readonly onRestored: () => void }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -120,7 +121,7 @@ function ResetPanel({ onRestored }: { readonly onRestored: () => void }) {
       await reset.mutateAsync(body);
     } catch (error) {
       const { fields, message } = serverErrors(error);
-      setError("confirmation", { message: fields["confirmation"] ?? fields["currentPassword"] ?? message });
+      setError("confirmation", { message: fields["confirmation"] ?? message });
       return;
     }
     clear();
@@ -147,7 +148,7 @@ function ResetPanel({ onRestored }: { readonly onRestored: () => void }) {
           <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-warning">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <span className="role-body-text">
-              Type the confirmation phrase to restore the system defaults `{DEFAULT_CREDENTIALS}`.
+              Type the confirmation phrase to restore the system defaults <strong>{DEFAULT_CREDENTIALS}</strong>.
             </span>
           </div>
           <FormField label="Confirmation Phrase" error={formState.errors.confirmation?.message}>

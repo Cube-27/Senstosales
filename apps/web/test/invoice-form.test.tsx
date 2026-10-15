@@ -104,22 +104,22 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
       "",
       "NOS",
       "4",
-      "100",
-      "₹400",
-      "₹36",
-      "₹36",
-      "₹472",
+      "100.00",
+      "₹400.00",
+      "₹36.00",
+      "₹36.00",
+      "₹472.00",
     ]);
     expect(screen.queryByLabelText("Invoice qty of item 10")).toBeNull();
-    expect(totalRow("Taxable Value")).toBe("₹480");
-    expect(totalRow("Central Tax")).toBe("₹43.2");
-    expect(totalRow("Grand Total")).toBe("₹566.4");
+    expect(totalRow("Taxable Value")).toBe("₹480.00");
+    expect(totalRow("Central Tax")).toBe("₹43.20");
+    expect(totalRow("Grand Total")).toBe("₹566.40");
     expect(screen.getAllByRole("link", { name: "17" })[0]?.getAttribute("href")).toBe(`/dc/${DC_ID}`);
   });
 
   it("saves the DC's lines after confirming and opens the invoice", async () => {
     let body: unknown;
-    api({
+    const calls = api({
       "POST /api/invoice": (call) => {
         body = call.body;
         return invoice();
@@ -136,6 +136,10 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
     fireEvent.click(saveButton());
     fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/invoice/${INVOICE_ID}`));
+    const paths = () => calls.map((c) => `${c.method} ${c.path}`);
+    await waitFor(() => expect(paths()).toContain(`GET /api/invoice/${INVOICE_ID}`));
+    // The DC's preview is not asked again once the DC has its invoice: it would be refused with a 409 (UI-MISC).
+    expect(paths().filter((p) => p === `GET /api/invoice/preview/dc/${DC_ID}`)).toHaveLength(1);
     expect(body).toEqual({
       ...HEADER,
       number: "INV-17",
@@ -177,7 +181,7 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
     );
     // 8 against 6 uninvoiced: no cap (A-7).
     fireEvent.change(screen.getByLabelText("Invoice qty of item 10"), { target: { value: "8" } });
-    expect(totalRow("Grand Total")).toBe("₹944");
+    expect(totalRow("Grand Total")).toBe("₹944.00");
     fireEvent.click(saveButton());
     fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
     await waitFor(() => expect(body).toBeDefined());
@@ -244,7 +248,7 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
     expect(await screen.findByText("Link a DC or PO to begin")).toBeTruthy();
     expect(screen.getByPlaceholderText("DC/PO Number...")).toBeTruthy();
     expect(screen.getByText("Link a DC or PO to load items.")).toBeTruthy();
-    expect(totalRow("Grand Total")).toBe("₹0");
+    expect(totalRow("Grand Total")).toBe("₹0.00");
     expect(saveButton().disabled).toBe(true);
   });
 });

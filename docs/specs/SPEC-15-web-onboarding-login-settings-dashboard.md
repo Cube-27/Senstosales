@@ -18,8 +18,9 @@ Core:
 - `/onboarding`: shown when no supplier exists (INV-78); supplier profile and GST rates in the existing settings
   layout (same fields and order), then the login.
 - `/settings`: legacy sections (supplier profile, GST rates, buyers, system access: change password and
-  reset-to-defaults with the confirmation phrase; BHEL portal password shown as "saved" with Change and Clear, never
-  displayed; INV-81). Save only through the existing Save button, with dirty tracking, inline validation, a disabled
+  reset-to-defaults with the confirmation phrase alone, also on the login screen; BHEL portal password shown as "saved" with Change and Clear, never
+  displayed; INV-81). No currency option and only the April-March FY cycle; the supplier GSTIN is checked for its
+  format (ARCHITECTURE rev 1.9). Save only through the existing Save button, with dirty tracking, inline validation, a disabled
   state with a visible reason and an unsaved-changes prompt on navigation (INV-72). Download-folder preferences are
   removed (§9). Backup now / Restore are added by SPEC-21.
 - `/` dashboard: legacy stat cards and recent activity; the open-flag count (INV-60); no insights.

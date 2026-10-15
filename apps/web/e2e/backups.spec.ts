@@ -4,7 +4,7 @@ import { expect, test } from "./fixtures.ts";
 import { expectNoLayoutShift } from "./layout.ts";
 import { signIn } from "./session.ts";
 
-test("Backup now saves today's copy, and Restore brings it back and reloads", async ({ page }) => {
+test("Backup now saves a manual copy, and Restore brings it back and reloads", async ({ page }) => {
   await signIn(page);
   await page.goto("/settings");
   await page.getByRole("button", { name: "System Defaults" }).click();
@@ -23,15 +23,14 @@ test("Backup now saves today's copy, and Restore brings it back and reloads", as
     await backupNow.click();
     await expect(status).toHaveText("Backup saved.");
   });
-  const today = await page.evaluate(() =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date()),
-  );
-  const copy = panel.getByRole("row").filter({ hasText: `daily-${today}.db` });
+  // Its own file beside the daily copy, never in place of it.
+  const copy = panel.getByRole("row").filter({ hasText: /manual-\d{8}T\d{6}Z\.db/ });
   await expect(copy).toHaveCount(1);
+  await expect(copy).toContainText("Manual");
 
   await copy.getByRole("button", { name: "Restore" }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog).toContainText(`Your current data will be replaced by daily-${today}.db.`);
+  await expect(dialog).toContainText(/Your current data will be replaced by manual-\d{8}T\d{6}Z\.db\./);
   const reloaded = page.waitForEvent("load");
   await dialog.getByRole("button", { name: "Restore" }).click();
   await reloaded;

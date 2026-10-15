@@ -70,7 +70,8 @@ bhel session (start, captcha, otp; SPEC-19), search, dashboard (summary, activit
 
 Behaviour matches the legacy frontend's visible formatting (A-2), rebuilt from scratch (C16): Indian digit
 grouping, currency sign, rate and value precision (5 dp for GEMC, 2 dp otherwise; A-12), legacy date display
-format. Inputs are branded integers; outputs strings. The same functions feed the screens and the exports.
+format. On screen, amounts and rates always show at least two decimals (`₹500.00`, GEMC `₹719.20`), so a column's
+amounts line up; legacy dropped trailing zeros (owner-approved E2E fix UI-MISC, 2026-10-15). Inputs are branded integers; outputs strings. The same functions feed the screens and the exports.
 
 ## 5. Invariants
 

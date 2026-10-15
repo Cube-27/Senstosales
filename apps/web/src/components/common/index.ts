@@ -3,7 +3,7 @@
 export { AppChrome } from "./AppChrome.tsx";
 export { Autocomplete, type AutocompleteOption, type AutocompleteProps } from "./Autocomplete.tsx";
 export { ButtonGroup, type ButtonGroupOption, type ButtonGroupProps } from "./ButtonGroup.tsx";
-export { qtyColumn } from "./columns.tsx";
+export { DATE_WIDTH, qtyColumn } from "./columns.tsx";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog.tsx";
 export { type Column, DataTable, type DataTableProps, type Selection, tableQuery } from "./DataTable.tsx";
 export { DownloadButton, type DownloadButtonProps } from "./DownloadButton.tsx";
@@ -18,7 +18,7 @@ export {
   type UploadRun,
 } from "./FileUploadModal.tsx";
 export { FolderImport, type FolderImportProps } from "./FolderImport.tsx";
-export { FormAlert } from "./FormAlert.tsx";
+export { HeaderAlert } from "./FormAlert.tsx";
 export { FormDialog, type FormDialogProps } from "./FormDialog.tsx";
 export { FormField, type FormFieldProps } from "./FormField.tsx";
 export { GlobalSearchDialog, type GlobalSearchDialogProps } from "./GlobalSearchDialog.tsx";

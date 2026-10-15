@@ -9,24 +9,28 @@ import { blankToNull } from "../../../lib/text.ts";
 type Supplier = RouteOutput<"supplier.get">;
 type Settings = RouteOutput<"settings.get">;
 
-/** The legacy System Defaults selects. They change no calculation (FY is April-March, IGST is 0, A2-4); they are
- * kept as the settings-page preferences they always were. */
-const zCurrency = z.enum(["INR", "USD"]);
-const zFyCycle = z.enum(["APR_MAR", "JAN_DEC"]);
-export const CURRENCY_LABELS: Record<z.infer<typeof zCurrency>, string> = {
-  INR: "INR - Indian Rupee",
-  USD: "USD - US Dollar",
-};
-export const FY_CYCLE_LABELS: Record<z.infer<typeof zFyCycle>, string> = {
-  APR_MAR: "April - March (India)",
-  JAN_DEC: "January - December",
-};
+/** The legacy Fiscal Year Cycle select. It changes no calculation (FY is April-March, A2-4); BHEL uses April-March,
+ * so that is its one option, and the Base Currency select is gone (owner answer 18, 2026-10-15). */
+const zFyCycle = z.enum(["APR_MAR"]);
+export const FY_CYCLE_LABELS: Record<z.infer<typeof zFyCycle>, string> = { APR_MAR: "April - March (India)" };
 
 /** Preference keys, and the values legacy showed when one was never saved. */
-const PREF = { currency: "currency", fyCycle: "fiscal_year_cycle", igstPct: "igst_pct" } as const;
-const PREF_DEFAULT = { currency: "INR", fyCycle: "APR_MAR", igstPct: "18" } as const;
+const PREF = { fyCycle: "fiscal_year_cycle", igstPct: "igst_pct" } as const;
+const PREF_DEFAULT = { fyCycle: "APR_MAR", igstPct: "18" } as const;
 
 const zText = z.string();
+
+/** A GSTIN's shape: the state code, the 10-character PAN, the entity number, `Z` and a check character. Blank is
+ * allowed (no GSTIN); any case is taken and stored in capitals (UI-SET-02). */
+const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+const zGstin = z
+  .string()
+  .trim()
+  .transform((text) => text.toUpperCase())
+  .refine(
+    (text) => text === "" || GSTIN.test(text),
+    "A GSTIN has 15 characters: the state code, the PAN, then 3 more.",
+  );
 
 /** The supplier profile fields of the legacy Supplier Profile section, in its order, then the fields the documents
  * print or new invoices start from (owner, 2026-10-15). */
@@ -34,7 +38,7 @@ export const zSupplierFields = z.object({
   name: zText,
   contact: zText,
   email: zText,
-  gstin: zText,
+  gstin: zGstin,
   address: zText,
   description: zText,
   state: zText,
@@ -52,7 +56,7 @@ export const zRates = z.object({ cgstPct: zGstPct, sgstPct: zGstPct });
 export const zSettingsForm = z.object({
   supplier: zSupplierFields,
   rates: zRates,
-  defaults: z.object({ currency: zCurrency, fyCycle: zFyCycle, igstPct: zGstPct }),
+  defaults: z.object({ fyCycle: zFyCycle, igstPct: zGstPct }),
 });
 
 export type SettingsFormInput = z.input<typeof zSettingsForm>;
@@ -124,7 +128,6 @@ export function toForm(supplier: Supplier, settings: Settings): SettingsFormInpu
     rates: { cgstPct: z.encode(zGstPct, settings.cgstPct), sgstPct: z.encode(zGstPct, settings.sgstPct) },
     defaults: {
       // A stored value the select does not offer shows as legacy did: the default.
-      currency: zCurrency.catch(PREF_DEFAULT.currency).parse(pref(settings, "currency")),
       fyCycle: zFyCycle.catch(PREF_DEFAULT.fyCycle).parse(pref(settings, "fyCycle")),
       igstPct: pref(settings, "igstPct"),
     },
@@ -162,7 +165,6 @@ export function settingsBody(stored: Settings, form: SettingsFormOutput): Settin
     sgstPct: form.rates.sgstPct,
     preferences: {
       ...stored.preferences,
-      [PREF.currency]: form.defaults.currency,
       [PREF.fyCycle]: form.defaults.fyCycle,
       [PREF.igstPct]: z.encode(zGstPct, form.defaults.igstPct),
     },

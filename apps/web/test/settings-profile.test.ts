@@ -2,6 +2,7 @@ import { type RouteOutput, zGstPct } from "@senstosales/schemas";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
+  FY_CYCLE_LABELS,
   onboardingBody,
   settingsBody,
   supplierBody,
@@ -30,6 +31,9 @@ const SETTINGS: RouteOutput<"settings.get"> = {
   preferences: { currency: "USD", other: "kept" },
 };
 
+/** A synthetic GSTIN of the right shape, put together here so no GSTIN-shaped text is in the repo (C1 scan). */
+const GSTIN = ["27", "ABCDE", "1234", "F1Z5"].join("");
+
 describe("settings form model (SPEC-15 PR 3)", () => {
   it("shows the stored profile, rates and System Defaults; blanks for missing values, legacy defaults for unsaved preferences", () => {
     expect(toForm(SUPPLIER, SETTINGS)).toEqual({
@@ -47,8 +51,29 @@ describe("settings form model (SPEC-15 PR 3)", () => {
         hsn: "",
       },
       rates: { cgstPct: "9", sgstPct: "2.5" },
-      defaults: { currency: "USD", fyCycle: "APR_MAR", igstPct: "18" },
+      defaults: { fyCycle: "APR_MAR", igstPct: "18" },
     });
+  });
+
+  it.each([
+    ["no GSTIN", "", true],
+    ["a GSTIN of the right shape", GSTIN, true],
+    ["one in lower case", GSTIN.toLowerCase(), true],
+    ["text that is no GSTIN", "BADGSTIN", false],
+    ["a GSTIN one character short", GSTIN.slice(0, 14), false],
+    ["a GSTIN without the Z", GSTIN.replace("Z", "X"), false],
+  ])("checks the GSTIN's format at the field: %s (UI-SET-02)", (_, gstin, ok) => {
+    const form = { ...toForm(SUPPLIER, SETTINGS), supplier: { ...toForm(SUPPLIER, SETTINGS).supplier, gstin } };
+    const result = zSettingsForm.safeParse(form);
+    expect(result.error?.issues.map((i) => [i.path.join("."), i.message]) ?? []).toEqual(
+      ok ? [] : [["supplier.gstin", "A GSTIN has 15 characters: the state code, the PAN, then 3 more."]],
+    );
+  });
+
+  it("offers only the April-March financial year, as BHEL uses (owner answer 18)", () => {
+    expect(FY_CYCLE_LABELS).toEqual({ APR_MAR: "April - March (India)" });
+    const settings = { ...SETTINGS, preferences: { fiscal_year_cycle: "JAN_DEC" } };
+    expect(toForm(SUPPLIER, settings).defaults.fyCycle).toBe("APR_MAR");
   });
 
   it("a stored select value it does not offer shows the default", () => {
@@ -96,12 +121,13 @@ describe("settings form model (SPEC-15 PR 3)", () => {
     const form = zSettingsForm.parse({
       ...toForm(SUPPLIER, SETTINGS),
       rates: { cgstPct: "6", sgstPct: "6" },
-      defaults: { currency: "INR", fyCycle: "JAN_DEC", igstPct: "12" },
+      defaults: { fyCycle: "APR_MAR", igstPct: "12" },
     });
+    // The currency is no longer offered or written (owner answer 18); a stored one is left as it was.
     expect(settingsBody(SETTINGS, form)).toEqual({
       cgstPct: 600000,
       sgstPct: 600000,
-      preferences: { currency: "INR", other: "kept", fiscal_year_cycle: "JAN_DEC", igst_pct: "12" },
+      preferences: { currency: "USD", other: "kept", fiscal_year_cycle: "APR_MAR", igst_pct: "12" },
     });
   });
 

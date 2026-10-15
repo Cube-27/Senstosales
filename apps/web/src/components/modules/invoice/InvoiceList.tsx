@@ -18,6 +18,7 @@ import {
   ListFilters,
   ListToolbar,
   PageHeader,
+  DATE_WIDTH,
   qtyColumn,
   StatCard,
   StatCardRow,
@@ -48,7 +49,13 @@ function columns({ busy, onDownload, onDelete }: Actions): Column<Row>[] {
         </Link>
       ),
     },
-    { key: "invoiceDate", header: "Date", width: "96px", sortable: true, render: (row) => fmtDate(row.invoiceDate) },
+    {
+      key: "invoiceDate",
+      header: "Date",
+      width: DATE_WIDTH,
+      sortable: true,
+      render: (row) => fmtDate(row.invoiceDate),
+    },
     {
       key: "dc",
       header: "Linked DCs",
