@@ -322,3 +322,27 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: A copy per service.
 - Why: One implementation of the list convention for lists sorted in memory.
 - Reversible: yes.
+
+### D-0569 — Dashboard period "This FY", by document date
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: The dashboard gains `fy` ("This FY"), the first button and the default; every period filters documents by their own date (INV-113). Received counts only SRV rows linked to a PO item (INV-40), and Pending Dispatch is clamped per active item (INV-114).
+- Alternatives: Keep "This month" as the default; filter by creation timestamp.
+- Why: Owner-approved 2026-10-15: the E2E dashboard was empty for a month with no new POs; document dates are what users reconcile against.
+- Reversible: yes — one enum value and its default.
+
+### D-0571 — A manual PO's value comes from its lines unless it has a stored page
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: On create and edit, a PO with a stored BHEL page (`source_document` kind `po`) keeps the page's PO-VALUE; any other PO gets `manualPoValue` of its lines (INV-115). GEMC is the field or, when blank, the number in the remarks (`gemcNumberOf`).
+- Alternatives: A new `po.origin` column.
+- Why: FIX-2 adds no migration; the stored page already records the origin. A null manual value also broke the `valueMax` filter.
+- Reversible: yes — a column can replace the lookup later.
+
+### D-0574 — The search speed guard is a query-plan test
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: `search-plans.test.ts` fails when a read of the SRV list or global search scans `srv_item`, `reconciliation_issue` or `po_item` inside a correlated subquery (PERF-01); the indexes are migration 0004's.
+- Alternatives: A timing test against a large synthetic dataset.
+- Why: Plans are deterministic in CI; timings flake. Verified red with the three indexes dropped.
+- Reversible: yes — test only.

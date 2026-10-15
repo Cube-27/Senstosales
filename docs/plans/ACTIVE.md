@@ -66,12 +66,12 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-08/SPEC-11 (#55): SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links.
 - SPEC-11 (#59 review): a DC create racing a DC edit that frees the same number (SRV items on a third PO).
 - SPEC-11 (#60 review): held-batch test for a DC delete committing between an invoice create's read and commit.
-- SPEC-05 (#80 simplify): indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id).
+- SPEC-05 (#80 simplify): an index on po_lot(po_item_id) (the srv_item and reconciliation_issue ones came with migration 0004).
 - SPEC-08 PR 5 (#47 review): finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting.
 - SPEC-16 (#84): light/dark screenshots of the PO and SRV screens (§7); `/po` e2e for paging bounding boxes and the blocked-delete reason once SPEC-18 can create a DC (now ct suite and unit tests).
 - SPEC-16 (#84): PO rows and items show received under Accepted (INV-09) in the UI; the API could return `acceptedQty` as SRV does.
 - SPEC-16 (#84 review): `JobProgress` shows "Waiting to start" while `jobs.detail` keeps failing, and the folder-import dialog stays busy; the by-PO SRV popover shows the first 100 SRVs.
-- Quality (#89): three tests time out only under full-suite load and pass alone: `dashboard.test.tsx` "stat cards" (1 s `waitFor`, cold start), `po-form.test.tsx` "creates a PO" and `apps/api/test/d1-params.test.ts` "DC list at 100 a page" (5 s).
+- Quality (#89): two tests time out only under full-suite load and pass alone: `po-form.test.tsx` "creates a PO" and `apps/api/test/d1-params.test.ts` "DC list at 100 a page" (5 s).
 - SPEC-14/16 (#84): an `authed` e2e fixture for the default-password login the SPEC-16 spec does in its own `beforeEach`.
 - SPEC-17 (#87): `hooks/useSearchText.ts` (from #84, used by every list screen) still has a `useEffect`; the no-effects lint check will flag it.
 - SPEC-17 (#87): `apps/api/test/d1-params.test.ts` "the DC list at 100 a page" creates 100 DCs one after another and timed out once at 5.4 s (5 s limit) in a cold `pnpm verify`; it ran in 1.1-2.9 s on reruns.
@@ -87,18 +87,25 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 
 Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE rev 1.8 onward).
 
-| Batch | Scope                                                                                              | Status     | Notes                                                                                |
-| ----- | -------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
-| FIX-1 | SRV parser reads every column; LOT NO and material optional; odd rows kept; per-SRV failure        | done (#92) | Migration 0004; D-0550..D-0557.                                                      |
-| FIX-1 | PO parser: REMARKS below, INSPECTION BY, inline labels, MTRL CAT, ITEM VALUE, rows kept            | done (#92) | GEMC from the remarks only.                                                          |
-| FIX-1 | Migrations 0003 (document fields) and 0004 (verbatim source rows)                                  | done (#92) | 0003 columns serve FIX-3; 0004 indexes serve FIX-2.                                  |
-| FIX-1 | SRV detail shows the SRV's own source fields                                                       | done (#92) | SRV list ordQty, value, material and rate follow FIX-2's `(po, po_item_no)` linking. |
-| FIX-1 | Docs: ARCHITECTURE §7.1, §7.3, §8.2, A2-3, A2-10; SPEC-06, SPEC-08; INV-50, INV-111..112           | done (#92) | EC-60 resolved.                                                                      |
-| FIX-3 | Exports exact to 3 dp, GEMC register amounts at 5 dp, header row on empty lists, words carry paise | done (#94) | D-0580..D-0583; EXP-04 was a checker artefact (DC numbers repeat across FYs).        |
-| FIX-3 | HSN and packets per invoice line, DC packets, the DC's invoice number and date, settings defaults  | done (#94) | D-0584..D-0586, D-0590; uses 0003's columns.                                         |
-| FIX-3 | DC and GC laid out as the owner's documents                                                        | done (#94) | D-0586..D-0589.                                                                      |
-| FIX-3 | Daily dispatch summary (A-16 reversed): Reports tab and workbook                                   | done (#94) | D-0591..D-0593.                                                                      |
-| FIX-3 | Docs: ARCHITECTURE rev 1.12, INV-87, INV-116..120, EC-41/45/47/49/50/62; SPEC-04, 13, 17           | done (#94) | D-0594.                                                                              |
+| Batch | Scope                                                                                                    | Status     | Notes                                                                                |
+| ----- | -------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| FIX-1 | SRV parser reads every column; LOT NO and material optional; odd rows kept; per-SRV failure              | done (#92) | Migration 0004; D-0550..D-0557.                                                      |
+| FIX-1 | PO parser: REMARKS below, INSPECTION BY, inline labels, MTRL CAT, ITEM VALUE, rows kept                  | done (#92) | GEMC from the remarks only.                                                          |
+| FIX-1 | Migrations 0003 (document fields) and 0004 (verbatim source rows)                                        | done (#92) | 0003 columns serve FIX-3; 0004 indexes serve FIX-2.                                  |
+| FIX-1 | SRV detail shows the SRV's own source fields                                                             | done (#92) | SRV list ordQty, value, material and rate follow FIX-2's `(po, po_item_no)` linking. |
+| FIX-1 | Docs: ARCHITECTURE §7.1, §7.3, §8.2, A2-3, A2-10; SPEC-06, SPEC-08; INV-50, INV-111..112                 | done (#92) | EC-60 resolved.                                                                      |
+| FIX-2 | SRV rows link to PO items by (PO, PO item number); Accepted from the SRV row                             | done (#93) | D-0565, D-0566; INV-39; EC-11 stays open for the PO-item figure.                     |
+| FIX-2 | DOC_NUMBER_CONFLICT only for another PO's document; PO ITM 0, duplicate and unknown item flags           | done (#93) | D-0567, D-0568; nine flag types (INV-58).                                            |
+| FIX-2 | Orphan SRVs listed, not in received; dashboard This FY default, per-item pending                         | done (#93) | D-0569; INV-40, INV-113, INV-114.                                                    |
+| FIX-2 | Report ranges by document date, current-FY default (every Operations Insights tab, incl. Daily Dispatch) | done (#93) | D-0570; INV-113.                                                                     |
+| FIX-2 | Manual PO value from its lines, GEMC from remarks, valueMax; PO search by item description               | done (#93) | D-0571; INV-115.                                                                     |
+| FIX-2 | SRV list and global search by index (PERF-01); tracker overdue and status sort unchanged                 | done (#93) | D-0572..D-0574; query-plan test.                                                     |
+| FIX-2 | Docs: ARCHITECTURE rev 1.11 (§6.2, §6.9, §6.10, §12.2, A-24, A2-7..A2-9); INV-113..115                   | done (#93) | D-0575; EC-03, EC-11, EC-12, EC-19 revised.                                          |
+| FIX-3 | Exports exact to 3 dp, GEMC register amounts at 5 dp, header row on empty lists, words carry paise       | done (#94) | D-0580..D-0583; EXP-04 was a checker artefact (DC numbers repeat across FYs).        |
+| FIX-3 | HSN and packets per invoice line, DC packets, the DC's invoice number and date, settings defaults        | done (#94) | D-0584..D-0586, D-0590; uses 0003's columns.                                         |
+| FIX-3 | DC and GC laid out as the owner's documents                                                              | done (#94) | D-0586..D-0589.                                                                      |
+| FIX-3 | Daily dispatch summary (A-16 reversed): Reports tab and workbook                                         | done (#94) | D-0591..D-0593.                                                                      |
+| FIX-3 | Docs: ARCHITECTURE rev 1.12, INV-87, INV-116..120, EC-41/45/47/49/50/62; SPEC-04, 13, 17                 | done (#94) | D-0594.                                                                              |
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
