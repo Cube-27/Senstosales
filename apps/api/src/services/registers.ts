@@ -149,7 +149,7 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
           };
         }
       }
-      return xlsxFile(EXPORTS.poRegister.fileName(), EXPORTS.poRegister.sheet, rows());
+      return xlsxFile(EXPORTS.poRegister, rows());
     },
 
     /** DCs dated in the range, newest first. */
@@ -163,7 +163,7 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
         itemCount: row.lineCount,
         dspQty: qtyNumber(row.dspQty),
       }));
-      return xlsxFile(EXPORTS.dcRegister.fileName(), EXPORTS.dcRegister.sheet, rows);
+      return xlsxFile(EXPORTS.dcRegister, rows);
     },
 
     /** Invoices dated in the range, newest first; a PO-direct invoice has no DC number. */
@@ -178,7 +178,7 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
         taxable: money(row.taxable),
         tax: money(sumMoney([row.cgst, row.sgst, row.igst])),
       }));
-      return xlsxFile(EXPORTS.invoiceRegister.fileName(), EXPORTS.invoiceRegister.sheet, rows);
+      return xlsxFile(EXPORTS.invoiceRegister, rows);
     },
 
     /**

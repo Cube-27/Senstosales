@@ -4,7 +4,7 @@ import type ExcelJS from "exceljs";
 
 import { EXPORTS } from "../reports/catalog.ts";
 import type { Row } from "./sheet.ts";
-import { workbookChunks } from "./xlsx.ts";
+import { addStreamedSheet, workbookChunks } from "./xlsx.ts";
 
 const SUMMARY = EXPORTS.pending;
 type Key = (typeof SUMMARY.columns)[number]["key"];
@@ -13,11 +13,8 @@ type Style = keyof typeof SUMMARY.styles;
 /** The texts the catalog's heading names in `<…>`, keyed by that name. */
 export type SummaryHeading = Record<string, string>;
 
-/** The TOTAL row's quantity (with the unit when every row has the same one) and packets. */
-export interface SummaryTotal {
-  readonly qty: string | number;
-  readonly packets: number;
-}
+/** The TOTAL row's quantity: with the unit when every row has the same one, else the number. */
+export type SummaryTotal = string | number;
 
 /** The last column's letter: the table has fewer than 27 columns. */
 const LAST_COLUMN = String.fromCodePoint(64 + SUMMARY.columns.length);
@@ -26,19 +23,6 @@ const LAST_COLUMN = String.fromCodePoint(64 + SUMMARY.columns.length);
 function put(cell: ExcelJS.Cell, value: string | number, style: Style) {
   cell.value = value === "" ? null : value;
   cell.style = SUMMARY.styles[style];
-}
-
-/**
- * exceljs's streaming writer leaves out the sheet's print options, so `horizontalCentered` would be lost. They go
- * just before the page margins, where the sheet XML expects them. Pinned by the pending golden.
- */
-function writeCentred(ws: ExcelJS.Worksheet) {
-  const writer = ws as unknown as { _writePageMargins(): void; _write(xml: string): void };
-  const margins = writer._writePageMargins.bind(writer);
-  writer._writePageMargins = () => {
-    writer._write('<printOptions horizontalCentered="1"/>');
-    margins();
-  };
 }
 
 function writeHeading(ws: ExcelJS.Worksheet, heading: SummaryHeading) {
@@ -55,14 +39,16 @@ function writeHeading(ws: ExcelJS.Worksheet, heading: SummaryHeading) {
   for (let r = 1; r <= SUMMARY.headerRow; r++) ws.getRow(r).commit();
 }
 
+/** The TOTAL row: the label over the first two columns, the quantity and packets under theirs, the rest blank. */
 function writeTotal(ws: ExcelJS.Worksheet, r: number, total: SummaryTotal) {
-  const [from, to] = SUMMARY.total.merge.split(":");
-  ws.mergeCells(`${from}${r}:${to}${r}`);
+  ws.mergeCells(r, 1, r, 2);
   const row = ws.getRow(r);
   put(row.getCell(1), SUMMARY.total.label, "totalLabel");
-  put(row.getCell(3), total.qty, "totalCell");
-  put(row.getCell(4), total.packets, "totalCell");
-  for (let c = 5; c <= SUMMARY.columns.length; c++) put(row.getCell(c), "", "totalCell");
+  // No v1 packets column (EC-41): 0.
+  const values: Partial<Record<Key, string | number>> = { qty: total, packets: 0 };
+  SUMMARY.columns.forEach((c, i) => {
+    if (i >= 2) put(row.getCell(i + 1), values[c.key] ?? "", "totalCell");
+  });
   row.commit();
 }
 
@@ -76,8 +62,7 @@ export function summaryChunks(
   total: () => SummaryTotal,
 ): AsyncGenerator<Uint8Array> {
   return workbookChunks(async (workbook, pace) => {
-    const ws = workbook.addWorksheet(SUMMARY.sheet, { pageSetup: SUMMARY.pageSetup });
-    writeCentred(ws);
+    const ws = addStreamedSheet(workbook, SUMMARY.sheet, { pageSetup: SUMMARY.pageSetup });
     ws.columns = SUMMARY.columns.map((c) => ({ width: c.width }));
     writeHeading(ws, heading);
     let r = SUMMARY.headerRow;

@@ -72,15 +72,9 @@ const reconciliationCells = (r: ReturnType<typeof reportColumns>) => ({
   balanceQty: qtyNumber(r.balanceQty),
 });
 
-/**
- * The pending summary's TOTAL quantity: the ordered quantities added, followed by the unit when every row has the
- * same one (blank units ignored), else the number alone, as legacy.
- */
-function summaryTotal(ordQtys: readonly Qty[], units: ReadonlySet<string>) {
-  const total = sumQty(ordQtys);
-  const [unit] = units;
-  return { qty: units.size === 1 ? `${qtyToString(total)} ${unit}` : qtyExactNumber(total), packets: 0 };
-}
+/** The TOTAL quantity: followed by the unit when every row has the same one (blank units ignored), as legacy. */
+const summaryTotal = (total: Qty, units: ReadonlySet<string>) =>
+  units.size === 1 ? `${qtyToString(total)} ${[...units][0]}` : qtyExactNumber(total);
 
 export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
   /** Every item `where` keeps, in the query's sort, then `defaults`. */
@@ -146,11 +140,11 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
 
   /** The pending rows as summary cells, adding up the ordered quantities and units for the TOTAL row as they pass. */
   function summaryRows(query: PendingQuery) {
-    const ordQtys: Qty[] = [];
+    let ordered = 0 as Qty;
     const units = new Set<string>();
     let serial = 0;
     const rows = mapped(pendingRows(query), (r) => {
-      ordQtys.push(r.ordQty);
+      ordered = sumQty([ordered, r.ordQty]);
       const unit = r.unit?.trim();
       if (unit) units.add(unit);
       serial += 1;
@@ -168,7 +162,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
         dspQty: qtyExactNumber(r.dspQty),
       };
     });
-    return { rows, total: () => summaryTotal(ordQtys, units) };
+    return { rows, total: () => summaryTotal(ordered, units) };
   }
 
   /** The selected POs' items, PO number then item number; an id selected twice counts once, an unknown one not at all. */
@@ -199,28 +193,25 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
         if (found === undefined) throw poNotFound();
         fileName = reconciliation.fileName(found.poNumber);
       }
-      return xlsxFile(fileName, reconciliation.sheet, mapped(reconciliationRows(query), reconciliationCells));
+      return xlsxFile(reconciliation, mapped(reconciliationRows(query), reconciliationCells), fileName);
     },
 
     /** The selected POs' reconciliation rows (SPEC-13 §2, EC-43). */
     exportSelected(body: ExportSelectedBody) {
-      const { exportSelected } = EXPORTS;
-      return xlsxFile(exportSelected.fileName(), exportSelected.sheet, mapped(selectedRows(body), reconciliationCells));
+      return xlsxFile(EXPORTS.exportSelected, mapped(selectedRows(body), reconciliationCells));
     },
 
     /** The SPEC-12 guarantee-certificate workbook of the chosen DC, reached from the reports screen. */
     async guaranteeCertificate({ dcId }: DcIdQuery) {
-      const [found, items, supplier, { documentSupplier }] = await Promise.all([
+      const [found, items, profile] = await Promise.all([
         findDcWithPo(db, dcId),
         itemsOfDc(db, dcId),
         findSupplier(db),
-        import("@senstosales/documents"),
       ]);
       if (found === undefined) throw dcNotFound();
-      if (supplier === null) throw onboardingRequired();
+      if (profile === null) throw onboardingRequired();
       const { dc, po: dcPo } = found;
-      const doc = { supplier: documentSupplier(supplier, dc), dc, po: dcPo, items };
-      return gcFile(EXPORTS.guaranteeCertificate.fileName(dc.number), doc);
+      return gcFile(EXPORTS.guaranteeCertificate.fileName(dc.number), { profile, dc, po: dcPo, items });
     },
 
     async pending(query: PendingQuery & Paged) {

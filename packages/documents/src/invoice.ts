@@ -1,8 +1,8 @@
 // The invoice workbook (SPEC-12 §4.1): the de-branded template filled as the legacy invoice download fills it, for any
 // number of items (A-2, INV-69). Three item rows fit the template; more are inserted above its Total row.
 import type { GstPct, IsoDate, LineTax, Money, Qty } from "@senstosales/domain";
-import { invoiceTotals, moneyToString, pctToString, qtyToString, sumMoney, sumQty } from "@senstosales/domain";
-import { fmtAmountWords, fmtDate } from "@senstosales/schemas";
+import { invoiceTotals, moneyToString, pctToString, sumMoney, sumQty } from "@senstosales/domain";
+import { fmtAmountWords, fmtDate, fmtDateDashed, qtyExactNumber } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
 import { documentFileName, insertRows, put, restyle, type Value } from "./layout.ts";
@@ -49,12 +49,11 @@ const AMOUNT_COLUMNS = ["L", "N", "P", "R", "S"];
 
 /** Number cells hold the exact decimal; formats do the rounding on screen, as legacy's float cells did. */
 const amount = (m: Money): number => Number(moneyToString(m));
-const quantity = (q: Qty): number => Number(qtyToString(q));
 const percent = (p: GstPct): number => Number(pctToString(p));
 
 const date = (d: IsoDate | null): string => (d === null ? "" : fmtDate(d));
 /** `2025-03-20` -> `20-03-2025`, the GEMC date's format. */
-const dashed = (d: IsoDate | null): string => date(d).replaceAll("/", "-");
+const dashed = (d: IsoDate | null): string => (d === null ? "" : fmtDateDashed(d));
 
 function writeHeader(ws: ExcelJS.Worksheet, { invoice, po, dc }: InvoiceDocument): void {
   const cells: Array<[string, Value]> = [
@@ -111,7 +110,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
       ["B", item.description || "No Description"],
       // No column stores packets; legacy printed 1 for every item.
       ["J", 1],
-      ["K", quantity(item.qty)],
+      ["K", qtyExactNumber(item.qty)],
       ["L", amount(item.rate)],
       ["M", item.unit || "NO"],
       ["N", amount(item.taxable)],
@@ -130,7 +129,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
   const cells: Array<[string, number, Value]> = [
     ["B", totalRow, "Total"],
     ["J", totalRow, items.length],
-    ["K", totalRow, quantity(sumQty(items.map((item) => item.qty)))],
+    ["K", totalRow, qtyExactNumber(sumQty(items.map((item) => item.qty)))],
     ["N", totalRow, amount(taxable)],
     ["P", totalRow, amount(cgst)],
     ["R", totalRow, amount(sgst)],

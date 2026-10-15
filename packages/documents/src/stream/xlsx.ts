@@ -40,9 +40,40 @@ function writable(out: PassThrough): Promise<void> {
   });
 }
 
+/** A page setup's print-option flags and their sheet XML attributes. */
+const PRINT_OPTIONS = [
+  ["horizontalCentered", "horizontalCentered"],
+  ["verticalCentered", "verticalCentered"],
+  ["showGridLines", "gridLines"],
+  ["showRowColHeaders", "headings"],
+] as const;
+
+/**
+ * A worksheet of a streaming workbook. exceljs's streaming writer leaves out the page setup's print options
+ * (centring, grid lines, headings), so they are written here, just before the page margins, where the sheet XML
+ * expects them.
+ */
+export function addStreamedSheet(
+  workbook: ExcelJS.stream.xlsx.WorkbookWriter,
+  name: string,
+  options: Partial<ExcelJS.AddWorksheetOptions> = {},
+) {
+  const worksheet = workbook.addWorksheet(name, options);
+  const set = PRINT_OPTIONS.filter(([key]) => options.pageSetup?.[key] === true);
+  if (set.length > 0) {
+    const writer = worksheet as unknown as { _writePageMargins(): void; _write(xml: string): void };
+    const margins = writer._writePageMargins.bind(writer);
+    writer._writePageMargins = () => {
+      writer._write(`<printOptions ${set.map(([, attribute]) => `${attribute}="1"`).join(" ")}/>`);
+      margins();
+    };
+  }
+  return worksheet;
+}
+
 /** The worksheet with the sheet's widths, page setup, footer and header row. */
 function addSheet<K extends string>(workbook: ExcelJS.stream.xlsx.WorkbookWriter, sheet: Sheet<K>) {
-  const worksheet = workbook.addWorksheet(sheet.name, {
+  const worksheet = addStreamedSheet(workbook, sheet.name, {
     ...(sheet.pageSetup ? { pageSetup: sheet.pageSetup } : {}),
     ...(sheet.oddFooter === undefined ? {} : { headerFooter: { oddFooter: sheet.oddFooter } }),
   });
@@ -95,7 +126,7 @@ export async function* workbookChunks(fill: Fill): AsyncGenerator<Uint8Array> {
  * The source's rows, the first one peeked already, so the source is closed when the reader stops early: by `yield*`
  * once it delegates, by the `finally` while the loop still holds the first row.
  */
-export async function* rowsAfter<T>(first: IteratorResult<T>, source: AsyncIterator<T>): AsyncGenerator<T> {
+async function* rowsAfter<T>(first: IteratorResult<T>, source: AsyncIterator<T>): AsyncGenerator<T> {
   if (first.done) return;
   let delegated = false;
   try {
@@ -112,7 +143,8 @@ export function xlsxChunks<K extends string>(sheet: Sheet<K>, rows: AsyncIterabl
   return workbookChunks(async (workbook, pace) => {
     const source = rows[Symbol.asyncIterator]();
     const first = await source.next();
-    const worksheet = first.done && sheet.bareWhenEmpty ? workbook.addWorksheet(sheet.name) : addSheet(workbook, sheet);
+    const worksheet =
+      first.done && sheet.bareWhenEmpty ? addStreamedSheet(workbook, sheet.name) : addSheet(workbook, sheet);
     const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
     for await (const row of rowsAfter(first, source)) {
       const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
