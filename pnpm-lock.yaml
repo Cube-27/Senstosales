@@ -119,6 +119,18 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
 
+  tools/corpus:
+    dependencies:
+      '@senstosales/api':
+        specifier: workspace:*
+        version: link:../../apps/api
+      '@senstosales/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@senstosales/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+
   tools/gen:
     dependencies:
       '@senstosales/schemas':
