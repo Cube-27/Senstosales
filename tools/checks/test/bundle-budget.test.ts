@@ -26,6 +26,11 @@ describe("bundle-budget (INV-104)", () => {
     expect(shellAssets(INDEX)).toEqual(["assets/index-abc.js", "assets/react-def.js", "assets/index-ghi.css"]);
   });
 
+  it("never reads a path that leaves the dist root", () => {
+    const html = `<script src="/assets/../../secret.js"></script><link rel="stylesheet" href="../x.css">`;
+    expect(shellAssets(html)).toEqual([]);
+  });
+
   it("measures each shell file gzipped and sums them", () => {
     mkdirSync(join(dist, "assets"));
     writeFileSync(join(dist, "index.html"), INDEX);

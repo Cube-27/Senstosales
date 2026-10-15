@@ -1,17 +1,18 @@
 // INV-104 (ARCHITECTURE §12.1): the web shell stays within 250 kB gzip. The shell is what the first page load fetches:
 // every script and stylesheet the built `index.html` names (Vite lists the entry's static imports as modulepreload
 // links). Route chunks load on navigation and are not counted.
-// Usage: node tools/checks/src/bundle-budget.ts [dist] (after `pnpm check:build`; default apps/web/dist)
+// Usage: node tools/checks/src/bundle-budget.ts (after `pnpm check:build`; reads apps/web/dist)
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const BUDGET_BYTES = 250_000;
 
-/** The `src`/`href` of each script and stylesheet in `html`, as paths under the dist root. */
+/** The `src`/`href` of each script and stylesheet in `html`, as paths under the dist root (none leaving it). */
 export function shellAssets(html: string): string[] {
   const refs = html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)="\/?([^"]+\.(?:js|css))"/g);
-  return [...new Set(Array.from(refs, (m) => m[1] as string))];
+  const paths = Array.from(refs, (m) => m[1] as string).filter((path) => !path.split("/").includes(".."));
+  return [...new Set(paths)];
 }
 
 /** Each shell asset with its gzip size, and their total. */
@@ -38,4 +39,4 @@ export function main(dist: string): number {
   return over ? 1 : 0;
 }
 
-if (import.meta.main) process.exit(main(process.argv[2] ?? "apps/web/dist"));
+if (import.meta.main) process.exit(main("apps/web/dist"));
