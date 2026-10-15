@@ -8,6 +8,12 @@ import { serverErrors } from "../../../lib/form-errors.ts";
 import { Button, Input } from "../../common/index.ts";
 import { bhelPasswordQuery, useBhelPassword } from "./useSettings.ts";
 
+/** Whether a password is saved; blank until the answer arrives. */
+function savedText(loading: boolean, saved: boolean): string {
+  if (loading) return "";
+  return saved ? "Saved" : "Not saved";
+}
+
 export function BhelPasswordField() {
   const { data } = useQuery(bhelPasswordQuery);
   const { set, clear } = useBhelPassword();
@@ -59,7 +65,7 @@ export function BhelPasswordField() {
         </form>
       ) : (
         <div className="mt-1 flex h-9 items-center gap-2">
-          <span className="w-24 role-body-text">{data === undefined ? "" : saved ? "Saved" : "Not saved"}</span>
+          <span className="w-24 role-body-text">{savedText(data === undefined, saved)}</span>
           <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
             Change
           </Button>

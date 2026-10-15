@@ -47,12 +47,14 @@ const RUN_START = /(?<![\w.,/-])/;
 const RUN_END = /(?![.,/-]?\d)/;
 const KEPT = [
   /&#?\w+;/,
-  new RegExp(`${RUN_START.source}${DAY.source}[/.-]${MONTH.source}[/.-](?:19|20)?\\d\\d${RUN_END.source}(?!\\w)`),
-  new RegExp(`${RUN_START.source}[1-9]\\d{0,2}(?:,\\d{2,3})+(?:\\.\\d{1,5})?${RUN_END.source}`),
-  new RegExp(`${RUN_START.source}(?:0|[1-9]\\d*)\\.\\d{1,5}${RUN_END.source}`),
+  new RegExp(
+    String.raw`${RUN_START.source}${DAY.source}[/.-]${MONTH.source}[/.-](?:19|20)?\d\d${RUN_END.source}(?!\w)`,
+  ),
+  new RegExp(String.raw`${RUN_START.source}[1-9]\d{0,2}(?:,\d{2,3})+(?:\.\d{1,5})?${RUN_END.source}`),
+  new RegExp(String.raw`${RUN_START.source}(?:0|[1-9]\d*)\.\d{1,5}${RUN_END.source}`),
 ];
 /** Group 1 is a kept token; any other run of letters, marks and digits (any script) is a word or code to replace. */
-const TOKEN = new RegExp(`(${either(KEPT)})|[\\p{L}\\p{M}\\p{N}]+`, "giu");
+const TOKEN = new RegExp(String.raw`(${either(KEPT)})|[\p{L}\p{M}\p{N}]+`, "giu");
 /**
  * Groups: 1 comment body, 2 script open tag (its body is dropped), 3 style element (kept: CSS carries no data), 4 any
  * other tag, 5 text; else a lone `<`.

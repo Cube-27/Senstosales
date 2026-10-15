@@ -14,7 +14,8 @@ type Flag = Detail["flags"][number];
 function summary(flag: Flag, itemNo: string | undefined): string {
   const { field, expected, actual } = flag.details;
   if (flag.type === "QTY_MISMATCH" && field === "ord_qty") {
-    return `${itemNo ? `PO item ${itemNo} ordered qty mismatch` : "Ordered qty mismatch"}: ${actual} vs ${expected ?? "-"} expected`;
+    const what = itemNo ? `PO item ${itemNo} ordered qty mismatch` : "Ordered qty mismatch";
+    return `${what}: ${actual} vs ${expected ?? "-"} expected`;
   }
   return `${titleCase(field)} mismatch`;
 }

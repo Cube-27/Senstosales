@@ -47,9 +47,9 @@ export const pickFiles = ({ accept, multiple }: { accept: string; multiple: bool
 
 export const webPlatform: Platform = {
   kind: "web",
-  async saveFile(file) {
+  saveFile(file) {
     downloadFile(file);
-    return "saved";
+    return Promise.resolve("saved");
   },
   pickFolder,
   pickFiles,

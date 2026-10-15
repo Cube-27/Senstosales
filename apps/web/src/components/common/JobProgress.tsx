@@ -22,6 +22,10 @@ const STATUS_TEXT: Record<Job["status"], { text: string; className: string }> = 
 };
 
 /** The issue list: the document in progress while the job runs, then the skipped and failed files with reasons. */
+/** One flag type with its count, as the import summary lists it. */
+const flagCount = ([type, count]: readonly [Parameters<typeof fmtFlagType>[0], number]): string =>
+  `${fmtFlagType(type)} ${fmtCount(count)}`;
+
 function Details({ job }: { readonly job: Job }) {
   const summary = jobSummary(job);
   if (isActive(job) || summary === null) {
@@ -39,9 +43,7 @@ function Details({ job }: { readonly job: Job }) {
   return (
     <div className="flex flex-col gap-1 p-2">
       <p className="role-body-text-sm">
-        {flags.length === 0
-          ? "No flags raised"
-          : `Flags raised: ${flags.map(([type, count]) => `${fmtFlagType(type)} ${fmtCount(count)}`).join(", ")}`}
+        {flags.length === 0 ? "No flags raised" : `Flags raised: ${flags.map(flagCount).join(", ")}`}
       </p>
       <ul aria-label="Files not imported" className="space-y-1">
         {issues.map((issue) => (

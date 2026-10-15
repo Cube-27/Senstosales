@@ -36,7 +36,7 @@ const RANGE_KEYS = ["from", "to", "valueMin", "valueMax"] as const satisfies rea
  * The lists' Filters button and panel: a date range, a value range and Clear all. The panel opens as a popover over
  * the page, so opening it moves nothing (C8), where the legacy panel slid the table down.
  */
-export function ListFilters({ dateLabel, value, onChange }: ListFiltersProps) {
+export function ListFilters({ dateLabel, value, onChange }: Readonly<ListFiltersProps>) {
   const active = RANGE_KEYS.some((key) => (value[key] ?? "") !== "");
   return (
     <Popover>

@@ -13,7 +13,8 @@ export function apiColumns<T extends Table>(table: T) {
 }
 
 const literal = (text: string) => text.replace(/[\\%_]/g, String.raw`\$&`);
-const like = (column: SQLWrapper, pattern: string) => sql`${column} LIKE ${pattern} ESCAPE ${sql.raw(String.raw`'\'`)}`;
+const BACKSLASH = sql.raw(String.raw`'\'`);
+const like = (column: SQLWrapper, pattern: string) => sql`${column} LIKE ${pattern} ESCAPE ${BACKSLASH}`;
 
 /** `LIKE` on the text as typed: `%` and `_` match themselves. */
 export const contains = (column: SQLWrapper, text: string) => like(column, `%${literal(text)}%`);
@@ -49,8 +50,11 @@ export const inRange = (column: SQLWrapper, { from, to }: { from?: string | unde
  * The UTC instant (ISO-8601, as stored) at which the IST calendar date `date` begins, `days` after it. IST is a fixed
  * +05:30 (C3). Built on the constant side so a filter compares the stored column as it is.
  */
-export const istDayStart = (date: IsoDate, days = 0) =>
-  sql`strftime('%Y-%m-%dT%H:%M:%fZ', ${date}, ${`${days} days`}, ${sql.raw(`'-${IST_OFFSET_MINUTES} minutes'`)})`;
+const FROM_IST = sql.raw(`'-${IST_OFFSET_MINUTES} minutes'`);
+export const istDayStart = (date: IsoDate, days = 0) => {
+  const later = `${days} days`;
+  return sql`strftime('%Y-%m-%dT%H:%M:%fZ', ${date}, ${later}, ${FROM_IST})`;
+};
 
 /** {@link byPoNumber} as keyset sort parts: select `kPoNumber: PO_NUMBER_KEY` and `poNumber` (D-0262). */
 export const PO_NUMBER_KEY = sql<number>`${byPoNumber[0]}`;

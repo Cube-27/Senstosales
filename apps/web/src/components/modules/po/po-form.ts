@@ -141,7 +141,8 @@ export function formError(values: FormValues): string | null {
       (rateOf(i.rate) ?? 0) <= 0,
   );
   if (bad < 0) return null;
-  return `Item ${values.items[bad]?.poItemNo ?? `#${bad + 1}`} has missing mandatory fields (Description, Code, Unit, Qty, Rate)`;
+  const item = values.items[bad]?.poItemNo ?? `#${bad + 1}`;
+  return `Item ${item} has missing mandatory fields (Description, Code, Unit, Qty, Rate)`;
 }
 
 const orNull = (text: string): string | null => (text.trim() === "" ? null : text.trim());

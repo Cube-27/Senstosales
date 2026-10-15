@@ -37,13 +37,15 @@ export function memoryStorage(): Storage & { files: Map<string, Uint8Array> } {
   const files = new Map<string, Uint8Array>();
   return {
     files,
-    put: async (key, bytes) => {
+    put: (key, bytes) => {
       files.set(key, bytes);
+      return Promise.resolve();
     },
-    get: async (key) => files.get(key) ?? null,
-    delete: async (key) => {
+    get: (key) => Promise.resolve(files.get(key) ?? null),
+    delete: (key) => {
       files.delete(key);
+      return Promise.resolve();
     },
-    list: async (prefix) => [...files.keys()].filter((key) => key.startsWith(prefix)),
+    list: (prefix) => Promise.resolve([...files.keys()].filter((key) => key.startsWith(prefix))),
   };
 }

@@ -52,7 +52,7 @@ const HEADER: readonly (TextField & { readonly wide?: true })[] = [
   { name: "gemcNumber", label: "GEMC No" },
 ];
 
-function TextInput({ field, register }: { readonly field: TextField; register: UseFormRegister<FormValues> }) {
+function TextInput({ field, register }: Readonly<{ field: TextField; register: UseFormRegister<FormValues> }>) {
   return (
     <FormField label={field.label}>
       <Input {...register(field.name)} />

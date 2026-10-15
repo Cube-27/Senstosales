@@ -59,13 +59,15 @@ async function startImport(kind: Kind, update: (run: Run) => void): Promise<void
   }
 }
 
-function FolderStep(props: {
-  readonly kind: Kind;
-  readonly run: Run;
-  readonly running: boolean;
-  readonly disabled: boolean;
-  onPick(): void;
-}) {
+function FolderStep(
+  props: Readonly<{
+    readonly kind: Kind;
+    readonly run: Run;
+    readonly running: boolean;
+    readonly disabled: boolean;
+    onPick(): void;
+  }>,
+) {
   const { kind, run } = props;
   const label = LABEL[kind];
   return (
@@ -107,7 +109,7 @@ function FolderStep(props: {
  * Folder import (ARCHITECTURE §7.4, SPEC-16): pick a folder of PO pages, then one of SRV pages; each is staged and
  * imported by a background job whose progress and summary show in place. The dialog closes only when nothing runs.
  */
-export function FolderImport({ open, onClose, onImported }: FolderImportProps) {
+export function FolderImport({ open, onClose, onImported }: Readonly<FolderImportProps>) {
   const [runs, setRuns] = useState<Record<Kind, Run>>({ po: IDLE, srv: IDLE });
   const running: Record<Kind, boolean> = { po: useRunning(runs.po), srv: useRunning(runs.srv) };
   const busy = running.po || running.srv;

@@ -115,7 +115,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     if (issues.length > 0) throw linesError(issues);
     // The lines equal the DC's (INV-29), so they are built from the DC's in its order.
     const lines = dcLines.map(({ dcItemId, poItemId, qty, poRate }) => ({ poItemId, dcItemId, qty, rate: poRate }));
-    return { poId: stored.poId, dc: { id: stored.id, number: stored.number }, lines: async () => lines };
+    return { poId: stored.poId, dc: { id: stored.id, number: stored.number }, lines: () => Promise.resolve(lines) };
   }
 
   /** INV-30, INV-31: lines on items of the PO, at least one, each qty > 0, at the PO item's rate. */

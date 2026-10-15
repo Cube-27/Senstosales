@@ -7,10 +7,7 @@ import { zIsoDate } from "@senstosales/schemas";
 import { z } from "zod";
 
 /** Text the user typed, whatever the router made of it. */
-export const zUrlText = z
-  .union([z.string(), z.number()])
-  .transform((v) => String(v))
-  .optional();
+export const zUrlText = z.union([z.string(), z.number()]).transform(String).optional();
 
 /** An on/off filter: `true` or absent. */
 export const zUrlFlag = z.literal(true).optional();

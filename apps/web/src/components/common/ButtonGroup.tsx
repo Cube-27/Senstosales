@@ -18,7 +18,13 @@ export interface ButtonGroupProps<T extends string> {
   readonly className?: string;
 }
 
-export function ButtonGroup<T extends string>({ options, value, onChange, label, className }: ButtonGroupProps<T>) {
+export function ButtonGroup<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+  className,
+}: Readonly<ButtonGroupProps<T>>) {
   return (
     <div
       role="group"

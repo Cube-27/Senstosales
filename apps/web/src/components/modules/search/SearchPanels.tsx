@@ -14,12 +14,12 @@ export function FiltersPanel({
   onChange,
   onClear,
   onSave,
-}: {
+}: Readonly<{
   readonly filters: Filters;
   onChange(filters: Filters): void;
   onClear(): void;
   onSave(): void;
-}) {
+}>) {
   const toggle = (type: DocType): void =>
     onChange({
       ...filters,
@@ -113,11 +113,11 @@ export function SavedPanel({
   saved,
   onLoad,
   onDelete,
-}: {
+}: Readonly<{
   readonly saved: readonly SavedSearch[];
   onLoad(saved: SavedSearch): void;
   onDelete(id: string): void;
-}) {
+}>) {
   return (
     <div className="bg-surface-sunken/30 px-4 py-3">
       <span className="mb-2 flex items-center gap-1.5 role-section-title">
@@ -151,7 +151,7 @@ export function SavedPanel({
   );
 }
 
-export function SaveSearchBox({ onSave, onCancel }: { onSave(name: string): void; onCancel(): void }) {
+export function SaveSearchBox({ onSave, onCancel }: Readonly<{ onSave(name: string): void; onCancel(): void }>) {
   const [name, setName] = useState("");
   return (
     <div className="w-80 rounded-lg border border-border bg-surface p-4 shadow-xl">

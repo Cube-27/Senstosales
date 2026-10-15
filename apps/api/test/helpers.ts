@@ -38,10 +38,10 @@ export function testApp(
 ) {
   const logger = memoryLogger();
   const app = createApp({ port: PORT, logger, signedIn, onboarded }, handlers);
-  const send = async (path: string, init: RequestInit = {}) => {
+  const send = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (!headers.has("host")) headers.set("host", HOST);
-    return app.request(`http://${HOST}${path}`, { ...init, headers });
+    return Promise.resolve(app.request(`http://${HOST}${path}`, { ...init, headers }));
   };
   return { app, send, client: createClient(send), logger };
 }

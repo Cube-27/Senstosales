@@ -36,7 +36,7 @@ export function ResultList({
   onHover,
   onOpen,
   onRecent,
-}: {
+}: Readonly<{
   readonly hits: readonly Hit[];
   readonly searching: boolean;
   readonly searchable: boolean;
@@ -46,7 +46,7 @@ export function ResultList({
   onHover(index: number): void;
   onOpen(target: Target): void;
   onRecent(recent: RecentSearch): void;
-}) {
+}>) {
   if (!searching && recent.length > 0) return <RecentSearches recent={recent} onRecent={onRecent} />;
   if (!searching) {
     return (
@@ -114,10 +114,10 @@ export function ResultList({
 function RecentSearches({
   recent,
   onRecent,
-}: {
+}: Readonly<{
   readonly recent: readonly RecentSearch[];
   onRecent(recent: RecentSearch): void;
-}) {
+}>) {
   return (
     <div className="p-3">
       <div className="mb-2 flex items-center gap-1.5 px-1 text-muted">
@@ -149,7 +149,7 @@ const STATUS_COLOR: Record<NonNullable<Hit["status"]>, NonNullable<BadgeProps["c
   Closed: "success",
 };
 
-export function Preview({ hit, onOpen }: { readonly hit: Hit | undefined; onOpen(target: Target): void }) {
+export function Preview({ hit, onOpen }: Readonly<{ hit: Hit | undefined; onOpen(target: Target): void }>) {
   if (!hit) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
@@ -230,7 +230,7 @@ function linkChips(hit: Hit): Array<{ key: string; label: string; target: Target
   );
 }
 
-function LinkedDocuments({ hit, onOpen }: { readonly hit: Hit; onOpen(target: Target): void }) {
+function LinkedDocuments({ hit, onOpen }: Readonly<{ hit: Hit; onOpen(target: Target): void }>) {
   const chips = linkChips(hit);
   if (chips.length === 0) return <span className="italic role-empty-text">No linked documents</span>;
   return (

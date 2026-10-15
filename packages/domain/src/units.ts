@@ -31,7 +31,9 @@ function parseScaled(s: string, dp: number): Result<number> {
 function scaledToString(n: number, dp: number): string {
   const digits = String(Math.abs(n)).padStart(dp + 1, "0");
   const frac = digits.slice(-dp).replace(/0+$/, "");
-  return `${n < 0 ? "-" : ""}${digits.slice(0, -dp)}${frac ? `.${frac}` : ""}`;
+  const sign = n < 0 ? "-" : "";
+  const point = frac ? "." : "";
+  return `${sign}${digits.slice(0, -dp)}${point}${frac}`;
 }
 
 /** INV-01: `"2.5"` -> `2500`. */

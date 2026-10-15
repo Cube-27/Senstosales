@@ -64,9 +64,9 @@ interface BackupDeps {
 export function backupHandlers({ clock, backups }: BackupDeps): JobHandlers {
   return {
     backup: {
-      documents: async () => {
+      documents: () => {
         const name = dailyBackupName(clock.today());
-        return [{ key: name, label: name }];
+        return Promise.resolve([{ key: name, label: name }]);
       },
       async process(name) {
         await backups.create(name);
