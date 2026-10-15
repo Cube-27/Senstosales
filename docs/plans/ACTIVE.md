@@ -193,10 +193,10 @@ Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules
 | 2   | Frozen design carry-over              | done (#78) |                                                                                                                      |
 | 3   | Design validators                     | done (#78) |                                                                                                                      |
 | 4   | Shell components                      | done (#78) |                                                                                                                      |
-| 5   | Primitives and FormField              | todo       |                                                                                                                      |
-| 6   | DataTable, Pagination and list search | todo       |                                                                                                                      |
-| 7   | Platform adapter                      | todo       |                                                                                                                      |
-| 8   | Playwright harness and `e2e` job      | todo       |                                                                                                                      |
+| 5   | Primitives and FormField              | done (#82) |                                                                                                                      |
+| 6   | DataTable, Pagination and list search | done (#82) |                                                                                                                      |
+| 7   | Platform adapter                      | done (#82) |                                                                                                                      |
+| 8   | Playwright harness and `e2e` job      | done (#82) |                                                                                                                      |
 
 ## [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md)
 
