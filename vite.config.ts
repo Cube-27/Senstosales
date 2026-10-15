@@ -53,7 +53,7 @@ export default defineConfig({
     options: { denyWarnings: true, reportUnusedDisableDirectives: "error" },
     categories: { correctness: "error" },
     env: { builtin: true, node: true },
-    ignorePatterns: ["**/generated/**", "**/coverage/**"],
+    ignorePatterns: ["**/generated/**", "**/coverage/**", "**/*.generated.ts"],
     rules: {
       "max-lines": ["error", 800],
       complexity: ["error", 15],

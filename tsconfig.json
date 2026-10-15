@@ -9,6 +9,7 @@
     { "path": "packages/documents" },
     { "path": "packages/scraper" },
     { "path": "apps/api" },
+    { "path": "apps/web" },
     { "path": "tools/checks" },
     { "path": "tools/corpus" },
     { "path": "tools/gen" },

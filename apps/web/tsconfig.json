@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    // `dist` is the built SPA that the API serves; declarations go where `vp build` never empties them.
+    "outDir": "node_modules/.cache/tsc",
+    "emitDeclarationOnly": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite-plus/client"]
+  },
+  "include": ["src", "test", "vite.config.ts"],
+  "references": [{ "path": "../../packages/schemas" }]
+}

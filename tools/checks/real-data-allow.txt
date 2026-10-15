@@ -4,3 +4,4 @@
 tools/checks/src/real-data-scan.ts:local-data-path  # the rule patterns themselves
 CLAUDE.md:private-repo-path  # names the owner's private folder to forbid reading it
 tools/checks/src/real-data-scan.ts:private-repo-path  # the rule pattern itself
+apps/web/index.html:html-outside-fixtures  # the SPA entry page, written for this app (no captured markup)
