@@ -1,13 +1,23 @@
 // DC rows (ARCHITECTURE §8.2) and the DC list, detail and delete reads (SPEC-11 §2). Plain rows: the filters that
 // need no business value run in SQL; the list totals come from the domain in the service (C2).
 import type { Db, Statement } from "@senstosales/db";
-import { dc, dcItem, invoice, po, poItem, reconciliationIssue, srvItem, UniqueViolation } from "@senstosales/db";
+import {
+  dc,
+  dcItem,
+  invoice,
+  MAX_BOUND_PARAMS,
+  po,
+  poItem,
+  reconciliationIssue,
+  srvItem,
+  UniqueViolation,
+} from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import { and, count, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { srvRefs, srvsResolvedTo } from "./po-list.ts";
-import { apiColumns, contains, flagColumns } from "./sql.ts";
+import { apiColumns, contains, flagColumns, inBatches } from "./sql.ts";
 
 /** The filters of the DC list and its stats; the value range is applied to the totals by the service. */
 export type DcFilters = z.output<(typeof routes)["dc.stats"]["query"]>;
@@ -125,19 +135,25 @@ export async function invoicesOfDcs(db: Db, dcIds: readonly string[]) {
 
 /** How many open flags each of these DCs' lines carry, by DC; a DC without one is absent. */
 export async function openFlagCountsOfDcs(db: Db, dcIds: readonly string[]) {
-  const counts = await db.query(
-    db.build
-      .select({ dcId: dcItem.dcId, count: count() })
-      .from(reconciliationIssue)
-      .innerJoin(dcItem, eq(dcItem.id, reconciliationIssue.scopeId))
-      .where(
-        and(
-          eq(reconciliationIssue.scopeType, "dc_item"),
-          eq(reconciliationIssue.status, "open"),
-          inArray(dcItem.dcId, [...dcIds]),
-        ),
-      )
-      .groupBy(dcItem.dcId),
+  const counts = await inBatches(
+    dcIds,
+    (ids) =>
+      db.query(
+        db.build
+          .select({ dcId: dcItem.dcId, count: count() })
+          .from(reconciliationIssue)
+          .innerJoin(dcItem, eq(dcItem.id, reconciliationIssue.scopeId))
+          .where(
+            and(
+              eq(reconciliationIssue.scopeType, "dc_item"),
+              eq(reconciliationIssue.status, "open"),
+              inArray(dcItem.dcId, ids),
+            ),
+          )
+          .groupBy(dcItem.dcId),
+      ),
+    // The scope type and status bind two more.
+    MAX_BOUND_PARAMS - 2,
   );
   return new Map(counts.map((row) => [row.dcId, row.count]));
 }

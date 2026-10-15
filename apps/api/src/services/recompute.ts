@@ -2,7 +2,7 @@
 // It returns statements instead of committing them, so every write use case that touches a PO adds them to its own
 // batch (INV-14, INV-84). Every value comes from a domain function (C2); this file groups rows by item and hands them over.
 import type { Db, Statement } from "@senstosales/db";
-import { DbError, po, poItem, reconciliationIssue, WriteBatch } from "@senstosales/db";
+import { chunk, DbError, po, poItem, reconciliationIssue, rowsPerInsert, WriteBatch } from "@senstosales/db";
 import type { IsoDate, PoFlagSnapshot } from "@senstosales/domain";
 import {
   computeItemQuantities,
@@ -135,12 +135,14 @@ export function recomputeStatements({ db, clock }: RecomputeDeps, snapshot: PoSn
     }));
     // Another batch built from the same stored flags may commit the same fingerprint first; the unique index then
     // keeps its row and this batch still commits (INV-59).
-    statements.push(
-      db.build
-        .insert(reconciliationIssue)
-        .values(rows)
-        .onConflictDoNothing({ target: reconciliationIssue.fingerprint }),
-    );
+    for (const run of chunk(rows, rowsPerInsert(reconciliationIssue))) {
+      statements.push(
+        db.build
+          .insert(reconciliationIssue)
+          .values(run)
+          .onConflictDoNothing({ target: reconciliationIssue.fingerprint }),
+      );
+    }
   }
   return statements;
 }

@@ -3,7 +3,7 @@
 // or DC (404), a DC or GC number taken in the FY, a stale version and a blocked delete (409). Each write is one
 // batch: the version guards, the DC rows, the SRV links to its numbers, the recompute of every PO whose rows or flags
 // change, and the audit row (C4).
-import { dc, dcItem, updateWithVersion } from "@senstosales/db";
+import { chunk, dc, dcItem, rowsPerInsert, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
@@ -142,7 +142,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 
     await commit(db, [
       db.build.insert(dc).values(dcRow),
-      db.build.insert(dcItem).values(itemRows),
+      ...chunk(itemRows, rowsPerInsert(dcItem)).map((rows) => db.build.insert(dcItem).values(rows)),
       ...links.statements,
       // A DC is a user change to the PO's quantities: an edit or create built from the PO before it fails (D-0220).
       ...guardedRecompute({ ...snapshot, dcLines: [...snapshot.dcLines, ...itemRows] }, row.version, links.changes),

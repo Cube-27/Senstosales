@@ -18,5 +18,6 @@ export {
   type Migration,
 } from "./migrator.ts";
 export { MIGRATIONS } from "./migrations.generated.ts";
+export { chunk, MAX_BOUND_PARAMS, rowsPerInsert } from "./limits.ts";
 export { updateWithVersion, type Versioned } from "./version.ts";
 export { GST_DEFAULTS, GST_KEYS, seedStatements, type GstRates } from "./seed.ts";
