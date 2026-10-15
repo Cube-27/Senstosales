@@ -4,17 +4,19 @@
 // so it never outlives a shell that crashed.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getRequestListener } from "@hono/node-server";
 
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
-import type { Logger, LogFields } from "../../ports/logger.ts";
 import { healthRoutes } from "../../routes/health.ts";
 import { apiRoutes } from "../../routes/index.ts";
 import { restoreRoutes } from "../../routes/restore.ts";
+import { createClock } from "./clock.ts";
 import { resolveDataDir } from "./data-dir.ts";
+import { createFileLogger } from "./logger.ts";
 import { openRuntime } from "./runtime.ts";
 import { spa } from "./static.ts";
 
@@ -36,14 +38,6 @@ export interface RunningServer {
   close(): Promise<void>;
 }
 
-/** JSON lines on stderr; stdout carries only the port line. SPEC-21 replaces this with the pino adapter. */
-const line =
-  (level: keyof Logger) =>
-  (fields: LogFields, message: string): void => {
-    process.stderr.write(`${JSON.stringify({ level, message, ...fields })}\n`);
-  };
-const stderrLogger: Logger = { debug: line("debug"), info: line("info"), warn: line("warn"), error: line("error") };
-
 function listen(server: Server): Promise<AddressInfo> {
   return new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -52,6 +46,7 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
+  const logger = createFileLogger({ dir: join(options.dataDir, "logs"), clock: createClock() });
   const {
     db,
     services,
@@ -61,7 +56,10 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     startDailyBackup,
   } = await openRuntime({
     ...options,
-    logger: stderrLogger,
+    logger,
+  }).catch((err: unknown) => {
+    logger.close();
+    throw err;
   });
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
@@ -69,7 +67,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   const server = createServer();
   const address = await listen(server);
   const app = createApp(
-    { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
+    { port: address.port, logger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
     {
       ...healthRoutes({ version: options.version, db }),
       ...apiRoutes(services),
@@ -90,6 +88,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
           jobs
             .idle()
             .then(closeRuntime)
+            .finally(() => logger.close())
             .then(
               () => (err ? reject(err) : resolve()),
               (closeErr: unknown) => reject(err ?? closeErr),
