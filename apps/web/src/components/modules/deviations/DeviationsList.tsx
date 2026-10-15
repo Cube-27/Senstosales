@@ -30,13 +30,15 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "type",
       header: "Type",
-      width: "150px",
+      // Every v1 flag name but the longest, MANUAL ADJUSTMENT OVERLAP, which its title shows in full.
+      width: "208px",
+      title: (f) => fmtFlagType(f.type),
       render: (f) => <Badge color={f.type === "QTY_MISMATCH" ? "error" : "warning"}>{fmtFlagType(f.type)}</Badge>,
     },
     {
       key: "poNumber",
       header: "PO",
-      width: "160px",
+      width: "100px",
       title: (f) => f.poNumber,
       render: (f) => (
         <Link to="/po/$id" params={{ id: f.poId }} className={refLink}>
@@ -48,7 +50,7 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "document",
       header: "Document",
-      width: "156px",
+      width: "118px",
       render: (f) =>
         f.srvId === null ? (
           <span className="role-helper-text">{SCOPE_LABEL[f.scopeType]}</span>
@@ -59,38 +61,38 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
           </Link>
         ),
     },
-    { key: "issue", header: "Issue", width: "380px", title: issueText, render: issueText },
+    { key: "issue", header: "Issue", width: "auto", title: issueText, render: issueText },
     {
       key: "expected",
       header: "Expected",
-      width: "96px",
+      width: "90px",
       align: "right",
       render: (f) => <span className="tabular-nums">{f.details.expected ?? "—"}</span>,
     },
     {
       key: "actual",
       header: "Actual",
-      width: "96px",
+      width: "92px",
       align: "right",
       render: (f) => <span className="text-error tabular-nums">{f.details.actual}</span>,
     },
     {
       key: "openedAt",
       header: "Detected",
-      width: "168px",
+      width: "200px",
       render: (f) => <span className="role-helper-text">{fmtInstantDateTime(f.openedAt)}</span>,
     },
     {
       key: "status",
       header: "Status",
-      width: "96px",
+      width: "80px",
       render: (f) =>
         f.status === "open" ? <Badge color="warning">Open</Badge> : <Badge color="success">Resolved</Badge>,
     },
     {
       key: "resolve",
       header: "",
-      width: "140px",
+      width: "120px",
       align: "right",
       render: (f) =>
         f.status === "open" && (

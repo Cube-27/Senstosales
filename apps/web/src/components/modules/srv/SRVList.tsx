@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   StatCard,
+  DATE_WIDTH,
   qtyColumn,
   StatCardRow,
   startUpload,
@@ -143,7 +144,7 @@ function PoSrvs({ row, search }: { readonly row: PoRow; readonly search: SrvSear
 function srvColumns(onDelete: (row: SrvRow) => void): Column<SrvRow>[] {
   return [
     { key: "srvNumber", header: "SRV #", width: "120px", sortable: true, title: (r) => r.srvNumber, render: srvLink },
-    { key: "srvDate", header: "Date", width: "100px", sortable: true, render: (r) => fmtDate(r.srvDate) },
+    { key: "srvDate", header: "Date", width: DATE_WIDTH, sortable: true, render: (r) => fmtDate(r.srvDate) },
     {
       key: "poNumber",
       header: "Purchase Order",
@@ -183,7 +184,13 @@ function poColumns(search: SrvSearch): Column<PoRow>[] {
       title: (r) => r.poNumber,
       render: (r) => <PoRef poId={r.poId} poNumber={r.poNumber} />,
     },
-    { key: "latestSrvDate", header: "Date", width: "100px", sortable: true, render: (r) => fmtDate(r.latestSrvDate) },
+    {
+      key: "latestSrvDate",
+      header: "Date",
+      width: DATE_WIDTH,
+      sortable: true,
+      render: (r) => fmtDate(r.latestSrvDate),
+    },
     ...totalsColumns<PoRow>(),
     {
       key: "srvCount",

@@ -55,32 +55,32 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
     {
       key: "poItem",
       header: "PO Item",
-      width: "80px",
+      width: "76px",
       render: (r) => (r.lotNo ? `#${r.poItemNo}.${r.lotNo}` : `#${r.poItemNo}`),
     },
-    { key: "srvItemNo", header: "SRV Item", width: "72px", render: (r) => String(r.srvItemNo) },
-    { key: "rev", header: "Rev", width: "56px", render: (r) => r.revNo ?? "—" },
+    { key: "srvItemNo", header: "SRV Item", width: "84px", render: (r) => String(r.srvItemNo) },
+    { key: "rev", header: "Rev", width: "52px", render: (r) => r.revNo ?? "—" },
     {
       key: "material",
       header: "Material",
-      width: "240px",
+      width: "auto",
       title: (r) => materialTitle(r.materialCode, r.poItem?.description),
       render: (r) => <MaterialCell code={r.materialCode} description={r.poItem?.description} />,
     },
     {
       key: "rate",
       header: "Unit Rate",
-      width: "100px",
+      width: "92px",
       align: "right",
       render: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : "—"),
     },
     // The SRV's own UNIT as printed; a row stored without one shows the PO item's.
-    { key: "unit", header: "Unit", width: "64px", render: (r) => r.unit ?? r.poItem?.unit ?? "—" },
+    { key: "unit", header: "Unit", width: "56px", render: (r) => r.unit ?? r.poItem?.unit ?? "—" },
     qtyColumn<Row>("ordQty", "Ordered", (r) => r.ordQty, { width: "88px" }),
     {
       key: "dspQty",
       header: "Dispatched",
-      width: "88px",
+      width: "104px",
       align: "right",
       title: () => "Dispatched against the PO item",
       render: (r) => <span className="tabular-nums">{r.poItem ? fmtQty(r.poItem.dspQty) : "—"}</span>,
@@ -91,7 +91,7 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
     {
       key: "flags",
       header: "Flags",
-      width: "72px",
+      width: "68px",
       render: (r) => {
         const flags = flagsOf(r.id);
         return (

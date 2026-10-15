@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { expect, type Page, test } from "@playwright/test";
 
-import { expectNoLayoutShift, measure } from "../e2e/layout.ts";
+import { expectNoLayoutShift } from "../e2e/layout.ts";
 
 const DIST = join(dirname(fileURLToPath(import.meta.url)), "dist");
 const ORIGIN = "http://ct.test";
@@ -81,21 +81,20 @@ test.describe("the light page", () => {
     });
   }
 
-  test("a page-size change resizes only the reserved body: header, columns and pager size stay", async ({ page }) => {
+  test("a page-size change keeps every box: the larger page scrolls inside the reserved body", async ({ page }) => {
     const { header, firstColumn, lastColumn, pager } = parts(page);
-    const before = await measure({ header, firstColumn, lastColumn });
-    const pagerBefore = await pager.boundingBox();
-    await pager.getByRole("combobox", { name: "Rows per page" }).click();
-    await page.getByRole("option", { name: "25" }).click();
-    await expect(page.locator("tbody tr")).toHaveCount(25);
-    expect(await measure({ header, firstColumn, lastColumn })).toEqual(before);
-    const pagerAfter = await pager.boundingBox();
-    expect([pagerAfter?.x, pagerAfter?.width, pagerAfter?.height]).toEqual([
-      pagerBefore?.x,
-      pagerBefore?.width,
-      pagerBefore?.height,
-    ]);
-    expect((await page.locator("tbody").boundingBox())?.height).toBe(1000);
+    const rows = page.getByRole("region", { name: "Table rows" });
+    const boxes = { rows, header, firstColumn, lastColumn, pager };
+    const choose = async (size: string, shown: string) => {
+      await pager.getByRole("combobox", { name: "Rows per page" }).click();
+      await page.getByRole("option", { name: size, exact: true }).click();
+      await expect(pager).toContainText(shown);
+    };
+    await expectNoLayoutShift(page, boxes, () => choose("25", "1-23"));
+    // All 23 rows are there, in the header's and ten rows' height.
+    await expect(page.locator("tbody tr:not([aria-hidden])")).toHaveCount(23);
+    expect((await rows.boundingBox())?.height).toBe(436);
+    await expectNoLayoutShift(page, boxes, () => choose("10", "1-10"));
   });
 
   test("a long cell is cut to one line with its full text in the title", async ({ page }) => {

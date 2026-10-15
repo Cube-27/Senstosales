@@ -64,22 +64,22 @@ const qty = (key: "ordQty" | "balanceQty" | "rcdQty" | "rejQty", header: string,
 function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Column<Item>[] {
   const gemc = detail.po.isGemc;
   return [
-    { key: "poItemNo", header: "#", width: "56px", render: (item) => `#${item.poItemNo}` },
+    { key: "poItemNo", header: "#", width: "48px", render: (item) => `#${item.poItemNo}` },
     {
       key: "material",
       header: "Material",
-      width: "260px",
+      width: "auto",
       title: (item) => materialTitle(item.materialCode, item.description, item.drawingNo),
       render: (item) => <MaterialCell code={item.materialCode} description={item.description} />,
     },
-    { key: "unit", header: "Unit", width: "64px", render: (item) => item.unit ?? "—" },
-    { key: "rate", header: "Rate", width: "100px", align: "right", render: (item) => fmtRate(item.rate, { gemc }) },
+    { key: "unit", header: "Unit", width: "56px", render: (item) => item.unit ?? "—" },
+    { key: "rate", header: "Rate", width: "84px", align: "right", render: (item) => fmtRate(item.rate, { gemc }) },
     qty("ordQty", "Ordered"),
     qty("balanceQty", "Pending"),
     {
       key: "dspQty",
       header: "Dispatched",
-      width: "120px",
+      width: "104px",
       align: "right",
       render: (item) => (
         <ManualQtyCell
@@ -93,11 +93,11 @@ function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Colu
     // Accepted is shown as received (INV-09).
     qty("rcdQty", "Accepted", "acceptedQty"),
     qty("rejQty", "Rejected"),
-    { key: "status", header: "Status", width: "104px", render: (item) => <StatusCell status={item.status} /> },
+    { key: "status", header: "Status", width: "88px", render: (item) => <StatusCell status={item.status} /> },
     {
       key: "flags",
       header: "Flags",
-      width: "60px",
+      width: "68px",
       render: (item) => {
         const n = flagsOf(item.id).length;
         return (
@@ -107,7 +107,7 @@ function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Colu
         );
       },
     },
-    { key: "lots", header: "Lots", width: "64px", align: "right", render: (item) => <LotsCell item={item} /> },
+    { key: "lots", header: "Lots", width: "60px", align: "right", render: (item) => <LotsCell item={item} /> },
   ];
 }
 

@@ -166,6 +166,14 @@ describe("Pagination", () => {
     ]);
   });
 
+  it("shows ten rows' height whatever the page size: a short page of 25 is padded only to ten rows", () => {
+    const { container } = table({ pageSize: 25 });
+    expect(container.querySelectorAll("tbody tr[aria-hidden]")).toHaveLength(7);
+    const body = screen.getByRole("region", { name: "Table rows" });
+    // The header row (36px) and ten rows of 40px.
+    expect(body.style.height).toBe("436px");
+  });
+
   it("changes the page size from the legacy sizes", () => {
     const { nav, onPageSize } = pager(1, 25);
     fireEvent.keyDown(within(nav).getByRole("combobox", { name: "Rows per page" }), { key: "Enter" });
@@ -178,6 +186,8 @@ describe("Pagination", () => {
     ["pixel columns only", [], "420px"],
     // A percentage column keeps at least 160px.
     ["a 30% column", [{ key: "note", header: "Note", width: "30%" }], "580px"],
+    // The auto column keeps at least 48px.
+    ["an auto column", [{ key: "note", header: "Note", width: "auto" }], "468px"],
   ])(
     "is wide enough for its columns (%s), so a narrow window scrolls it rather than squeezing one",
     (_, extra, min) => {
