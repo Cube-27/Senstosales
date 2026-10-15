@@ -26,6 +26,8 @@ import {
   StatCard,
   qtyColumn,
   StatCardRow,
+  startUpload,
+  type UploadRun,
   useToast,
   tableQuery,
 } from "../../common/index.ts";
@@ -289,7 +291,7 @@ export function SRVList() {
     enabled: byPo,
   });
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
-  const [files, setFiles] = useState<readonly File[]>([]);
+  const [upload, setUpload] = useState<UploadRun | null>(null);
   const [deleting, setDeleting] = useState<SrvRow | null>(null);
   const refresh = () => invalidate("srv", "po");
   const srvCols = useMemo(() => srvColumns(setDeleting), []);
@@ -329,7 +331,11 @@ export function SRVList() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void pickHtmlPages().then((picked) => picked && setFiles(picked))}
+            onClick={() =>
+              void pickHtmlPages().then((picked) => {
+                if (picked?.length) setUpload(startUpload(picked, (file) => uploadHtml("srv.upload", file)));
+              })
+            }
           >
             <Upload aria-hidden />
             Upload
@@ -342,12 +348,10 @@ export function SRVList() {
         )}
       </div>
       <FileUploadModal
-        open={files.length > 0}
-        files={files}
+        run={upload}
         title="Import SRV Data"
-        onUpload={(file) => uploadHtml("srv.upload", file)}
         onClose={() => {
-          setFiles([]);
+          setUpload(null);
           void refresh();
         }}
       />

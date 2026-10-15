@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from "react";
 
 import { cn } from "../../lib/cn.ts";
 import { AlertCircle, CheckCircle, type Icon, Info, X } from "../../lib/icons.ts";
@@ -58,11 +58,6 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
     },
     [remove],
   );
-
-  useEffect(() => {
-    const pending = timers.current;
-    return () => pending.forEach(clearTimeout);
-  }, []);
 
   const api = useMemo<ToastApi>(
     () => ({

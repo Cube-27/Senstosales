@@ -9,6 +9,7 @@ import {
   ConfirmDialog,
   DatePicker,
   FileUploadModal,
+  startUpload,
   FormField,
   Input,
   QuantityInput,
@@ -350,9 +351,7 @@ describe("FileUploadModal", () => {
     await act(async () => {
       render(
         <FileUploadModal
-          open
-          files={[file("a.html"), file("b.html"), file("c.html")]}
-          onUpload={onUpload}
+          run={startUpload([file("a.html"), file("b.html"), file("c.html")], onUpload)}
           onClose={() => {}}
         />,
       );
@@ -376,7 +375,7 @@ describe("FileUploadModal", () => {
 
   it("with no files is complete and can be closed", async () => {
     const onClose = vi.fn();
-    render(<FileUploadModal open files={[]} onUpload={vi.fn()} onClose={onClose} />);
+    render(<FileUploadModal run={startUpload([], vi.fn())} onClose={onClose} />);
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(await within(dialog).findByRole("button", { name: "Done" }));
     expect([within(dialog).getByText("0 / 0").textContent, onClose.mock.calls.length]).toEqual(["0 / 0", 1]);
@@ -385,11 +384,22 @@ describe("FileUploadModal", () => {
   it("stops after the file in flight when cancelled", async () => {
     let release: (o: UploadOutcome) => void = () => {};
     const onUpload = vi.fn(() => new Promise<UploadOutcome>((resolve) => (release = resolve)));
-    render(<FileUploadModal open files={[file("a.html"), file("b.html")]} onUpload={onUpload} onClose={() => {}} />);
+    render(<FileUploadModal run={startUpload([file("a.html"), file("b.html")], onUpload)} onClose={() => {}} />);
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     await act(async () => release({ status: "accepted", reason: null }));
     await within(dialog).findByText("Cancelled");
     expect([onUpload.mock.calls.length, within(dialog).getByText("1 / 2").textContent]).toEqual([1, "1 / 2"]);
+  });
+
+  it("stops after the file in flight when the screen showing it closes", async () => {
+    let release: (o: UploadOutcome) => void = () => {};
+    const onUpload = vi.fn(() => new Promise<UploadOutcome>((resolve) => (release = resolve)));
+    const run = startUpload([file("a.html"), file("b.html")], onUpload);
+    const view = render(<FileUploadModal run={run} onClose={() => {}} />);
+    await screen.findByRole("dialog");
+    view.unmount();
+    await act(async () => release({ status: "accepted", reason: null }));
+    expect([onUpload.mock.calls.length, run.state().results.length]).toEqual([1, 1]);
   });
 });
