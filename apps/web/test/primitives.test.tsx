@@ -216,6 +216,11 @@ describe("DatePicker", () => {
     expect([onValue.mock.calls, input.value]).toEqual([[["2025-01-05"]], "Jan 05, 2025"]);
   });
 
+  it("hints the format, not a real-looking date, while empty (UI-MISC)", () => {
+    render(<Dated initial="" onValue={() => {}} />);
+    expect(screen.getByRole("textbox", { name: "PO date" })).toHaveProperty("placeholder", "Mon DD, YYYY");
+  });
+
   it("puts text that is no date back to the current value on blur, and clears on empty", () => {
     const onValue = vi.fn();
     render(<Dated initial="2024-03-01" onValue={onValue} />);

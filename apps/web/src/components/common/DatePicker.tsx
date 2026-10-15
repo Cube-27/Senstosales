@@ -31,7 +31,7 @@ export function DatePicker({
   onChange,
   className,
   disabled,
-  placeholder = "Dec 22, 2019",
+  placeholder = "Mon DD, YYYY",
   "aria-label": ariaLabel,
   onBlur,
   onKeyDown,
