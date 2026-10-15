@@ -1,6 +1,7 @@
 // The PO, DC and invoice registers and the DC and invoice list CSVs (SPEC-13 §2), each with its catalog layout and
 // file name. Documents come a keyset page at a time with their lines (INV-99), are totalled with the domain (C2) and
-// written as they stand: no flag column, nothing clamped (INV-60, INV-61). Numbers go out to 2 dp (D-0260).
+// written as they stand: no flag column, nothing clamped (INV-60, INV-61). Quantities go out exact to 3 dp, amounts to
+// 2 dp, or 5 dp on a GEMC PO (A-12).
 import type { ListProgress, Money, Qty, SrvLineQty } from "@senstosales/domain";
 import { dcListProgress, dcListTotals, invoiceListProgress, srvLineShown, sumMoney, sumQty } from "@senstosales/domain";
 import type { Row } from "@senstosales/documents";
@@ -41,7 +42,7 @@ type DcPageRow = Awaited<ReturnType<typeof dcListPage>>[number];
 type InvoicePageRow = Awaited<ReturnType<typeof invoiceListPage>>[number];
 type InvoiceListRow = InvoicePageRow & { itemCount: number; qty: Qty } & ListProgress & { deliveredQty: Qty };
 
-const money = (m: Money | null) => (m === null ? null : moneyNumber(m));
+const money = (m: Money | null, gemc: boolean) => (m === null ? null : moneyNumber(m, { gemc }));
 const NONE = 0 as Qty;
 
 /** Quantities added by key with the domain; rows without a key are left out. */
@@ -142,7 +143,7 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
             poNumber: row.number,
             poDate: row.poDate,
             supplierName,
-            poValue: money(row.poValue),
+            poValue: money(row.poValue, row.isGemc),
             status: row.status,
             itemCount: row.itemCount,
             ordQty: qtyNumber(row.ordQty),
@@ -174,9 +175,9 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
         invoiceDate: row.invoiceDate,
         poNumber: row.poNumber,
         dcNumber: row.dcNumber,
-        total: money(row.total),
-        taxable: money(row.taxable),
-        tax: money(sumMoney([row.cgst, row.sgst, row.igst])),
+        total: money(row.total, row.isGemc),
+        taxable: money(row.taxable, row.isGemc),
+        tax: money(sumMoney([row.cgst, row.sgst, row.igst]), row.isGemc),
       }));
       return xlsxFile(EXPORTS.invoiceRegister, rows);
     },
@@ -194,7 +195,7 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
         poNumber: row.poNumber,
         consigneeName: row.consigneeName,
         status: row.status,
-        value: money(row.value),
+        value: money(row.value, row.isGemc),
         ordQty: qtyNumber(row.ordQty),
         dspQty: qtyNumber(row.dspQty),
         pendingQty: qtyNumber(row.pendingQty),
@@ -217,7 +218,7 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
         poNumber: row.poNumber,
         itemCount: row.itemCount,
         dspQty: qtyNumber(row.deliveredQty),
-        total: money(row.total),
+        total: money(row.total, row.isGemc),
         status: row.status,
         pendingQty: qtyNumber(row.pendingQty),
       }));

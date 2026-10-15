@@ -130,24 +130,12 @@ describe("table goldens", () => {
     expect(lots).toEqual(["4500102 M-210 L1", "4500101 M-110 L2", "4500101 M-120 L1", "4500101 M-110 L1"]);
   });
 
-  it("an empty export is the bare Report sheet: no header row, no page setup (EC-45)", () => {
-    expect(golden("po-register-empty.json")).toEqual({
-      fileName: "PO_Register.xlsx",
-      sheet: "Report",
-      widths: [],
-      pageSetup: {},
-      oddFooter: null,
-      styles: {},
-      merges: [],
-      rows: [],
-    });
+  it("an empty export keeps its header row, widths and page setup (EC-45, EXP-09)", () => {
+    const full = golden("po-register.json");
+    expect(golden("po-register-empty.json")).toEqual({ ...full, rows: full.rows.slice(0, 1) });
   });
 
-  it("writes numbers rounded to 2 dp and never as text", () => {
-    const numbers = TABLE_GOLDENS.flatMap(({ file }) => golden(file).rows.slice(1).flat()).filter(
-      (cell) => typeof cell === "number",
-    );
-    expect(numbers.filter((n) => Number(n.toFixed(TABLE.decimals)) !== n)).toEqual([]);
+  it("writes numbers as numbers, never as text", () => {
     expect(golden("dc-register.json").rows[1]).toEqual(["103", "2025-05-28", "4500102", "Example Works Unit", 1, 1.25]);
   });
 });

@@ -8,7 +8,7 @@ import { EXPORTS } from "@senstosales/documents/catalog";
 import type { IsoDate, Qty } from "@senstosales/domain";
 import { addDays, qtyToString, sumQty, TOL } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
-import { fmtDateDashed, foldRepeatedLines, qtyExactNumber, qtyNumber } from "@senstosales/schemas";
+import { fmtDateDashed, foldRepeatedLines, qtyNumber } from "@senstosales/schemas";
 import type { SQL } from "drizzle-orm";
 import { and, eq, gt, gte, lte, or } from "drizzle-orm";
 import type { z } from "zod";
@@ -83,7 +83,7 @@ const reconciliationCells = (r: ReturnType<typeof reportColumns>) => ({
 
 /** The TOTAL quantity: followed by the unit when every row has the same one (blank units ignored), as legacy. */
 const summaryTotal = (total: Qty, units: ReadonlySet<string>) =>
-  units.size === 1 ? `${qtyToString(total)} ${[...units][0]}` : qtyExactNumber(total);
+  units.size === 1 ? `${qtyToString(total)} ${[...units][0]}` : qtyNumber(total);
 
 export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
   /** Every item `where` keeps, in the query's sort, then `defaults`. */
@@ -168,7 +168,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
         gemcNumber: r.gemcNumbers.join(","),
         invoiceNumbers: r.invoices.map((i) => i.number).join(","),
         dcNumbers: r.dcs.map((d) => d.number).join(","),
-        dspQty: qtyExactNumber(r.dspQty),
+        dspQty: qtyNumber(r.dspQty),
       };
     });
     return { rows, total: () => summaryTotal(ordered, units) };

@@ -44,6 +44,7 @@ export const poRegisterPage = (db: Db, range: Range, page: KeysetPage) =>
         number: po.poNumber,
         poDate: po.poDate,
         poValue: po.poValue,
+        isGemc: po.isGemc,
         status: po.status,
         ordQty: po.ordQty,
         dateKey: poDateKey,
@@ -83,6 +84,7 @@ const dcPage = (db: Db, where: SQL | undefined, page: KeysetPage) =>
         number: dc.number,
         dcDate: dc.dcDate,
         poNumber: po.poNumber,
+        isGemc: po.isGemc,
         consigneeName: dc.consigneeName,
         numberKey: asNumber(dc.number),
       })
@@ -151,6 +153,7 @@ const invoicePage = (db: Db, where: SQL | undefined, page: KeysetPage) =>
         number: invoice.number,
         invoiceDate: invoice.invoiceDate,
         poNumber: po.poNumber,
+        isGemc: po.isGemc,
         dcId: invoice.dcId,
         dcNumber: dc.number,
         taxable: invoice.taxable,

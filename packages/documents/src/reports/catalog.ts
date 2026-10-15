@@ -23,14 +23,12 @@ const A4_FIT_WIDTH = {
 
 /**
  * The legacy generic list workbook, shared by the registers, the reconciliation report, export-selected and the
- * delivery tracker: one sheet named `Report`, a styled header row, then one row per record. Numbers are written
- * rounded to 2 dp with no number format (General); text, dates (`YYYY-MM-DD`) and codes as text; a missing value
- * is an empty cell. With no rows the workbook holds the empty `Report` sheet only: no header row, no page setup
- * (EC-45).
+ * delivery tracker: one sheet named `Report`, a styled header row, then one row per record. Numbers have no number
+ * format (General): quantities exact to 3 dp, amounts to 2 dp, or 5 on a GEMC PO (A-12); text, dates (`YYYY-MM-DD`)
+ * and codes as text; a missing value is an empty cell. With no rows the header row is still written (EC-45).
  */
 export const TABLE = {
   sheet: "Report",
-  decimals: 2,
   headerStyle: {
     font: { bold: true },
     border: box,
@@ -60,7 +58,6 @@ const table = <A extends unknown[]>(fileName: (...args: A) => string, columns: r
     pageSetup: TABLE.pageSetup,
     headerStyle: TABLE.headerStyle,
     oddFooter: TABLE.oddFooter,
-    bareWhenEmpty: true,
   } satisfies Sheet<string>,
 });
 

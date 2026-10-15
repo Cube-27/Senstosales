@@ -70,9 +70,8 @@ describe("GET /api/delivery-tracker/export", () => {
     expect(rows.slice(1).map(lotOfCells)).toEqual(["4500101 M-110 L1 2025-05-20"]);
   });
 
-  it("with nothing to list, writes the bare Report sheet (EC-45)", async () => {
-    const { rows, widths, pageSetup } = await exported("?q=nothing-matches");
-    expect({ rows, widths, pageSetup }).toEqual({ rows: [], widths: [], pageSetup: {} });
+  it("with nothing to list, writes the header row only (EC-45)", async () => {
+    expect(await exported("?q=nothing-matches")).toEqual({ ...golden, rows: golden.rows.slice(0, 1) });
   });
 
   it("rejects an invalid filter before writing anything", async () => {

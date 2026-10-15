@@ -28,28 +28,29 @@ function roundDiv(n: number, unit: number): number {
   return up * 2 >= unit ? floor + 1 : floor;
 }
 
-/** `n / unit` as a number to 2 dp, half up as {@link roundDiv}: what the legacy exports wrote for quantities and money. */
-const hundredthsNumber = (n: number, unit: number): number => roundDiv(n, unit / 100) / 100;
+/** GEMC amounts and rates show up to 5 dp, others up to 2 (A-12). */
+interface Precision {
+  readonly gemc: boolean;
+}
 
-/** A quantity as an export's number cell: `1.255` -> `1.26` (SPEC-13, legacy `round(x, 2)`). */
-export const qtyNumber = (q: Qty): number => hundredthsNumber(q, ONE_UNIT);
+/**
+ * A quantity as an export's number cell, exact to its 3 dp, so a fractional quantity is never rounded away:
+ * `12.345` -> `12.345`, `0.001` -> `0.001`.
+ */
+export const qtyNumber = (q: Qty): number => Number(qtyToString(q));
 
-/** A quantity as a number cell at its full 3 dp, as the pending summary writes it: `2.125` -> `2.125`. */
-export const qtyExactNumber = (q: Qty): number => Number(qtyToString(q));
-
-/** An amount as an export's number cell: `826.004` -> `826`. */
-export const moneyNumber = (m: Money): number => hundredthsNumber(m, ONE_RUPEE);
+/**
+ * An amount as an export's number cell: a GEMC amount exact to its 5 dp (A-12), others to 2 dp half up as legacy
+ * wrote them: `826.004` -> `826`.
+ */
+export const moneyNumber = (m: Money, { gemc }: Precision): number =>
+  gemc ? Number(moneyToString(m)) : roundDiv(m, ONE_RUPEE / 100) / 100;
 
 /** A count of records or items: `1234567` -> `"12,34,567"`. */
 export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-n))}` : groupIndian(String(n)));
 
 /** A quantity in whole units, as legacy shows every quantity: `2.5` -> `"3"` (EC-21). */
 export const fmtQty = (q: Qty): string => fmtCount(roundDiv(q, ONE_UNIT));
-
-/** GEMC amounts and rates show up to 5 dp, others up to 2 (A-12). */
-interface Precision {
-  readonly gemc: boolean;
-}
 
 /** A unit rate without the rupee sign (legacy rate cells draw it apart): `1234.50` -> `"1,234.5"`. */
 export function fmtRate(m: Money, { gemc }: Precision): string {
@@ -137,14 +138,14 @@ function rupeeWords(n: number): string {
 
 /**
  * The legacy invoice's amount in words: `1180.5` -> `"Rupees One Thousand One Hundred and Eighty and Paise Fifty
- * Only"`. Paise are rounded half up and can reach a hundred (`5.996` -> `"… and Paise One Hundred Only"`); legacy
- * could not write a thousand crore or more (EC-49).
+ * Only"`. Paise are rounded half up and a hundred of them carry into the rupees (`5.996` -> `"Rupees Six Only"`);
+ * legacy could not write a thousand crore or more (EC-49).
  */
 export function fmtAmountWords(m: Money): string {
-  const rem = m % ONE_RUPEE;
-  const paise = roundDiv(rem, ONE_RUPEE / 100);
-  const words = `Rupees ${rupeeWords((m - rem) / ONE_RUPEE)}`;
-  const paiseWords = paise > 0 ? ` and Paise ${rupeeWords(paise)}` : "";
+  // Rounded to whole paise first, so 99.5 paise or more carries into the rupees.
+  const paise = roundDiv(m, ONE_RUPEE / 100);
+  const words = `Rupees ${rupeeWords(Math.floor(paise / 100))}`;
+  const paiseWords = paise % 100 > 0 ? ` and Paise ${rupeeWords(paise % 100)}` : "";
   return `${words}${paiseWords} Only`;
 }
 

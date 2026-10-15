@@ -2,7 +2,7 @@
 // number of items (A-2, INV-69). Three item rows fit the template; more are inserted above its Total row.
 import type { GstPct, IsoDate, LineTax, Money, Qty } from "@senstosales/domain";
 import { invoiceTotals, moneyToString, pctToString, sumMoney, sumQty } from "@senstosales/domain";
-import { fmtAmountWords, fmtDate, fmtDateDashed, qtyExactNumber } from "@senstosales/schemas";
+import { fmtAmountWords, fmtDate, fmtDateDashed, qtyNumber } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
 import { documentFileName, insertRows, put, restyle, type Value } from "./layout.ts";
@@ -110,7 +110,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
       ["B", item.description || "No Description"],
       // No column stores packets; legacy printed 1 for every item.
       ["J", 1],
-      ["K", qtyExactNumber(item.qty)],
+      ["K", qtyNumber(item.qty)],
       ["L", amount(item.rate)],
       ["M", item.unit || "NO"],
       ["N", amount(item.taxable)],
@@ -129,7 +129,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
   const cells: Array<[string, number, Value]> = [
     ["B", totalRow, "Total"],
     ["J", totalRow, items.length],
-    ["K", totalRow, qtyExactNumber(sumQty(items.map((item) => item.qty)))],
+    ["K", totalRow, qtyNumber(sumQty(items.map((item) => item.qty)))],
     ["N", totalRow, amount(taxable)],
     ["P", totalRow, amount(cgst)],
     ["R", totalRow, amount(sgst)],
