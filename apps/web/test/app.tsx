@@ -58,7 +58,7 @@ export function stubApi(api: FakeApi): Call[] {
         ok: true,
         status: 200,
         headers: { get: (name: string) => (name.toLowerCase() === "content-disposition" ? disposition : null) },
-        arrayBuffer: async () => new TextEncoder().encode(answer.text).buffer,
+        arrayBuffer: () => Promise.resolve(new TextEncoder().encode(answer.text).buffer),
       };
     }
     const { status, body: json } = isReply(answer) ? answer : { status: 200, body: answer };

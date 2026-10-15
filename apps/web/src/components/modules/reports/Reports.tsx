@@ -98,7 +98,7 @@ interface ReportActionsProps {
 }
 
 /** The header's search, date range, Reset (kept in its slot, INV-71) and Download. */
-function ReportActions(p: ReportActionsProps) {
+function ReportActions(p: Readonly<ReportActionsProps>) {
   return (
     <div className="flex items-center gap-2">
       <Input

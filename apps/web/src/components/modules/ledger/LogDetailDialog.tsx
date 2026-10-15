@@ -14,7 +14,7 @@ export interface LogDetailDialogProps {
 }
 
 /** The legacy Log Details dialog: the event, when and by whom, and the row's changed values. */
-export function LogDetailDialog({ entry, onClose }: LogDetailDialogProps) {
+export function LogDetailDialog({ entry, onClose }: Readonly<LogDetailDialogProps>) {
   return (
     <Dialog open={entry !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl gap-0 p-0">

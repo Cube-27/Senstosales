@@ -71,18 +71,24 @@ function toggled(selected: ReadonlySet<string>, key: string): ReadonlySet<string
   return next;
 }
 
-/** A list query's total, state and error as the table takes them. */
-export const tableQuery = (q: {
+interface ListQuery {
   readonly data?: { readonly total: number } | undefined;
   readonly isError: boolean;
   readonly isFetching: boolean;
   readonly error: Error | null;
-}) =>
-  ({
-    total: q.data?.total ?? 0,
-    state: q.isError ? "error" : q.isFetching ? "loading" : "ready",
-    error: q.error?.message,
-  }) as const;
+}
+
+function queryState(q: ListQuery): DataTableProps<unknown>["state"] {
+  if (q.isError) return "error";
+  return q.isFetching ? "loading" : "ready";
+}
+
+/** A list query's total, state and error as the table takes them. */
+export const tableQuery = (q: ListQuery) => ({
+  total: q.data?.total ?? 0,
+  state: queryState(q),
+  error: q.error?.message,
+});
 
 /** Every body row is this tall, so a page's body is `pageSize × ROW_HEIGHT` whatever it holds. */
 const ROW_HEIGHT = 40;
@@ -161,7 +167,7 @@ function SelectAll<Row>({ selection, rows }: { readonly selection: Selection<Row
     <th scope="col" className="h-9 px-3">
       <Checkbox
         aria-label="Select all rows on this page"
-        checked={all ? true : count > 0 ? "indeterminate" : false}
+        checked={all || (count > 0 && "indeterminate")}
         disabled={keys.length === 0}
         onCheckedChange={toggle}
         className="size-4 align-middle"

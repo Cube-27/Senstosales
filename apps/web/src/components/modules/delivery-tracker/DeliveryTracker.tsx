@@ -107,7 +107,7 @@ const STATUS_CARDS = [
 ] as const;
 
 /** The stat cards; the three counts double as status toggles. */
-function TrackerStats({ search, onToggle }: { readonly search: TrackerSearch; onToggle(s: TrackerStatus): void }) {
+function TrackerStats({ search, onToggle }: Readonly<{ search: TrackerSearch; onToggle(s: TrackerStatus): void }>) {
   const stats = useQuery(apiQuery("deliveryTracker.stats", { query: trackerFilters(search) })).data;
   return (
     <StatCardRow>

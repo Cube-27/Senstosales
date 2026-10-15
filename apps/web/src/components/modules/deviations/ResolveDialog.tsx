@@ -14,7 +14,7 @@ export interface ResolveDialogProps {
  * Resolve (acknowledge) one flag with an optional note (SPEC-17 §2, INV-59): the flag is marked resolved and nothing
  * else changes. The list is read again afterwards; a failure keeps the dialog open with the server's message.
  */
-export function ResolveDialog({ flag, onClose }: ResolveDialogProps) {
+export function ResolveDialog({ flag, onClose }: Readonly<ResolveDialogProps>) {
   const invalidate = useInvalidate();
   const { toast } = useToast();
   const [note, setNote] = useState("");

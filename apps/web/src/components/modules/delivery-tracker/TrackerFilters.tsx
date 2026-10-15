@@ -41,7 +41,7 @@ function Range({ label, icon: Icon, children: [from, to] }: RangeProps) {
  * More Filters: the legacy advanced panel (due date, entry date and lot value ranges, Clear All Filters). It opens as
  * a popover over the list, so opening it moves nothing (C8), where the legacy panel pushed the table down.
  */
-export function TrackerFilters({ search, onChange, onClear, canClear }: TrackerFiltersProps) {
+export function TrackerFilters({ search, onChange, onClear, canClear }: Readonly<TrackerFiltersProps>) {
   const [open, setOpen] = useState(false);
   const date = (key: "dueFrom" | "dueTo" | "entryFrom" | "entryTo", label: string, placeholder: string) => (
     <DatePicker

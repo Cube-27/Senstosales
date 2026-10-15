@@ -33,7 +33,7 @@ export interface SmartFilterChipsProps {
 }
 
 /** The tracker's quick filter chips: each a toggle; Clear all clears every filter. */
-export function SmartFilterChips({ isActive, onToggle, onClear }: SmartFilterChipsProps) {
+export function SmartFilterChips({ isActive, onToggle, onClear }: Readonly<SmartFilterChipsProps>) {
   const active = CHIPS.map(isActive);
   return (
     <div className="flex w-full min-w-0 items-center gap-2 border-b border-border px-4 py-2">

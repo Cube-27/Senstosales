@@ -13,7 +13,7 @@ export interface DownloadButtonProps {
 }
 
 /** The legacy screens' green Excel download button. */
-export function DownloadButton({ busy, onClick, className, children }: DownloadButtonProps) {
+export function DownloadButton({ busy, onClick, className, children }: Readonly<DownloadButtonProps>) {
   return (
     <Button
       size="sm"
