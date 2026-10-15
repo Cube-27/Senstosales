@@ -40,11 +40,25 @@ export const invoicesNumbered = (db: Db, supplierId: string, numbers: readonly s
       .where(and(eq(invoice.supplierId, supplierId), inArray(invoice.number, [...numbers]))),
   );
 
-/** A DC's lines with their PO item's rate: what a DC-sourced invoice must repeat (INV-29). */
+/**
+ * A DC's lines in its order with their PO item's rate, what a DC-sourced invoice must repeat (INV-29), and the item's
+ * document columns and uninvoiced quantity, which the preview shows.
+ */
 export const dcLinesToInvoice = (db: Db, dcId: string) =>
   db.query(
     db.build
-      .select({ dcItemId: dcItem.id, poItemId: dcItem.poItemId, qty: dcItem.dspQty, poRate: poItem.rate })
+      .select({
+        dcItemId: dcItem.id,
+        poItemId: dcItem.poItemId,
+        qty: dcItem.dspQty,
+        poRate: poItem.rate,
+        poItemNo: poItem.poItemNo,
+        materialCode: poItem.materialCode,
+        description: poItem.description,
+        drawingNo: poItem.drawingNo,
+        unit: poItem.unit,
+        uninvoicedQty: poItem.uninvoicedQty,
+      })
       .from(dcItem)
       .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
       .where(eq(dcItem.dcId, dcId))

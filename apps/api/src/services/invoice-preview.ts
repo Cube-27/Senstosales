@@ -4,17 +4,17 @@
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
-import { NotFoundError } from "../errors.ts";
+import { dcHasInvoice, dcNotFound, NotFoundError } from "../errors.ts";
 import { findDc, invoicesOfDcs } from "../repositories/dc.ts";
 import { dcLinesToInvoice } from "../repositories/invoice.ts";
 import { findPoRow, itemsOfPo } from "../repositories/po-list.ts";
 import { findSupplier, supplierSnapshotOf } from "../repositories/supplier.ts";
 import type { SupplierDeps } from "./index.ts";
-import { dcHasInvoice } from "./invoice.ts";
 import { gstRatesOf } from "./settings.ts";
 
 type Header = z.output<(typeof routes)["invoice.previewPo"]["response"]>["header"];
 type Item = Awaited<ReturnType<typeof itemsOfPo>>[number];
+type DcLine = Awaited<ReturnType<typeof dcLinesToInvoice>>[number];
 
 /** Header fields neither the PO nor the DC fills; the supplier's details come from the supplier row. */
 const BLANK_HEADER = {
@@ -39,27 +39,21 @@ const BLANK_HEADER = {
   remarks: null,
 } satisfies Omit<Header, keyof ReturnType<typeof supplierSnapshotOf>>;
 
-/** A preview line: the PO item as documents show it, the DC line if any, and the item's uninvoiced quantity. */
-const lineOf = (item: Item, dcLine: { dcItemId: string; qty: Item["ordQty"] } | null) => ({
-  poItemNo: item.poItemNo,
-  materialCode: item.materialCode,
-  description: item.description,
-  drawingNo: item.drawingNo,
-  unit: item.unit,
-  rate: item.rate,
-  poItemId: item.id,
-  dcItemId: dcLine?.dcItemId ?? null,
-  qty: dcLine?.qty ?? null,
-  uninvoicedQty: item.uninvoicedQty,
+/** The PO item columns a preview line shows. */
+const itemInfo = ({ poItemNo, materialCode, description, drawingNo, unit }: Item | DcLine) => ({
+  poItemNo,
+  materialCode,
+  description,
+  drawingNo,
+  unit,
 });
 
 export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db" | "supplierId">) {
-  /** The PO, its items, the GST rates and the header every preview starts from. */
+  /** The PO, the GST rates and the header every preview starts from: the legacy PO-sourced defaults. */
   async function base(poId: string) {
     const supplier = await supplierId.require();
-    const [row, items, rates, supplierRow] = await Promise.all([
+    const [row, rates, supplierRow] = await Promise.all([
       findPoRow(db, poId),
-      itemsOfPo(db, poId),
       gstRatesOf(db, supplier),
       findSupplier(db),
     ]);
@@ -69,20 +63,24 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
       ...supplierSnapshotOf(supplierRow),
       buyersOrderDate: row.poDate,
       gemcNumber: row.gemcNumber,
+      remarks: row.remarks,
     };
-    return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, row, items, header, ...rates };
+    return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, header, ...rates };
   }
 
   return {
     /** Every item of the PO with no qty: the user types each line's quantity (INV-31). */
     async fromPo(poId: string) {
-      const { row, items, header, ...rest } = await base(poId);
-      return {
-        ...rest,
-        dc: null,
-        header: { ...header, remarks: row.remarks },
-        lines: items.map((i) => lineOf(i, null)),
-      };
+      const [preview, items] = await Promise.all([base(poId), itemsOfPo(db, poId)]);
+      const lines = items.map((item) => ({
+        ...itemInfo(item),
+        rate: item.rate,
+        poItemId: item.id,
+        dcItemId: null,
+        qty: null,
+        uninvoicedQty: item.uninvoicedQty,
+      }));
+      return { ...preview, dc: null, lines };
     },
 
     /** The DC's lines at the DC qty, in the DC's order, as the create stores them; 409 once the DC has an invoice. */
@@ -92,12 +90,11 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
         dcLinesToInvoice(db, dcId),
         invoicesOfDcs(db, [dcId]),
       ]);
-      if (stored === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
+      if (stored === undefined) throw dcNotFound();
       if (invoices.has(dcId)) throw dcHasInvoice(stored.number);
-      const { row: _, items, header, ...rest } = await base(stored.poId);
-      const byId = new Map(items.map((i) => [i.id, i]));
+      const { header, ...preview } = await base(stored.poId);
       return {
-        ...rest,
+        ...preview,
         dc: { id: stored.id, number: stored.number, date: stored.dcDate, financialYear: stored.financialYear },
         header: {
           ...header,
@@ -109,7 +106,14 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
           transporter: stored.transporter,
           remarks: stored.remarks,
         },
-        lines: dcLines.map((line) => lineOf(byId.get(line.poItemId)!, line)),
+        lines: dcLines.map((line) => ({
+          ...itemInfo(line),
+          rate: line.poRate,
+          poItemId: line.poItemId,
+          dcItemId: line.dcItemId,
+          qty: line.qty,
+          uninvoicedQty: line.uninvoicedQty,
+        })),
       };
     },
   };

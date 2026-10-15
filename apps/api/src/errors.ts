@@ -68,6 +68,12 @@ export function linesError(issues: readonly Issue[], bodyPath = (path: string) =
   return new ValidationError(issues[0]!.code, issues[0]!.message, { fields });
 }
 
+export const dcNotFound = (): NotFoundError => new NotFoundError("dc-not-found", "This DC was not found.");
+
+/** INV-28: a DC has one invoice. */
+export const dcHasInvoice = (dcNumber: string): ConflictError =>
+  new ConflictError("dc-has-invoice", `DC ${dcNumber} already has an invoice.`);
+
 /** An edit that sent a version someone else has since changed (INV-95, D-0124). */
 export const staleVersion = (): ConflictError =>
   new ConflictError("stale-version", "Someone else changed this. Reload it and try again.");

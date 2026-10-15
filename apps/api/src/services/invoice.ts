@@ -16,7 +16,7 @@ import {
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
-import { ConflictError, fieldError, linesError, NotFoundError } from "../errors.ts";
+import { ConflictError, dcHasInvoice, dcNotFound, fieldError, linesError, NotFoundError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import { findDc } from "../repositories/dc.ts";
 import { dcLinesToInvoice, findInvoice, invoiceCollision, invoicesNumbered } from "../repositories/invoice.ts";
@@ -35,14 +35,17 @@ type DirectInvoiceCreate = Extract<InvoiceCreate, { kind: "direct" }>;
 /** A line before tax. */
 type Line = { poItemId: string; dcItemId: string | null; qty: Qty; rate: Money };
 
-/** Where an invoice's lines come from: its PO, its DC if any, and the lines checked against them. */
+/**
+ * Where an invoice comes from: its PO, its DC if any, and its lines. A PO-direct invoice's lines are checked against
+ * the PO's items, which are read with the snapshot after the PO's version, so `lines` runs then.
+ */
 type Source = { poId: string; dc: { id: string; number: string } | null; lines: () => Promise<Line[]> };
 
 export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
   /** INV-29: exactly the DC's lines at the DC qty and PO rate, else 400; checked before the PO is read. */
   async function dcSource(body: DcInvoiceCreate): Promise<Source> {
     const [stored, dcLines] = await Promise.all([findDc(db, body.dcId), dcLinesToInvoice(db, body.dcId)]);
-    if (stored === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
+    if (stored === undefined) throw dcNotFound();
     const issues = validateDcInvoiceLines({ dcLines, lines: body.lines });
     if (issues.length > 0) throw linesError(issues);
     // The lines equal the DC's (INV-29), so they are built from the DC's in its order.
@@ -51,16 +54,17 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
   }
 
   /** INV-30, INV-31: lines on items of the PO, at least one, each qty > 0, at the PO item's rate. */
-  function directSource(body: DirectInvoiceCreate): Source {
-    async function lines() {
+  const directSource = (body: DirectInvoiceCreate): Source => ({
+    poId: body.poId,
+    dc: null,
+    async lines() {
       const items = await itemsOfPo(db, body.poId);
       const issues = validateDirectInvoiceLines({ poItemIds: new Set(items.map((i) => i.id)), lines: body.lines });
       if (issues.length > 0) throw linesError(issues);
       const rates = new Map(items.map((i) => [i.id, i.rate]));
       return body.lines.map(({ poItemId, qty }) => ({ poItemId, dcItemId: null, qty, rate: rates.get(poItemId)! }));
-    }
-    return { poId: body.poId, dc: null, lines };
-  }
+    },
+  });
 
   /**
    * One attempt: reads the source and its PO, then builds and commits the batch. A retry reads them again, so a DC
@@ -90,7 +94,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       supplierId: supplier,
       invoiceId: id,
       ...line,
-      ...invoiceLineTax({ qty: line.qty, rate: line.rate, cgstPct, sgstPct, gemc: row.isGemc }),
+      ...invoiceLineTax({ ...line, cgstPct, sgstPct, gemc: row.isGemc }),
     }));
     const totals = invoiceTotals(itemRows);
     const { kind, lines: _, ...header } = body;
@@ -178,7 +182,3 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
 }
 
 export type InvoiceService = ReturnType<typeof invoiceService>;
-
-/** INV-28: a DC has one invoice. */
-export const dcHasInvoice = (dcNumber: string) =>
-  new ConflictError("dc-has-invoice", `DC ${dcNumber} already has an invoice.`);
