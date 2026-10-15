@@ -119,7 +119,7 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
 
   it("saves the DC's lines after confirming and opens the invoice", async () => {
     let body: unknown;
-    api({
+    const calls = api({
       "POST /api/invoice": (call) => {
         body = call.body;
         return invoice();
@@ -136,6 +136,10 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
     fireEvent.click(saveButton());
     fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/invoice/${INVOICE_ID}`));
+    const paths = () => calls.map((c) => `${c.method} ${c.path}`);
+    await waitFor(() => expect(paths()).toContain(`GET /api/invoice/${INVOICE_ID}`));
+    // The DC's preview is not asked again once the DC has its invoice: it would be refused with a 409 (UI-MISC).
+    expect(paths().filter((p) => p === `GET /api/invoice/preview/dc/${DC_ID}`)).toHaveLength(1);
     expect(body).toEqual({
       ...HEADER,
       number: "INV-17",

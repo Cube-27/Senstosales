@@ -340,9 +340,9 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
     setSaving(true);
     try {
       const invoice = await api.request("invoice.create", { body });
-      // Leave first: the refetches (the source page, the number check) need not hold the navigation.
-      void navigate({ to: "/invoice/$id", params: { id: invoice.id } });
-      void invalidate("invoice", "dc", "po");
+      // Leave first, then refresh: this page's preview is gone by then, so it is not asked again for a DC that now has
+      // its invoice (a 409).
+      void navigate({ to: "/invoice/$id", params: { id: invoice.id } }).then(() => invalidate("invoice", "dc", "po"));
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
       check.refused(e, { number: body.number, date: body.invoiceDate });
