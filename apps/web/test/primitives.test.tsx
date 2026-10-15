@@ -217,6 +217,21 @@ describe("Autocomplete", () => {
     expect(box.getAttribute("aria-expanded")).toBe("false");
   });
 
+  it("picks an option on press and keeps the field focused", () => {
+    const onChange = vi.fn();
+    render(<Autocomplete aria-label="Buyer" options={OPTIONS} value="" onChange={onChange} />);
+    const box = screen.getByRole("combobox", { name: "Buyer" });
+    box.focus();
+    fireEvent.focus(box);
+    const pressed = fireEvent.mouseDown(screen.getByRole("option", { name: /^Alpha/ }));
+    expect([pressed, onChange.mock.calls, box.getAttribute("aria-expanded"), document.activeElement === box]).toEqual([
+      false,
+      [["a", OPTIONS[0]]],
+      "false",
+      true,
+    ]);
+  });
+
   it("shows the chosen label, reports searches and clears with the named button", () => {
     const onChange = vi.fn();
     const onSearch = vi.fn();

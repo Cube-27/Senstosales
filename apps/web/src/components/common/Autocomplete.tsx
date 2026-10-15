@@ -161,9 +161,12 @@ function OptionList({ id, "aria-label": ariaLabel, open, options, value, active,
             i === active && "bg-primary/10",
             option.value === value && "bg-primary/5 text-accent",
           )}
-          // Keeps the field focused, so blur does not close the list before the click lands.
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => onPick(option)}
+          // Picks on press and keeps the field focused, so blur does not close the list first; the keyboard picks
+          // through the field (aria-activedescendant).
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onPick(option);
+          }}
         >
           <span className="flex flex-col gap-0.5">
             <span className="role-body-text">{option.label}</span>

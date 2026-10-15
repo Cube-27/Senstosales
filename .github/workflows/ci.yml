@@ -37,7 +37,9 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
-        run: node tools/checks/src/changes.ts "$BASE" "$HEAD"
+        # On a push BASE is empty: no paths, so everything runs; a failed diff runs everything too.
+        run: |
+          if [ -n "$BASE" ]; then git diff --name-only "$BASE...$HEAD" || true; fi | node tools/checks/src/changes.ts
 
   # Format, lint (C15 guardrails, C12/C3 boundaries), the INV-90 language check, the INV-64 status-source check, the
   # INV-84 migration SQL lint and D1 dialect step (every migration applied on a local in-memory D1), typecheck, tests
