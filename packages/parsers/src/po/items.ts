@@ -1,6 +1,8 @@
 // PO items and their lots, read from the item table (SPEC-06 §2). The row rules are the legacy parser's: an item row
 // starts with a PO ITM number, a row with LOT NO and DELY QTY adds a lot to the item above, and any other row is
-// description text for the item a 1-2 digit cell names, else the item above.
+// description text for the item a 1-2 digit cell names, else the item above. Rows are kept as printed (A2-10): an item
+// printed again (one row per lot) keeps its first row's values, every lot row is stored with its raw cells, and PO ITM
+// 0 or LOT NO 0 is kept and flagged downstream, never refused.
 import { parsePageDate } from "../dates.ts";
 import { fail, readMoney, readQty } from "../fields.ts";
 import { mapColumnsByHeader } from "../html.ts";
@@ -14,11 +16,13 @@ type PoLot = PoItem["lots"][number];
 const HEADERS = {
   poItemNo: "PO ITM",
   materialCode: "MATERIAL CODE",
+  mtrlCat: "MTRL CAT",
   unit: "UNIT",
   rate: "PO RATE",
   ordQty: "ORD QTY",
   rcdQty: "RCD QTY",
   rejQty: "REJ QTY",
+  itemValue: "ITEM VALUE",
   lotNo: "LOT NO",
   delyQty: "DELY QTY",
   delyDate: "DELY DATE",
@@ -38,12 +42,11 @@ const DRAWING = /(?:DRG|DRAWING)[ .-]*(?:NO[.-]*\s*)?(?::\s*)?([A-Z0-9][A-Z0-9./
 const RUN_IN = /^(?:ITEM|VAR|REV)/i;
 const WHOLE = /^\d+$/;
 
-/** A whole number above 0 that reads exactly: one past 2^53 would be rounded and could match another lot. */
-const isLotNumber = (text: string): boolean =>
-  WHOLE.test(text) && Number.isSafeInteger(Number(text)) && Number(text) > 0;
+/** A whole number that reads exactly: one past 2^53 would be rounded and could match another lot. */
+const isLotNumber = (text: string): boolean => WHOLE.test(text) && Number.isSafeInteger(Number(text));
 
-/** One table row, read by column; a column the table lacks reads as "". */
-type Cells = (column: Column) => string;
+/** One table row, read by column; a column the table lacks reads as "". `raw` is the row by header text. */
+type Cells = ((column: Column) => string) & { raw: Record<string, string> };
 
 export function parsePoItems(page: Page): ParseResult<PoItem[]> {
   const rows = itemTable(page);
@@ -55,11 +58,15 @@ export function parsePoItems(page: Page): ParseResult<PoItem[]> {
   const hasRej = columns.rejQty !== undefined;
   const items: PoItem[] = [];
   let current: PoItem | undefined;
+  const header = rows[0] ?? [];
   for (const row of rows.slice(1)) {
-    const cells: Cells = (column) => {
-      const index = columns[column];
-      return index === undefined ? "" : (row[index] ?? "");
-    };
+    const cells: Cells = Object.assign(
+      (column: Column) => {
+        const index = columns[column];
+        return index === undefined ? "" : (row[index] ?? "");
+      },
+      { raw: Object.fromEntries(header.map((label, i) => [label, row[i] ?? ""])) },
+    );
     if (WHOLE.test(cells("poItemNo"))) {
       const item = readItemRow(cells, items, hasRej);
       if (!item.ok) return item;
@@ -84,30 +91,24 @@ function itemTable(page: Page): string[][] | undefined {
   return undefined;
 }
 
-/** A new item, or a repeated item row: its lot is added if new and the larger ordered quantity kept (legacy). */
+/** A new item, or the same item printed again: the item keeps its first row's values, and the row's lot is added. */
 function readItemRow(cells: Cells, items: PoItem[], hasRej: boolean): ParseResult<PoItem> {
   const text = cells("poItemNo");
   const poItemNo = Number(text);
   // A number past 2^53 would be read rounded and could match another item.
-  const whole = Number.isSafeInteger(poItemNo);
-  const where = `item ${whole ? poItemNo : text}`;
-  if (!whole || poItemNo === 0) return fail("bad-number", `${where}, PO ITM is not an item number`, `${where}, PO ITM`);
+  const where = `item ${Number.isSafeInteger(poItemNo) ? poItemNo : text}`;
+  if (!Number.isSafeInteger(poItemNo)) {
+    return fail("bad-number", `${where}, PO ITM is not an item number`, `${where}, PO ITM`);
+  }
   const existing = items.find((item) => item.poItemNo === poItemNo);
-  const item = existing ? mergeOrdQty(existing, cells, where) : readItem(cells, poItemNo, where, hasRej);
+  const item = existing ? { ok: true as const, value: existing } : readItem(cells, poItemNo, where, hasRej);
   if (!item.ok) return item;
   if (!existing) items.push(item.value);
   if (cells("lotNo") === "") return item;
   const lot = readLot(cells, where);
   if (!lot.ok) return lot;
-  if (!item.value.lots.some((l) => l.lotNo === lot.value.lotNo)) item.value.lots.push(lot.value);
+  item.value.lots.push(lot.value);
   return item;
-}
-
-function mergeOrdQty(item: PoItem, cells: Cells, where: string): ParseResult<PoItem> {
-  const ordQty = readQty(cells("ordQty"), `${where}, ORD QTY`);
-  if (!ordQty.ok) return ordQty;
-  if (ordQty.value > item.ordQty) item.ordQty = ordQty.value;
-  return { ok: true, value: item };
 }
 
 function readItem(cells: Cells, poItemNo: number, where: string, hasRej: boolean): ParseResult<PoItem> {
@@ -122,6 +123,10 @@ function readItem(cells: Cells, poItemNo: number, where: string, hasRej: boolean
   // An empty received or rejected cell is 0, as the legacy parser read it.
   const rcdQty = readQty(cells("rcdQty") || "0", `${where}, RCD QTY`);
   if (!rcdQty.ok) return rcdQty;
+  const valueText = cells("itemValue");
+  const itemValue =
+    valueText === "" ? { ok: true as const, value: null } : readMoney(valueText, `${where}, ITEM VALUE`);
+  if (!itemValue.ok) return itemValue;
   // Null when the page has no REJ QTY column.
   const rejQty = hasRej ? readQty(cells("rejQty") || "0", `${where}, REJ QTY`) : { ok: true as const, value: null };
   if (!rejQty.ok) return rejQty;
@@ -133,9 +138,11 @@ function readItem(cells: Cells, poItemNo: number, where: string, hasRej: boolean
       description: "",
       drawingNo: null,
       unit: cells("unit"),
+      mtrlCat: cells("mtrlCat") || null,
       ordQty: ordQty.value,
       rate: rate.value,
       rcdQty: rcdQty.value,
+      itemValue: itemValue.value,
       rejQty: rejQty.value,
       lots: [],
     },
@@ -157,9 +164,7 @@ function readFollowingRow(
   if (cells("lotNo") !== "" && cells("delyQty") !== "") {
     const lot = readLot(cells, `item ${current.poItemNo}`);
     if (!lot.ok) return lot;
-    const index = current.lots.findIndex((l) => l.lotNo === lot.value.lotNo);
-    if (index === -1) current.lots.push(lot.value);
-    else if (lot.value.delyQty > 0) current.lots[index] = lot.value;
+    current.lots.push(lot.value);
     return { ok: true, value: current };
   }
   appendDescription(row, items, current);
@@ -199,6 +204,7 @@ function readLot(cells: Cells, item: string): ParseResult<PoLot> {
       entryAllowDate: entryAllow?.ok ? entryAllow.value : null,
       entryAllowNote: entryAllow && !entryAllow.ok ? entryText : null,
       destCode: cells("destCode") || null,
+      rawRow: cells.raw,
     },
   };
 }
@@ -207,7 +213,8 @@ function readLot(cells: Cells, item: string): ParseResult<PoLot> {
 function drawingNo(description: string): string | null {
   const found = new Set<string>();
   for (const match of description.matchAll(DRAWING)) {
-    const token = drawingToken(match[1] ?? "", description[match.index + match[0].length]);
+    // A full stop after the number ends the sentence; it is not part of the number.
+    const token = drawingToken(match[1] ?? "", description[match.index + match[0].length])?.replace(/\.+$/, "");
     if (token !== undefined && token.length > 4) found.add(token);
   }
   // Code-unit order, as the legacy parser sorted.

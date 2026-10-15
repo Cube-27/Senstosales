@@ -22,9 +22,11 @@
       "description": "SPRING WASHER M16",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "300",
       "rate": "85",
       "rcdQty": "150",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-07-31",
           "entryAllowDate": "2023-08-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN300010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "85.00",
+            "ORD QTY": "300.000",
+            "RCD QTY": "150.000",
+            "LOT NO": "1",
+            "DELY QTY": "100.000",
+            "DELY DATE": "31/07/2023",
+            "ENTRY ALLOW DATE": "15/08/2023",
+            "DEST CODE": "11"
+          }
         },
         {
           "lotNo": 2,
@@ -41,7 +57,21 @@
           "delyDate": "2023-08-31",
           "entryAllowDate": "2023-09-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "LOT NO": "2",
+            "DELY QTY": "100.000",
+            "DELY DATE": "31/08/2023",
+            "ENTRY ALLOW DATE": "15/09/2023",
+            "DEST CODE": "11"
+          }
         },
         {
           "lotNo": 3,
@@ -49,7 +79,21 @@
           "delyDate": "2023-09-30",
           "entryAllowDate": "2023-10-15",
           "entryAllowNote": null,
-          "destCode": "12"
+          "destCode": "12",
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "LOT NO": "3",
+            "DELY QTY": "100.000",
+            "DELY DATE": "30/09/2023",
+            "ENTRY ALLOW DATE": "15/10/2023",
+            "DEST CODE": "12"
+          }
         }
       ]
     },
@@ -59,9 +103,11 @@
       "description": "PVC SLEEVE 20 MM",
       "drawingNo": null,
       "unit": "MTR",
+      "mtrlCat": "1",
       "ordQty": "500",
       "rate": "15.75",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -70,7 +116,21 @@
           "delyDate": "2023-07-31",
           "entryAllowDate": "2023-08-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN300020",
+            "MTRL CAT": "1",
+            "UNIT": "MTR",
+            "PO RATE": "15.75",
+            "ORD QTY": "500.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "250.000",
+            "DELY DATE": "31/07/2023",
+            "ENTRY ALLOW DATE": "15/08/2023",
+            "DEST CODE": "11"
+          }
         },
         {
           "lotNo": 2,
@@ -78,7 +138,21 @@
           "delyDate": "2023-09-30",
           "entryAllowDate": "2023-10-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "LOT NO": "2",
+            "DELY QTY": "250.000",
+            "DELY DATE": "30/09/2023",
+            "ENTRY ALLOW DATE": "15/10/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

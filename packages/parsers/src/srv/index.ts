@@ -1,50 +1,44 @@
-// `parseSrv` (SPEC-06 §4.1): one SRV file holds every SRV of one PO. Rows are grouped by SRV number; an item key
-// `(po_item_no, lot_no, srv_item_no)` seen twice in one SRV fails the whole file (A2-10, INV-50).
+// `parseSrv` (SPEC-06 §4.1): one SRV file holds every SRV of one PO. Rows are grouped by SRV number and numbered in
+// file order within their SRV, so rows whose page keys repeat are all kept (A2-10). A row that cannot be read fails
+// its SRV only: the file's other SRVs are still read (A2-10, as legacy).
 import { loadPage } from "../html.ts";
-import type { ParseResult, SrvDocument } from "../types.ts";
-import { isDataRow, readRow, srvTables } from "./table.ts";
+import type { ParseResult, SrvDocument, SrvFailure, SrvFile } from "../types.ts";
+import { isDataRow, readRow, srvNumberOf, srvTables } from "./table.ts";
 import type { SrvTable } from "./table.ts";
 
-type Group = { srv: SrvDocument; keys: Set<string> };
+type State = { srvs: Map<string, SrvDocument>; failed: Map<string, SrvFailure>; poNumber?: string };
 
-/** At least one SRV, so a caller can read the file's PO number from the first. */
-export function parseSrv(html: string): ParseResult<[SrvDocument, ...SrvDocument[]]> {
-  const groups = new Map<string, Group>();
-  for (const table of srvTables(loadPage(html))) {
-    const added = addRows(table, groups);
-    if (!added.ok) return added;
-  }
-  const [first, ...rest] = [...groups.values()].map((group) => group.srv);
-  return first
-    ? { ok: true, value: [first, ...rest] }
+/** At least one SRV read, so a caller can read the file's PO number from the first. */
+export function parseSrv(html: string): ParseResult<SrvFile> {
+  const state: State = { srvs: new Map(), failed: new Map() };
+  for (const table of srvTables(loadPage(html))) addRows(table, state);
+  const [first, ...rest] = state.srvs.values();
+  const failed = [...state.failed.values()];
+  if (first) return { ok: true, value: { srvs: [first, ...rest], failed } };
+  return failed[0]
+    ? { ok: false, error: failed[0].error }
     : { ok: false, error: { code: "no-srv-table", message: "The page has no SRV table with rows" } };
 }
 
-function addRows(table: SrvTable, groups: Map<string, Group>): ParseResult<void> {
+function addRows(table: SrvTable, state: State): void {
   for (const [index, row] of table.rows.entries()) {
     if (!isDataRow(table, row)) continue;
-    const rowNo = index + 2;
-    const read = readRow(table, row, rowNo, groups.values().next().value?.srv.poNumber);
-    if (!read.ok) return read;
+    const srvNumber = srvNumberOf(table, row);
+    if (state.failed.has(srvNumber)) continue;
+    const read = readRow(table, row, index + 2, state.poNumber);
+    if (!read.ok) {
+      state.srvs.delete(srvNumber);
+      state.failed.set(srvNumber, { srvNumber, error: read.error });
+      continue;
+    }
     const { item, ...ids } = read.value;
-    let group = groups.get(ids.srvNumber);
-    if (!group) {
-      group = newGroup(table, row, ids);
-      groups.set(ids.srvNumber, group);
+    state.poNumber ??= ids.poNumber;
+    let srv = state.srvs.get(srvNumber);
+    if (!srv) {
+      // An SRV's date and raw header are its first row's.
+      srv = { ...ids, rawHeader: item.rawRow, items: [] };
+      state.srvs.set(srvNumber, srv);
     }
-    const key = `${item.poItemNo}/${item.lotNo}/${item.srvItemNo}`;
-    if (group.keys.has(key)) {
-      const message = `SRV ${ids.srvNumber} has item ${item.poItemNo}, lot ${item.lotNo}, SRV item ${item.srvItemNo} more than once`;
-      return { ok: false, error: { code: "duplicate-srv-item-key", message, location: `row ${rowNo}` } };
-    }
-    group.keys.add(key);
-    group.srv.items.push(item);
+    srv.items.push({ rowNo: srv.items.length + 1, ...item });
   }
-  return { ok: true, value: undefined };
 }
-
-/** An SRV's date and raw header are its first row's. */
-const newGroup = (table: SrvTable, row: string[], ids: Omit<SrvDocument, "rawHeader" | "items">): Group => ({
-  srv: { ...ids, rawHeader: Object.fromEntries(table.header.map((label, i) => [label, row[i] ?? ""])), items: [] },
-  keys: new Set(),
-});

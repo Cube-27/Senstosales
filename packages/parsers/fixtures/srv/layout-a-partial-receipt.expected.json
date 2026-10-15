@@ -23,18 +23,46 @@
     },
     "items": [
       {
+        "rowNo": 1,
+        "division": null,
         "poItemNo": 10,
-        "lotNo": 1,
+        "subItemNo": null,
+        "pmirNo": null,
         "srvItemNo": 1,
+        "revNo": null,
+        "lotNo": 1,
         "materialCode": "SYN106010",
-        "ordQty": "12",
-        "rcdQty": "6",
-        "acceptedQty": "6",
-        "rejQty": "0",
         "challanNo": "21",
         "challanDate": "2023-08-02",
         "invoiceNo": "21",
-        "invoiceDate": "2023-08-02"
+        "invoiceDate": "2023-08-02",
+        "financeDate": null,
+        "cnoteNo": null,
+        "cnoteDate": null,
+        "unit": "NOS",
+        "ordQty": "12",
+        "challanQty": null,
+        "rcdQty": "6",
+        "acceptedQty": "6",
+        "rejQty": "0",
+        "rawRow": {
+          "PO NO": "4100000106",
+          "SRV NO": "5000601",
+          "SRV DATE": "10/08/2023",
+          "PO ITM": "10",
+          "LOT NO": "1",
+          "SRV ITM": "1",
+          "MATERIAL CODE": "SYN106010",
+          "UNIT": "NOS",
+          "ORD QTY": "12.000",
+          "RECVD QTY": "6.000",
+          "ACPT QTY": "6.000",
+          "REJ QTY": "0.000",
+          "CHALLAN NO": "21",
+          "CHALLAN DATE": "02/08/23",
+          "INV NO": "21",
+          "INV DATE": "02/08/23"
+        }
       }
     ]
   }

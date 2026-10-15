@@ -47,6 +47,51 @@ describe("parsePoHeader", () => {
     expect(r.ok && [r.value.remarks, r.value.gemcNumber]).toEqual(["Against GEMC: 5116-A dated 01-APR-24", "5116-A"]);
   });
 
+  it("reads REMARKS, TOTAL VALUE and SUPP NAME M/S from below their shared label row, GEMC from the remarks", () => {
+    const html =
+      "<table><tr><td>PURCHASE ORDER</td><td>PO DATE</td></tr><tr><td>4100000999</td><td>05/04/2023</td></tr></table>" +
+      "<table><tr><td>REMARKS</td><td>TOTAL VALUE</td><td>SUPP NAME M/S</td></tr>" +
+      "<tr><td>(1) REGULARIZATION PO AGAINST GEM CONTRACT REF.NO.GEMC-5116000000001 ONLY</td><td>1250.5</td>" +
+      "<td>EXAMPLE SUPPLIER, EXAMPLE TOWN</td></tr><tr><td>NAME</td><td>A. PERSON</td></tr></table>";
+    const r = header(html);
+    expect(r.ok && [r.value.remarks, r.value.gemcNumber, r.value.rawHeader]).toEqual([
+      "(1) REGULARIZATION PO AGAINST GEM CONTRACT REF.NO.GEMC-5116000000001 ONLY",
+      "5116000000001",
+      {
+        "PURCHASE ORDER": "4100000999",
+        "PO DATE": "05/04/2023",
+        REMARKS: "(1) REGULARIZATION PO AGAINST GEM CONTRACT REF.NO.GEMC-5116000000001 ONLY",
+        "TOTAL VALUE": "1250.5",
+        "SUPP NAME M/S": "EXAMPLE SUPPLIER, EXAMPLE TOWN",
+        NAME: "A. PERSON",
+      },
+    ]);
+  });
+
+  it("reads INSPECTION BY printed with a colon", () => {
+    const r = header(page("<tr><td>INSPECTION BY :</td><td>THIRD PARTY EXAMPLE AGENCY</td></tr>"));
+    expect(r.ok && [r.value.inspection, r.value.rawHeader["INSPECTION BY :"]]).toEqual([
+      "THIRD PARTY EXAMPLE AGENCY",
+      "THIRD PARTY EXAMPLE AGENCY",
+    ]);
+  });
+
+  it("reads labels printed with their value in one cell into the raw header", () => {
+    const r = header(
+      page(
+        "<tr><td>TIN NO. 11110000001</td><td>ECC NO. EXAMPLE01</td><td>PHONE: 00-000-0000001</td><td>FAX: </td></tr>",
+      ),
+    );
+    expect(r.ok && r.value.rawHeader).toEqual({
+      "TIN NO.": "11110000001",
+      "ECC NO.": "EXAMPLE01",
+      "PHONE:": "00-000-0000001",
+      "PURCHASE ORDER": "4100000999",
+      "PO DATE": "05/04/2023",
+      "FAX:": "",
+    });
+  });
+
   it("keeps the label as printed in the raw header", () => {
     const html =
       "<table><tr><td>PURCHASE ORDER NO.</td><td>4100000999</td><td>PO DATE</td><td>12-APR-24</td></tr>" +

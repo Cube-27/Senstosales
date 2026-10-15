@@ -22,9 +22,11 @@
       "description": "SOLENOID VALVE 24 V DC",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "1500",
       "rcdQty": "4",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-12-31",
           "entryAllowDate": "2024-01-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN112010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "1500.00",
+            "ORD QTY": "10.000",
+            "RCD QTY": "4.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.000",
+            "DELY DATE": "31/12/2023",
+            "ENTRY ALLOW DATE": "15/01/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

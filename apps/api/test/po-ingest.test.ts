@@ -2,6 +2,8 @@
 // INV-44), header, items and lots, GEMC source and net rates (INV-16, INV-17), cancel and restore (INV-48), the date
 // winner after accept (INV-45), and never a write to DCs, invoices or manual quantities (INV-47). Real node:sqlite,
 // synthetic pages parsed by `packages/parsers`; expected values worked by hand from ARCHITECTURE §6.2-§6.4, §7.2.
+import { readFileSync } from "node:fs";
+
 import type { Db, Instant } from "@senstosales/db";
 import {
   auditLog,
@@ -110,6 +112,34 @@ describe("a new PO", () => {
       after: { poNumber: "4500001", poDate: "2025-04-10", amendNo: 0, cancelledItems: [], restoredItems: [] },
       jobId: null,
     });
+  });
+});
+
+describe("a page in the current layout (E2E fixes 2026-10-15)", () => {
+  test("stores the remarks from below their label, GEMC from them, MTRL CAT, ITEM VALUE and every lot row", async () => {
+    const html = readFileSync(
+      new URL("../../../packages/parsers/fixtures/po/current-layout-gemc-remarks.html", import.meta.url),
+      "utf8",
+    );
+    const [result] = (await client.request("po.upload", { body: { files: [{ name: "po.html", html }] } })).results;
+    expect(result).toEqual({ name: "po.html", status: "accepted", reason: null });
+
+    const row = await poRow();
+    expect([row?.remarks?.slice(0, 40), row?.isGemc, row?.gemcNumber]).toEqual([
+      "(1)THIS IS A REGULARIZATION PO AGAINST G",
+      true,
+      "500000000000140",
+    ]);
+    expect((await items()).map((i) => [i.poItemNo, i.mtrlCat, i.itemValue, i.rateSource])).toEqual([
+      [1, "900100", 127440000, 10620000],
+      [2, "900100", 90270000, 21240000],
+    ]);
+    const lots = await db.query(db.build.select().from(poLot).orderBy(poLot.delyQty));
+    expect(lots.map((l) => [l.lotNo, l.delyQty, l.rawRow?.["LOT NO"], l.rawRow?.["ITEM VALUE"]])).toEqual([
+      [2, 4000, "2", "1274.4"],
+      [1, 4250, "1", "902.7"],
+      [1, 8000, "1", "1274.4"],
+    ]);
   });
 });
 
@@ -268,6 +298,7 @@ describe("the date winner after accept (INV-45)", () => {
         materialCode: code,
         poItemNo: 10,
         lotNo: 1,
+        rowNo: 1,
         srvItemNo: 1,
         ordQty: 10000 as Qty,
         rcdQty: 3000 as Qty,

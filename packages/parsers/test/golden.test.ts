@@ -8,7 +8,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
 import { loadPage } from "../src/html.ts";
-import { parsePo, parseSrv, zPoDocument, zSrvFile } from "../src/index.ts";
+import { parsePo, parseSrv, zPoDocument, zSrvList } from "../src/index.ts";
 import type { ParseResult } from "../src/types.ts";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);
@@ -28,7 +28,7 @@ function load<S extends z.ZodType>(kind: "po" | "srv", schema: S) {
 }
 
 const PO = load("po", zPoDocument);
-const SRV = load("srv", zSrvFile);
+const SRV = load("srv", zSrvList);
 type Po = (typeof PO.fixtures)[number];
 type Srv = (typeof SRV.fixtures)[number];
 
@@ -50,7 +50,7 @@ describe("fixture files", () => {
     expect(z.encode(zPoDocument, doc)).toEqual(wire);
   });
   it.each(SRV.fixtures)("srv/$name.expected.json is canonical", ({ wire, doc }) => {
-    expect(z.encode(zSrvFile, doc)).toEqual(wire);
+    expect(z.encode(zSrvList, doc)).toEqual(wire);
   });
 });
 
@@ -59,7 +59,7 @@ describe("golden", () => {
     expect(parsePo(html)).toEqual({ ok: true, value: doc });
   });
   it.each(SRV.fixtures)("parseSrv: $name", ({ html, doc }) => {
-    expect(parseSrv(html)).toEqual({ ok: true, value: doc });
+    expect(parseSrv(html)).toEqual({ ok: true, value: { srvs: doc, failed: [] } });
   });
 });
 
@@ -105,6 +105,11 @@ const PO_CATEGORIES: Record<string, (f: Po) => boolean> = {
   "multi-lot": ({ doc }) => doc.items.some((item) => item.lots.length > 1),
   "short-closed (entry-allow note)": (f) => lots(f).some((lot) => lot.entryAllowNote !== null),
   amended: ({ doc }) => doc.amendNo > 0,
+  "REMARKS, TOTAL VALUE and SUPP NAME M/S on one label row, values below": ({ doc }) =>
+    doc.rawHeader["TOTAL VALUE"] !== undefined && doc.remarks !== null && doc.gemcNumber !== null,
+  "an item printed once per lot": ({ html, doc }) =>
+    doc.items.some((item) => item.lots.length > 1 && item.lots.every((lot) => lot.rawRow["PO ITM"] !== "")) &&
+    html.includes("ITEM VALUE"),
   "legacy misread: a description row naming another item numbered 100+ (EC-23)": ({ doc }) =>
     doc.items.some((item) =>
       doc.items.some(
@@ -125,6 +130,10 @@ const SRV_CATEGORIES: Record<string, (f: Srv) => boolean> = {
   "repeated challan number across FYs": challanInTwoFys,
   "a commented-out older table": ({ html }) => /<!--(?:(?!-->)[^])*SRV NO/.test(html),
   "several SRVs in one file": ({ doc }) => doc.length > 1,
+  "current layout: no LOT NO or MATERIAL CODE column": (f) => srvItems(f).every((item) => !("LOT NO" in item.rawRow)),
+  "a PO ITM 0 row (A2-10)": (f) => srvItems(f).some((item) => item.poItemNo === 0),
+  "a repeated SRV item key (A2-10)": ({ doc }) =>
+    doc.some((srv) => new Set(srv.items.map((i) => `${i.poItemNo}/${i.srvItemNo}`)).size < srv.items.length),
 };
 
 describe("fixture coverage (SPEC-06 §6)", () => {

@@ -60,11 +60,14 @@ export type PoValues = Pick<
   | "rawHeader"
 > & { readonly items: readonly PoItemValues[] };
 
-type PoItemValues = Omit<DocItem, "materialCode" | "description" | "unit"> & {
+type PoItemValues = Omit<DocItem, "materialCode" | "description" | "unit" | "lots"> & {
   readonly materialCode: string | null;
   readonly description: string | null;
   readonly unit: string | null;
+  readonly lots: readonly PoLotValues[];
 };
+/** A lot keyed in on the manual form has no page row. */
+type PoLotValues = Omit<DocItem["lots"][number], "rawRow"> & { readonly rawRow: Record<string, string> | null };
 type Item = PoSnapshot["items"][number];
 type MatchedLine = Awaited<ReturnType<typeof unmatchedSrvLines>>[number];
 
@@ -277,9 +280,11 @@ function itemValues(item: PoItemValues, isGemc: boolean) {
     description: item.description,
     drawingNo: item.drawingNo,
     unit: item.unit,
+    mtrlCat: item.mtrlCat,
     ordQty: item.ordQty,
     rateSource: item.rate,
     rate: isGemc ? gemcNetRate(gemcSourceRate(item.rate)) : item.rate,
+    itemValue: item.itemValue,
     poRcdQty: item.rcdQty,
     poRejQty: item.rejQty,
   };

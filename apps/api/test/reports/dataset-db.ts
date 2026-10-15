@@ -195,6 +195,7 @@ function srvRows(db: NodeDb) {
         materialCode: item.materialCode,
         poItemNo: item.poItemNo,
         lotNo: 1,
+        rowNo: j + 1,
         srvItemNo: j + 1,
         ordQty: q(item.ordQty),
         rcdQty: q(line.rcdQty),

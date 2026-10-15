@@ -320,29 +320,73 @@ describe("INV-43: the date guard per (PO, SRV number)", () => {
   });
 });
 
-describe("failures (INV-50)", () => {
+describe("failures and odd rows (INV-50, A2-10)", () => {
   beforeEach(async () => {
     await uploadPo(APRIL);
     await uploadOne([{ ...S1, rcd: "4.000" }]);
   });
 
-  test("a file with a duplicate item key fails as a whole and keeps the previous SRV data", async () => {
-    const before = { srvs: await srvs(), lines: await lines() };
-
+  test("stores rows whose keys repeat and a PO ITM 0 row as printed, numbered in row order (A2-10)", async () => {
     const [result] = await upload({
       rows: [
-        { ...S1, rcd: "6.000" },
+        { srv: "7000002", date: "02/05/2025", item: 20, challan: "11" },
+        { srv: "7000002", date: "02/05/2025", item: 0, srvItem: 2 },
+        { srv: "7000002", date: "02/05/2025", item: 20, challan: "12" },
+      ],
+    });
+
+    expect(result).toEqual({ name: "srv-0.html", status: "accepted", reason: null });
+    const stored = (await lines()).filter((l) => l.poItemNo !== 10 || l.challanNo !== null);
+    expect(stored.map((l) => [l.rowNo, l.poItemNo, l.srvItemNo, l.challanNo])).toEqual([
+      [2, 0, 2, null],
+      [1, 20, 1, "11"],
+      [3, 20, 1, "12"],
+    ]);
+  });
+
+  test("a re-uploaded SRV keeps each repeated row's id, in row order (INV-59)", async () => {
+    const rows = [
+      { srv: "7000002", date: "02/05/2025", item: 20, challan: "11" },
+      { srv: "7000002", date: "02/05/2025", item: 20, challan: "12" },
+    ];
+    await uploadOne(rows);
+    const ids = async () =>
+      (await db.query(db.build.select().from(srvItem).where(eq(srvItem.poItemNo, 20)).orderBy(srvItem.rowNo))).map(
+        (l) => [l.rowNo, l.id, l.challanNo],
+      );
+    const first = await ids();
+    await uploadOne([{ ...rows[0]!, challan: "13" }, rows[1]!]);
+    expect(await ids()).toEqual([
+      [1, first[0]?.[1], "13"],
+      [2, first[1]?.[1], "12"],
+    ]);
+  });
+
+  test("an SRV that cannot be read is reported, and the file's other SRVs are stored (A2-10)", async () => {
+    const [result] = await upload({
+      rows: [
         { srv: "7000002", date: "02/05/2025", item: 20 },
-        { srv: "7000002", date: "02/05/2025", item: 20 },
+        { srv: "7000003", date: "02/05/2025", item: 20, rcd: "N/A" },
       ],
     });
 
     expect(result).toEqual({
       name: "srv-0.html",
+      status: "accepted",
+      reason: 'SRV 7000003 could not be read (bad-quantity): RECVD QTY is not a quantity: "N/A".',
+    });
+    expect((await srvs()).map((r) => r.srvNumber)).toEqual(["7000001", "7000002"]);
+  });
+
+  test("a file none of whose SRVs can be read fails and keeps the previous SRV data", async () => {
+    const before = { srvs: await srvs(), lines: await lines() };
+
+    const [result] = await upload({ rows: [{ ...S1, rcd: "N/A" }] });
+
+    expect(result).toEqual({
+      name: "srv-0.html",
       status: "failed",
-      reason: expect.stringMatching(
-        /^Could not read this SRV page \(duplicate-srv-item-key\): SRV 7000002 has item 20/,
-      ),
+      reason: 'Could not read this SRV page (bad-quantity): RECVD QTY is not a quantity: "N/A"',
     });
     expect({ srvs: await srvs(), lines: await lines() }).toEqual(before);
     expect((await itemQty())[0]?.rcd).toBe(4000);

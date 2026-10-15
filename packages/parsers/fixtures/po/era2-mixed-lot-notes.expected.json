@@ -22,9 +22,11 @@
       "description": "CONTACTOR 32 A",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "40",
       "rate": "100",
       "rcdQty": "10",
+      "itemValue": null,
       "rejQty": "0",
       "lots": [
         {
@@ -33,7 +35,22 @@
           "delyDate": "2024-12-31",
           "entryAllowDate": "2025-01-15",
           "entryAllowNote": null,
-          "destCode": "31"
+          "destCode": "31",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN139010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "100.00",
+            "ORD QTY": "40.000",
+            "RCD QTY": "10.000",
+            "REJ QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.000",
+            "DELY DATE": "31-DEC-24",
+            "ENTRY ALLOW DATE": "15-JAN-25",
+            "DEST CODE": "31"
+          }
         },
         {
           "lotNo": 2,
@@ -41,7 +58,22 @@
           "delyDate": "2025-01-31",
           "entryAllowDate": null,
           "entryAllowNote": "Short Closed",
-          "destCode": "31"
+          "destCode": "31",
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "REJ QTY": "",
+            "LOT NO": "2",
+            "DELY QTY": "15.000",
+            "DELY DATE": "31-JAN-25",
+            "ENTRY ALLOW DATE": "Short Closed",
+            "DEST CODE": "31"
+          }
         },
         {
           "lotNo": 3,
@@ -49,7 +81,22 @@
           "delyDate": "2025-02-28",
           "entryAllowDate": null,
           "entryAllowNote": "Entry Not Allowed",
-          "destCode": null
+          "destCode": null,
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "REJ QTY": "",
+            "LOT NO": "3",
+            "DELY QTY": "15.000",
+            "DELY DATE": "28-FEB-25",
+            "ENTRY ALLOW DATE": "Entry Not Allowed",
+            "DEST CODE": ""
+          }
         }
       ]
     }

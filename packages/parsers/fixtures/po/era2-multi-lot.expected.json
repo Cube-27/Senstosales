@@ -22,9 +22,11 @@
       "description": "WELDING ELECTRODE 3.15 MM",
       "drawingNo": null,
       "unit": "KG",
+      "mtrlCat": "1",
       "ordQty": "300",
       "rate": "120",
       "rcdQty": "100",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-07-31",
           "entryAllowDate": "2024-08-15",
           "entryAllowNote": null,
-          "destCode": "31"
+          "destCode": "31",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN129010",
+            "MTRL CAT": "1",
+            "UNIT": "KG",
+            "PO RATE": "120.00",
+            "ORD QTY": "300.000",
+            "RCD QTY": "100.000",
+            "LOT NO": "1",
+            "DELY QTY": "100.000",
+            "DELY DATE": "31-JUL-24",
+            "ENTRY ALLOW DATE": "15-AUG-24",
+            "DEST CODE": "31"
+          }
         },
         {
           "lotNo": 2,
@@ -41,7 +57,21 @@
           "delyDate": "2024-08-31",
           "entryAllowDate": "2024-09-15",
           "entryAllowNote": null,
-          "destCode": "31"
+          "destCode": "31",
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "LOT NO": "2",
+            "DELY QTY": "100.000",
+            "DELY DATE": "31-AUG-24",
+            "ENTRY ALLOW DATE": "15-SEP-24",
+            "DEST CODE": "31"
+          }
         },
         {
           "lotNo": 3,
@@ -49,7 +79,21 @@
           "delyDate": "2024-09-30",
           "entryAllowDate": "2024-10-15",
           "entryAllowNote": null,
-          "destCode": "32"
+          "destCode": "32",
+          "rawRow": {
+            "PO ITM": "",
+            "MATERIAL CODE": "",
+            "MTRL CAT": "",
+            "UNIT": "",
+            "PO RATE": "",
+            "ORD QTY": "",
+            "RCD QTY": "",
+            "LOT NO": "3",
+            "DELY QTY": "100.000",
+            "DELY DATE": "30-SEP-24",
+            "ENTRY ALLOW DATE": "15-OCT-24",
+            "DEST CODE": "32"
+          }
         }
       ]
     }

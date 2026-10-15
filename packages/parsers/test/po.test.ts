@@ -6,10 +6,12 @@ const HEADER = "<table><tr><td>PURCHASE ORDER</td><td>4100000999</td><td>PO DATE
 const COLUMNS = [
   "PO ITM",
   "MATERIAL CODE",
+  "MTRL CAT",
   "UNIT",
   "PO RATE",
   "ORD QTY",
   "RCD QTY",
+  "ITEM VALUE",
   "LOT NO",
   "DELY QTY",
   "DELY DATE",
@@ -26,10 +28,12 @@ const item = (no: string, overrides: Partial<Record<(typeof COLUMNS)[number], st
   const values: Record<string, string> = {
     "PO ITM": no,
     "MATERIAL CODE": `SYN${no}`,
+    "MTRL CAT": "900100",
     UNIT: "NOS",
     "PO RATE": "10.00",
     "ORD QTY": "5.000",
     "RCD QTY": "0.000",
+    "ITEM VALUE": "50",
     "LOT NO": "1",
     "DELY QTY": "5.000",
     "DELY DATE": "30/06/2023",
@@ -41,12 +45,7 @@ const item = (no: string, overrides: Partial<Record<(typeof COLUMNS)[number], st
 };
 /** A lot-only row in `COLUMNS` order. */
 const lot = (lotNo: string, delyQty: string, entryAllow = "15/08/2023"): string[] => [
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
+  ...COLUMNS.slice(0, COLUMNS.indexOf("LOT NO")).map(() => ""),
   lotNo,
   delyQty,
   "31/07/2023",
@@ -72,9 +71,11 @@ describe("parsePo items", () => {
         description: "",
         drawingNo: null,
         unit: "NOS",
+        mtrlCat: "900100",
         ordQty: 1000500,
         rate: 125050000,
         rcdQty: 2125,
+        itemValue: 5000000,
         rejQty: null,
         lots: [
           {
@@ -84,6 +85,12 @@ describe("parsePo items", () => {
             entryAllowDate: "2023-07-15",
             entryAllowNote: null,
             destCode: "11",
+            rawRow: Object.fromEntries(
+              COLUMNS.map((c, i) => [
+                c,
+                item("10", { "PO RATE": "1,250.50", "ORD QTY": "1,000.500", "RCD QTY": "2.125" })[i],
+              ]),
+            ),
           },
         ],
       },
@@ -91,14 +98,16 @@ describe("parsePo items", () => {
   });
 
   it("reads REJ QTY when the page has the column, an empty cell as 0", () => {
-    const columns = [...COLUMNS.slice(0, 6), "REJ QTY"];
+    const columns = ["PO ITM", "MATERIAL CODE", "UNIT", "PO RATE", "ORD QTY", "RCD QTY", "REJ QTY"];
     const r = items(page([["10", "SYN10", "NOS", "1", "5", "", ""]], columns));
-    expect(Array.isArray(r) && r.map((i) => [i.rcdQty, i.rejQty, i.lots])).toEqual([[0, 0, []]]);
+    expect(Array.isArray(r) && r.map((i) => [i.rcdQty, i.rejQty, i.mtrlCat, i.itemValue, i.lots])).toEqual([
+      [0, 0, null, null, []],
+    ]);
   });
 
   it("keeps a non-date ENTRY ALLOW DATE as the lot note (INV-46)", () => {
     const r = items(page([item("10", { "ENTRY ALLOW DATE": "PO Short Closed", "DEST CODE": "" })]));
-    expect(Array.isArray(r) && r[0]?.lots).toEqual([
+    expect(Array.isArray(r) && r[0]?.lots).toMatchObject([
       {
         lotNo: 1,
         delyQty: 5000,
@@ -110,19 +119,36 @@ describe("parsePo items", () => {
     ]);
   });
 
-  it("adds extra lot rows to the item above; a repeated lot number with a quantity replaces the lot", () => {
-    const r = items(page([item("10"), lot("2", "3.000"), lot("2", "4.000", ""), lot("2", "0")]));
+  it("adds every extra lot row to the item above as printed, a repeated lot number too (A2-10)", () => {
+    const r = items(page([item("10"), lot("2", "3.000"), lot("2", "4.000", ""), lot("0", "0")]));
     expect(Array.isArray(r) && r[0]?.lots.map((l) => [l.lotNo, l.delyQty, l.entryAllowDate])).toEqual([
       [1, 5000, "2023-07-15"],
+      [2, 3000, "2023-08-15"],
       [2, 4000, null],
+      [0, 0, "2023-08-15"],
     ]);
   });
 
-  it("merges a repeated item row: a new lot is added and the larger ordered quantity kept", () => {
+  it("keeps an item printed again (one row per lot) at its first row's values, with each row's lot and cells", () => {
     const r = items(page([item("10"), item("10", { "ORD QTY": "8", "LOT NO": "2" }), item("10", { "ORD QTY": "6" })]));
-    expect(Array.isArray(r) && r.map((i) => [i.poItemNo, i.ordQty, i.lots.map((l) => l.lotNo)])).toEqual([
-      [10, 8000, [1, 2]],
+    expect(
+      Array.isArray(r) && r.map((i) => [i.poItemNo, i.ordQty, i.lots.map((l) => [l.lotNo, l.rawRow["ORD QTY"]])]),
+    ).toEqual([
+      [
+        10,
+        5000,
+        [
+          [1, "5.000"],
+          [2, "8"],
+          [1, "6"],
+        ],
+      ],
     ]);
+  });
+
+  it("keeps item number 0 as printed (A2-10)", () => {
+    const r = items(page([item("0")]));
+    expect(Array.isArray(r) && r.map((i) => i.poItemNo)).toEqual([0]);
   });
 
   it("appends description rows to the item above, or to the item a 1-2 digit cell names", () => {
@@ -145,6 +171,11 @@ describe("parsePo items", () => {
   it("joins every drawing number of 5+ characters in the description, sorted and distinct", () => {
     const r = items(page([item("10"), ["", "PLATE DRG. NO. B-7720 TO DRAWING: A1234/5 DRG B-7720 DRG 12"]]));
     expect(Array.isArray(r) && r[0]?.drawingNo).toBe("A1234/5, B-7720");
+  });
+
+  it("leaves a full stop that ends the sentence out of the drawing number", () => {
+    const r = items(page([item("10"), ["", "SHIM AS PER DRG NO. 3A12095. QTY IN NOS"]]));
+    expect(Array.isArray(r) && r[0]?.drawingNo).toBe("3A12095");
   });
 
   it("ends a drawing number before a run-in ITEM, VAR or REV; one followed by other text is not read", () => {
@@ -179,9 +210,14 @@ describe("parsePo items", () => {
       "PO RATE",
     ],
     ["an empty material code", page([item("10", { "MATERIAL CODE": "" })]), "missing-field", "item 10, MATERIAL CODE"],
-    ["item number 0", page([item("0")]), "bad-number", "item 0, PO ITM"],
     ["an item number past 2^53", page([item("9007199254740993")]), "bad-number", "item 9007199254740993, PO ITM"],
     ["an empty ordered quantity", page([item("10", { "ORD QTY": "" })]), "bad-quantity", "item 10, ORD QTY"],
+    [
+      "an item value that is not a number",
+      page([item("10", { "ITEM VALUE": "x" })]),
+      "bad-number",
+      "item 10, ITEM VALUE",
+    ],
     ["four decimals", page([item("10", { "RCD QTY": "1.0005" })]), "bad-quantity", "item 10, RCD QTY"],
     ["a rate that is not a number", page([item("10", { "PO RATE": "N/A" })]), "bad-number", "item 10, PO RATE"],
     ["a lot number that is not whole", page([item("10"), lot("2a", "1")]), "bad-number", "item 10, LOT NO"],

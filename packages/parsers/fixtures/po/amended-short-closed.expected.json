@@ -22,9 +22,11 @@
       "description": "CABLE GLAND 25 MM",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "100",
       "rate": "62.5",
       "rcdQty": "60",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-01-31",
           "entryAllowDate": null,
           "entryAllowNote": "PO Short Closed",
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN500010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "62.50",
+            "ORD QTY": "100.000",
+            "RCD QTY": "60.000",
+            "LOT NO": "1",
+            "DELY QTY": "100.000",
+            "DELY DATE": "31/01/2023",
+            "ENTRY ALLOW DATE": "PO Short Closed",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -43,9 +59,11 @@
       "description": "TERMINAL BOX COVER",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10.5",
       "rate": "400",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -54,7 +72,21 @@
           "delyDate": "2023-02-28",
           "entryAllowDate": "2023-03-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN500020",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "400.00",
+            "ORD QTY": "10.500",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.500",
+            "DELY DATE": "28/02/2023",
+            "ENTRY ALLOW DATE": "15/03/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

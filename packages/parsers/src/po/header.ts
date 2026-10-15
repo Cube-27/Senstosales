@@ -1,5 +1,6 @@
 // PO header fields, read by label (SPEC-06 §2). The label vocabulary is the legacy parser's; each pattern matches a
-// whole cell, so a heading such as "PURCHASE ORDER DETAILS" is not a label.
+// whole cell, so a heading such as "PURCHASE ORDER DETAILS" is not a label. A few labels are printed with their value
+// in one cell ("TIN NO. 123"); those are read into the raw header as label and value.
 import { extractGemcNumber } from "@senstosales/domain";
 import type { Money } from "@senstosales/domain";
 import { zPoId } from "@senstosales/schemas";
@@ -21,7 +22,7 @@ const LABELS = {
   "RC NO": /^R[. ]*C[. :-]*(?:NO\.?)?$/i,
   "ORD-TYPE": /^ORD-TYPE$/i,
   "PO STATUS": /^PO STATUS$/i,
-  "INSPECTION BY": /^INSPECTION BY$/i,
+  "INSPECTION BY": /^INSPECTION BY\s*:?$/i,
   "INSPECTION AT": /^INSPECTION AT(?: BHEL)?$/i,
   CURRENCY: /^CURRENCY$/i,
   "EX RATE": /^EX RATE$/i,
@@ -35,7 +36,9 @@ const LABELS = {
   "PO-VALUE": /^PO-VALUE$/i,
   "NET PO VAL": /^NET PO VAL$/i,
   "FOB VALUE": /^FOB VALUE$/i,
+  // A label in its own right: REMARKS, TOTAL VALUE and SUPP NAME M/S share one label row, each value below its label.
   REMARKS: /^REMARKS$/i,
+  "TOTAL VALUE": /^TOTAL VALUE$/i,
   NAME: /^NAME$/i,
   DESIGNATION: /^DESIGNATION$/i,
   "PHONE NO": /^PHONE NO$/i,
@@ -44,6 +47,9 @@ const LABELS = {
   EMAIL: /^EMAIL:?$/i,
 } satisfies Record<string, RegExp>;
 type Field = keyof typeof LABELS;
+
+/** A label printed with its value in one cell: the label as printed, then the value. */
+const INLINE = /^(TIN NO\.|ECC NO\.|MPCT NO\.|PHONE:|FAX:) *(\S.*)$/i;
 
 const PATTERNS = Object.values(LABELS);
 const isLabel = (text: string): boolean => PATTERNS.some((pattern) => pattern.test(text));
@@ -78,10 +84,20 @@ export function parsePoHeader(page: Page): ParseResult<PoHeader> {
       currency: text(found, "CURRENCY"),
       remarks,
       gemcNumber: remarks === null ? null : extractGemcNumber(remarks),
-      rawHeader: Object.fromEntries([...found.values()].map((hit) => [hit.label, hit.value])),
+      rawHeader: Object.fromEntries([
+        ...inlineLabels(page),
+        ...[...found.values()].map((hit) => [hit.label, hit.value]),
+      ]),
     },
   };
 }
+
+/** Every cell that holds an inline label and its value, as [label, value]. */
+const inlineLabels = (page: Page): [string, string][] =>
+  page.flat(2).flatMap((text) => {
+    const match = INLINE.exec(text);
+    return match ? [[match[1] ?? "", match[2] ?? ""]] : [];
+  });
 
 /** The field's text; an absent label or an empty cell is null. */
 const text = (found: Found, field: Field): string | null => found.get(field)?.value || null;

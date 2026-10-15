@@ -22,9 +22,11 @@
       "description": "MOTOR TERMINAL BOX WITH CABLE ENTRY PLATE PAINTED GREY",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "2",
       "rate": "2700",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-02-29",
           "entryAllowDate": "2024-03-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN118010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "2700.00",
+            "ORD QTY": "2.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "2.000",
+            "DELY DATE": "29/02/2024",
+            "ENTRY ALLOW DATE": "15/03/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -43,9 +59,11 @@
       "description": "",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "1000",
       "rate": "0.5",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -54,7 +72,21 @@
           "delyDate": "2024-02-29",
           "entryAllowDate": "2024-03-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN118020",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "0.50",
+            "ORD QTY": "1000.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "1000.000",
+            "DELY DATE": "29/02/2024",
+            "ENTRY ALLOW DATE": "15/03/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

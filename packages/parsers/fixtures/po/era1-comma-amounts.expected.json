@@ -22,9 +22,11 @@
       "description": "ARMOURED CABLE 3 CORE 16 SQMM",
       "drawingNo": null,
       "unit": "MTR",
+      "mtrlCat": "1",
       "ordQty": "100",
       "rate": "1250",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-09-30",
           "entryAllowDate": "2023-10-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN108010",
+            "MTRL CAT": "1",
+            "UNIT": "MTR",
+            "PO RATE": "1,250.00",
+            "ORD QTY": "100.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "100.000",
+            "DELY DATE": "30/09/2023",
+            "ENTRY ALLOW DATE": "15/10/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

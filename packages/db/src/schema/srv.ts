@@ -35,11 +35,20 @@ export const srvItem = sqliteTable(
       .references(() => srv.id),
     /** Null until matched to a PO item (INV-39). */
     poItemId: ulid("po_item_id"),
+    /** The row's place in its SRV, from 1: the page's own keys may repeat (A2-10). */
+    rowNo: integer("row_no").notNull(),
     materialCode: text("material_code"),
     poItemNo: integer("po_item_no").notNull(),
-    lotNo: integer("lot_no").notNull(),
+    /** The page's other columns, as printed; null where the page has no such column or an empty cell. */
+    subItemNo: text("sub_item_no"),
+    lotNo: integer("lot_no"),
     srvItemNo: integer("srv_item_no").notNull(),
+    revNo: text("rev_no"),
+    division: text("division"),
+    pmirNo: text("pmir_no"),
+    unit: text("unit"),
     ordQty: qtyM("ord_qty_m").notNull(),
+    challanQty: qtyM("challan_qty_m"),
     // Nullable as the domain's SrvLine reads them: received falls back to accepted (INV-11).
     rcdQty: qtyM("rcd_qty_m"),
     acceptedQty: qtyM("accepted_qty_m"),
@@ -49,11 +58,18 @@ export const srvItem = sqliteTable(
     challanDate: isoDate("challan_date"),
     invoiceNo: text("invoice_no"),
     invoiceDate: isoDate("invoice_date"),
+    financeDate: isoDate("finance_date"),
+    cnoteNo: text("cnote_no"),
+    cnoteDate: isoDate("cnote_date"),
+    /** Column header -> cell text of this row as printed; null on rows stored before schema version 4. */
+    rawRow: text("raw_row_json", { mode: "json" }).$type<Record<string, string>>(),
     resolvedDcId: ulid("resolved_dc_id"),
     resolvedInvoiceId: ulid("resolved_invoice_id"),
   },
   // A DC or invoice delete clears the links that point at it (§6.10).
   (t) => [
+    index("srv_item_srv_id_idx").on(t.srvId),
+    index("srv_item_po_item_id_idx").on(t.poItemId),
     index("srv_item_resolved_dc_id_idx").on(t.resolvedDcId),
     index("srv_item_resolved_invoice_id_idx").on(t.resolvedInvoiceId),
   ],

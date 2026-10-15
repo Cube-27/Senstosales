@@ -22,9 +22,11 @@
       "description": "SOCKET HEAD SCREW M8 X 25",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "12",
       "rate": "200",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-07-31",
           "entryAllowDate": "2023-08-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN106010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "200.00",
+            "ORD QTY": "12.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "12.000",
+            "DELY DATE": "31/07/2023",
+            "ENTRY ALLOW DATE": "15/08/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -43,9 +59,11 @@
       "description": "PLAIN WASHER M8",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "12",
       "rate": "100",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -54,7 +72,21 @@
           "delyDate": "2023-07-31",
           "entryAllowDate": "2023-08-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN106020",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "100.00",
+            "ORD QTY": "12.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "12.000",
+            "DELY DATE": "31/07/2023",
+            "ENTRY ALLOW DATE": "15/08/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

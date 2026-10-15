@@ -22,9 +22,11 @@
       "description": "DIGITAL MULTIMETER",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "5",
       "rate": "2360",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-08-31",
           "entryAllowDate": "2024-09-15",
           "entryAllowNote": null,
-          "destCode": "31"
+          "destCode": "31",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN132010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "2360.00",
+            "ORD QTY": "5.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "5.000",
+            "DELY DATE": "31-AUG-24",
+            "ENTRY ALLOW DATE": "15-SEP-24",
+            "DEST CODE": "31"
+          }
         }
       ]
     }

@@ -22,9 +22,11 @@
       "description": "SPRING PIN 6 X 30",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "50",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-10-31",
           "entryAllowDate": "2023-11-15",
           "entryAllowNote": null,
-          "destCode": null
+          "destCode": null,
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN110010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "50.00",
+            "ORD QTY": "10.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.000",
+            "DELY DATE": "31/10/2023",
+            "ENTRY ALLOW DATE": "15/11/2023",
+            "DEST CODE": ""
+          }
         }
       ]
     }

@@ -38,32 +38,33 @@ async function migrated(): Promise<NodeDb> {
 }
 
 describe("MIGRATIONS", () => {
-  test("0003 adds the document fields and is the latest version", () => {
+  test("0004 keeps source rows verbatim and is the latest version", () => {
     expect(MIGRATIONS.map((m) => [m.version, m.name])).toEqual([
       [1, "init"],
       [2, "lookup_indexes"],
       [3, "document_fields"],
+      [4, "verbatim_source_rows"],
     ]);
-    expect(LATEST_VERSION).toBe(3);
+    expect(LATEST_VERSION).toBe(4);
   });
 });
 
 describe("planMigrations", () => {
   test("an empty DB plans every migration", () => {
-    expect(planMigrations(0).map((m) => m.version)).toEqual([1, 2, 3]);
+    expect(planMigrations(0).map((m) => m.version)).toEqual([1, 2, 3, 4]);
   });
 
   test("a version-1 DB plans 0002 onwards", () => {
-    expect(planMigrations(1).map((m) => m.version)).toEqual([2, 3]);
+    expect(planMigrations(1).map((m) => m.version)).toEqual([2, 3, 4]);
   });
 
   test("an up-to-date DB plans nothing", () => {
-    expect(planMigrations(3)).toEqual([]);
+    expect(planMigrations(4)).toEqual([]);
   });
 
   test("a DB newer than the app is refused in plain words", () => {
-    expect(() => planMigrations(4)).toThrow(NewerDatabaseError);
-    expect(() => planMigrations(4)).toThrow("This data was saved by a newer version of SenstoSales.");
+    expect(() => planMigrations(5)).toThrow(NewerDatabaseError);
+    expect(() => planMigrations(5)).toThrow("This data was saved by a newer version of SenstoSales.");
   });
 
   test("only migrations above the current version are planned", () => {
@@ -82,12 +83,13 @@ describe("applyMigrations", () => {
 
   test("an empty DB migrates to the latest version and records it", async () => {
     const db = await migrated();
-    expect(await readSchemaVersion(db)).toBe(3);
+    expect(await readSchemaVersion(db)).toBe(4);
     const rows = await db.query(db.build.select().from(schema.schemaMigration));
     expect(rows).toEqual([
       { version: 1, name: "init", appliedAt: AT, appVersion: "0.1.0" },
       { version: 2, name: "lookup_indexes", appliedAt: AT, appVersion: "0.1.0" },
       { version: 3, name: "document_fields", appliedAt: AT, appVersion: "0.1.0" },
+      { version: 4, name: "verbatim_source_rows", appliedAt: AT, appVersion: "0.1.0" },
     ]);
   });
 
@@ -95,12 +97,13 @@ describe("applyMigrations", () => {
     const db = open();
     await applyMigrations(db, planMigrations(0).slice(0, 1), { appVersion: "0.1.0", appliedAt: AT });
     await applyMigrations(db, planMigrations(await readSchemaVersion(db)), { appVersion: "0.2.0", appliedAt: AT });
-    expect(await readSchemaVersion(db)).toBe(3);
+    expect(await readSchemaVersion(db)).toBe(4);
     const rows = await db.query(db.build.select().from(schema.schemaMigration));
     expect(rows.map((r) => [r.version, r.appVersion])).toEqual([
       [1, "0.1.0"],
       [2, "0.2.0"],
       [3, "0.2.0"],
+      [4, "0.2.0"],
     ]);
   });
 
@@ -113,6 +116,8 @@ describe("applyMigrations", () => {
     ["dc_item", "dc_id", "dc_item_dc_id_idx"],
     ["dc_item", "po_item_id", "dc_item_po_item_id_idx"],
     ["invoice_item", "invoice_id", "invoice_item_invoice_id_idx"],
+    ["srv_item", "srv_id", "srv_item_srv_id_idx"],
+    ["srv_item", "po_item_id", "srv_item_po_item_id_idx"],
     ["srv_item", "resolved_dc_id", "srv_item_resolved_dc_id_idx"],
     ["srv_item", "resolved_invoice_id", "srv_item_resolved_invoice_id_idx"],
   ])("a lookup on %s.%s uses %s", async (table, column, index) => {
@@ -157,7 +162,7 @@ describe("applyMigrations", () => {
     expect(plan).toEqual([]);
     await applyMigrations(db, plan, { appVersion: "0.2.0", appliedAt: AT });
     expect(await totalChanges(db)).toBe(before);
-    expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(3);
+    expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(4);
   });
 
   test("an empty plan sends no batch, so it never takes the write lock", async () => {
@@ -174,9 +179,9 @@ describe("applyMigrations", () => {
 
   test("a DB carrying a newer version is refused", async () => {
     const db = await migrated();
-    await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (4, 'future', ${AT}, '9.0.0')`)]);
+    await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (5, 'future', ${AT}, '9.0.0')`)]);
     const version = await readSchemaVersion(db);
-    expect(version).toBe(4);
+    expect(version).toBe(5);
     expect(() => planMigrations(version)).toThrow(NewerDatabaseError);
   });
 
@@ -187,5 +192,33 @@ describe("applyMigrations", () => {
     await expect(applyMigrations(db, broken, { appVersion: "0.1.0", appliedAt: AT })).rejects.toThrow(DbError);
     expect(await objects(db, "table")).toEqual([]);
     expect(await readSchemaVersion(db)).toBe(0);
+  });
+});
+
+describe("0004 verbatim_source_rows", () => {
+  test("keeps every stored SRV row, numbering each SRV's rows in id order, with the new columns empty", async () => {
+    const db = open();
+    await applyMigrations(db, planMigrations(0).slice(0, 3), { appVersion: "0.1.0", appliedAt: AT });
+    await db.batch(
+      [
+        sql`INSERT INTO supplier (id, name, bank_details_json, invoice_defaults_json) VALUES ('S1', 'Example Supplier', '{}', '{}')`,
+        sql`INSERT INTO srv (id, supplier_id, po_number, srv_number, srv_date, financial_year, raw_header_json)
+            VALUES ('V1', 'S1', '100', '9001', '2025-04-02', '2025-26', '{}'), ('V2', 'S1', '100', '9002', '2025-04-03', '2025-26', '{}')`,
+        sql`INSERT INTO srv_item (id, supplier_id, srv_id, po_item_no, lot_no, srv_item_no, ord_qty_m, rcd_qty_m)
+            VALUES ('I2', 'S1', 'V1', 1, 1, 2, 5000, 5000), ('I1', 'S1', 'V1', 1, 1, 1, 5000, 4000),
+                   ('I3', 'S1', 'V2', 2, 1, 1, 7000, 7000)`,
+      ].map((s) => db.build.run(s)),
+    );
+    await applyMigrations(db, planMigrations(await readSchemaVersion(db)), { appVersion: "0.2.0", appliedAt: AT });
+    const rows = await db.query(
+      db.build.values(
+        sql`SELECT id, srv_id, row_no, po_item_no, lot_no, srv_item_no, rcd_qty_m, rev_no, raw_row_json FROM srv_item ORDER BY id`,
+      ),
+    );
+    expect(rows).toEqual([
+      ["I1", "V1", 1, 1, 1, 1, 4000, null, null],
+      ["I2", "V1", 2, 1, 1, 2, 5000, null, null],
+      ["I3", "V2", 1, 2, 1, 1, 7000, null, null],
+    ]);
   });
 });

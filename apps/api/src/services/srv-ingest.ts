@@ -1,5 +1,5 @@
-// SRV file ingest (SPEC-08 §4.2, ARCHITECTURE §6.10, §7.2, §7.3): parse outside any batch (a duplicate item key fails
-// the file, INV-50), keep the raw page, then one `WriteBatch` per file: for each SRV not older than the stored one
+// SRV file ingest (SPEC-08 §4.2, ARCHITECTURE §6.10, §7.2, §7.3): parse outside any batch (an SRV that cannot be read
+// is reported and the file's other SRVs are stored, A2-10), keep the raw page, then one `WriteBatch` per file: for each SRV not older than the stored one
 // (INV-43), replace its row and items, matching items (INV-39), keeping the cited numbers as text (INV-38) and resolving
 // them in the SRV date's FY (INV-37) → recompute the PO and its new flags (INV-52, INV-53) → audit. An SRV whose PO is
 // not stored is kept unattached and changes nothing (INV-40).
@@ -58,7 +58,7 @@ export async function ingestSrvFile(
     const { code, message } = parsed.error;
     return { name, status: "failed", reason: `Could not read this SRV page (${code}): ${message}` };
   }
-  const docs = parsed.value;
+  const { srvs: docs, failed } = parsed.value;
   // Every SRV in a file is of one PO (SPEC-06 §4.1), and the page is keyed by it (EC-29).
   const { poNumber } = docs[0];
   const docDate = docs.map((doc) => doc.srvDate).reduce((a, b) => (compareIsoDate(a, b) >= 0 ? a : b));
@@ -66,7 +66,12 @@ export async function ingestSrvFile(
 
   const stored = new Map((await srvsOfPoNumber(deps.db, ctx.supplierId, poNumber)).map((r) => [r.srvNumber, r]));
   const { accepted, skipped } = byDate(docs, stored);
-  if (accepted.length === 0) return { name, status: "skipped", reason: `${olderThan(skipped)}. Nothing was changed.` };
+  const unread = failed.map(
+    ({ srvNumber, error }) => `SRV ${srvNumber} could not be read (${error.code}): ${error.message}.`,
+  );
+  if (accepted.length === 0) {
+    return { name, status: "skipped", reason: [`${olderThan(skipped)}. Nothing was changed.`, ...unread].join(" ") };
+  }
 
   const poId = (await findPoByNumber(deps.db, ctx.supplierId, poNumber))?.id ?? null;
   const batch = new WriteBatch(deps.db);
@@ -82,6 +87,7 @@ export async function ingestSrvFile(
   const notes = [
     poId !== null ? null : `PO ${poNumber} is not in the system yet; its SRVs are stored and listed as "PO not found".`,
     skipped.length === 0 ? null : `${olderThan(skipped)}, so ${were} skipped.`,
+    ...unread,
   ].filter((note) => note !== null);
   return { name, status: "accepted", reason: notes.length > 0 ? notes.join(" ") : null };
 }
@@ -120,19 +126,17 @@ async function ingestStatements(
     dcNumbersOf(db, ctx.supplierId),
     invoiceNumbersOf(db, ctx.supplierId),
   ]);
-  const refs = {
-    dcs,
-    invoices,
-    items: snapshot?.items,
-    idOf: new Map(oldItems.map((row) => [itemKey(row.srvId, row), row.id])),
-  };
+  const refs = { dcs, invoices, items: snapshot?.items, idOf: idsByKey(oldItems) };
   const now = deps.clock.now();
   const statements: Statement[] = [];
   const newLines: SrvLine[] = [];
   for (const doc of accepted) {
     const before = stored.get(doc.srvNumber);
     const srvId = before?.id ?? newId();
-    const items = doc.items.map((item) => srvItemRow(item, { srvId, srvDate: doc.srvDate, refs }));
+    const keys = occurrenceKeys(srvId, doc.items);
+    const items = doc.items.map((item, i) =>
+      srvItemRow(item, { id: refs.idOf.get(keys[i] ?? ""), srvId, srvDate: doc.srvDate, refs }),
+    );
     newLines.push(...items.map(({ line }) => line));
     const header = {
       srvDate: doc.srvDate,
@@ -175,8 +179,29 @@ async function ingestStatements(
 type DocItem = SrvDocument["items"][number];
 type ItemKey = Pick<DocItem, "poItemNo" | "lotNo" | "srvItemNo">;
 
-const itemKey = (srvId: string, { poItemNo, lotNo, srvItemNo }: ItemKey) =>
-  `${srvId}/${poItemNo}/${lotNo}/${srvItemNo}`;
+/**
+ * Each item's key within its SRV: the page's own key, and its occurrence among the rows that repeat it (A2-10), so
+ * a re-uploaded SRV's rows keep the ids their flags cite (INV-59). `items` are in row order.
+ */
+function occurrenceKeys(srvId: string, items: readonly ItemKey[]): string[] {
+  const seen = new Map<string, number>();
+  return items.map(({ poItemNo, lotNo, srvItemNo }) => {
+    const key = `${srvId}/${poItemNo}/${lotNo ?? ""}/${srvItemNo}`;
+    const n = (seen.get(key) ?? 0) + 1;
+    seen.set(key, n);
+    return `${key}#${n}`;
+  });
+}
+
+/** The stored items' ids by `occurrenceKeys`; `rows` are in row order. */
+function idsByKey(rows: readonly (ItemKey & { id: string; srvId: string })[]): Map<string, string> {
+  const ids = new Map<string, string>();
+  for (const srvId of new Set(rows.map((row) => row.srvId))) {
+    const ofSrv = rows.filter((row) => row.srvId === srvId);
+    occurrenceKeys(srvId, ofSrv).forEach((key, i) => ids.set(key, ofSrv[i]?.id ?? ""));
+  }
+  return ids;
+}
 
 interface ItemRefs {
   readonly dcs: Awaited<ReturnType<typeof dcNumbersOf>>;
@@ -187,10 +212,13 @@ interface ItemRefs {
   readonly idOf: ReadonlyMap<string, string>;
 }
 
-/** An SRV item's row and the line recompute reads from it. */
-function srvItemRow(item: DocItem, { srvId, srvDate, refs }: { srvId: string; srvDate: IsoDate; refs: ItemRefs }) {
+/** An SRV item's row, every column as on the page, and the line recompute reads from it. `id`: the replaced row's. */
+function srvItemRow(
+  item: DocItem,
+  { id, srvId, srvDate, refs }: { id: string | undefined; srvId: string; srvDate: IsoDate; refs: ItemRefs },
+) {
   const line = {
-    id: refs.idOf.get(itemKey(srvId, item)) ?? newId(),
+    id: id ?? newId(),
     srvId,
     poItemId: refs.items ? matchSrvItem(item, refs.items) : null,
     srvDate,
@@ -205,14 +233,6 @@ function srvItemRow(item: DocItem, { srvId, srvDate, refs }: { srvId: string; sr
     resolvedInvoiceId: resolveDocLink(item.invoiceNo, srvDate, refs.invoices),
   } satisfies SrvLine;
   const { srvDate: _date, ...stored } = line;
-  const row = {
-    ...stored,
-    materialCode: item.materialCode,
-    poItemNo: item.poItemNo,
-    lotNo: item.lotNo,
-    srvItemNo: item.srvItemNo,
-    challanDate: item.challanDate,
-    invoiceDate: item.invoiceDate,
-  };
+  const row = { ...item, ...stored };
   return { line, row };
 }

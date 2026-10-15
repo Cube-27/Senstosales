@@ -22,9 +22,11 @@
       "description": "PIPE Ø 25 MM × 2 M, 90° BEND",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "120",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-07-31",
           "entryAllowDate": "2024-08-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN127010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "120.00",
+            "ORD QTY": "10.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.000",
+            "DELY DATE": "31/07/2024",
+            "ENTRY ALLOW DATE": "15/08/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

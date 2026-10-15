@@ -45,8 +45,8 @@ export function checkForm(form: PoForm): IsoDate {
 }
 
 /**
- * The PO the form describes. The PO document's received and rejected quantities and a lot's entry-allow date are
- * not on the form, so an edit keeps the stored ones. An item sent without lots gets the legacy default: lot 1 of the
+ * The PO the form describes. The PO document's received and rejected quantities, MTRL CAT, ITEM VALUE and a lot's
+ * entry-allow date and page row are not on the form, so an edit keeps the stored ones. An item sent without lots gets the legacy default: lot 1 of the
  * ordered quantity, due on the PO date.
  */
 export function formValues(form: PoForm, poDate: IsoDate, kept: Kept): PoValues {
@@ -76,13 +76,20 @@ export function formValues(form: PoForm, poDate: IsoDate, kept: Kept): PoValues 
         description: item.description,
         drawingNo: item.drawingNo,
         unit: item.unit,
+        mtrlCat: stored?.mtrlCat ?? null,
         ordQty: item.ordQty,
         rate: item.rateSource,
+        itemValue: stored?.itemValue ?? null,
         rcdQty: stored?.poRcdQty ?? (0 as Qty),
         rejQty: stored?.poRejQty ?? null,
         lots: lots.map((lot) => {
           const old = stored && storedLot.get(`${stored.id}/${lot.lotNo}`);
-          return { ...lot, entryAllowDate: old?.entryAllowDate ?? null, entryAllowNote: old?.entryAllowNote ?? null };
+          return {
+            ...lot,
+            entryAllowDate: old?.entryAllowDate ?? null,
+            entryAllowNote: old?.entryAllowNote ?? null,
+            rawRow: old?.rawRow ?? null,
+          };
         }),
       };
     }),

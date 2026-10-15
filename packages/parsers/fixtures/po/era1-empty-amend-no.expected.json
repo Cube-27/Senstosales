@@ -22,9 +22,11 @@
       "description": "O RING KIT",
       "drawingNo": null,
       "unit": "SET",
+      "mtrlCat": "1",
       "ordQty": "2",
       "rate": "380",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-10-31",
           "entryAllowDate": "2023-11-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN111010",
+            "MTRL CAT": "1",
+            "UNIT": "SET",
+            "PO RATE": "380.00",
+            "ORD QTY": "2.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "2.000",
+            "DELY DATE": "31/10/2023",
+            "ENTRY ALLOW DATE": "15/11/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

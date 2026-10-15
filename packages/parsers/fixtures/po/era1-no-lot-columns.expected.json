@@ -22,9 +22,11 @@
       "description": "TERMINAL LUG 10 SQMM",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "75",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": "0",
       "lots": []
     },
@@ -34,9 +36,11 @@
       "description": "TERMINAL LUG 16 SQMM",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "75",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": "0",
       "lots": []
     }
