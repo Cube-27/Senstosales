@@ -224,7 +224,11 @@ function drawingNo(description: string): string | null {
  */
 function drawingToken(token: string, next: string | undefined): string | undefined {
   // A full stop after the number ends the sentence; it is not part of the number.
-  if (next === undefined || /[\s,]/.test(next)) return token.replace(/\.+$/, "");
+  if (next === undefined || /[\s,]/.test(next)) {
+    let end = token.length;
+    while (token[end - 1] === ".") end--;
+    return token.slice(0, end);
+  }
   for (let end = token.length - 1; end > 0; end--) {
     if (RUN_IN.test(token.slice(end))) return token.slice(0, end);
   }
