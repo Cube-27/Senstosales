@@ -8,7 +8,7 @@ import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
 import { and, desc, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import { dcRefs, invoiceRefs, srvRefs } from "./po-list.ts";
+import { dcRefs, invoiceRefs, srvRefs, srvsResolvedTo } from "./po-list.ts";
 import { contains, startsWith } from "./sql.ts";
 
 export type SearchQuery = z.output<(typeof routes)["search.query"]["query"]>;
@@ -214,10 +214,6 @@ export function searchSrvs(db: Db, t: Terms, f: SearchQuery, limit: number | und
     .orderBy(...ranked(t, srv.srvNumber), desc(srv.srvDate), srv.id);
   return db.query(limit === undefined ? query : query.limit(limit));
 }
-
-/** The SRVs with a line resolved to `column = id` (INV-37). */
-const srvsResolvedTo = (db: Db, column: AnyColumn, id: string) =>
-  inArray(srv.id, db.build.select({ id: srvItem.srvId }).from(srvItem).where(eq(column, id)));
 
 /** A DC's lines with their PO item rate, its invoice and the SRVs resolved to it. */
 export const dcExtras = (db: Db, dcId: string) =>

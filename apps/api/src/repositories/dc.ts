@@ -1,12 +1,12 @@
 // DC rows (ARCHITECTURE §8.2) and the DC list, detail and delete reads (SPEC-11 §2). Plain rows: the filters that
 // need no business value run in SQL; the list totals come from the domain in the service (C2).
 import type { Db, Statement } from "@senstosales/db";
-import { dc, dcItem, invoice, po, poItem, reconciliationIssue, srv, srvItem, UniqueViolation } from "@senstosales/db";
+import { dc, dcItem, invoice, po, poItem, reconciliationIssue, srvItem, UniqueViolation } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import { and, count, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import { srvRefs } from "./po-list.ts";
+import { srvRefs, srvsResolvedTo } from "./po-list.ts";
 import { apiColumns, contains, flagColumns } from "./sql.ts";
 
 /** The filters of the DC list and its stats; the value range is applied to the totals by the service. */
@@ -50,13 +50,17 @@ export async function findDc(db: Db, id: string) {
 }
 
 /**
- * The DC and its PO's version in one read. A delete that commits after this read bumps that version, so a batch
- * guarded on it fails instead of writing for a DC that is gone (EC-25).
+ * The DC with its PO's reference and version, in one read. A delete that commits after this read bumps that version,
+ * so a batch guarded on it fails instead of writing for a DC that is gone (EC-25).
  */
-export async function findDcForWrite(db: Db, id: string) {
+export async function findDcWithPo(db: Db, id: string) {
   const rows = await db.query(
     db.build
-      .select({ ...apiColumns(dc), poVersion: po.version })
+      .select({
+        dc: apiColumns(dc),
+        po: { id: po.id, poNumber: po.poNumber, isGemc: po.isGemc },
+        poVersion: po.version,
+      })
       .from(dc)
       .innerJoin(po, eq(po.id, dc.poId))
       .where(eq(dc.id, id)),
@@ -176,27 +180,38 @@ export const itemsOfDc = (db: Db, dcId: string) =>
       .orderBy(poItem.poItemNo, dcItem.id),
   );
 
-const linkedSrvItem = (dcId: string) => eq(srvItem.resolvedDcId, dcId);
-
 /** The SRVs with an item linked to the DC (INV-37). */
-export const srvsOfDc = (db: Db, dcId: string) =>
-  srvRefs(
-    db,
-    exists(
-      db.build
-        .select({ one: sql`1` })
-        .from(srvItem)
-        .where(and(eq(srvItem.srvId, srv.id), linkedSrvItem(dcId))),
-    ),
-  );
+export const srvsOfDc = (db: Db, dcId: string) => srvRefs(db, srvsResolvedTo(db, srvItem.resolvedDcId, dcId));
 
-/** The backward links that block a delete (INV-35). */
+/** The backward links that block a DC delete (INV-35): its invoice, and the SRV items linked to it. */
+const blockingLinks = (db: Db, dcId: string) => ({
+  invoices: exists(
+    db.build
+      .select({ one: sql`1` })
+      .from(invoice)
+      .where(eq(invoice.dcId, dcId)),
+  ),
+  srvItems: exists(
+    db.build
+      .select({ one: sql`1` })
+      .from(srvItem)
+      .where(eq(srvItem.resolvedDcId, dcId)),
+  ),
+});
+
+/** Whether each kind of link that blocks a delete exists, as a count of 0 or 1 (INV-35). */
 export async function deleteLinksOfDc(db: Db, dcId: string) {
-  const [invoices, srvItems] = await Promise.all([
-    db.query(db.build.select({ n: count() }).from(invoice).where(eq(invoice.dcId, dcId))),
-    db.query(db.build.select({ n: count() }).from(srvItem).where(linkedSrvItem(dcId))),
-  ]);
-  return { invoices: invoices[0]?.n ?? 0, srvItems: srvItems[0]?.n ?? 0 };
+  const { invoices, srvItems } = blockingLinks(db, dcId);
+  const rows = await db.query(
+    db.build
+      .select({
+        invoices: sql<number>`${invoices}`.mapWith(Number),
+        srvItems: sql<number>`${srvItems}`.mapWith(Number),
+      })
+      .from(dc)
+      .where(eq(dc.id, dcId)),
+  );
+  return rows[0] ?? { invoices: 0, srvItems: 0 };
 }
 
 /**
@@ -204,10 +219,9 @@ export async function deleteLinksOfDc(db: Db, dcId: string) {
  * delete built from a read without links must not remove a DC that gained one before the commit (INV-35).
  */
 export const stillUnlinked = (db: Db, dcId: string): Statement => {
-  const linked = sql`EXISTS (SELECT 1 FROM ${invoice} WHERE ${invoice.dcId} = ${dcId})
-    OR EXISTS (SELECT 1 FROM ${srvItem} WHERE ${srvItem.resolvedDcId} = ${dcId})`;
+  const { invoices, srvItems } = blockingLinks(db, dcId);
   return db.build
     .update(dc)
-    .set({ version: sql`CASE WHEN ${linked} THEN NULL ELSE ${dc.version} END` })
+    .set({ version: sql`CASE WHEN ${or(invoices, srvItems)} THEN NULL ELSE ${dc.version} END` })
     .where(eq(dc.id, dcId));
 };

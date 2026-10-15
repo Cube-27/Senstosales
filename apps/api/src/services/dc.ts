@@ -28,7 +28,7 @@ import {
   dcsNumbered,
   deleteLinksOfDc,
   findDc,
-  findDcForWrite,
+  findDcWithPo,
   invoicesOfDcs,
   isNumberCollision,
   itemsOfDc,
@@ -43,13 +43,15 @@ import { audit } from "./audit.ts";
 import type { SupplierDeps } from "./index.ts";
 import { reresolveLinks } from "./links.ts";
 import type { Comparator } from "./paging.ts";
-import { byNum, byNumber, byText, desc, on, page } from "./paging.ts";
+import { byNum, byNumber, byText, desc, inValueRange, on, page } from "./paging.ts";
 import type { PoSnapshot } from "./recompute.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
 
 export type DcCreate = z.output<(typeof routes)["dc.create"]["body"]>;
 type DcUpdate = z.output<(typeof routes)["dc.update"]["body"]>;
 type ListQuery = z.output<(typeof routes)["dc.list"]["query"]>;
+/** The fields of a create or edit body that name the DC and its GC. */
+type Numbered = Pick<DcCreate, "number" | "dcDate" | "gcNumber" | "gcDate">;
 
 /** Header fields the form starts blank; the supplier's own details are filled in. */
 const BLANK_HEADER = {
@@ -66,6 +68,11 @@ const BLANK_HEADER = {
   modeOfTransport: null,
   remarks: null,
 } satisfies Partial<DcCreate>;
+
+type Doc = { id: string; number: string; date: DcCreate["dcDate"] };
+
+/** No SRV link changes: an edit that keeps the DC's number and FY. */
+const NO_LINKS = { changes: new Map<string, string | null>(), poIds: new Set<string>(), statements: [] };
 
 /** The plain reason a DC delete is refused (INV-35). */
 const DELETE_BLOCKED: Partial<Record<DeleteBlockReason, string>> = {
@@ -117,7 +124,7 @@ const DEFAULT = [desc(SORTS.dcDate), desc(SORTS.number), desc(on<Row, string>((r
  * One row per DC the filters keep, as the legacy list totals it: each line adds its PO item's ordered and received
  * quantities, its dispatched quantity, and dispatched × the PO item's rate. Then the value range.
  */
-function toRows(lines: readonly Line[], { valueMin, valueMax }: DcFilters): Row[] {
+function toRows(lines: readonly Line[], filters: DcFilters): Row[] {
   return [...Map.groupBy(lines, (line) => line.id).values()]
     .map((group): Row => {
       const { id, number, dcDate, financialYear, poId, poNumber } = group[0]!;
@@ -135,9 +142,7 @@ function toRows(lines: readonly Line[], { valueMin, valueMax }: DcFilters): Row[
         value: sumMoney(group.map((line) => qtyValue(line.dspQty, line.rate))),
       };
     })
-    .filter(
-      (row) => (valueMin === undefined || row.value >= valueMin) && (valueMax === undefined || row.value <= valueMax),
-    );
+    .filter((row) => inValueRange(row.value, filters));
 }
 
 export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
@@ -148,7 +153,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
   }
 
   async function loadDc(id: string) {
-    const row = await findDcForWrite(db, id);
+    const row = await findDcWithPo(db, id);
     if (row === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
     return row;
   }
@@ -179,6 +184,16 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     return statements.flat();
   }
 
+  /**
+   * The SRV link changes for `numbers` once DC `id` is stored as `doc`, or removed when `doc` is null: every DC of
+   * those numbers is read in any FY and the domain resolves each citing item (INV-37).
+   */
+  async function relink(supplier: string, id: string, numbers: readonly string[], doc: Doc | null) {
+    const stored = (await dcsNumbered(db, supplier, [...new Set(numbers)])).filter((d) => d.id !== id);
+    const docs = doc === null ? stored : [...stored, doc];
+    return reresolveLinks(db, { supplierId: supplier, kind: "dc", numbers: [...new Set(numbers)], docs });
+  }
+
   const commit = (statements: readonly Statement[]) =>
     statements.reduce((batch, s) => batch.add(s), new WriteBatch(db)).commit();
 
@@ -186,7 +201,11 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
   async function createOnce(supplier: string, body: DcCreate, number: string) {
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
     const row = await loadPo(body.poId);
-    const [snapshot, stored] = await Promise.all([loadPoSnapshot(db, body.poId), dcsNumbered(db, supplier, [number])]);
+    const id = newId();
+    const [snapshot, links] = await Promise.all([
+      loadPoSnapshot(db, body.poId),
+      relink(supplier, id, [number], { id, number, date: body.dcDate }),
+    ]);
     const lines = body.items.map((item) => ({ poItemId: item.poItemId, qty: item.dspQty }));
     const issues = validateDcLines({ poItemIds: new Set(snapshot.items.map((i) => i.id)), lines });
     if (issues.length > 0) throw linesError(issues);
@@ -196,16 +215,8 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     const gc = gcOf(body, number);
     const { items, ...fields } = body;
     const { poId } = fields;
-    const id = newId();
     const dcRow = { ...fields, ...gc, id, supplierId: supplier, number, financialYear, createdAt: now };
     const itemRows = items.map((item) => ({ id: newId(), supplierId: supplier, dcId: id, ...item, createdAt: now }));
-
-    const links = await reresolveLinks(db, {
-      supplierId: supplier,
-      kind: "dc",
-      numbers: [number],
-      docs: [...stored, { id, number, date: body.dcDate }],
-    });
 
     await commit([
       db.build.insert(dc).values(dcRow),
@@ -229,15 +240,16 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
    * recomputed for its flags.
    */
   async function updateOnce(supplier: string, id: string, { version, ...body }: DcUpdate, number: string) {
-    const { poVersion, ...stored } = await loadDc(id);
+    const { dc: stored, poVersion } = await loadDc(id);
     const fields = { ...body, number, financialYear: fyOf(body.dcDate), ...gcOf(body, number) };
-    const numbers = [...new Set([stored.number, number])];
-    const docs = (await dcsNumbered(db, supplier, numbers)).map((d) =>
-      d.id === id ? { id, number, date: body.dcDate } : d,
-    );
-    const links = await reresolveLinks(db, { supplierId: supplier, kind: "dc", numbers, docs });
+    // Links resolve by (number, FY) (INV-24): with both unchanged, no citation resolves differently.
+    const moved = number !== stored.number || fields.financialYear !== stored.financialYear;
+    const [snapshot, links] = await Promise.all([
+      loadPoSnapshot(db, stored.poId),
+      moved ? relink(supplier, id, [stored.number, number], { id, number, date: body.dcDate }) : NO_LINKS,
+    ]);
     const recompute = [
-      ...guardedRecompute(await loadPoSnapshot(db, stored.poId), poVersion, links.changes),
+      ...guardedRecompute(snapshot, poVersion, links.changes),
       ...(await otherPos(links.poIds, stored.poId, links.changes)),
     ];
     const { id: _id, poId: _poId, createdAt: _createdAt, version: _version, ...before } = stored;
@@ -260,13 +272,14 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 
   /** One delete attempt: refused while an invoice or an SRV item links the DC (INV-35). */
   async function deleteOnce(supplier: string, id: string) {
-    const { poVersion, ...row } = await loadDc(id);
+    const { dc: row, poVersion } = await loadDc(id);
     const reason = deleteBlock("dc", await deleteLinksOfDc(db, id));
     if (reason !== null) throw new ConflictError("delete-blocked", DELETE_BLOCKED[reason]!, { reason });
 
-    const docs = (await dcsNumbered(db, supplier, [row.number])).filter((d) => d.id !== id);
-    const links = await reresolveLinks(db, { supplierId: supplier, kind: "dc", numbers: [row.number], docs });
-    const snapshot = await loadPoSnapshot(db, row.poId);
+    const [snapshot, links] = await Promise.all([
+      loadPoSnapshot(db, row.poId),
+      relink(supplier, id, [row.number], null),
+    ]);
     const lines = snapshot.dcLines.filter((line) => line.dcId === id);
     const kept = snapshot.dcLines.filter((line) => line.dcId !== id);
     const recompute = guardedRecompute({ ...snapshot, dcLines: kept }, poVersion, links.changes);
@@ -301,22 +314,31 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
    * database names only one index, so the stored DCs decide, and a taken DC number is the one named. `self` is the
    * DC being edited, which never collides with itself.
    */
-  async function numberTaken(
-    supplier: string,
-    doc: { number: string; dcDate: DcCreate["dcDate"]; gcNumber: string },
-    self?: string,
-  ) {
-    const fy = fyOf(doc.dcDate);
-    const taken = (await dcsNumbered(db, supplier, [doc.number])).some((d) => d.id !== self && fyOf(d.date) === fy);
-    if (taken) return new ConflictError("dc-number-taken", `DC ${doc.number} already exists in FY ${fy}.`);
-    return new ConflictError("gc-number-taken", `GC ${doc.gcNumber} already exists in FY ${fy}.`);
+  async function numberTaken(supplier: string, body: Numbered, number: string, self: string | undefined) {
+    const fy = fyOf(body.dcDate);
+    const taken = (await dcsNumbered(db, supplier, [number])).some((d) => d.id !== self && fyOf(d.date) === fy);
+    if (taken) return new ConflictError("dc-number-taken", `DC ${number} already exists in FY ${fy}.`);
+    return new ConflictError("gc-number-taken", `GC ${gcOf(body, number).gcNumber} already exists in FY ${fy}.`);
   }
 
-  /** Numbers are looked up trimmed (INV-24), so they are stored trimmed: " 7 " and "7" are one DC number (D-0248). */
-  function trimmedNumber(raw: string): string {
-    const number = raw.trim();
+  /**
+   * Saves `body` as DC `self` (an edit) or a new DC, by `attempt` with the trimmed number, retried on a stale PO; a
+   * DC or GC number taken in the FY is the 409 naming it. Numbers are looked up trimmed (INV-24), so they are stored
+   * trimmed: " 7 " and "7" are one DC number (D-0248).
+   */
+  async function saveNumbered<T>(
+    body: Numbered,
+    self: string | undefined,
+    attempt: (supplier: string, number: string) => Promise<T>,
+  ): Promise<T> {
+    const supplier = await supplierId.require();
+    const number = body.number.trim();
     if (number === "") throw fieldError("number-blank", "number", "Enter the DC number.");
-    return number;
+    try {
+      return await retrying(["po"], () => attempt(supplier, number));
+    } catch (err) {
+      throw isNumberCollision(err) ? await numberTaken(supplier, body, number, self) : err;
+    }
   }
 
   async function rows(filters: DcFilters) {
@@ -333,26 +355,13 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 
     /** INV-32, INV-26, INV-22: stores the DC in its date's FY, or answers 400, 404 or 409 and writes nothing. */
     async create(body: DcCreate) {
-      const supplier = await supplierId.require();
-      const number = trimmedNumber(body.number);
-      try {
-        return (await findDc(db, await retrying(["po"], () => createOnce(supplier, body, number))))!;
-      } catch (err) {
-        if (!isNumberCollision(err)) throw err;
-        throw await numberTaken(supplier, { number, dcDate: body.dcDate, gcNumber: gcOf(body, number).gcNumber });
-      }
+      const id = await saveNumbered(body, undefined, (supplier, number) => createOnce(supplier, body, number));
+      return (await findDc(db, id))!;
     },
 
     /** INV-33, INV-25, INV-26, INV-95: changes header fields only, or answers 400, 404 or 409 and writes nothing. */
     async update(id: string, body: DcUpdate) {
-      const supplier = await supplierId.require();
-      const number = trimmedNumber(body.number);
-      try {
-        await retrying(["po"], () => updateOnce(supplier, id, body, number));
-      } catch (err) {
-        if (!isNumberCollision(err)) throw err;
-        throw await numberTaken(supplier, { number, dcDate: body.dcDate, gcNumber: gcOf(body, number).gcNumber }, id);
-      }
+      await saveNumbered(body, id, (supplier, number) => updateOnce(supplier, id, body, number));
       return (await findDc(db, id))!;
     },
 
@@ -393,15 +402,13 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     },
 
     async detail(id: string) {
-      const { poVersion: _poVersion, ...row } = await loadDc(id);
-      const [poRow, items, invoices, srvs, flags] = await Promise.all([
-        loadPo(row.poId),
+      const { dc: row, po: poRef } = await loadDc(id);
+      const [items, invoices, srvs, flags] = await Promise.all([
         itemsOfDc(db, id),
         invoicesOfDcs(db, [id]),
         srvsOfDc(db, id),
         openFlagsOfDc(db, id),
       ]);
-      const poRef = { id: poRow.id, poNumber: poRow.poNumber, isGemc: poRow.isGemc };
       return { dc: row, po: poRef, items, invoice: invoices.get(id) ?? null, srvs, flags };
     },
   };
@@ -410,7 +417,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 export type DcService = ReturnType<typeof dcService>;
 
 /** INV-26: the GC number and date, trimmed like the DC number; blank ones take the DC's. */
-const gcOf = (body: Pick<DcCreate, "dcDate" | "gcNumber" | "gcDate">, number: string) =>
+const gcOf = (body: Omit<Numbered, "number">, number: string) =>
   defaultGc({ dcNumber: number, dcDate: body.dcDate, gcNumber: body.gcNumber?.trim() ?? null, gcDate: body.gcDate });
 
 /** The 400 for invalid lines: the first issue's code, and every issue at its body path (SPEC-11 §4.3). */

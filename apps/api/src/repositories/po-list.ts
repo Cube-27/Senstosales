@@ -1,7 +1,7 @@
 // PO list, stats and detail reads (SPEC-10 §4.1). Plain rows: filters and sorts run in SQL over stored columns,
 // including the derived ones; nothing here computes a business value (C2).
 import type { Db } from "@senstosales/db";
-import { dc, invoice, po, poItem, poLot, reconciliationIssue, srv } from "@senstosales/db";
+import { dc, invoice, po, poItem, poLot, reconciliationIssue, srv, srvItem } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
 import { and, asc, count, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
@@ -189,6 +189,10 @@ export const srvRefs = (db: Db, where: SQL | undefined) =>
       .where(where)
       .orderBy(srv.srvDate, srv.id),
   );
+
+/** The SRVs with a line resolved to `column = id` (INV-37). */
+export const srvsResolvedTo = (db: Db, column: AnyColumn, id: string) =>
+  inArray(srv.id, db.build.select({ id: srvItem.srvId }).from(srvItem).where(eq(column, id)));
 
 /** Every DC, invoice and SRV of the PO, unpaged, oldest first (INV-73). */
 export async function linkedDocsOfPo(db: Db, poId: string) {
