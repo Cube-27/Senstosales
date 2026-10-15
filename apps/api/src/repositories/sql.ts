@@ -1,8 +1,8 @@
 // SQL pieces the list repositories share.
 import { po, reconciliationIssue } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
-import type { SQLWrapper, Table } from "drizzle-orm";
-import { getTableColumns, sql } from "drizzle-orm";
+import type { AnyColumn, SQLWrapper, Table } from "drizzle-orm";
+import { getTableColumns, getTableName, sql } from "drizzle-orm";
 
 /** A table's columns without `supplier_id`, which no API shape carries. */
 export function apiColumns<T extends Table>(table: T) {
@@ -10,11 +10,18 @@ export function apiColumns<T extends Table>(table: T) {
   return columns;
 }
 
+const literal = (text: string) => text.replace(/[\\%_]/g, String.raw`\$&`);
+const like = (column: SQLWrapper, pattern: string) => sql`${column} LIKE ${pattern} ESCAPE ${sql.raw(String.raw`'\'`)}`;
+
 /** `LIKE` on the text as typed: `%` and `_` match themselves. */
-export function contains(column: SQLWrapper, text: string) {
-  const pattern = "%" + text.replace(/[\\%_]/g, String.raw`\$&`) + "%";
-  return sql`${column} LIKE ${pattern} ESCAPE ${sql.raw(String.raw`'\'`)}`;
-}
+export const contains = (column: SQLWrapper, text: string) => like(column, `%${literal(text)}%`);
+
+/** Starts with the text as typed, ignoring ASCII case as `LIKE` does. */
+export const startsWith = (column: SQLWrapper, text: string) => like(column, `${literal(text)}%`);
+
+/** A column with its table's name; a column placed directly in a select-list fragment is otherwise left bare. */
+export const qualified = (column: AnyColumn) =>
+  sql`${sql.identifier(getTableName(column.table))}.${sql.identifier(column.name)}`;
 
 /** A flag's API columns: the fingerprint is storage only; `zFlag` does not carry it. */
 const { fingerprint: _, ...flagApiColumns } = apiColumns(reconciliationIssue);
