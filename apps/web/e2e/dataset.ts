@@ -29,6 +29,8 @@ export const DATASETS = {
   fresh: async (_url: string) => {},
   /** Onboarded with the synthetic supplier and the default GST rates; the password is still the default. */
   onboarded: (url: string) => send(url, "/api/onboarding", { ...SUPPLIER, cgstPct: "9", sgstPct: "9" }),
+  /** The same, on a server of its own, so the POs a BHEL sync ingests stay out of the other specs. */
+  "bhel-sync": (url: string) => send(url, "/api/onboarding", { ...SUPPLIER, cgstPct: "9", sgstPct: "9" }),
 } satisfies Record<string, (url: string) => Promise<void>>;
 
 export type Dataset = keyof typeof DATASETS;

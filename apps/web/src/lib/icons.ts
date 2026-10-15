@@ -60,3 +60,5 @@ export {
   Save,
   Trash2 as Delete,
 } from "lucide-react";
+// The BHEL sync screen (SPEC-19).
+export { ArrowRightLeft, Lock, Play, RefreshCw as Reset, Shield } from "lucide-react";
