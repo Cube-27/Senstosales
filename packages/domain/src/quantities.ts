@@ -57,3 +57,14 @@ export function poUninvoicedQty(items: readonly { uninvoicedQty: Qty; cancelled:
 function sumActive<T extends { cancelled: boolean }>(items: readonly T[], qty: (item: T) => Qty): Qty {
   return sumQty(items.filter((i) => !i.cancelled).map(qty));
 }
+
+/**
+ * INV-73: the supply progress ring's percentage, the larger of dispatched and accepted (shown as received, INV-09)
+ * over ordered, rounded half up to a whole percent as the legacy list did. Not clamped: over-supply shows above 100
+ * (A-7). Nothing ordered is 0%.
+ */
+export function supplyProgressPct({ ordQty, dspQty, rcdQty }: { ordQty: Qty; dspQty: Qty; rcdQty: Qty }): number {
+  if (ordQty <= 0) return 0;
+  const supplied = Math.max(dspQty, rcdQty, 0);
+  return Math.floor((supplied * 200 + ordQty) / (2 * ordQty));
+}

@@ -22,7 +22,7 @@ export {
   sumQty,
 } from "./units.ts";
 export type { ItemQuantities, ItemQuantityInput, PoTotals, PoTotalsItem } from "./quantities.ts";
-export { computeItemQuantities, computePoTotals, poUninvoicedQty } from "./quantities.ts";
+export { computeItemQuantities, computePoTotals, poUninvoicedQty, supplyProgressPct } from "./quantities.ts";
 export type { ItemStatus, ItemStatusInput, PoStatus } from "./status.ts";
 export { itemStatus, poStatus } from "./status.ts";
 export type { DocKey, Fy } from "./fy.ts";
