@@ -252,3 +252,43 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Add `poDate` to those finders.
 - Why: They carry the PO version for write guards and feed the detail API; the documents need different columns.
 - Reversible: yes.
+
+### D-0583 — Amount in words carries paise and prints them only when non-zero
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 E2E FIX-3 (#94) · Status: decided
+- Decision: Round to whole paise first, so paise carry into rupees (`5.996` prints `Rupees Six Only`); paise print only when non-zero; legacy's "and" stays.
+- Alternatives: Drop "and".
+- Why: Owner (E2E); EC-49 admitted; "and" is legacy wording (C7).
+- Reversible: yes.
+
+### D-0586 — The invoice a DC cites
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 E2E FIX-3 (#94) · Status: decided
+- Decision: The invoice number and date filled in on the DC win, else the invoice made from the DC; the DC workbook and the daily dispatch summary use this rule.
+- Alternatives: The DC's own invoice first.
+- Why: EC-47; the owner fills in invoices raised outside the app.
+- Reversible: yes.
+
+### D-0587 — DC notes on the sheet
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 E2E FIX-3 (#94) · Status: decided
+- Decision: The DC's notes, split on blank lines as the DC form saves them, fill remarks 4 to 6; notes past the sixth join it with two spaces; no notes prints legacy's `TC No  dt.  Of`.
+- Alternatives: Grow rows.
+- Why: The template has three remark slots above the Lot No. line.
+- Reversible: yes.
+
+### D-0588 — Digit-only DC and PO numbers print as numbers
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 E2E FIX-3 (#94) · Status: decided
+- Decision: A DC or PO number of digits alone without a leading zero (up to 15 digits) prints as a number; `075` stays text.
+- Alternatives: All numeric.
+- Why: The owner's DCs show numbers; a leading zero must survive.
+- Reversible: yes.
+
+### D-0589 — Consignee over three rows
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 E2E FIX-3 (#94) · Status: decided
+- Decision: B9 the name (`Consignee` when empty), B10 the first address line, B11 the rest joined by `, `.
+- Alternatives: One wrapped cell.
+- Why: The owner's DCs.
+- Reversible: yes.

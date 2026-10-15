@@ -308,3 +308,43 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: An empty workbook.
 - Why: The file name needs the PO or DC number.
 - Reversible: yes.
+
+### D-0580 — Export quantities exact
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 E2E FIX-3 (#94) · Status: decided
+- Decision: `qtyNumber` writes the stored quantity exactly (3 dp) in xlsx, CSV and registers.
+- Alternatives: Keep 2-dp rounding.
+- Why: Owner (E2E DOC-FRAC, EXP-02/04/05).
+- Reversible: yes.
+
+### D-0581 — GEMC register amounts at 5 dp
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 E2E FIX-3 (#94) · Status: decided
+- Decision: `moneyNumber(m, { gemc })` writes 5 dp for a GEMC PO's register rows, 2 dp otherwise; the delivery tracker's pending value stays at 2 dp (a computed sum, shown as legacy).
+- Alternatives: 5 dp everywhere.
+- Why: A-12; owner.
+- Reversible: yes.
+
+### D-0582 — Empty list workbooks keep the header row
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 E2E FIX-3 (#94) · Status: decided
+- Decision: The xlsx writer always writes the header row; `bareWhenEmpty` is removed.
+- Alternatives: Legacy's bare sheet.
+- Why: Owner (EXP-09); EC-45 admitted.
+- Reversible: yes.
+
+### D-0592 — Daily dispatch columns
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 E2E FIX-3 (#94) · Status: decided
+- Decision: The pending summary's columns: the dispatched quantity with its unit, the DC line's packets (blank when none), GEMC from the invoice made from the DC else the PO (not from an invoice only filled in on the DC, which the app does not hold), Dispatch Delivered the DC's department number; TOTAL each unit's sum joined by `+`, and the packets summed.
+- Alternatives: Legacy's quantity in Dispatch Delivered.
+- Why: The owner's sample summaries.
+- Reversible: yes.
+
+### D-0593 — Daily dispatch order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 E2E FIX-3 (#94) · Status: decided
+- Decision: DC date, then the order DCs were made (legacy `created_at`), then DC, then PO item number; DC date is the only sort column.
+- Alternatives: DC number.
+- Why: Legacy order.
+- Reversible: yes.

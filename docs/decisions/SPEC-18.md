@@ -114,3 +114,27 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Header edits keep surrounding spaces.
 - Why: One rule across forms; spaces around a typed value carry nothing.
 - Reversible: yes.
+
+### D-0584 — HSN per invoice line
+
+- Date: 2026-10-15 · Spec/PR: SPEC-18 E2E FIX-3 (#94) · Status: decided
+- Decision: `invoice_item.hsn` is stored; the preview fills each line from Settings `invoiceDefaults.hsn` and the server applies the same default to a blank line.
+- Alternatives: HSN on the PO item.
+- Why: Owner; BHEL pages carry no HSN.
+- Reversible: costly (column).
+
+### D-0585 — Packets per DC line and invoice line
+
+- Date: 2026-10-15 · Spec/PR: SPEC-18 E2E FIX-3 (#94) · Status: decided
+- Decision: `dc_item.packets` and `invoice_item.packets` are stored, nullable; a DC-sourced invoice line defaults to its DC line's; the invoice workbook prints 1 for a line without, as legacy.
+- Alternatives: Packets per document.
+- Why: Owner ("entered per item").
+- Reversible: costly.
+
+### D-0594 — Optional fields in the edit dialogs
+
+- Date: 2026-10-15 · Spec/PR: SPEC-18 E2E FIX-3 (#94) · Status: decided
+- Decision: The DC edit no longer requires GC Number or Consignee (a blank GC number takes the DC number, as on create); the invoice edit no longer requires Buyer Address; DC create and edit bodies take the cited invoice as optional.
+- Alternatives: Keep them required.
+- Why: Owner; API callers that predate EC-47 send no invoice fields.
+- Reversible: yes.
