@@ -33,6 +33,8 @@ export const DATASETS = {
   onboarded,
   /** The same, on a server of its own, so the POs a BHEL sync ingests stay out of the other specs. */
   "bhel-sync": onboarded,
+  /** The same, on an API of its own: the document flow\'s numbers meet no other spec\'s data. */
+  documents: onboarded,
 } satisfies Record<string, (url: string) => Promise<void>>;
 
 export type Dataset = keyof typeof DATASETS;
