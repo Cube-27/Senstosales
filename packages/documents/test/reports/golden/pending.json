@@ -83,7 +83,7 @@
     [{ "v": "Tel. No. 000-000-0000", "s": "tel" }],
     [],
     [{ "v": "Example Supplier", "s": "company" }],
-    [{ "v": "", "s": "address" }],
+    [{ "v": null, "s": "address" }],
     [{ "v": "1 Example Road, Example City", "s": "address" }],
     [{ "v": "SUMMARY", "s": "title" }],
     [null, { "v": "Date:", "s": "dateLabel" }, { "v": "01-06-2025", "s": "dateValue" }],
@@ -105,7 +105,7 @@
       { "v": "10 NOS", "s": "cell" },
       { "v": 0, "s": "cell" },
       { "v": "4500101", "s": "cell" },
-      { "v": "", "s": "cell" },
+      { "v": null, "s": "cell" },
       { "v": "201", "s": "cell" },
       { "v": "101,102", "s": "cell" },
       { "v": 9, "s": "cell" }
@@ -117,7 +117,7 @@
       { "v": 0, "s": "cell" },
       { "v": "4500102", "s": "cell" },
       { "v": "GEMC-0001", "s": "cell" },
-      { "v": "", "s": "cell" },
+      { "v": null, "s": "cell" },
       { "v": "103", "s": "cell" },
       { "v": 1.25, "s": "cell" }
     ],
@@ -126,11 +126,11 @@
       null,
       { "v": 12.5, "s": "totalCell" },
       { "v": 0, "s": "totalCell" },
-      { "v": "", "s": "totalCell" },
-      { "v": "", "s": "totalCell" },
-      { "v": "", "s": "totalCell" },
-      { "v": "", "s": "totalCell" },
-      { "v": "", "s": "totalCell" }
+      { "v": null, "s": "totalCell" },
+      { "v": null, "s": "totalCell" },
+      { "v": null, "s": "totalCell" },
+      { "v": null, "s": "totalCell" },
+      { "v": null, "s": "totalCell" }
     ]
   ]
 }

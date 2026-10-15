@@ -58,7 +58,9 @@ interface ReconciliationRow {
   balanceQty: string;
 }
 
-const numbers = (refs: DocRef[]) => refs.map((r) => r.number).join(",");
+/** A list as the workbook cell holds it: joined with `,`, a blank cell when empty. */
+const joined = (texts: string[]) => texts.join(",") || null;
+const numbers = (refs: DocRef[]) => joined(refs.map((r) => r.number));
 
 describe("GET /api/reports/pending", () => {
   it("lists the items dated in the range with quantity to supply, as the pending golden's rows", async () => {
@@ -72,7 +74,7 @@ describe("GET /api/reports/pending", () => {
         `${r.ordQty} ${r.unit}`,
         0,
         r.poNumber,
-        r.gemcNumbers.join(","),
+        joined(r.gemcNumbers),
         numbers(r.invoices),
         numbers(r.dcs),
         Number(r.dspQty),

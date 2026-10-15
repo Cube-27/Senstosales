@@ -8,8 +8,11 @@ import { isDeepStrictEqual } from "node:util";
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 type Style = Record<string, Json>;
 
-/** A cell: its value, or `{ v, s }` with the name of its style; an unnamed style is shown whole, so it fails. */
-export type GoldenCell = string | number | null | { v: string | number; s: string } | { v: Json; style: Style };
+/**
+ * A cell: its value, or `{ v, s }` with the name of its style (`v` null for a styled blank, which is how a writer
+ * stores an empty string); an unnamed style is shown whole, so it fails.
+ */
+export type GoldenCell = string | number | null | { v: string | number | null; s: string } | { v: Json; style: Style };
 
 export interface WorkbookGolden {
   fileName: string;
@@ -47,7 +50,9 @@ const readDefaults = (async () => {
   blank.addWorksheet("x");
   const read = new ExcelJS.Workbook();
   await read.xlsx.load(await blank.xlsx.writeBuffer());
-  return plain(read.worksheets[0]!.pageSetup) as Record<string, Json>;
+  // A sheet with print options reads back each one; those it leaves off are false.
+  const printOptions = { showGridLines: false, showRowColHeaders: false, horizontalCentered: false, verticalCentered: false };
+  return { ...printOptions, ...(plain(read.worksheets[0]!.pageSetup) as Record<string, Json>) };
 })();
 
 /**
@@ -69,8 +74,8 @@ function cellOf(cell: ExcelJS.Cell, styles: Record<string, Style>, used: Set<str
   if (cell.type === ExcelJS.ValueType.Merge) return null;
   const style = styleOf(cell);
   const value = plain(cell.value);
-  const scalar = typeof value === "string" || typeof value === "number";
-  if (Object.keys(style).length === 0 && (scalar || value === null)) return value;
+  const scalar = typeof value === "string" || typeof value === "number" || value === null;
+  if (Object.keys(style).length === 0 && scalar) return value;
   const name = Object.keys(styles).find((key) => isDeepStrictEqual(styles[key], style));
   if (name === undefined || !scalar) return { v: value, style };
   used.add(name);

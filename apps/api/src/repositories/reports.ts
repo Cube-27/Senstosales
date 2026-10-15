@@ -24,6 +24,7 @@ export const reportItems = (db: Db, where: SQL | undefined, page: KeysetPage) =>
         gemcNumber: po.gemcNumber,
         poItemNo: poItem.poItemNo,
         description: poItem.description,
+        materialCode: poItem.materialCode,
         unit: poItem.unit,
         ordQty: poItem.ordQty,
         dspQty: poItem.dspQty,
@@ -98,6 +99,10 @@ export async function itemDocuments(db: Db, poItemIds: readonly string[]) {
   ]);
   return { dcs, invoices };
 }
+
+/** The numbers of the POs with these ids, unknown ids left out; at most 100 ids (D1). */
+export const poNumbersOf = (db: Db, poIds: readonly string[]) =>
+  db.query(db.build.select({ id: po.id, poNumber: po.poNumber }).from(po).where(inArray(po.id, [...poIds])));
 
 /** The most item ids {@link itemDocuments} takes. */
 export const DOCUMENTS_BATCH = 100;
