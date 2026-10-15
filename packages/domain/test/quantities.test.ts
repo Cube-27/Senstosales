@@ -155,7 +155,7 @@ describe("INV-73: supply progress = max(dispatched, accepted) / ordered, whole p
 
 // A manual PO's value is the sum of its lines, ordered × rate as entered, each line rounded to 5 dp (owner,
 // 2026-10-15); a PO read from a BHEL page keeps the page's PO-VALUE.
-describe("manualPoValue", () => {
+describe("manualPoValue (INV-115)", () => {
   const line = (ordQty: string, rate: string) => ({ ordQty: qty(ordQty), rate: money(rate) });
 
   it.each([

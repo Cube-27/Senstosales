@@ -40,7 +40,7 @@ export function averageLeadTimeDays(pos: readonly { poDate: IsoDate; firstSrvDat
 
 /**
  * The funnel's Pending Dispatch (A-22): ordered minus dispatched, never below 0 on each item, as the pending value is
- * clamped (owner, 2026-10-15); cancelled items have nothing pending (INV-07).
+ * clamped (owner, 2026-10-15; INV-114); cancelled items have nothing pending (INV-07).
  */
 export function pendingDispatchQty(items: readonly { ordQty: Qty; dspQty: Qty; cancelled: boolean }[]): Qty {
   // A difference of two milli-unit integers is a milli-unit integer; the brand cannot follow arithmetic.

@@ -70,8 +70,8 @@ export function supplyProgressPct({ ordQty, dspQty, rcdQty }: { ordQty: Qty; dsp
 }
 
 /**
- * A manual PO's value (owner, 2026-10-15): the sum of its lines, ordered × the rate as entered, each line rounded to
- * 5 dp. A PO read from a BHEL page keeps the page's PO-VALUE instead.
+ * A manual PO's value (owner, 2026-10-15; INV-115): the sum of its lines, ordered × the rate as entered, each line
+ * rounded to 5 dp. A PO read from a BHEL page keeps the page's PO-VALUE instead.
  */
 export const manualPoValue = (lines: readonly { ordQty: Qty; rate: Money }[]): Money =>
   sumMoney(lines.map((line) => qtyValue(line.ordQty, line.rate)));

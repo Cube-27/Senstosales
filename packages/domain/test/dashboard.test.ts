@@ -64,7 +64,7 @@ describe("fyStartOf", () => {
 
 // A-22: the funnel's Pending Dispatch, in milli-units: ordered minus dispatched, clamped per item as the pending
 // value is (owner, 2026-10-15); a cancelled item has nothing pending (INV-07).
-describe("pendingDispatchQty", () => {
+describe("pendingDispatchQty (INV-114)", () => {
   const item = (ordQty: string, dspQty: string, cancelled = false) => ({
     ordQty: qty(ordQty),
     dspQty: qty(dspQty),
