@@ -80,8 +80,8 @@ function reportsApi() {
     "GET /api/reports/pending": { items: PENDING, total: 3 },
     "GET /api/reports/reconciliation": { items: RECONCILIATION, total: 1 },
     "GET /api/reports/daily-dispatch": { items: DISPATCH, total: 2 },
-    "GET /api/reports/daily-dispatch/export": fileReply("Daily_Dispatch_2025-05-31_to_2025-06-01.xlsx"),
-    "GET /api/reports/pending/export": fileReply("Items_Summary_2025-05-31_to_2025-06-01.xlsx"),
+    "GET /api/reports/daily-dispatch/export": fileReply("Daily_Dispatch_2025-04-01_to_2025-06-01.xlsx"),
+    "GET /api/reports/pending/export": fileReply("Items_Summary_2025-04-01_to_2025-06-01.xlsx"),
     "GET /api/reports/reconciliation/export": fileReply("PO_Reconciliation_Report.xlsx"),
     "POST /api/reports/export-selected": fileReply("PO_Reconciliation_Report.xlsx"),
   });
@@ -92,7 +92,7 @@ const bodyRows = () => within(screen.getAllByRole("rowgroup")[1] as HTMLElement)
 const headers = () => screen.getAllByRole("columnheader").map((h) => h.textContent);
 
 describe("reports (SPEC-17 PR 4)", () => {
-  it("opens on Items Summary for yesterday to today, with the legacy columns", async () => {
+  it("opens on Items Summary for the current FY to today, with the legacy columns", async () => {
     const calls = reportsApi();
     renderApp("/reports");
     expect(await screen.findByRole("heading", { level: 1, name: "Operations Insights" })).toBeTruthy();
@@ -103,7 +103,7 @@ describe("reports (SPEC-17 PR 4)", () => {
     ).toEqual(["Items Summary", "Audit Ledger", "Daily Dispatch"]);
     await screen.findByText("Item 1");
     const sent = last(calls, "GET /api/reports/pending");
-    expect([sent?.get("from"), sent?.get("to")]).toEqual(["2025-05-31", "2025-06-01"]);
+    expect([sent?.get("from"), sent?.get("to")]).toEqual(["2025-04-01", "2025-06-01"]);
     expect(headers()).toEqual([
       "",
       "Material",
@@ -145,7 +145,7 @@ describe("reports (SPEC-17 PR 4)", () => {
         .getAllByRole("cell")
         .map((c) => c.textContent),
     ).toEqual(["", "4500001", "Item 1", "10", "4", "3", "1"]);
-    expect(last(calls, "GET /api/reports/reconciliation")?.get("from")).toBe("2025-05-31");
+    expect(last(calls, "GET /api/reports/reconciliation")?.get("from")).toBe("2025-04-01");
   });
 
   it("switches to Daily Dispatch: each DC line in the range, and downloads its summary", async () => {
@@ -180,11 +180,11 @@ describe("reports (SPEC-17 PR 4)", () => {
         .getByRole("link", { name: "101" })
         .getAttribute("href"),
     ).toBe(`/dc/${id("D1")}`);
-    expect(last(calls, "GET /api/reports/daily-dispatch")?.get("from")).toBe("2025-05-31");
+    expect(last(calls, "GET /api/reports/daily-dispatch")?.get("from")).toBe("2025-04-01");
     await userEvent.click(screen.getByRole("button", { name: "Download" }));
-    await waitFor(() => expect(saved).toEqual(["Daily_Dispatch_2025-05-31_to_2025-06-01.xlsx"]));
+    await waitFor(() => expect(saved).toEqual(["Daily_Dispatch_2025-04-01_to_2025-06-01.xlsx"]));
     const sent = last(calls, "GET /api/reports/daily-dispatch/export");
-    expect([sent?.get("from"), sent?.get("to")]).toEqual(["2025-05-31", "2025-06-01"]);
+    expect([sent?.get("from"), sent?.get("to")]).toEqual(["2025-04-01", "2025-06-01"]);
   });
 
   it("downloads the tab's workbook for the range, without the search text", async () => {
@@ -194,9 +194,9 @@ describe("reports (SPEC-17 PR 4)", () => {
     await screen.findByText("Item 1");
     expect(last(calls, "GET /api/reports/pending")?.get("q")).toBe("bolt");
     await userEvent.click(screen.getByRole("button", { name: "Download" }));
-    await waitFor(() => expect(saved).toEqual(["Items_Summary_2025-05-31_to_2025-06-01.xlsx"]));
+    await waitFor(() => expect(saved).toEqual(["Items_Summary_2025-04-01_to_2025-06-01.xlsx"]));
     const sent = last(calls, "GET /api/reports/pending/export");
-    expect([sent?.get("from"), sent?.get("to"), sent?.get("q")]).toEqual(["2025-05-31", "2025-06-01", null]);
+    expect([sent?.get("from"), sent?.get("to"), sent?.get("q")]).toEqual(["2025-04-01", "2025-06-01", null]);
   });
 
   it("downloads the selected rows' POs once each through export-selected, then clears the selection", async () => {
@@ -228,6 +228,6 @@ describe("reports (SPEC-17 PR 4)", () => {
     await waitFor(() => expect(last(calls, "GET /api/reports/pending")?.get("from")).toBe("2025-05-01"));
     expect(screen.getByRole("button", { name: "Reset" }).className).not.toContain("invisible");
     await userEvent.click(screen.getByRole("button", { name: "Reset" }));
-    await waitFor(() => expect(last(calls, "GET /api/reports/pending")?.get("from")).toBe("2025-05-31"));
+    await waitFor(() => expect(last(calls, "GET /api/reports/pending")?.get("from")).toBe("2025-04-01"));
   });
 });
