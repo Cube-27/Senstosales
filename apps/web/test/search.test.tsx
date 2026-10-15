@@ -164,11 +164,9 @@ describe("global search (SPEC-15 PR 5, INV-24)", () => {
 
   it("keeps the loading indicator's slot and the previous results while the next search runs (C8)", async () => {
     let release: () => void = () => {};
-    let n = 0;
-    searchApi(() => {
-      n += 1;
-      return n === 1 ? HITS : new Promise((resolve) => (release = () => resolve([HITS[3]])));
-    });
+    const held = new Promise((resolve) => (release = () => resolve([HITS[3]])));
+    // Keyed by the text, not the call count: slow typing may search a prefix first.
+    searchApi((url) => (url.searchParams.get("q") === "123" ? held : HITS));
     renderApp("/");
     const dialog = await openSearch();
     expect(within(dialog).queryByLabelText("Searching")).toBeNull();

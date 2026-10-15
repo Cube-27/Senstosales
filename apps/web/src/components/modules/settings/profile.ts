@@ -52,6 +52,19 @@ export const zOnboardingForm = zSettingsForm.pick({ supplier: true, rates: true 
 export type OnboardingFormInput = z.input<typeof zOnboardingForm>;
 export type OnboardingFormOutput = z.output<typeof zOnboardingForm>;
 
+/** The supplier and rate fields' API paths as the form's (the letterhead description is
+ * `invoiceDefaults.description`); onboarding and settings both write them. */
+export const SUPPLIER_SERVER_FIELDS = {
+  name: "supplier.name",
+  contact: "supplier.contact",
+  email: "supplier.email",
+  gstin: "supplier.gstin",
+  address: "supplier.address",
+  "invoiceDefaults.description": "supplier.description",
+  cgstPct: "rates.cgstPct",
+  sgstPct: "rates.sgstPct",
+} as const;
+
 export const EMPTY_ONBOARDING: OnboardingFormInput = {
   supplier: { name: "", contact: "", email: "", gstin: "", address: "", description: "" },
   rates: { cgstPct: "9", sgstPct: "9" },

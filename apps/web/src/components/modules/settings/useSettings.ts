@@ -13,7 +13,8 @@ export const bhelPasswordQuery = apiQuery("settings.bhelPassword");
 type Buyer = RouteOutput<"buyers.list">[number];
 type BuyerBody = RouteInput<"buyers.create">["body"];
 
-/** Save: the supplier profile and the settings, each only when it changed. */
+/** Save: the supplier profile and the settings, each only when it changed. One after the other, so a refused
+ * profile (a field error) stops before the settings write. */
 export function useSaveSettings() {
   const queryClient = useQueryClient();
   return useMutation({

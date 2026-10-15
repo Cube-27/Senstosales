@@ -8,13 +8,7 @@ import { createAppRouter } from "./router.ts";
 
 /** `history` is the browser's by default; tests pass a memory history. */
 export function createApp(history?: RouterHistory) {
-  const queryClient = createQueryClient((to) =>
-    onAuthError({
-      queryClient,
-      navigate: (path, redirect) => void router.navigate({ to: path, search: redirect ? { redirect } : {} }),
-      currentHref: () => router.state.location.href,
-    })(to),
-  );
+  const queryClient = createQueryClient((to) => onAuthError(queryClient, router, to));
   const router = createAppRouter(queryClient, history);
   return { queryClient, router };
 }

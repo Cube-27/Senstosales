@@ -7,16 +7,17 @@ import { FormProvider, useForm } from "react-hook-form";
 
 import { api } from "../../../lib/api.ts";
 import { showServerErrors } from "../../../lib/form-errors.ts";
-import { onboardingQuery } from "../../../lib/session.ts";
+import { LOGIN, onboardingQuery } from "../../../lib/session.ts";
 import { Button } from "../../common/index.ts";
 import {
   EMPTY_ONBOARDING,
+  SUPPLIER_SERVER_FIELDS,
   onboardingBody,
   type OnboardingFormInput,
   type OnboardingFormOutput,
   zOnboardingForm,
 } from "../settings/profile.ts";
-import { RateField, SupplierProfileFields } from "../settings/ProfileFields.tsx";
+import { FormRootError, RateField, SupplierProfileFields } from "../settings/ProfileFields.tsx";
 
 export function OnboardingScreen() {
   const navigate = useNavigate();
@@ -34,10 +35,10 @@ export function OnboardingScreen() {
     try {
       await complete.mutateAsync(values);
     } catch (error) {
-      showServerErrors(form.setError, error, SERVER_FIELDS);
+      showServerErrors(form.setError, error, SUPPLIER_SERVER_FIELDS);
       return;
     }
-    await navigate({ to: "/auth/login", replace: true });
+    await navigate({ to: LOGIN, replace: true });
   });
 
   return (
@@ -67,9 +68,7 @@ export function OnboardingScreen() {
               </div>
             </section>
             <div className="mt-4 flex items-center justify-end gap-3">
-              <p role="alert" className="min-h-5 flex-1 truncate text-error role-helper-text">
-                {form.formState.errors.root?.message}
-              </p>
+              <FormRootError className="flex-1 truncate" />
               <Button type="submit" loading={form.formState.isSubmitting}>
                 Save and Continue
               </Button>
@@ -80,15 +79,3 @@ export function OnboardingScreen() {
     </div>
   );
 }
-
-/** The onboarding body's fields as the form's (the letterhead description is `invoiceDefaults.description`). */
-const SERVER_FIELDS = {
-  name: "supplier.name",
-  contact: "supplier.contact",
-  email: "supplier.email",
-  gstin: "supplier.gstin",
-  address: "supplier.address",
-  "invoiceDefaults.description": "supplier.description",
-  cgstPct: "rates.cgstPct",
-  sgstPct: "rates.sgstPct",
-} as const;

@@ -5,7 +5,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useBlocker } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { type FieldErrors, FormProvider, useForm } from "react-hook-form";
 
 import { serverErrors, showServerErrors } from "../../../lib/form-errors.ts";
@@ -15,6 +15,7 @@ import {
   settingsBody,
   type SettingsFormInput,
   type SettingsFormOutput,
+  SUPPLIER_SERVER_FIELDS,
   supplierBody,
   toForm,
   zSettingsForm,
@@ -34,14 +35,7 @@ const SECTIONS = [
 
 /** The API's field paths as the form's. */
 const SERVER_FIELDS = {
-  name: "supplier.name",
-  contact: "supplier.contact",
-  email: "supplier.email",
-  gstin: "supplier.gstin",
-  address: "supplier.address",
-  "invoiceDefaults.description": "supplier.description",
-  cgstPct: "rates.cgstPct",
-  sgstPct: "rates.sgstPct",
+  ...SUPPLIER_SERVER_FIELDS,
   "preferences.igst_pct": "defaults.igstPct",
 } as const;
 
@@ -62,10 +56,14 @@ export function SettingsScreen() {
   const supplier = useQuery(supplierQuery);
   const settings = useQuery(settingsQuery);
   const loaded = supplier.data !== undefined && settings.data !== undefined;
+  const values = useMemo(
+    () => (supplier.data && settings.data ? toForm(supplier.data, settings.data) : undefined),
+    [supplier.data, settings.data],
+  );
   const form = useForm<SettingsFormInput, unknown, SettingsFormOutput>({
     resolver: zodResolver(zSettingsForm),
     mode: "onChange",
-    ...(loaded ? { values: toForm(supplier.data, settings.data) } : {}),
+    ...(values ? { values } : {}),
     resetOptions: { keepDirtyValues: true },
   });
   const { isDirty, isSubmitting, errors } = form.formState;

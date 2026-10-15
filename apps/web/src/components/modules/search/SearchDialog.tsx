@@ -3,10 +3,11 @@
 // goes to its page and closes the dialog. While a search runs the previous results stay (C8).
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { type KeyboardEvent, useEffect, useState } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 
 import { apiQuery } from "../../../lib/api.ts";
 import { GlobalSearchDialog } from "../../common/index.ts";
+import { DOC } from "../documents.ts";
 import { type Filters, hasActiveFilters, isSearchable, NO_FILTERS, searchQuery } from "./filters.ts";
 import { type RecentSearch, type SavedSearch, useSearchHistory } from "./history.ts";
 import { FiltersPanel, SavedPanel, SaveSearchBox } from "./SearchPanels.tsx";
@@ -14,13 +15,6 @@ import { Preview, ResultList, type Target } from "./SearchParts.tsx";
 
 /** The legacy waits this long after the last keystroke. */
 const DEBOUNCE_MS = 300;
-
-const PAGE: Record<Target["type"], "/po/$id" | "/dc/$id" | "/invoice/$id" | "/srv/$id"> = {
-  po: "/po/$id",
-  dc: "/dc/$id",
-  invoice: "/invoice/$id",
-  srv: "/srv/$id",
-};
 
 function useDebounced<T>(value: T, ms: number): T {
   const [settled, setSettled] = useState(value);
@@ -31,7 +25,7 @@ function useDebounced<T>(value: T, ms: number): T {
   return settled;
 }
 
-export interface SearchDialogProps {
+interface SearchDialogProps {
   readonly open: boolean;
   onOpenChange(open: boolean): void;
 }
@@ -45,10 +39,13 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const [selected, setSelected] = useState(0);
   const history = useSearchHistory();
 
-  const q = useDebounced(query, DEBOUNCE_MS);
-  const searchable = isSearchable(q, filters);
+  // Typed text and typed amounts both wait for the debounce; one request per pause.
+  const typed = useMemo(() => ({ q: query, filters }), [query, filters]);
+  const settled = useDebounced(typed, DEBOUNCE_MS);
+  const { q } = settled;
+  const searchable = isSearchable(q, settled.filters);
   const search = useQuery({
-    ...apiQuery("search.query", { query: searchQuery(q, filters) }),
+    ...apiQuery("search.query", { query: searchQuery(q, settled.filters) }),
     enabled: open && searchable,
   });
   const searching = query.trim() !== "" || hasActiveFilters(filters);
@@ -59,15 +56,15 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const answeredAt = search.isSuccess && !search.isPlaceholderData ? search.dataUpdatedAt : 0;
   const { addRecent } = history;
   useEffect(() => {
-    if (answeredAt > 0 && q.trim() !== "") addRecent(q.trim(), filters);
-  }, [answeredAt, q, filters, addRecent]);
+    if (answeredAt > 0 && settled.q.trim() !== "") addRecent(settled.q.trim(), settled.filters);
+  }, [answeredAt, settled, addRecent]);
 
   useEffect(() => setSelected(0), [search.data]);
 
   const openTarget = ({ type, id }: Target): void => {
     onOpenChange(false);
     setQuery("");
-    void navigate({ to: PAGE[type], params: { id } });
+    void navigate({ to: DOC[type].page, params: { id } });
   };
 
   const onKeyDown = (e: KeyboardEvent): void => {
@@ -121,7 +118,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           hits={hits}
           searching={searching}
           searchable={searchable}
-          loading={search.isFetching || q !== query}
+          loading={search.isFetching || settled !== typed}
           selected={selected}
           recent={history.recent}
           onHover={setSelected}

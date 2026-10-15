@@ -9,11 +9,11 @@ import { z } from "zod";
 
 import { showServerErrors } from "../../../lib/form-errors.ts";
 import { AlertCircle, ShieldCheck } from "../../../lib/icons.ts";
-import { sessionQuery } from "../../../lib/session.ts";
+import { LOGIN, sessionQuery } from "../../../lib/session.ts";
 import { Button, FormField, Input, useToast } from "../../common/index.ts";
 import { DEFAULT_CREDENTIALS, RESET_PHRASE, USERNAME, useChangePassword, useResetDefaults } from "../auth/useAuth.ts";
 import { BhelPasswordField } from "./BhelPasswordField.tsx";
-import { TextField } from "./ProfileFields.tsx";
+import { FormRootError, TextField } from "./ProfileFields.tsx";
 
 const zChangePassword = z
   .object({
@@ -47,7 +47,7 @@ export function SystemAccessPanel() {
 }
 
 /** The legacy notice while the default password is in use; it never forces a change (C11). */
-export function DefaultPasswordNotice() {
+function DefaultPasswordNotice() {
   return (
     <div
       role="note"
@@ -64,7 +64,7 @@ export function DefaultPasswordNotice() {
 /** After a password change or reset every session has ended: go to the login. */
 function useBackToLogin() {
   const navigate = useNavigate();
-  return () => navigate({ to: "/auth/login", replace: true });
+  return () => navigate({ to: LOGIN, replace: true });
 }
 
 function ChangePasswordForm() {
@@ -97,9 +97,7 @@ function ChangePasswordForm() {
         <TextField name="currentPassword" label="Current Password" type="password" />
         <TextField name="newPassword" label="New Password" type="password" />
         <TextField name="confirmPassword" label="Confirm New Password" type="password" />
-        <p role="alert" className="min-h-4 text-error role-helper-text">
-          {form.formState.errors.root?.message}
-        </p>
+        <FormRootError />
         <Button type="submit" className="mt-1 w-full" loading={form.formState.isSubmitting}>
           Change Password
         </Button>
@@ -134,9 +132,7 @@ function ResetDefaultsForm() {
         </p>
         <TextField name="currentPassword" label="Current Password" type="password" />
         <TextField name="confirmation" label="Confirmation Phrase" placeholder={RESET_PHRASE} />
-        <p role="alert" className="min-h-4 text-error role-helper-text">
-          {form.formState.errors.root?.message}
-        </p>
+        <FormRootError />
         <Button type="submit" variant="outline" className="mt-1 w-full" loading={form.formState.isSubmitting}>
           Reset to Defaults
         </Button>

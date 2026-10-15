@@ -8,8 +8,6 @@ export interface ServerErrors {
   readonly fields: Readonly<Record<string, string>>;
   /** The server's message, or a plain one for a network failure: the footer shows it when no field took it. */
   readonly message: string;
-  /** True when the message belongs in the footer: no field took it. */
-  readonly inFooter: boolean;
   readonly conflict: boolean;
 }
 
@@ -27,14 +25,9 @@ function fieldIssues(details: Record<string, unknown> | undefined): Array<[strin
 }
 
 export function serverErrors(error: unknown): ServerErrors {
-  if (!(error instanceof ApiError)) return { fields: {}, message: NETWORK, inFooter: true, conflict: false };
+  if (!(error instanceof ApiError)) return { fields: {}, message: NETWORK, conflict: false };
   const fields = Object.fromEntries(fieldIssues(error.body.details));
-  return {
-    fields,
-    message: error.body.message,
-    inFooter: Object.keys(fields).length === 0,
-    conflict: error.status === 409,
-  };
+  return { fields, message: error.body.message, conflict: error.status === 409 };
 }
 
 /** Puts a refused write's messages on the form: each at the field `fieldFor` maps its server path to, else the

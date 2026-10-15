@@ -23,6 +23,7 @@ import {
   Wallet,
 } from "../../../lib/icons.ts";
 import { ButtonGroup, PageHeader, StatCard, StatCardRow, useToast } from "../../common/index.ts";
+import { DOC } from "../documents.ts";
 import { pendingDispatch, sharePct } from "./funnel.ts";
 
 type Range = "month" | "30d" | "all";
@@ -182,13 +183,11 @@ function ActionRow({
   );
 }
 
-const DOC: Record<
-  Activity["type"],
-  { label: string; icon: Icon; tone: string; to: "/po/$id" | "/dc/$id" | "/invoice/$id" }
-> = {
-  po: { label: "PO", icon: PurchaseOrder, tone: "bg-primary/10 text-accent", to: "/po/$id" },
-  dc: { label: "DC", icon: DeliveryChallan, tone: "bg-success/10 text-success", to: "/dc/$id" },
-  invoice: { label: "Invoice", icon: Invoice, tone: "bg-warning/10 text-warning", to: "/invoice/$id" },
+/** The legacy tile colour per document type. */
+const TONE: Record<Activity["type"], string> = {
+  po: "bg-primary/10 text-accent",
+  dc: "bg-success/10 text-success",
+  invoice: "bg-warning/10 text-warning",
 };
 
 /** The legacy shows the four latest documents. */
@@ -212,9 +211,9 @@ function RecentDocuments({ items }: { readonly items: readonly Activity[] | unde
       {shown.map((item) => {
         const doc = DOC[item.type];
         return (
-          <Link key={`${item.type}-${item.id}`} to={doc.to} params={{ id: item.id }} className={cn(ROW, SLOT)}>
+          <Link key={`${item.type}-${item.id}`} to={doc.page} params={{ id: item.id }} className={cn(ROW, SLOT)}>
             <div className="flex items-center gap-3">
-              <div className={cn(TILE, doc.tone)}>
+              <div className={cn(TILE, TONE[item.type])}>
                 <doc.icon className="size-5" />
               </div>
               <div>
@@ -234,10 +233,10 @@ function RecentDocuments({ items }: { readonly items: readonly Activity[] | unde
 }
 
 const STAGES = [
-  { key: "ordQty", title: "Ordered", subtitle: "Total PO quantity", icon: PurchaseOrder, bar: "bg-primary" },
-  { key: "dspQty", title: "Dispatched", subtitle: "Via Delivery Challans", icon: DeliveryChallan, bar: "bg-success" },
-  { key: "invoicedQty", title: "Invoiced", subtitle: "Payment pending", icon: Invoice, bar: "bg-primary" },
-  { key: "rcdQty", title: "Accepted", subtitle: "Confirmed via SRV", icon: StoreReceipt, bar: "bg-success" },
+  { key: "ordQty", title: "Ordered", subtitle: "Total PO quantity", icon: PurchaseOrder, success: false },
+  { key: "dspQty", title: "Dispatched", subtitle: "Via Delivery Challans", icon: DeliveryChallan, success: true },
+  { key: "invoicedQty", title: "Invoiced", subtitle: "Payment pending", icon: Invoice, success: false },
+  { key: "rcdQty", title: "Accepted", subtitle: "Confirmed via SRV", icon: StoreReceipt, success: true },
 ] as const;
 
 function Funnel({ funnel }: { readonly funnel: Summary["funnel"] }) {
@@ -255,12 +254,11 @@ function Funnel({ funnel }: { readonly funnel: Summary["funnel"] }) {
       </div>
       {STAGES.map((stage, i) => {
         const share = sharePct(funnel[stage.key], funnel.ordQty);
-        const success = stage.bar === "bg-success";
         return (
           <div key={stage.key} className="border-b border-border/50 bg-surface px-4 py-3 last:border-b-0">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className={cn(TILE, success ? "bg-success/10 text-success" : "bg-primary/10 text-accent")}>
+                <div className={cn(TILE, stage.success ? "bg-success/10 text-success" : "bg-primary/10 text-accent")}>
                   <stage.icon className="size-5" />
                 </div>
                 <div>
@@ -277,8 +275,8 @@ function Funnel({ funnel }: { readonly funnel: Summary["funnel"] }) {
             <div className="mt-2 pl-[52px]">
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-sunken">
                 <div
-                  className={cn("h-1.5 rounded-full", stage.bar)}
-                  style={{ width: `${funnel.ordQty > 0 ? share.width : 0}%` }}
+                  className={cn("h-1.5 rounded-full", stage.success ? "bg-success" : "bg-primary")}
+                  style={{ width: `${share.width}%` }}
                 />
               </div>
             </div>

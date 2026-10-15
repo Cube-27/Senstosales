@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 
 import { api } from "../../lib/api.ts";
 import { LogOut, Monitor, Package } from "../../lib/icons.ts";
+import { LOGIN } from "../../lib/session.ts";
 import { useToast } from "./Toast.tsx";
 
 const ACTION = "relative rounded-lg p-2 text-muted transition-colors hover:bg-surface-sunken hover:text-foreground";
@@ -22,7 +23,7 @@ export function HeaderActions() {
     // The next user starts from the login with nothing of this session's data cached.
     queryClient.clear();
     toast("Signed Out", "Authentication session ended.", "success");
-    await navigate({ to: "/auth/login" });
+    await navigate({ to: LOGIN });
   };
 
   return (

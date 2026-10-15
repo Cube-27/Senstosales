@@ -11,7 +11,7 @@ import { z } from "zod";
 import { showServerErrors } from "../../../lib/form-errors.ts";
 import { Building, Check, Pencil, Plus, Trash2, Users, X } from "../../../lib/icons.ts";
 import { Button, ConfirmDialog, useToast } from "../../common/index.ts";
-import { TextField } from "./ProfileFields.tsx";
+import { FormRootError, TextField } from "./ProfileFields.tsx";
 import { buyersQuery, useDeleteBuyer, useSaveBuyer } from "./useSettings.ts";
 
 type Buyer = RouteOutput<"buyers.list">[number];
@@ -179,9 +179,7 @@ function BuyerEditor({ editing, onClose }: { readonly editing: Editing; readonly
           <TextField name="gstin" label="Buyer GSTIN" placeholder="15-character GSTIN" />
           <TextField name="state" label="Place of Supply" placeholder="Tamil Nadu" />
         </div>
-        <p role="alert" className="min-h-4 text-error role-helper-text">
-          {form.formState.errors.root?.message}
-        </p>
+        <FormRootError />
         <div className="flex items-center justify-between border-t border-border pt-2">
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Cancel

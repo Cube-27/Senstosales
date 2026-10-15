@@ -71,8 +71,8 @@ export function dayOf(timestamp: string) {
   return day.success ? day.data : null;
 }
 
-export const loadRecent = (): RecentSearch[] => read(RECENT_KEY, zRecent);
-export const loadSaved = (): SavedSearch[] => read(SAVED_KEY, zSaved);
+const loadRecent = (): RecentSearch[] => read(RECENT_KEY, zRecent);
+const loadSaved = (): SavedSearch[] => read(SAVED_KEY, zSaved);
 
 export function useSearchHistory() {
   const [recent, setRecent] = useState(loadRecent);

@@ -7,7 +7,7 @@ import { Bookmark, X } from "../../../lib/icons.ts";
 import { Button, DatePicker, Input } from "../../common/index.ts";
 import { amount, DOC_TYPES, type DocType, type Filters, hasActiveFilters } from "./filters.ts";
 import type { SavedSearch } from "./history.ts";
-import { DOC } from "./SearchParts.tsx";
+import { DOC } from "../documents.ts";
 
 export function FiltersPanel({
   filters,

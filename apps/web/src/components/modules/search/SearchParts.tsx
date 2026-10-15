@@ -3,38 +3,26 @@
 import { fmtDate, fmtFy, fmtMoneyCompact, fmtQty, type RouteOutput } from "@senstosales/schemas";
 
 import { cn } from "../../../lib/cn.ts";
-import {
-  AlertCircle,
-  ArrowUpRight,
-  DeliveryChallan,
-  type Icon,
-  Invoice,
-  PurchaseOrder,
-  Search,
-  StoreReceipt,
-} from "../../../lib/icons.ts";
+import { AlertCircle, ArrowUpRight, Invoice, Search } from "../../../lib/icons.ts";
 import { Badge, type BadgeProps, Button } from "../../common/index.ts";
-import type { DocType } from "./filters.ts";
+import { DOC } from "../documents.ts";
+import { DOC_TYPES, type DocType } from "./filters.ts";
 import { dayOf, type RecentSearch } from "./history.ts";
 
-export type Hit = RouteOutput<"search.query">[number];
+type Hit = RouteOutput<"search.query">[number];
 type Fy = NonNullable<Hit["financialYear"]>;
 
-export const DOC: Record<DocType, { label: string; plural: string; icon: Icon }> = {
-  po: { label: "PO", plural: "Purchase Orders", icon: PurchaseOrder },
-  dc: { label: "DC", plural: "Delivery Challans", icon: DeliveryChallan },
-  invoice: { label: "Invoice", plural: "Invoices", icon: Invoice },
-  srv: { label: "SRV", plural: "SRVs", icon: StoreReceipt },
-};
-
 /** A document number with its FY where numbers restart each FY (INV-24): `12 · FY 2025-26`. */
-export const withFy = (number: string, fy: Fy | null): string => (fy === null ? number : `${number} · ${fmtFy(fy)}`);
+const withFy = (number: string, fy: Fy | null): string => (fy === null ? number : `${number} · ${fmtFy(fy)}`);
 
 /** Where a hit or a linked document opens. */
 export interface Target {
   readonly type: DocType;
   readonly id: string;
 }
+
+/** The legacy lists the five latest searches. */
+const RECENT_SHOWN = 5;
 
 const EMPTY = "flex h-full items-center justify-center px-4 text-center";
 
@@ -129,19 +117,20 @@ function RecentSearches({
         <Search className="size-4" />
         <span className="role-section-title">Recent Searches</span>
       </div>
-      {recent.slice(0, 5).map((r) => (
-        <button
+      {recent.slice(0, RECENT_SHOWN).map((r) => (
+        <Button
           type="button"
+          variant="ghost"
           key={`${r.query}-${r.timestamp}`}
           onClick={() => onRecent(r)}
-          className="mb-1 w-full rounded-md px-3 py-2 text-left text-muted hover:bg-surface hover:text-foreground"
+          className="mb-1 h-auto w-full flex-col items-stretch gap-0 rounded-md px-3 py-2 text-left text-muted hover:bg-surface hover:text-foreground"
         >
           <div className="truncate role-body-text">{r.query}</div>
           <div className="mt-0.5 role-helper-text">
-            {r.filters.types.length < 4 ? `${r.filters.types.join(", ")} • ` : ""}
+            {r.filters.types.length < DOC_TYPES.length ? `${r.filters.types.join(", ")} • ` : ""}
             {fmtDate(dayOf(r.timestamp))}
           </div>
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -157,7 +146,7 @@ export function Preview({ hit, onOpen }: { readonly hit: Hit | undefined; onOpen
   if (!hit) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <Invoice className="mb-3 size-8 text-tertiary/50" />
+        <Invoice className="mb-3 size-8 text-tertiary opacity-50" />
         <p className="role-body-text">Select an item to view details</p>
       </div>
     );
@@ -214,34 +203,28 @@ export function Preview({ hit, onOpen }: { readonly hit: Hit | undefined; onOpen
   );
 }
 
-function LinkedDocuments({ hit, onOpen }: { readonly hit: Hit; onOpen(target: Target): void }) {
+/** Which linked documents a hit shows: every kind but its own, DC and invoice numbers with their FY. */
+function linkChips(hit: Hit): Array<{ key: string; label: string; target: Target }> {
   const { po, dcs, invoices, srvs } = hit.links;
-  const chips: Array<{ key: string; label: string; target: Target }> = [
-    ...(hit.type !== "po" && po
-      ? [{ key: `po-${po.id}`, label: `PO #${po.number}`, target: { type: "po" as const, id: po.id } }]
-      : []),
-    ...(hit.type === "dc"
-      ? []
-      : dcs.map((d) => ({
-          key: `dc-${d.id}`,
-          label: `DC #${withFy(d.number, d.financialYear)}`,
-          target: { type: "dc" as const, id: d.id },
-        }))),
-    ...(hit.type === "invoice"
-      ? []
-      : invoices.map((d) => ({
-          key: `inv-${d.id}`,
-          label: `INV #${withFy(d.number, d.financialYear)}`,
-          target: { type: "invoice" as const, id: d.id },
-        }))),
-    ...(hit.type === "srv"
-      ? []
-      : srvs.map((d) => ({
-          key: `srv-${d.id}`,
-          label: `SRV #${d.number}`,
-          target: { type: "srv" as const, id: d.id },
-        }))),
+  const groups: Array<[DocType, string, ReadonlyArray<{ id: string; number: string; financialYear?: Fy | null }>]> = [
+    ["po", "PO", po ? [po] : []],
+    ["dc", "DC", dcs],
+    ["invoice", "INV", invoices],
+    ["srv", "SRV", srvs],
   ];
+  return groups.flatMap(([type, prefix, docs]) =>
+    type === hit.type
+      ? []
+      : docs.map((d) => ({
+          key: `${type}-${d.id}`,
+          label: `${prefix} #${withFy(d.number, d.financialYear ?? null)}`,
+          target: { type, id: d.id },
+        })),
+  );
+}
+
+function LinkedDocuments({ hit, onOpen }: { readonly hit: Hit; onOpen(target: Target): void }) {
+  const chips = linkChips(hit);
   if (chips.length === 0) return <span className="italic role-empty-text">No linked documents</span>;
   return (
     <div className="flex flex-wrap gap-2">
