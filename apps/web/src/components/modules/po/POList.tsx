@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Delete,
   DeliveryChallan,
+  FolderOpen,
   IndianRupee,
   Invoice,
   Link2,
@@ -32,6 +33,7 @@ import {
   ConfirmDialog,
   DataTable,
   FileUploadModal,
+  FolderImport,
   ListFilters,
   ListToolbar,
   PageHeader,
@@ -251,6 +253,7 @@ export function POList() {
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
 
   const [files, setFiles] = useState<readonly File[]>([]);
+  const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [busy, setBusy] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("po.") });
@@ -353,6 +356,10 @@ export function POList() {
                   <Upload aria-hidden />
                   Upload PO HTML
                 </Button>
+                <Button variant="ghost" size="sm" className="justify-start" onClick={() => setImporting(true)}>
+                  <FolderOpen aria-hidden />
+                  Import Folders
+                </Button>
               </div>
             </PopoverContent>
           </Popover>
@@ -368,6 +375,13 @@ export function POList() {
           {...list.table}
         />
       </div>
+      <FolderImport
+        open={importing}
+        onClose={() => setImporting(false)}
+        onImported={() =>
+          void queryClient.invalidateQueries({ predicate: (q) => /^(po|srv)\./.test(String(q.queryKey[0])) })
+        }
+      />
       <FileUploadModal
         open={files.length > 0}
         files={files}
