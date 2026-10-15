@@ -76,7 +76,7 @@ orchestrator uses the next free IDs.
 `main` requires a PR for every change, including tracker updates. Work in flight is read from open PRs and
 `spec-*` branches, not from ACTIVE.md. Never merge without a `MERGE` or `MERGE AFTER FIX` verdict from someone other
 than the author (every listed fix made) and green CI. One review per PR, no re-review. Agents never merge directly:
-`tools/orchestrator/merge_pr.sh` is the only merge path, and a PreToolUse hook denies `gh pr merge`.
+`tools/orchestrator/merge_pr.sh` is the only merge path; never run `gh pr merge` yourself.
 
 ## 4. Decisions: decide and log, or escalate
 

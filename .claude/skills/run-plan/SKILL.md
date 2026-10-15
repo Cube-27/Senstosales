@@ -36,8 +36,7 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
    same migration or generated file. For each assignment:
    - `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>`: fetches and creates the worktree
      off `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`. Never a raw `git worktree add`, and
-     never an MSYS drive path (`/c/...`): with path conversion off, git creates it under `C:/c/` (the path guard
-     denies such commands);
+     never an MSYS drive path (`/c/...`): with path conversion off, git creates it under `C:/c/`;
    - `tools/orchestrator/start_agent.sh <name> spec-NN-pr-M "<prompt>"` with: "Run `/implement-pr` for SPEC-NN
      PR M. An orchestrator assigned you this row. Your decision IDs are D-NNNN..D-NNNN. Own the PR through
      `/implement-pr` §6 until it merges." Give each implementor its own range of five free IDs, never overlapping
@@ -50,8 +49,8 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
    - On `READY <sha7>`, merge directly, one PR at a time:
      `if tools/orchestrator/merge_pr.sh <n> <sha7>; then tools/orchestrator/close_agent.sh <impl> &&
      tools/orchestrator/cleanup_worktree.sh <worktree> <branch>; fi`
-     Never chain with `;`: a pane that didn't close keeps its worktree. Never run `gh pr merge` yourself (the merge
-     guard denies it). A failed merge leaves the PR open: retry.
+     Never chain with `;`: a pane that didn't close keeps its worktree. Never run `gh pr merge` yourself: `merge_pr.sh`
+     is the only merge path. A failed merge leaves the PR open: retry.
    - Only when the branch is behind `main` or conflicts, send its implementor `REBASE`; it rebases, gets CI green
      and comments `READY` again.
    - Stuck PR (CI red after 3 honest attempts, an implementor gone or idle without `READY`): unblock it (a fresh

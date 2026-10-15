@@ -1,8 +1,7 @@
 #!/bin/bash
 # merge_pr.sh PR SHA7 — the only sanctioned merge path. Squash-merges PR only if wait_ci.sh reports every check
 # passed on commit SHA7, and only if SHA7 is still the PR's head when the merge runs (--match-head-commit). Never
-# chain `gh pr merge` after a wait with `;`: a failed wait must stop the merge. The merge-guard hook denies
-# `gh pr merge` typed as a tool call; this script's own call is not a tool call, so it passes.
+# chain `gh pr merge` after a wait with `;`: a failed wait must stop the merge.
 # A spec PR (branch spec-NN/...) must carry its tracker commit: its diff must touch docs/plans/ACTIVE.md.
 # Open PRs based on the PR's branch are first retargeted to its base; a failed retarget refuses the merge.
 # Safe to rerun: a PR already MERGED at SHA7 exits 0 without merging again. When `gh pr merge` fails, the PR state is
