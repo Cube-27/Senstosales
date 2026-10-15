@@ -14,16 +14,18 @@ every row in the batch `done (#n)`. One `/simplify` pass and one review per PR, 
 
 ## 0. Claim
 
-1. Read `CLAUDE.md`, then `docs/plans/ACTIVE.md`. Take the assigned rows, or the ready `todo` rows of the first
+1. Read `CLAUDE.md`, then from `docs/plans/ACTIVE.md` only "Current focus" and your spec's table. Take the assigned rows, or the ready `todo` rows of the first
    spec with any, by the per-row rule in `/run-plan` §1.1.
 2. If an orchestrator assigned you the rows, your cwd is already their worktree. Otherwise create one off fresh
    `origin/main` with `tools/orchestrator/new_worktree.sh spec-NN-pr-A-B spec-NN/pr-A-B-<short-name>` (at
    `C:/Projects/SenstoSales-worktrees/spec-NN-pr-A-B`). Never work in the main checkout.
-3. **Shared files.** `ACTIVE.md` and `DECISIONS.md` change only in your tracker commit (§6.3): your rows and your
+3. **Shared files.** `ACTIVE.md` and the decisions log change only in your tracker commit (§6.3): your rows and your
    decisions, under the decision-ID range the orchestrator gave you at assignment (solo: the next free IDs).
    Until then your decisions go in the PR body. "Current focus" changes only when the orchestrator asks.
 4. Read the spec: the design sections your rows touch, its invariants, testing strategy, acceptance criteria and
-   your PR-plan rows; the ARCHITECTURE sections it cites; the `DECISIONS.md` entries for that spec.
+   your PR-plan rows; ARCHITECTURE §2 and only the sections it cites; its decisions file `docs/decisions/SPEC-NN.md`
+   and the open items in `docs/DECISIONS.md`. Never read `ACTIVE.md`, `ARCHITECTURE.md` or `DECISIONS.md` in full (`CLAUDE.md` §1): find sections with
+   `grep -n "^#"` and read line ranges.
 
 ## 1. Frame
 
@@ -88,7 +90,7 @@ Review your diff as a hostile reviewer, then fix what you find:
 
 - Rebase onto `origin/main` into small, ordered commits (failing test before fix where it tells the story).
 - Title `type(scope): subject`. Body from the PR template, a one-minute briefing: Why (link the spec rows), What
-  changed, Scope, Verification (real commands and outcomes; criterion → proof), Decisions (DECISIONS.md template
+  changed, Scope, Verification (real commands and outcomes; criterion → proof), Decisions (`docs/DECISIONS.md` template
   fields, no ID, `decided` or `needs-owner`; or "None").
 - Open it ready, not draft: `gh pr create`. The tracker commit comes after review (§6.3).
 
@@ -108,7 +110,8 @@ if a message in your pane says to: `merge_pr.sh`, run by the orchestrator, is th
    `tools/orchestrator/close_agent.sh reviewer-pr<n>`.
 2. **`MERGE AFTER FIX`:** fix every Act-on item, push, get CI green again. No second review.
 3. **Ready:** add the tracker commit `chore(plan): done SPEC-NN PRs A-B (#n)` (every row of the batch `done (#n)`; your
-   `## Decisions` copied to DECISIONS.md under the IDs you were given, `needs-owner` ones also in its index), push, get
+   `## Decisions` appended to `docs/decisions/SPEC-NN.md` under the IDs you were given; cross-cutting, process and
+   `needs-owner` ones go in `docs/DECISIONS.md`, `needs-owner` ones also in its index), push, get
    CI green, then comment `READY <sha7>` on the PR, listing each Act-on item with the commit that fixed it. Then stop.
 4. **`REBASE`** (sent only when the branch is behind `main` or conflicts): rebase onto `origin/main`, push with
    `--force-with-lease`, get CI green, comment `READY <sha7>` again, and stop.

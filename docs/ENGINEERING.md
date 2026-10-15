@@ -66,7 +66,7 @@ convention.
 
 ## Working autonomously
 
-**Never block on the human for reversible work.** Decide, proceed, and log the decision in `DECISIONS.md`. The
+**Never block on the human for reversible work.** Decide, proceed, and log the decision (`docs/decisions/SPEC-NN.md`). The
 exceptions are in `CLAUDE.md` §4: architecture changes, candidates, secrets, paid accounts and irreversible actions
 are escalated, never decided.
 

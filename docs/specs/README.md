@@ -11,7 +11,7 @@ Rules every spec follows:
 
 - **No invented business rules.** Every rule cites the legacy business spec (`spec §n`), an owner decision (`A-n`,
   `A2-n`) or an invariant (`INV-NN`). Under-specified mechanics take the most conservative reading, are marked
-  "implementation detail" and are listed in Open issues (and DECISIONS.md when implemented). Uncovered business
+  "implementation detail" and are listed in Open issues (and the spec's `docs/decisions/SPEC-NN.md` when implemented). Uncovered business
   edge cases go to `EDGE_CASES.md` with the spec's behaviour (C18).
 - **Frozen output, free mechanism.** The UI/UX flows and on-screen elements must match legacy (minor visual
   changes allowed, D-0016) and the CSV/Excel formats match cell for cell (golden tests, screenshots); how they are built is new and the simplest efficient way (A-2, A-26, C16).
