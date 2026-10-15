@@ -1,0 +1,43 @@
+{
+  "fileName": "PO_Reconciliation_4500101.xlsx",
+  "sheet": "Report",
+  "widths": [12, 12, 12, 60, 13, 18, 16, 16, 13],
+  "pageSetup": {
+    "paperSize": 9,
+    "orientation": "landscape",
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "printTitlesRow": "1:1",
+    "margins": { "left": 0.4, "right": 0.4, "top": 0.5, "bottom": 0.5, "header": 0.2, "footer": 0.3 }
+  },
+  "oddFooter": "&CPage &P of &N",
+  "styles": {
+    "header": {
+      "font": { "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "fill": { "type": "pattern", "pattern": "solid", "fgColor": { "argb": "FFD7E4BC" } }
+    }
+  },
+  "merges": [],
+  "rows": [
+    [
+      { "v": "po_number", "s": "header" },
+      { "v": "po_item_no", "s": "header" },
+      { "v": "po_date", "s": "header" },
+      { "v": "item_description", "s": "header" },
+      { "v": "ordered_qty", "s": "header" },
+      { "v": "total_dispatched", "s": "header" },
+      { "v": "total_accepted", "s": "header" },
+      { "v": "total_rejected", "s": "header" },
+      { "v": "pending_qty", "s": "header" }
+    ],
+    ["4500101", 10, "2025-04-02", "Hex bolt M10", 10, 9, 6, 0, 1],
+    ["4500101", 20, "2025-04-02", "Plain washer", 5, 5, 4, 1, 0]
+  ]
+}

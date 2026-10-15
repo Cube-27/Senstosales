@@ -1,0 +1,41 @@
+{
+  "fileName": "DC_Register.xlsx",
+  "sheet": "Report",
+  "widths": [12, 12, 12, 30, 12, 12],
+  "pageSetup": {
+    "paperSize": 9,
+    "orientation": "landscape",
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "printTitlesRow": "1:1",
+    "margins": { "left": 0.4, "right": 0.4, "top": 0.5, "bottom": 0.5, "header": 0.2, "footer": 0.3 }
+  },
+  "oddFooter": "&CPage &P of &N",
+  "styles": {
+    "header": {
+      "font": { "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "fill": { "type": "pattern", "pattern": "solid", "fgColor": { "argb": "FFD7E4BC" } }
+    }
+  },
+  "merges": [],
+  "rows": [
+    [
+      { "v": "dc_number", "s": "header" },
+      { "v": "dc_date", "s": "header" },
+      { "v": "po_number", "s": "header" },
+      { "v": "consignee_name", "s": "header" },
+      { "v": "item_count", "s": "header" },
+      { "v": "total_qty", "s": "header" }
+    ],
+    ["103", "2025-05-28", "4500102", "Example Works Unit", 1, 1.25],
+    ["102", "2025-05-10", "4500101", "+Example Store", 1, 3],
+    ["101", "2025-04-25", "4500101", "Example Works Unit", 2, 11]
+  ]
+}

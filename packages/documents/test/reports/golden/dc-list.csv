@@ -1,0 +1,4 @@
+﻿Record,Date,Contract,Consignee,Status,Value,Ord Qty,Delivered Qty,Pending Qty,Received Qty
+103,2025-05-28,4500102,Example Works Unit,Pending,500,2.5,1.25,1.25,0
+102,2025-05-10,4500101,'+Example Store,Pending,300,10,3,1,6
+101,2025-04-25,4500101,Example Works Unit,Pending,700,15,11,1,10

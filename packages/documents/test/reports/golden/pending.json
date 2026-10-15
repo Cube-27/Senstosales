@@ -1,0 +1,136 @@
+{
+  "fileName": "Items_Summary_2025-03-01_to_2025-05-31.xlsx",
+  "sheet": "Summary",
+  "widths": [5, 39, 11, 8, 13, 15, 11, 11, 11],
+  "pageSetup": {
+    "paperSize": 9,
+    "orientation": "landscape",
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "horizontalCentered": true,
+    "printArea": "A1:I12",
+    "margins": { "left": 0.25, "right": 0.25, "top": 0.35, "bottom": 0.35, "header": 0.3, "footer": 0.3 }
+  },
+  "oddFooter": null,
+  "styles": {
+    "tel": { "font": { "name": "Calibri", "size": 11 } },
+    "company": { "font": { "name": "Calibri", "size": 16, "bold": true }, "alignment": { "horizontal": "center" } },
+    "address": {
+      "font": { "name": "Calibri", "size": 10, "bold": true },
+      "alignment": { "horizontal": "center", "wrapText": true }
+    },
+    "title": {
+      "font": { "name": "Calibri", "size": 14, "bold": true },
+      "alignment": { "horizontal": "center" },
+      "border": { "top": { "style": "thin" }, "bottom": { "style": "thin" } }
+    },
+    "dateLabel": { "font": { "name": "Calibri", "size": 11, "bold": true }, "alignment": { "horizontal": "right" } },
+    "dateValue": { "font": { "name": "Calibri", "size": 11, "bold": true }, "alignment": { "horizontal": "left" } },
+    "th": {
+      "font": { "name": "Calibri", "size": 11, "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "alignment": { "horizontal": "center", "vertical": "middle", "wrapText": true }
+    },
+    "cell": {
+      "font": { "name": "Calibri", "size": 11 },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "alignment": { "horizontal": "center", "vertical": "middle", "wrapText": true }
+    },
+    "cellLeft": {
+      "font": { "name": "Calibri", "size": 11 },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "alignment": { "horizontal": "left", "vertical": "middle", "wrapText": true }
+    },
+    "totalLabel": {
+      "font": { "name": "Calibri", "size": 11, "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "alignment": { "horizontal": "right", "vertical": "middle" }
+    },
+    "totalCell": {
+      "font": { "name": "Calibri", "size": 11, "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "alignment": { "horizontal": "center", "vertical": "middle" }
+    }
+  },
+  "merges": ["A3:I3", "A4:I4", "A5:I5", "A6:I6", "A12:B12"],
+  "rows": [
+    [{ "v": "Tel. No. 000-000-0000", "s": "tel" }],
+    [],
+    [{ "v": "Example Supplier", "s": "company" }],
+    [{ "v": "", "s": "address" }],
+    [{ "v": "1 Example Road, Example City", "s": "address" }],
+    [{ "v": "SUMMARY", "s": "title" }],
+    [null, { "v": "Date:", "s": "dateLabel" }, { "v": "01-06-2025", "s": "dateValue" }],
+    [],
+    [
+      { "v": "S.\nNo.", "s": "th" },
+      { "v": "Description", "s": "th" },
+      { "v": "Quantity\nSet/Nos.", "s": "th" },
+      { "v": "No of\npackets", "s": "th" },
+      { "v": "PO NO", "s": "th" },
+      { "v": "GEMC  NO", "s": "th" },
+      { "v": "Invoice\nNo.", "s": "th" },
+      { "v": "Challan\nNo.", "s": "th" },
+      { "v": "Dispatch\nDelivered", "s": "th" }
+    ],
+    [
+      { "v": 1, "s": "cell" },
+      { "v": "Hex bolt M10", "s": "cellLeft" },
+      { "v": "10 NOS", "s": "cell" },
+      { "v": 0, "s": "cell" },
+      { "v": "4500101", "s": "cell" },
+      { "v": "", "s": "cell" },
+      { "v": "201", "s": "cell" },
+      { "v": "101,102", "s": "cell" },
+      { "v": 9, "s": "cell" }
+    ],
+    [
+      { "v": 2, "s": "cell" },
+      { "v": "Gasket set\nSize 50", "s": "cellLeft" },
+      { "v": "2.5 SET", "s": "cell" },
+      { "v": 0, "s": "cell" },
+      { "v": "4500102", "s": "cell" },
+      { "v": "GEMC-0001", "s": "cell" },
+      { "v": "", "s": "cell" },
+      { "v": "103", "s": "cell" },
+      { "v": 1.25, "s": "cell" }
+    ],
+    [
+      { "v": "TOTAL", "s": "totalLabel" },
+      null,
+      { "v": 12.5, "s": "totalCell" },
+      { "v": 0, "s": "totalCell" },
+      { "v": "", "s": "totalCell" },
+      { "v": "", "s": "totalCell" },
+      { "v": "", "s": "totalCell" },
+      { "v": "", "s": "totalCell" },
+      { "v": "", "s": "totalCell" }
+    ]
+  ]
+}

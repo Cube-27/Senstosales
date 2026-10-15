@@ -1,0 +1,42 @@
+{
+  "fileName": "PO_Register.xlsx",
+  "sheet": "Report",
+  "widths": [12, 12, 30, 12, 12, 13, 12],
+  "pageSetup": {
+    "paperSize": 9,
+    "orientation": "landscape",
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "printTitlesRow": "1:1",
+    "margins": { "left": 0.4, "right": 0.4, "top": 0.5, "bottom": 0.5, "header": 0.2, "footer": 0.3 }
+  },
+  "oddFooter": "&CPage &P of &N",
+  "styles": {
+    "header": {
+      "font": { "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "fill": { "type": "pattern", "pattern": "solid", "fgColor": { "argb": "FFD7E4BC" } }
+    }
+  },
+  "merges": [],
+  "rows": [
+    [
+      { "v": "po_number", "s": "header" },
+      { "v": "po_date", "s": "header" },
+      { "v": "supplier_name", "s": "header" },
+      { "v": "po_value", "s": "header" },
+      { "v": "po_status", "s": "header" },
+      { "v": "items_count", "s": "header" },
+      { "v": "total_qty", "s": "header" }
+    ],
+    ["4500102", "2025-04-20", "Example Supplier", 1180, "Pending", 1, 2.5],
+    ["4500101", "2025-04-02", "Example Supplier", 1100, "Pending", 2, 15],
+    ["4500103", "2025-03-15", "Example Supplier", 50, "Closed", 1, 4]
+  ]
+}
