@@ -97,9 +97,32 @@ height, a pager that stays put, loading/empty/error states with the content's fo
 
 **No React effects.** Web code never uses `useEffect` or `useLayoutEffect` (owner rule; `vp lint` refuses both, as
 imports and as `React.` members). Derive the value during render; act in the event handler that caused the change;
-fetch and react to fetch results with TanStack Query (`meta.onSuccess`, or `meta.onError` for a failure toast) or a Router loader; reset
-state with a `key`; read outside state with `useSyncExternalStore`. A DOM listener that lives as long as an element
+fetch and react to fetch results with TanStack Query (`meta.onSuccess`, or `meta.onError` for a failure toast) or a
+Router loader; reset state with a `key`; read outside state with `useSyncExternalStore`. A DOM listener that lives as long as an element
 goes in that element's ref callback, which returns its cleanup.
 
 **No real data.** The repo is public. Fixtures are synthetic or anonymised; the real corpus is read from
 `SENSTO_CORPUS_DIR` locally and never committed.
+
+## Patterns the analysers flag
+
+SonarCloud checks every PR; write these right the first time. Rules that misread this codebase are excluded, with
+reasons, in `.sonarcloud.properties`.
+
+- **Read-only props:** `({ title }: Readonly<CardProps>)`, not `({ title }: CardProps)`; inline prop types too.
+- **No nested ternary:** an `if` chain, a lookup table or a named helper, not `a ? x : b ? y : z`.
+- **No nested template literal:** hoist the inner part (`const note = n ? ": " + n : ""` as its own statement), then
+  `` `Manual ${q}${note}` ``.
+- **No needless async:** `() => Promise.resolve(x)` when nothing is awaited; keep `async` only where a throw must
+  become a rejection.
+- **No `void` or assignment inside an expression:** `(n) => { count = n; }`, not `(n) => void (count = n)`.
+- **Escaped backslashes:** `` String.raw`C:\Windows` ``, not `"C:\\Windows"`.
+- **Code points:** `codePointAt` and `String.fromCodePoint`, not `charCodeAt` and `fromCharCode`.
+- **Clamps and lookups:** `Math.max(0, x)`, not `x < 0 ? 0 : x`; `list.includes(v)`, not `list.some((o) => o === v)`;
+  `a?.[1]`, not `a && a[1]`.
+- **Test assertions:** `expect(rows).toHaveLength(3)`, not `expect(rows.length).toBe(3)`; assert presence with
+  `getBy*`, not `expect(queryBy*(…)).not.toBeNull()`.
+- **Regexes on input from outside the repo:** no adjacent overlapping quantifiers (`\s*(.+);\s*$`); trim first, or use
+  a negated class (`[^;]+`).
+- **Components:** define them at module level, never inside another component's render.
+- **Cognitive complexity:** split a function before it nests branches inside loops inside loops.
