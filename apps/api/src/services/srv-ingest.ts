@@ -46,7 +46,12 @@ export async function uploadSrvFiles(deps: SrvIngestDeps, files: readonly Upload
 }
 
 /** One SRV file: accepted, skipped when every SRV in it is older than the stored one, or failed with a reason. */
-export async function ingestSrvFile(deps: SrvIngestDeps, file: UploadFile, ctx: IngestContext): Promise<FileResult> {
+export async function ingestSrvFile(
+  deps: SrvIngestDeps,
+  file: UploadFile,
+  ctx: IngestContext,
+  preStored = false,
+): Promise<FileResult> {
   const { name } = file;
   const parsed = parseSrv(file.html);
   if (!parsed.ok) {
@@ -57,16 +62,10 @@ export async function ingestSrvFile(deps: SrvIngestDeps, file: UploadFile, ctx: 
   // Every SRV in a file is of one PO (SPEC-06 §4.1), and the page is keyed by it (EC-29).
   const { poNumber } = docs[0];
   const docDate = docs.map((doc) => doc.srvDate).reduce((a, b) => (compareIsoDate(a, b) >= 0 ? a : b));
-  await storeSourceDocument(deps, { kind: "srv", key: poNumber, html: file.html, docDate }, ctx);
+  if (!preStored) await storeSourceDocument(deps, { kind: "srv", key: poNumber, html: file.html, docDate }, ctx);
 
   const stored = new Map((await srvsOfPoNumber(deps.db, ctx.supplierId, poNumber)).map((r) => [r.srvNumber, r]));
-  const accepted: SrvDocument[] = [];
-  const skipped: StoredSrv[] = [];
-  for (const doc of docs) {
-    const old = stored.get(doc.srvNumber);
-    if (old && !acceptIncoming(old.srvDate, doc.srvDate)) skipped.push(old);
-    else accepted.push(doc);
-  }
+  const { accepted, skipped } = byDate(docs, stored);
   if (accepted.length === 0) return { name, status: "skipped", reason: `${olderThan(skipped)}. Nothing was changed.` };
 
   const poId = (await findPoByNumber(deps.db, ctx.supplierId, poNumber))?.id ?? null;
@@ -84,6 +83,18 @@ export async function ingestSrvFile(deps: SrvIngestDeps, file: UploadFile, ctx: 
     skipped.length === 0 ? null : `${olderThan(skipped)}, so ${skipped.length === 1 ? "it was" : "they were"} skipped.`,
   ].filter((note) => note !== null);
   return { name, status: "accepted", reason: notes.length > 0 ? notes.join(" ") : null };
+}
+
+/** The SRVs of a file that replace or add to the stored ones, and the stored ones that older copies lost to. */
+function byDate(docs: readonly SrvDocument[], stored: ReadonlyMap<string, StoredSrv>) {
+  const accepted: SrvDocument[] = [];
+  const skipped: StoredSrv[] = [];
+  for (const doc of docs) {
+    const old = stored.get(doc.srvNumber);
+    if (old && !acceptIncoming(old.srvDate, doc.srvDate)) skipped.push(old);
+    else accepted.push(doc);
+  }
+  return { accepted, skipped };
 }
 
 /** "Older than the stored SRV 1 (dated …)" for the stored SRVs a file's older copies lost to. */

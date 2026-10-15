@@ -2,9 +2,11 @@
 // adapters, with the in-process job runner. The server serves it over HTTP; the corpus import (SPEC-09) calls the
 // services directly, so both run the same wiring.
 import { openNodeDb, type NodeDb } from "@senstosales/db/node";
+import { createSessions, type Scraper } from "@senstosales/scraper";
 
 import pkg from "../../../package.json" with { type: "json" };
 import type { Logger } from "../../ports/logger.ts";
+import { bhelScrapeHandlers } from "../../services/bhel-sync.ts";
 import { folderImportHandlers } from "../../services/folder-import.ts";
 import { createServices, type Services } from "../../services/index.ts";
 import { jobWorker } from "../../services/job-worker.ts";
@@ -20,17 +22,29 @@ export interface RuntimeOptions {
   /** Stamped into `schema_migration` by an upgrade; this package's version unless given. */
   readonly version?: string;
   readonly logger: Logger;
+  /** The BHEL portal adapter; without one, BHEL sync is not offered. */
+  readonly scraper?: Scraper;
 }
+
+/** How often open scraper sessions are checked for the 15-minute idle close (INV-100). */
+const IDLE_SWEEP_MS = 60_000;
 
 export interface Runtime {
   readonly db: NodeDb;
   readonly services: Services;
   readonly jobs: JobRunner;
+  /** At exit: closes every scraper session (INV-100), then `db`. */
+  close(): Promise<void>;
 }
 
 /** Opens the database in `dataDir`, upgrading it first if it is older (C9), and builds the services. The caller
- * closes `db`. */
-export async function openRuntime({ dataDir, version = pkg.version, logger }: RuntimeOptions): Promise<Runtime> {
+ * runs `close` (or closes `db` when it opened no scraper session). */
+export async function openRuntime({
+  dataDir,
+  version = pkg.version,
+  logger,
+  scraper,
+}: RuntimeOptions): Promise<Runtime> {
   const paths = await prepareDataDir(dataDir);
   const clock = createClock();
   const db = openNodeDb(paths.db);
@@ -40,10 +54,25 @@ export async function openRuntime({ dataDir, version = pkg.version, logger }: Ru
     db.close();
     throw err;
   }
-  // The scrape and backup handlers arrive with their PRs (SPEC-19, SPEC-21); until then a start fails plainly. Jobs
-  // run only when a user starts one, never at startup (C9).
+  // The backup handler arrives with SPEC-21; until then a start fails plainly. Jobs run only when a user starts one,
+  // never at startup (C9).
   const storage = createFsStorage(dataDir);
-  const handlers = { ...folderImportHandlers({ db, clock, storage }), ...recomputeAllHandlers({ db, clock }) };
+  const bhel = scraper && { scraper, sessions: createSessions(clock) };
+  const handlers = {
+    ...folderImportHandlers({ db, clock, storage }),
+    ...recomputeAllHandlers({ db, clock }),
+    ...(bhel && bhelScrapeHandlers({ db, clock, storage, ...bhel })),
+  };
   const jobs = createJobRunner(jobWorker({ db, clock, logger, handlers }));
-  return { db, services: createServices({ db, clock, jobs, storage }), jobs };
+  // `unref`: the sweep never keeps the process alive on its own.
+  const sweep = bhel && setInterval(() => void bhel.sessions.closeIdle(), IDLE_SWEEP_MS).unref();
+  const close = async () => {
+    clearInterval(sweep);
+    try {
+      await bhel?.sessions.closeAll();
+    } finally {
+      db.close();
+    }
+  };
+  return { db, services: createServices({ db, clock, jobs, storage, ...(bhel && { bhel }) }), jobs, close };
 }

@@ -239,14 +239,14 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 
 ## [SPEC-19 — BHEL scraper and sync](../specs/SPEC-19-bhel-scraper-sync.md)
 
-| PR  | Scope                                | Status | Notes |
-| --- | ------------------------------------ | ------ | ----- |
-| 1   | Scraper port, fake and sessions      | todo   |       |
-| 2   | Playwright adapter: launch and login | todo   |       |
-| 3   | HTTP session listing and fetch       | todo   |       |
-| 4   | Scrape jobs and wizard API           | todo   |       |
-| 5   | Sync wizard UI and tray status       | todo   |       |
-| 6   | Live sync acceptance (human)         | todo   | H3    |
+| PR  | Scope                                | Status     | Notes |
+| --- | ------------------------------------ | ---------- | ----- |
+| 1   | Scraper port, fake and sessions      | done (#77) |       |
+| 2   | Playwright adapter: launch and login | todo       |       |
+| 3   | HTTP session listing and fetch       | todo       |       |
+| 4   | Scrape jobs and wizard API           | done (#77) |       |
+| 5   | Sync wizard UI and tray status       | todo       |       |
+| 6   | Live sync acceptance (human)         | todo       | H3    |
 
 ## [SPEC-20 — Desktop packaging and release](../specs/SPEC-20-desktop-packaging-release.md)
 

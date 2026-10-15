@@ -75,8 +75,16 @@ export async function uploadPoFiles(deps: PoIngestDeps, files: readonly UploadFi
   return results;
 }
 
-/** One PO file: accepted, skipped as older than the stored PO (INV-42, INV-44), or failed with a reason (INV-50). */
-export async function ingestPoFile(deps: PoIngestDeps, file: UploadFile, ctx: IngestContext): Promise<FileResult> {
+/**
+ * One PO file: accepted, skipped as older than the stored PO (INV-42, INV-44), or failed with a reason (INV-50).
+ * `preStored`: a scrape stored the page before parsing (D-0178), so it is not stored again.
+ */
+export async function ingestPoFile(
+  deps: PoIngestDeps,
+  file: UploadFile,
+  ctx: IngestContext,
+  preStored = false,
+): Promise<FileResult> {
   const { name } = file;
   const parsed = parsePo(file.html);
   if (!parsed.ok) {
@@ -91,7 +99,9 @@ export async function ingestPoFile(deps: PoIngestDeps, file: UploadFile, ctx: In
       return { name, status: "skipped", reason };
     }
     // The PO number is the storage key, so an uploaded page is stored once it has parsed and passed the guard (EC-29).
-    await storeSourceDocument(deps, { kind: "po", key: doc.poNumber, html: file.html, docDate: doc.poDate }, ctx);
+    if (!preStored) {
+      await storeSourceDocument(deps, { kind: "po", key: doc.poNumber, html: file.html, docDate: doc.poDate }, ctx);
+    }
     const batch = new WriteBatch(deps.db);
     for (const statement of await ingestStatements(deps, doc, stored, ctx)) batch.add(statement);
     await batch.commit();
