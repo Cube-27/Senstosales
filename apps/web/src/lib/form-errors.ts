@@ -1,6 +1,7 @@
 // How a form shows a refused write (SPEC-15 §4.2): the server's message at the field its `details` names, or in the
 // form footer; a 409 version conflict also offers "Reload".
 import { ApiError } from "@senstosales/schemas/errors";
+import type { FieldPath, FieldValues, UseFormSetError } from "react-hook-form";
 
 export interface ServerErrors {
   /** Message per form field path (`currentPassword`, `supplier.name`), from `details.fields`. */
@@ -34,4 +35,23 @@ export function serverErrors(error: unknown): ServerErrors {
     inFooter: Object.keys(fields).length === 0,
     conflict: error.status === 409,
   };
+}
+
+/** Puts a refused write's messages on the form: each at the field `fieldFor` maps its server path to, else the
+ * server's message at the form's `root` (the footer). */
+export function showServerErrors<T extends FieldValues>(
+  setError: UseFormSetError<T>,
+  error: unknown,
+  fieldFor: Readonly<Record<string, FieldPath<T>>>,
+): ServerErrors {
+  const errors = serverErrors(error);
+  let placed = false;
+  for (const [path, message] of Object.entries(errors.fields)) {
+    const field = fieldFor[path];
+    if (field === undefined) continue;
+    setError(field, { message });
+    placed = true;
+  }
+  if (!placed) setError("root", { message: errors.message });
+  return errors;
 }
