@@ -55,3 +55,8 @@ RESUME.md
 business_development/
 # Company details matched by the real-data scan in the hook and local `pnpm verify` (SPEC-00 §4.6, D-0010)
 tools/checks/company-details.local.txt
+
+# Desktop shell build outputs (SPEC-20)
+apps/desktop/src-tauri/binaries/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/

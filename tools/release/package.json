@@ -1,0 +1,10 @@
+{
+  "name": "@senstosales/release",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "devDependencies": {
+    "@senstosales/db": "workspace:*",
+    "esbuild": "^0.28.2"
+  }
+}
