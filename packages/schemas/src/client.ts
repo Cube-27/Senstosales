@@ -56,11 +56,13 @@ export class ApiError extends Error {
   }
 }
 
-type Args<N extends RouteName> = object extends RouteInput<N> ? [input?: RouteInput<N>] : [input: RouteInput<N>];
+/** A call's arguments after the route name: the input is optional when every part of it is. */
+export type RouteArgs<N extends RouteName> =
+  object extends RouteInput<N> ? [input?: RouteInput<N>] : [input: RouteInput<N>];
 
 export function createClient(fetchImpl: FetchLike) {
   return {
-    async request<N extends RouteName>(name: N, ...[input]: Args<N>): Promise<RouteOutput<N>> {
+    async request<N extends RouteName>(name: N, ...[input]: RouteArgs<N>): Promise<RouteOutput<N>> {
       const def: RouteDef = routes[name];
       const { params, query, body } = (input ?? {}) as {
         params?: object;

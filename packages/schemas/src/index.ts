@@ -29,6 +29,7 @@ export {
   type Download,
   type FetchLike,
   type FetchResponse,
+  type RouteArgs,
   type RouteInput,
   type RouteName,
   type RouteOutput,
