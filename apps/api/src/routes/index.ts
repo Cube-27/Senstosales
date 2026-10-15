@@ -5,7 +5,7 @@ import { authRoutes } from "./auth.ts";
 import { buyersRoutes } from "./buyers.ts";
 import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
-import { poRoutes } from "./po.ts";
+import { poManualQtyRoutes, poRoutes } from "./po.ts";
 import { poUploadRoutes } from "./po-upload.ts";
 import { settingsRoutes } from "./settings.ts";
 import { srvUploadRoutes } from "./srv-upload.ts";
@@ -22,6 +22,7 @@ export function apiRoutes(services: Services): Handlers {
     ...jobsRoutes(services.jobs),
     ...jobStagingRoutes(services.folderImport),
     ...poRoutes(services.po),
+    ...poManualQtyRoutes(services.poManualQty),
     ...poUploadRoutes(services.poIngest),
     ...srvUploadRoutes(services.srvIngest),
     ...srvRoutes(services.srv),
