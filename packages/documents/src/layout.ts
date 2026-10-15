@@ -8,17 +8,11 @@ interface Range {
   right: number;
 }
 
-const LETTERS = /^([A-Z]+)(\d+)$/;
-
-function column(letters: string): number {
-  return [...letters].reduce((n, letter) => n * 26 + letter.charCodeAt(0) - 64, 0);
-}
-
-function parseRange(range: string): Range {
+function parseRange(ws: ExcelJS.Worksheet, range: string): Range {
   const [from = "", to = from] = range.split(":");
-  const [, l1 = "", r1 = ""] = LETTERS.exec(from) ?? [];
-  const [, l2 = "", r2 = ""] = LETTERS.exec(to) ?? [];
-  return { top: Number(r1), left: column(l1), bottom: Number(r2), right: column(l2) };
+  const topLeft = ws.getCell(from).fullAddress;
+  const bottomRight = ws.getCell(to).fullAddress;
+  return { top: topLeft.row, left: topLeft.col, bottom: bottomRight.row, right: bottomRight.col };
 }
 
 const merge = (ws: ExcelJS.Worksheet, { top, left, bottom, right }: Range): void =>
@@ -31,7 +25,7 @@ const merge = (ws: ExcelJS.Worksheet, { top, left, bottom, right }: Range): void
  */
 export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, like: number): void {
   if (count <= 0) return;
-  const merges = ws.model.merges.map(parseRange);
+  const merges = ws.model.merges.map((range) => parseRange(ws, range));
   const moving = merges.filter((m) => m.top >= at);
   const repeated = merges.filter((m) => m.top === like && m.bottom === like);
   const width = ws.columnCount;
@@ -41,7 +35,7 @@ export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, lik
       return { value: cell.isMerged && cell.master !== cell ? null : cell.value, style: cell.style };
     });
   const below = Array.from({ length: ws.rowCount - at + 1 }, (_, i) => cellsOf(at + i));
-  const template = cellsOf(like);
+  const blank = cellsOf(like).map(({ style }) => ({ value: null, style }));
 
   for (const m of moving) ws.unMergeCells(m.top, m.left, m.bottom, m.right);
   const write = (row: number, cells: ReturnType<typeof cellsOf>) =>
@@ -51,11 +45,7 @@ export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, lik
       cell.style = style;
     });
   below.forEach((cells, i) => write(at + count + i, cells));
-  for (let row = at; row < at + count; row++)
-    write(
-      row,
-      template.map(({ style }) => ({ value: null, style })),
-    );
+  for (let row = at; row < at + count; row++) write(row, blank);
 
   for (const m of moving) merge(ws, { ...m, top: m.top + count, bottom: m.bottom + count });
   for (let row = at; row < at + count; row++) for (const m of repeated) merge(ws, { ...m, top: row, bottom: row });

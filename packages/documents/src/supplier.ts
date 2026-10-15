@@ -15,15 +15,9 @@ export interface DocumentSupplier {
   jurisdiction: string | null;
 }
 
-interface SupplierProfile {
-  name: string;
-  address: string | null;
-  gstin: string | null;
-  contact: string | null;
-  state: string | null;
-  stateCode: string | null;
+type SupplierProfile = Omit<DocumentSupplier, "description" | "jurisdiction"> & {
   invoiceDefaults: Readonly<Record<string, string>>;
-}
+};
 
 interface SupplierSnapshot {
   supplierName: string | null;

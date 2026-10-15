@@ -89,24 +89,24 @@ function writeFooter(
   { supplier, dc, po, invoiceNumber, items }: DcDocument,
   at: number,
 ): number {
-  const value = sumMoney(items.map((item) => qtyValue(item.dspQty, item.rate)));
-  const remarks: Array<[number, Value, string]> = [
-    [0, 1, `GST Bill No. ${invoiceNumber ?? ""} Dt.`],
-    [1, 2, `Guarantee Certificate No. ${dc.gcNumber}   Dt. ${fmtDate(dc.gcDate)}`],
-    [2, 3, `Dimension Report ${(dc.ourRef ?? "").trim()}`.trimEnd()],
-    [3, 4, "TC No  dt.  Of"],
-    [6, null, "Lot No."],
-    [7, null, `Consignment Value of BHEL PO ${fmtFixed(value, { gemc: po.isGemc })}`],
+  const total = sumMoney(items.map((item) => qtyValue(item.dspQty, item.rate)));
+  const cells: Array<[number, string, Value]> = [
+    [0, "B", 1],
+    [0, "C", `GST Bill No. ${invoiceNumber ?? ""} Dt.`],
+    [1, "B", 2],
+    [1, "C", `Guarantee Certificate No. ${dc.gcNumber}   Dt. ${fmtDate(dc.gcDate)}`],
+    [2, "B", 3],
+    [2, "C", `Dimension Report ${(dc.ourRef ?? "").trim()}`.trimEnd()],
+    [3, "B", 4],
+    [3, "C", "TC No  dt.  Of"],
+    [6, "C", "Lot No."],
+    [7, "C", `Consignment Value of BHEL PO ${fmtFixed(total, { gemc: po.isGemc })}`],
+    [10, "C", "Received the Goods in good condition"],
+    [10, "H", `                 For ${supplier.name}`],
+    [11, "C", "E. & O.E."],
   ];
-  for (const [offset, number, text] of remarks) {
-    put(ws, `B${at + offset}`, number);
-    put(ws, `C${at + offset}`, text);
-  }
-  const signature = at + 10;
-  put(ws, `C${signature}`, "Received the Goods in good condition");
-  put(ws, `H${signature}`, `                 For ${supplier.name}`);
-  put(ws, `C${signature + 1}`, "E. & O.E.");
-  return signature + 1;
+  for (const [offset, column, value] of cells) put(ws, `${column}${at + offset}`, value);
+  return at + 11;
 }
 
 function setPage(ws: ExcelJS.Worksheet, lastRow: number, onePage: boolean): void {
@@ -139,7 +139,7 @@ export async function buildDcWorkbook(doc: DcDocument): Promise<Uint8Array> {
     ws.getRow(row).hidden = extra === 0 && row >= FIRST_ITEM_ROW + items.length && row < BLANK_ROW;
   }
   writeItems(ws, items);
-  const lastRow = writeFooter(ws, { ...doc, items }, REMARKS_ROW + extra);
+  const lastRow = writeFooter(ws, doc, REMARKS_ROW + extra);
   setPage(ws, lastRow, extra === 0);
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }
@@ -148,6 +148,6 @@ const FILE_NAME_SAFE = /^[\p{L}\p{N}_-]+$/u;
 
 /** Legacy's download name: path characters become `_`, anything else unsafe gives `export`; at most 100 characters. */
 export function dcFileName(number: string): string {
-  const name = number.replaceAll("..", "_").replaceAll("/", "_").replaceAll("\\", "_");
+  const name = number.replace(/\.\.|[/\\]/g, "_");
   return `DC_${FILE_NAME_SAFE.test(name) ? name.slice(0, 100) : "export"}.xlsx`;
 }
