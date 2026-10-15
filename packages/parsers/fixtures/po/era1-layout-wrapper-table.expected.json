@@ -22,9 +22,11 @@
       "description": "LIMIT SWITCH",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "3",
       "rate": "700",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-04-30",
           "entryAllowDate": "2024-05-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN122010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "700.00",
+            "ORD QTY": "3.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "3.000",
+            "DELY DATE": "30/04/2024",
+            "ENTRY ALLOW DATE": "15/05/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

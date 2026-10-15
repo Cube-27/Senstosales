@@ -107,6 +107,8 @@ describe("upgradeGate", () => {
     expect(await db.query(db.build.select().from(schemaMigration))).toEqual([
       { version: 1, name: "init", appliedAt: NOW, appVersion: "1.2.3" },
       { version: 2, name: "lookup_indexes", appliedAt: NOW, appVersion: "1.2.3" },
+      { version: 3, name: "document_fields", appliedAt: NOW, appVersion: "1.2.3" },
+      { version: 4, name: "verbatim_source_rows", appliedAt: NOW, appVersion: "1.2.3" },
     ]);
     db.close();
 

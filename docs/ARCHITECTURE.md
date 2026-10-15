@@ -362,14 +362,26 @@ The v1 flag set is exactly these six (A-24). (INV-58)
 
 - Input: an HTML string decoded as UTF-8 with replacement. Output: a Zod-validated `PoDocument`/`SrvDocument` or a
   typed `ParseError`. Pure; parsed documents carry no derived values. PO input is HTML only (A2-2). (INV-49)
+- **Verbatim (owner, 2026-10-15)**: PO and SRV pages are BHEL's documents and the source of truth. Every cell is
+  imported as printed; an odd row (PO ITM 0, LOT NO 0, a repeated key or lot) is stored and flagged, never fixed,
+  merged or refused. Each stored row keeps its raw cells by header text. (INV-111)
 - **PO**: header fields located by label text (PO number and date, enquiry, supplier code, order type, division,
-  quotation, PO status code, amendment no, PO value, RC no, inspection, currency, net value, remarks); the item table
-  by its header row; description continuation rows keyed by item number; extra lots; `&nbsp;` stripped; dates in
+  quotation, PO status code, amendment no, PO value, RC no, inspection, currency, net value, remarks); a label whose
+  right-hand neighbour is also a label reads the cell below (REMARKS, TOTAL VALUE and SUPP NAME M/S share one label
+  row); `INSPECTION BY :` with its colon; labels printed with their value in one cell (`TIN NO.`, `ECC NO.`,
+  `MPCT NO.`, `PHONE:`, `FAX:`) go to the raw header. The item table by its header row, with MTRL CAT and ITEM VALUE;
+  an item printed once per lot keeps its first row's values and gains each row's lot; every lot row is kept,
+  repeated lot numbers too; description continuation rows keyed by item number; `&nbsp;` stripped; dates in
   `DD/MM/YYYY` and `DD-MON-YY`; a non-date "Entry Allow" cell (for example "PO Short Closed") is kept as the lot note
-  and shown instead of a date (spec §4) (INV-46); GEMC number from remarks (§6.4).
+  and shown instead of a date (spec §4) (INV-46); GEMC number from the remarks cell only (§6.4, A2-3); a full stop
+  that ends a sentence is not part of a drawing number.
 - **SRV**: HTML comments skipped (pages embed an older commented-out table); the table whose header contains `SRV NO`;
-  columns mapped by header text (two layouts); rows grouped by `(po_number, srv_number)`; item key
-  `(po_item_no, lot_no, srv_item_no)`; challan dates `DD/MM/YY`.
+  columns mapped by header text; every column is read (DIV, PO ITM, SUB ITM, PMIR NO, SRV ITM, REV NO, challan,
+  TAX INV, FINANCE DT, CNOTE, UNIT, ORDER/CHALLAN/RECVD/ACCEPTED/REJ QTY); LOT NO and MATERIAL CODE are read when a
+  page has them (current pages have neither; lots are reference only); an empty cell is null; rows grouped by
+  `(po_number, srv_number)` and numbered in file order within their SRV, which is the stored row's identity, since
+  the page's own key may repeat (A2-10); a row that cannot be read fails its SRV only; challan dates `DD/MM/YY` and
+  `DD-MON-YY`. (INV-112)
 
 ### 7.2 Ingestion guards (spec §4)
 
@@ -392,8 +404,9 @@ The v1 flag set is exactly these six (A-24). (INV-58)
 - Progress (`total, done, skipped, failed, current`) is written per document; the UI polls every 2 s; the tray
   shows the current job. Cancel is honoured between documents.
 - **One batch per document** (A-3): parse outside any batch; one `WriteBatch` per PO file or per SRV file. A failing
-  file becomes a `job_event` with the reason, its previous data is kept, and the job continues. An SRV file with
-  duplicate item keys fails as a whole (legacy bug fix, A2-10). (INV-50)
+  file becomes a `job_event` with the reason, its previous data is kept, and the job continues. An SRV of the file
+  that cannot be read is reported in the file's result and the file's other SRVs are stored; repeated item keys are
+  stored as printed (A2-10). (INV-50)
 - Raw HTML is stored through `Storage` before parsing and recorded in `source_document`, so a parser fix can
   re-parse without re-scraping.
 - **PO batch**: guard -> upsert header/items/lots -> recompute items (§6.2, §6.3) -> flag detection -> audit row.
@@ -444,14 +457,14 @@ SQLite now, D1 later; one set of SQL migrations runs on both. Every business tab
 | `app_user`, `session`  | One `admin` user; password hash; sessions by token hash.                                                                                                                                                                                                                                          |
 | `source_document`      | id, kind (`po`/`srv`), key, storage_key, sha256, doc_date, ingested_at, job_id.                                                                                                                                                                                                                   |
 | `po`                   | id, po_number (unique per supplier), po_date, buyer_id, enquiry, quotation, order_type, bhel_status_code, amend_no, po_value_u5, net_po_value_u5, is_gemc, gemc_number, remarks, raw_header_json, status and totals (derived), version.                                                           |
-| `po_item`              | id, po_id, po_item_no, material_code, description, drawing_no, unit, ord_qty_m, rate_source_u5, rate_u5, po_rcd_qty_m, po_rej_qty_m, cancelled_at, manual_dispatched_qty_m (default 0), manual_note, manual_set_at; derived dsp/rcd/rej/balance/uninvoiced and status. UNIQUE(po_id, po_item_no). |
-| `po_lot`               | id, po_item_id, lot_no, dely_qty_m, dely_date, entry_allow_date, entry_allow_note, dest_code.                                                                                                                                                                                                     |
-| `dc`                   | id, po_id, number, dc_date, financial_year, gc_number, gc_date, header fields, version, created_at. UNIQUE(supplier_id, number, financial_year); UNIQUE(supplier_id, gc_number, financial_year).                                                                                                  |
-| `dc_item`              | id, dc_id, po_item_id, dsp_qty_m, created_at.                                                                                                                                                                                                                                                     |
+| `po_item`              | id, po_id, po_item_no, material_code, description, drawing_no, unit, mtrl_cat, ord_qty_m, rate_source_u5, rate_u5, item_value_u5, po_rcd/rej_qty_m, cancelled_at, manual_dispatched_qty_m (default 0), manual_note, manual_set_at; derived quantities and status. UNIQUE(po_id, po_item_no).      |
+| `po_lot`               | id, po_item_id, lot_no, dely_qty_m, dely_date, entry_allow_date, entry_allow_note, dest_code, raw_row_json (the page row). No unique key: a repeated lot row is kept (A2-10).                                                                                                                     |
+| `dc`                   | id, po_id, number, dc_date, financial_year, gc_number, gc_date, header fields, version, created_at, invoice_number, invoice_date. UNIQUE(supplier_id, number, financial_year); UNIQUE(supplier_id, gc_number, financial_year).                                                                    |
+| `dc_item`              | id, dc_id, po_item_id, dsp_qty_m, created_at, packets.                                                                                                                                                                                                                                            |
 | `invoice`              | id, po_id, dc_id (nullable, UNIQUE), kind (`dc`/`direct`), number, invoice_date, financial_year, buyer snapshot, GST percentages, totals_u5, header fields, version, created_at. UNIQUE(supplier_id, number, financial_year).                                                                     |
-| `invoice_item`         | id, invoice_id, po_item_id, dc_item_id (nullable), qty_m, rate_u5, taxable_u5, cgst_u5, sgst_u5, igst_u5, total_u5.                                                                                                                                                                               |
+| `invoice_item`         | id, invoice_id, po_item_id, dc_item_id (nullable), qty_m, rate_u5, taxable_u5, cgst_u5, sgst_u5, igst_u5, total_u5, hsn, packets.                                                                                                                                                                 |
 | `srv`                  | id, po_number, po_id (nullable: PO not found), srv_number, srv_date, financial_year, raw_header_json. UNIQUE(supplier_id, po_number, srv_number).                                                                                                                                                 |
-| `srv_item`             | id, srv_id, po_item_id (nullable), material_code, po_item_no, lot_no, srv_item_no, ord/rcd/accepted/rej `_qty_m`, challan_no, challan_date, invoice_no, invoice_date, resolved_dc_id, resolved_invoice_id.                                                                                        |
+| `srv_item`             | id, srv_id, po_item_id (nullable), row_no, material_code, po_item_no, sub_item_no, lot_no, srv_item_no, rev_no, division, pmir_no, unit, ord/challan/rcd/accepted/rej `_qty_m`, challan_no/date, invoice_no/date, finance_date, cnote_no/date, raw_row_json, resolved_dc_id, resolved_invoice_id. |
 | `reconciliation_issue` | id, type, scope_type, scope_id, po_id, fingerprint, details_json (field, expected, actual), status (`open`/`acknowledged`), note, opened_at, acknowledged_at.                                                                                                                                     |
 | `audit_log`            | id, at, actor, action, entity_type, entity_id, before_json, after_json, job_id. One row per write batch, in that batch. Kept forever (A-26).                                                                                                                                                      |
 | `job`, `job_event`     | job: type, status, timestamps, cancel_requested, progress_json, error, summary_json; partial unique index on running. job_event: job_id, at, level, document_key, message.                                                                                                                        |
@@ -755,14 +768,14 @@ spec or format freeze, not by new design"), each with its source.
 | ----- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
 | A2-1  | PO key: `po_number` or `(po_number, FY)` (spec §4 allows both) | `po_number` (per supplier)                                                                                   | Legacy schema (PO number is the key)                     |
 | A2-2  | PO upload from Excel (spec §2 mentions it)                     | HTML only                                                                                                    | Legacy upload accepts HTML only; A-6                     |
-| A2-3  | How a PO is recognised as GEMC                                 | A GEMC number in REMARKS (legacy regex)                                                                      | Legacy parser                                            |
+| A2-3  | How a PO is recognised as GEMC                                 | A GEMC number in the REMARKS text below its label (legacy regex)                                             | Legacy parser; owner 2026-10-15                          |
 | A2-4  | Invoice tax split and rounding                                 | CGST + SGST from settings, IGST 0; per-line rounding to 5 dp for GEMC, 2 dp otherwise; header = sum of lines | Legacy invoice service; spec §5; A-12                    |
 | A2-5  | Which FY makes a GC number unique                              | The DC's FY                                                                                                  | Legacy DC service                                        |
 | A2-6  | Next-number suggestion                                         | None; numbers typed by the user                                                                              | Spec §2 ("Manual"); legacy UI                            |
 | A2-7  | SRV item to PO item when a material code is on several items   | The SRV row's PO item number decides                                                                         | Spec §3 (material code) + legacy matching by item number |
 | A2-8  | Accepted column value                                          | The item's `rcd_qty`, as legacy reports show                                                                 | Legacy report service                                    |
 | A2-9  | SRV for a PO not in the system                                 | Stored; listed with "PO not found"; not a flag                                                               | Legacy SRV ingestion                                     |
-| A2-10 | Duplicate item keys inside one SRV file                        | The whole file fails; previous data kept                                                                     | Legacy bug fix (atomic per file, A-3)                    |
+| A2-10 | Odd PO or SRV rows; an unreadable SRV in a file                | Stored as printed and flagged; an unreadable SRV fails alone, the file's other SRVs are stored               | Owner 2026-10-15 (E2E real-data test)                    |
 | A2-11 | Session lifetime                                               | As legacy (session cookie plus "remember me")                                                                | Legacy auth; A-17                                        |
 | A2-12 | Suppliers per install                                          | One                                                                                                          | Legacy is single-supplier; switcher is candidate K7      |
 | A2-13 | Status of a PO whose items are all cancelled                   | Derived by the item rule over active items: Closed (no active item is pending or delivered)                  | Spec §6 + A-9 + A-13; recorded in EDGE_CASES             |
@@ -847,3 +860,4 @@ Every section of the legacy business spec, mapped to this document and `INVARIAN
 | 1.5 | 2026-10-15 | §8.2, §13.3: the schema version is `max(version)` in `schema_migration`; `PRAGMA user_version` is no longer written or read, since D1 refuses it (ADR 0002). SPEC-05 and SPEC-07 likewise (owner delegated the decision to the orchestrator; SPEC-05 PR 3).                                                                 |
 | 1.6 | 2026-10-15 | §8.1: optimistic concurrency checks the version inside the `UPDATE`; a stale version fails the batch (409) instead of a changes check after it, which a void batch cannot do. SPEC-05 §2 likewise (owner delegated the wording fix to the orchestrator, D-0124).                                                            |
 | 1.7 | 2026-10-15 | §3: `tools/orchestrator/` holds the agent and merge scripts; the merge-guard and path-guard PreToolUse hook is removed, and `merge_pr.sh` stays the only merge path (INV-89) (owner).                                                                                                                                       |
+| 1.8 | 2026-10-15 | §7.1, §7.3, §8.2, A2-3, A2-10: PO and SRV pages verbatim (every SRV column, optional LOT NO and MATERIAL CODE, odd rows kept and flagged, one bad SRV fails alone, REMARKS below its label); HSN, packets and DC invoice columns. INV-50 revised; INV-111, INV-112 (owner-approved 2026-10-15, E2E real-data test).         |

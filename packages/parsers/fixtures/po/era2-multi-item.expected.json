@@ -22,9 +22,11 @@
       "description": "FLANGE GASKET 150 NB DRG NO 3A120955 ASBESTOS FREE",
       "drawingNo": "3A120955",
       "unit": "NOS",
+      "mtrlCat": "2",
       "ordQty": "40",
       "rate": "450.5",
       "rcdQty": "12",
+      "itemValue": null,
       "rejQty": "2",
       "lots": [
         {
@@ -33,7 +35,22 @@
           "delyDate": "2024-05-31",
           "entryAllowDate": "2024-06-15",
           "entryAllowNote": null,
-          "destCode": "21"
+          "destCode": "21",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN200010",
+            "MTRL CAT": "2",
+            "UNIT": "NOS",
+            "PO RATE": "450.50",
+            "ORD QTY": "40.000",
+            "RCD QTY": "12.000",
+            "REJ QTY": "2.000",
+            "LOT NO": "1",
+            "DELY QTY": "40.000",
+            "DELY DATE": "31-MAY-24",
+            "ENTRY ALLOW DATE": "15-JUN-24",
+            "DEST CODE": "21"
+          }
         }
       ]
     },
@@ -43,9 +60,11 @@
       "description": "COPPER WIRE 2.5 SQMM",
       "drawingNo": null,
       "unit": "KG",
+      "mtrlCat": "2",
       "ordQty": "100.5",
       "rate": "120.25",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": "0",
       "lots": [
         {
@@ -54,7 +73,22 @@
           "delyDate": "2024-06-30",
           "entryAllowDate": "2024-07-15",
           "entryAllowNote": null,
-          "destCode": "21"
+          "destCode": "21",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN200020",
+            "MTRL CAT": "2",
+            "UNIT": "KG",
+            "PO RATE": "120.25",
+            "ORD QTY": "100.500",
+            "RCD QTY": "0.000",
+            "REJ QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "100.500",
+            "DELY DATE": "30-JUN-24",
+            "ENTRY ALLOW DATE": "15-JUL-24",
+            "DEST CODE": "21"
+          }
         }
       ]
     },
@@ -64,9 +98,11 @@
       "description": "VALVE ASSEMBLY SET",
       "drawingNo": null,
       "unit": "SET",
+      "mtrlCat": "3",
       "ordQty": "2",
       "rate": "2000",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": "0",
       "lots": [
         {
@@ -75,7 +111,22 @@
           "delyDate": "2024-07-31",
           "entryAllowDate": "2024-08-15",
           "entryAllowNote": null,
-          "destCode": "22"
+          "destCode": "22",
+          "rawRow": {
+            "PO ITM": "30",
+            "MATERIAL CODE": "SYN200030",
+            "MTRL CAT": "3",
+            "UNIT": "SET",
+            "PO RATE": "2000.00",
+            "ORD QTY": "2.000",
+            "RCD QTY": "0.000",
+            "REJ QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "2.000",
+            "DELY DATE": "31-JUL-24",
+            "ENTRY ALLOW DATE": "15-AUG-24",
+            "DEST CODE": "22"
+          }
         }
       ]
     }

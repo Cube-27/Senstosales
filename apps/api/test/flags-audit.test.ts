@@ -160,6 +160,7 @@ async function addSrvFlag(app: App): Promise<void> {
       srvId: S1,
       poItemNo: 10,
       lotNo: 1,
+      rowNo: 1,
       srvItemNo: 1,
       ordQty: 5000 as Qty,
     }),

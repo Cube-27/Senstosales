@@ -45,13 +45,15 @@ export function checkForm(form: PoForm): IsoDate {
 }
 
 /**
- * The PO the form describes. The PO document's received and rejected quantities and a lot's entry-allow date are
- * not on the form, so an edit keeps the stored ones. An item sent without lots gets the legacy default: lot 1 of the
+ * The PO the form describes. The PO document's received and rejected quantities, MTRL CAT, ITEM VALUE and a lot's
+ * entry-allow date and page row are not on the form, so an edit keeps the stored ones. An item sent without lots gets the legacy default: lot 1 of the
  * ordered quantity, due on the PO date.
  */
 export function formValues(form: PoForm, poDate: IsoDate, kept: Kept): PoValues {
   const storedItem = new Map(kept.items.map((item) => [item.poItemNo, item]));
-  const storedLot = new Map(kept.lots.map((lot) => [`${lot.poItemId}/${lot.lotNo}`, lot]));
+  // A lot number can repeat on the page (A2-10), so the n-th form lot with a number takes the n-th stored one; stored
+  // lots come in page order (ids are made in page order) and the form sends them in the order it was given.
+  const storedLot = new Map(occurrences(kept.lots, (lot) => `${lot.poItemId}/${lot.lotNo}`));
   return {
     poNumber: form.poNumber,
     poDate,
@@ -76,17 +78,35 @@ export function formValues(form: PoForm, poDate: IsoDate, kept: Kept): PoValues 
         description: item.description,
         drawingNo: item.drawingNo,
         unit: item.unit,
+        mtrlCat: stored?.mtrlCat ?? null,
         ordQty: item.ordQty,
         rate: item.rateSource,
+        itemValue: stored?.itemValue ?? null,
         rcdQty: stored?.poRcdQty ?? (0 as Qty),
         rejQty: stored?.poRejQty ?? null,
-        lots: lots.map((lot) => {
-          const old = stored && storedLot.get(`${stored.id}/${lot.lotNo}`);
-          return { ...lot, entryAllowDate: old?.entryAllowDate ?? null, entryAllowNote: old?.entryAllowNote ?? null };
+        lots: occurrences(lots, (lot) => `${stored?.id}/${lot.lotNo}`).map(([key, lot]) => {
+          const old = stored && storedLot.get(key);
+          return {
+            ...lot,
+            entryAllowDate: old?.entryAllowDate ?? null,
+            entryAllowNote: old?.entryAllowNote ?? null,
+            rawRow: old?.rawRow ?? null,
+          };
         }),
       };
     }),
   };
+}
+
+/** Each value with its key and its occurrence among the values sharing that key: `key#n`, from 1. */
+function occurrences<T>(values: readonly T[], keyOf: (value: T) => string): [string, T][] {
+  const seen = new Map<string, number>();
+  return values.map((value) => {
+    const key = keyOf(value);
+    const n = (seen.get(key) ?? 0) + 1;
+    seen.set(key, n);
+    return [`${key}#${n}`, value];
+  });
 }
 
 type Audited = Pick<

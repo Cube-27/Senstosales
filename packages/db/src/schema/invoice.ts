@@ -84,6 +84,8 @@ export const invoiceItem = sqliteTable(
     qty: qtyM("qty_m").notNull(),
     rate: moneyU5("rate_u5").notNull(),
     ...taxAmounts(),
+    hsn: text("hsn"),
+    packets: integer("packets"),
   },
   (t) => [index("invoice_item_invoice_id_idx").on(t.invoiceId)],
 );

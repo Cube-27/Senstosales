@@ -22,9 +22,11 @@
       "description": "RUBBER GROMMET",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "88",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-06-30",
           "entryAllowDate": "2024-07-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN126010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "88.00",
+            "ORD QTY": "10.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.000",
+            "DELY DATE": "30/06/2024",
+            "ENTRY ALLOW DATE": "15/07/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     }
@@ -53,19 +69,19 @@
     "EX RATE": "1.00",
     "SUPP NAME M/S": "Example Engineering Works",
     "SUPP CODE": "900101",
+    "TIN NO": "TIN-000126",
+    "ECC NO": "ECC-000126",
+    "MPCT NO": "MPCT-000126",
     "DVN": "21",
     "AMEND NO": "0",
     "PO-VALUE": "880.00",
     "NET PO VAL": "1038.40",
+    "FOB VALUE": "0.00",
     "REMARKS": "Older page with tax registration labels.",
     "NAME": "Test Officer",
     "DESIGNATION": "Deputy Manager",
     "PHONE:": "011-20000001",
     "FAX:": "011-20000002",
-    "EMAIL:": "stores@example.com",
-    "TIN NO": "TIN-000126",
-    "ECC NO": "ECC-000126",
-    "MPCT NO": "MPCT-000126",
-    "FOB VALUE": "0.00"
+    "EMAIL:": "stores@example.com"
   }
 }

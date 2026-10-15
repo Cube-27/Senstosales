@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
-import { zPoDocument, zSrvDocument, zSrvFile } from "../src/index.ts";
+import { zPoDocument, zSrvDocument } from "../src/index.ts";
+import { zSrvList } from "../src/types.ts";
 
 /** A valid PO document on the wire, overridden per case. */
 const PO = {
@@ -28,9 +29,11 @@ const PO = {
       description: "",
       drawingNo: null,
       unit: "NOS",
+      mtrlCat: null,
       ordQty: "5",
       rate: "12.5",
       rcdQty: "0",
+      itemValue: null,
       rejQty: null,
       lots: [
         {
@@ -40,6 +43,7 @@ const PO = {
           entryAllowDate: null,
           entryAllowNote: null,
           destCode: null,
+          rawRow: {},
         },
       ],
     },
@@ -77,18 +81,29 @@ describe("zSrvDocument", () => {
     rawHeader: { "SRV NO": "5000001" },
     items: [
       {
+        rowNo: 1,
+        division: null,
         poItemNo: 10,
-        lotNo: 1,
+        subItemNo: null,
+        pmirNo: null,
         srvItemNo: 1,
-        materialCode: "SYN0001",
-        ordQty: "5",
-        rcdQty: "5",
-        acceptedQty: "4",
-        rejQty: "1",
+        revNo: null,
+        lotNo: null,
+        materialCode: null,
         challanNo: "17",
         challanDate: "2024-04-28",
         invoiceNo: null,
         invoiceDate: null,
+        financeDate: null,
+        cnoteNo: null,
+        cnoteDate: null,
+        unit: null,
+        ordQty: "5",
+        challanQty: null,
+        rcdQty: "5",
+        acceptedQty: "4",
+        rejQty: "1",
+        rawRow: {},
       },
     ],
   };
@@ -107,7 +122,7 @@ describe("zSrvDocument", () => {
 
   it("an SRV file holds the SRVs of one PO only", () => {
     const second = { ...SRV, srvNumber: "5000002" };
-    expect(zSrvFile.safeParse([SRV, second]).success).toBe(true);
-    expect(zSrvFile.safeParse([SRV, { ...second, poNumber: "4100000998" }]).success).toBe(false);
+    expect(zSrvList.safeParse([SRV, second]).success).toBe(true);
+    expect(zSrvList.safeParse([SRV, { ...second, poNumber: "4100000998" }]).success).toBe(false);
   });
 });

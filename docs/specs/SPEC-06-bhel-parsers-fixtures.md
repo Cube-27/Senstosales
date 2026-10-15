@@ -21,9 +21,12 @@ Core:
   code, amendment no, PO value, RC no, inspection, currency, net value, remarks); item table by header row;
   description continuation rows keyed by item number; extra lots; entry-allow non-date text kept as the lot note
   (spec §4, INV-46); GEMC number via the domain's `extractGemcNumber` (INV-19).
-- SRV: skip HTML comments; the table whose header contains `SRV NO`; two column layouts mapped by header text; rows
-  grouped by `(po_number, srv_number)`; item key `(po_item_no, lot_no, srv_item_no)`; duplicate keys → the file
-  fails (A2-10, INV-50).
+- SRV: skip HTML comments; the table whose header contains `SRV NO`; columns mapped by header text; every column
+  read as printed (LOT NO and MATERIAL CODE optional; current pages have neither); rows grouped by
+  `(po_number, srv_number)` and numbered in file order within their SRV; PO ITM 0 and repeated keys are kept; a row
+  that cannot be read fails its SRV only (A2-10, INV-50, INV-112).
+- PO and SRV pages are read verbatim: odd rows are kept for flagging, never merged or refused, and each row keeps its
+  raw cells (INV-111).
 - `tools/checks/src/anonymise-fixture.ts` (moved here from SPEC-00) and ~40 PO / ~30 SRV anonymised fixtures with
   expected JSON.
 - `pnpm test:corpus` (parser assertions), skipped when `SENSTO_CORPUS_DIR` is unset, never in CI.
@@ -57,12 +60,15 @@ from the page is evaluated or fetched.
 ### 4.2 Document shapes (summary)
 
 `PoDocument`: header fields above (quantities as `Qty`, money as `Money`, dates as `IsoDate`), `gemcNumber |
-null`, `items[]` (`poItemNo`, `materialCode`, `description`, `drawingNo`, `unit`, `ordQty`, `rate` (as on the
-page; GST-inclusive for GEMC), `rcdQty`, `rejQty | null`, `lots[]` (`lotNo`, `delyQty`, `delyDate | null`,
-`entryAllowDate | null`, `entryAllowNote | null`, `destCode`)), `rawHeader` (label → text).
-`SrvDocument`: `poNumber`, `srvNumber`, `srvDate`, `rawHeader`, `items[]` (`poItemNo`, `lotNo`, `srvItemNo`,
-`materialCode`, `ordQty`, `rcdQty`, `acceptedQty`, `rejQty`, `challanNo`, `challanDate`, `invoiceNo`,
-`invoiceDate`).
+null`, `items[]` (`poItemNo`, `materialCode`, `description`, `drawingNo`, `unit`, `mtrlCat | null`, `ordQty`,
+`rate` (as on the page; GST-inclusive for GEMC), `rcdQty`, `itemValue | null`, `rejQty | null`, `lots[]` (`lotNo`,
+`delyQty`, `delyDate | null`, `entryAllowDate | null`, `entryAllowNote | null`, `destCode`, `rawRow`)), `rawHeader`
+(label → text). Item and lot numbers may be 0.
+`SrvDocument`: `poNumber`, `srvNumber`, `srvDate`, `rawHeader` (the first row), `items[]` (`rowNo`, `division`,
+`poItemNo`, `subItemNo`, `pmirNo`, `srvItemNo`, `revNo`, `lotNo | null`, `materialCode | null`, `challanNo`,
+`challanDate`, `invoiceNo`, `invoiceDate`, `financeDate`, `cnoteNo`, `cnoteDate`, `unit`, `ordQty`, `challanQty`,
+`rcdQty`, `acceptedQty`, `rejQty` (each null when the cell is empty), `rawRow`). `parseSrv` returns
+`{ srvs, failed }`: the SRVs it read (at least one) and, for each SRV it could not read, its number and error.
 
 ### 4.3 Anonymiser (`tools/checks/src/anonymise-fixture.ts`)
 
@@ -74,12 +80,12 @@ quantities. Replacements are consistent across a PO and its SRV file through a m
 ### 4.4 Error handling
 
 Every failure is a `ParseError` with a stable `code` (`no-item-table`, `bad-date`, `bad-quantity`,
-`duplicate-srv-item-key`, `no-srv-table`, …) and a plain message; the ingest job records it as a `job_event`
+`no-srv-table`, …) and a plain message; the ingest job records it as a `job_event`
 (SPEC-08). The parser never throws on any input string (property test).
 
 ## 5. Invariants
 
-INV-19 (parser part), INV-46, INV-49, INV-50 (duplicate-key part), INV-75, INV-76.
+INV-19 (parser part), INV-46, INV-49, INV-50 (per-SRV failure part), INV-75, INV-76, INV-111, INV-112.
 
 ## 6. Testing strategy
 

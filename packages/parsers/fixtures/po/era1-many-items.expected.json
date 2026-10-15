@@ -22,9 +22,11 @@
       "description": "SPARE PART TYPE A",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "4",
       "rate": "30",
       "rcdQty": "1",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN115010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "30.00",
+            "ORD QTY": "4.000",
+            "RCD QTY": "1.000",
+            "LOT NO": "1",
+            "DELY QTY": "4.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -43,9 +59,11 @@
       "description": "SPARE PART TYPE B",
       "drawingNo": null,
       "unit": "KG",
+      "mtrlCat": "1",
       "ordQty": "8",
       "rate": "60",
       "rcdQty": "2",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -54,7 +72,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN115020",
+            "MTRL CAT": "1",
+            "UNIT": "KG",
+            "PO RATE": "60.00",
+            "ORD QTY": "8.000",
+            "RCD QTY": "2.000",
+            "LOT NO": "1",
+            "DELY QTY": "8.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -64,9 +96,11 @@
       "description": "SPARE PART TYPE C",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "12",
       "rate": "90",
       "rcdQty": "3",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -75,7 +109,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "30",
+            "MATERIAL CODE": "SYN115030",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "90.00",
+            "ORD QTY": "12.000",
+            "RCD QTY": "3.000",
+            "LOT NO": "1",
+            "DELY QTY": "12.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -85,9 +133,11 @@
       "description": "SPARE PART TYPE D",
       "drawingNo": null,
       "unit": "KG",
+      "mtrlCat": "1",
       "ordQty": "16",
       "rate": "120",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -96,7 +146,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "40",
+            "MATERIAL CODE": "SYN115040",
+            "MTRL CAT": "1",
+            "UNIT": "KG",
+            "PO RATE": "120.00",
+            "ORD QTY": "16.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "16.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -106,9 +170,11 @@
       "description": "SPARE PART TYPE E",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "20",
       "rate": "150",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -117,7 +183,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "50",
+            "MATERIAL CODE": "SYN115050",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "150.00",
+            "ORD QTY": "20.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "20.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -127,9 +207,11 @@
       "description": "SPARE PART TYPE F",
       "drawingNo": null,
       "unit": "KG",
+      "mtrlCat": "1",
       "ordQty": "24",
       "rate": "180",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -138,7 +220,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "60",
+            "MATERIAL CODE": "SYN115060",
+            "MTRL CAT": "1",
+            "UNIT": "KG",
+            "PO RATE": "180.00",
+            "ORD QTY": "24.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "24.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -148,9 +244,11 @@
       "description": "SPARE PART TYPE G",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "28",
       "rate": "210",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -159,7 +257,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "70",
+            "MATERIAL CODE": "SYN115070",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "210.00",
+            "ORD QTY": "28.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "28.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -169,9 +281,11 @@
       "description": "SPARE PART TYPE H",
       "drawingNo": null,
       "unit": "KG",
+      "mtrlCat": "1",
       "ordQty": "32",
       "rate": "240",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -180,7 +294,21 @@
           "delyDate": "2024-01-31",
           "entryAllowDate": "2024-02-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "80",
+            "MATERIAL CODE": "SYN115080",
+            "MTRL CAT": "1",
+            "UNIT": "KG",
+            "PO RATE": "240.00",
+            "ORD QTY": "32.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "32.000",
+            "DELY DATE": "31/01/2024",
+            "ENTRY ALLOW DATE": "15/02/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

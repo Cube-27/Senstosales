@@ -223,6 +223,7 @@ async function seed() {
       materialCode: "M-10",
       poItemNo: 10,
       lotNo: 1,
+      rowNo: 1,
       srvItemNo: 1,
       ordQty: q(10_000),
       rcdQty: q(3_000),

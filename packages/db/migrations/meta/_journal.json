@@ -15,6 +15,20 @@
       "when": 1792052255550,
       "tag": "0002_lookup_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792086307487,
+      "tag": "0003_document_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792086460325,
+      "tag": "0004_verbatim_source_rows",
+      "breakpoints": true
     }
   ]
 }

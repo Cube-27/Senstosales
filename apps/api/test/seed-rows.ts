@@ -189,6 +189,7 @@ export function rows(db: NodeDb) {
         ...S,
         poItemNo: 10,
         lotNo: 1,
+        rowNo: 1,
         srvItemNo: 1,
         ordQty: q(0),
         ...row,

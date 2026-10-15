@@ -20,8 +20,8 @@ describe("chunk", () => {
 
 describe("rowsPerInsert", () => {
   test.each([
-    ["dc_item (6 columns)", dcItem, 16],
-    ["srv_item (18 columns)", srvItem, 5],
+    ["dc_item (7 columns)", dcItem, 14],
+    ["srv_item (29 columns)", srvItem, 3],
     ["supplier (11 columns)", supplier, 9],
   ])("%s: %i rows", (_, table, rows) => {
     expect(rowsPerInsert(table)).toBe(rows);

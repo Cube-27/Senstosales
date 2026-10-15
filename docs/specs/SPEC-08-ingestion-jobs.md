@@ -26,7 +26,8 @@ Core:
 - PO ingest: date guard (INV-42), header/items/lots upsert, GEMC source and net rates (INV-16, INV-17), cancel /
   restore items absent / present in an amended PO (INV-48), never writes DCs, invoices, manual qty or derived
   dispatch directly (INV-47), winner re-evaluated after accept (INV-45).
-- SRV file ingest: duplicate item keys fail the file (INV-50); per `(po_number, srv_number)` date guard (INV-43);
+- SRV file ingest: an SRV that cannot be read is reported and the file's other SRVs are stored; repeated keys
+  are stored as printed (INV-50, A2-10); per `(po_number, srv_number)` date guard (INV-43);
   replace `srv`/`srv_item`; match items (INV-39); store raw numbers and resolve links in the SRV date's FY (INV-37,
   INV-38); "PO not found" SRVs stored without effect (INV-40); recompute each affected PO; flags; audit. All or
   nothing per file.
@@ -72,7 +73,7 @@ PO file:  parse (outside batch) → load stored po_date → acceptIncoming? no �
           yes → upsert po, items (rate_source, rate = gemcNetRate), lots; cancel/restore items
               → attach stored SRVs of this po_number that were "PO not found" (match items, INV-39)
               → recomputePo → new flags → audit row → commit (one batch)
-SRV file: parse → duplicate keys? fail file → for each (po, srv) with acceptIncoming:
+SRV file: parse (unreadable SRVs reported) → for each (po, srv) with acceptIncoming:
               replace srv + srv_items (match items, resolve links in fyOf(srv_date))
           → recomputePo for each affected PO → new flags → audit row → commit (one batch)
 ```
@@ -101,7 +102,8 @@ API tests with in-memory node:sqlite and the anonymised parser fixtures plus syn
   delete, covered there).
 - Amended PO missing an item → item cancelled; reappearing → restored (INV-48); a DC on it later raises
   `DOC_ON_CANCELLED_ITEM` (SPEC-11).
-- SRV with duplicate keys fails as a whole and keeps the previous SRV data (INV-50).
+- An SRV file none of whose SRVs can be read fails and keeps the previous SRV data; one unreadable SRV fails
+  alone (INV-50, A2-10).
 - Cross-FY challan not linked and `DOC_NUMBER_CONFLICT` raised (INV-37, EC-03); SRV `ord_qty` differing →
   `QTY_MISMATCH`.
 - SRV for an unknown PO stored, listed "PO not found", no flag (INV-40).

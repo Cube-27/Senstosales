@@ -72,6 +72,9 @@ export const poItem = sqliteTable(
     balanceQty: qtyM("balance_qty_m").notNull(),
     uninvoicedQty: qtyM("uninvoiced_qty_m").notNull(),
     status: text("status").$type<ItemStatus>().notNull(),
+    /** MTRL CAT and ITEM VALUE as on the page. */
+    mtrlCat: text("mtrl_cat"),
+    itemValue: moneyU5("item_value_u5"),
   },
   (t) => [
     uniqueIndex("po_item_po_item_no_uq").on(t.poId, t.poItemNo),
@@ -94,4 +97,6 @@ export const poLot = sqliteTable("po_lot", {
   /** Entry-allow text that is not a date (INV-46). */
   entryAllowNote: text("entry_allow_note"),
   destCode: text("dest_code"),
+  /** Column header -> cell text of the item-table row the lot came from; null on lots stored before schema version 4. */
+  rawRow: text("raw_row_json", { mode: "json" }).$type<Record<string, string>>(),
 });

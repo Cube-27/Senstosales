@@ -65,6 +65,10 @@ function valueBeside(
   return right !== undefined && !isLabel(right) ? right : (below?.[c] ?? "");
 }
 
+/** A table row as header text -> cell text, the way a page row is kept as printed (A2-10). */
+export const rowByHeader = (header: readonly string[], row: readonly string[]): Record<string, string> =>
+  Object.fromEntries(header.map((label, i) => [label, row[i] ?? ""]));
+
 /** Each column's index: the first header cell its pattern matches; a column the header lacks is left out. */
 export function mapColumnsByHeader<K extends string>(
   header: readonly string[],

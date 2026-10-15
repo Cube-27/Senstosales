@@ -22,9 +22,11 @@
       "description": "HEX BOLT M12 X 40 GALVANISED",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "10",
       "rate": "1250",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2023-06-30",
           "entryAllowDate": "2023-07-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN100010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "1250.00",
+            "ORD QTY": "10.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "10.000",
+            "DELY DATE": "30/06/2023",
+            "ENTRY ALLOW DATE": "15/07/2023",
+            "DEST CODE": "11"
+          }
         }
       ]
     }

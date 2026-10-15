@@ -96,6 +96,7 @@ describe("a PO folder of good, older and broken files", () => {
         materialCode: "SYN-10",
         poItemNo: 10,
         lotNo: 1,
+        rowNo: 1,
         srvItemNo: 1,
         ordQty: 10000 as Qty,
         rcdQty: 3000 as Qty,
@@ -195,13 +196,7 @@ describe("an SRV folder of good, older, broken and PO-not-found files", () => {
         // Cites 12.000 ordered where the PO orders 10.000 (INV-52).
         file("good.html", srvPage("4500001", [{ srv: "7000002", date: "02/05/2025", item: 20, ord: "12.000" }])),
         file("older.html", srvPage("4500001", [{ srv: "7000001", date: "20/04/2025", item: 10 }])),
-        file(
-          "broken.html",
-          srvPage("4500001", [
-            { srv: "7000003", date: "03/05/2025", item: 20 },
-            { srv: "7000003", date: "03/05/2025", item: 20 },
-          ]),
-        ),
+        file("broken.html", srvPage("4500001", [{ srv: "7000003", date: "03/05/2025", item: 20, rcd: "N/A" }])),
         file("unknown-po.html", srvPage("4500099", [{ srv: "7000009", date: "02/05/2025", item: 10 }])),
       ],
       undefined,
@@ -229,7 +224,7 @@ describe("an SRV folder of good, older, broken and PO-not-found files", () => {
       failedDocuments: [
         {
           document: "broken.html",
-          reason: expect.stringMatching(/^Could not read this SRV page \(duplicate-srv-item-key\): SRV 7000003/),
+          reason: 'Could not read this SRV page (bad-quantity): RECVD QTY is not a quantity: "N/A"',
         },
       ],
       flags: { QTY_MISMATCH: 1 },

@@ -21,11 +21,19 @@ export const zSrvItem = z.object({
   srvId: zId,
   /** `null` until matched to a PO item (INV-39). */
   poItemId: zId.nullable(),
+  /** The row's place in its SRV, from 1 (A2-10). */
+  rowNo: z.int().positive(),
   materialCode: z.string().nullable(),
   poItemNo: z.int().nonnegative(),
-  lotNo: z.int().nonnegative(),
+  subItemNo: z.string().nullable(),
+  lotNo: z.int().nonnegative().nullable(),
   srvItemNo: z.int().nonnegative(),
+  revNo: z.string().nullable(),
+  division: z.string().nullable(),
+  pmirNo: z.string().nullable(),
+  unit: z.string().nullable(),
   ordQty: zQty,
+  challanQty: zQty.nullable(),
   rcdQty: zQty,
   acceptedQty: zQty,
   rejQty: zQty,
@@ -33,6 +41,11 @@ export const zSrvItem = z.object({
   challanDate: zIsoDate.nullable(),
   invoiceNo: z.string().nullable(),
   invoiceDate: zIsoDate.nullable(),
+  financeDate: zIsoDate.nullable(),
+  cnoteNo: z.string().nullable(),
+  cnoteDate: zIsoDate.nullable(),
+  /** Column header -> cell text of the row as printed; `null` on rows stored before schema version 4. */
+  rawRow: zTextMap.nullable(),
   resolvedDcId: zId.nullable(),
   resolvedInvoiceId: zId.nullable(),
 });

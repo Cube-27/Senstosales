@@ -22,9 +22,11 @@
       "description": "BEARING HOUSING CAST IRON",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "20",
       "rate": "450",
       "rcdQty": "18",
+      "itemValue": null,
       "rejQty": "2",
       "lots": [
         {
@@ -33,7 +35,22 @@
           "delyDate": "2023-08-31",
           "entryAllowDate": "2023-09-15",
           "entryAllowNote": null,
-          "destCode": "21"
+          "destCode": "21",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN107010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "450.00",
+            "ORD QTY": "20.000",
+            "RCD QTY": "18.000",
+            "REJ QTY": "2.000",
+            "LOT NO": "1",
+            "DELY QTY": "20.000",
+            "DELY DATE": "31/08/2023",
+            "ENTRY ALLOW DATE": "15/09/2023",
+            "DEST CODE": "21"
+          }
         }
       ]
     }

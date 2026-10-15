@@ -55,7 +55,7 @@ export const srvsOfPoNumber = (db: Db, supplierId: string, poNumber: string) =>
       .where(and(eq(srv.supplierId, supplierId), eq(srv.poNumber, poNumber))),
   );
 
-/** The item keys and ids of these SRVs, so a replaced SRV keeps the ids its flags cite (INV-59). */
+/** The item keys and ids of these SRVs in row order, so a replaced SRV keeps the ids its flags cite (INV-59). */
 export const srvItemKeysOf = (db: Db, srvIds: readonly string[]) =>
   inBatches(srvIds, (ids) =>
     db.query(
@@ -68,7 +68,8 @@ export const srvItemKeysOf = (db: Db, srvIds: readonly string[]) =>
           srvItemNo: srvItem.srvItemNo,
         })
         .from(srvItem)
-        .where(inArray(srvItem.srvId, ids)),
+        .where(inArray(srvItem.srvId, ids))
+        .orderBy(srvItem.srvId, srvItem.rowNo),
     ),
   );
 

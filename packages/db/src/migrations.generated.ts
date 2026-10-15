@@ -55,4 +55,33 @@ export const MIGRATIONS: readonly [Migration, ...Migration[]] = [
       "CREATE INDEX `srv_item_resolved_invoice_id_idx` ON `srv_item` (`resolved_invoice_id`);",
     ],
   },
+  {
+    version: 3,
+    name: "document_fields",
+    statements: [
+      "ALTER TABLE `dc` ADD `invoice_number` text;",
+      "ALTER TABLE `dc` ADD `invoice_date` text;",
+      "ALTER TABLE `dc_item` ADD `packets` integer;",
+      "ALTER TABLE `invoice_item` ADD `hsn` text;",
+      "ALTER TABLE `invoice_item` ADD `packets` integer;",
+    ],
+  },
+  {
+    version: 4,
+    name: "verbatim_source_rows",
+    statements: [
+      "CREATE TABLE `__new_srv_item` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`supplier_id` text NOT NULL,\n\t`srv_id` text NOT NULL,\n\t`po_item_id` text,\n\t`row_no` integer NOT NULL,\n\t`material_code` text,\n\t`po_item_no` integer NOT NULL,\n\t`sub_item_no` text,\n\t`lot_no` integer,\n\t`srv_item_no` integer NOT NULL,\n\t`rev_no` text,\n\t`division` text,\n\t`pmir_no` text,\n\t`unit` text,\n\t`ord_qty_m` integer NOT NULL,\n\t`challan_qty_m` integer,\n\t`rcd_qty_m` integer,\n\t`accepted_qty_m` integer,\n\t`rej_qty_m` integer,\n\t`challan_no` text,\n\t`challan_date` text,\n\t`invoice_no` text,\n\t`invoice_date` text,\n\t`finance_date` text,\n\t`cnote_no` text,\n\t`cnote_date` text,\n\t`raw_row_json` text,\n\t`resolved_dc_id` text,\n\t`resolved_invoice_id` text,\n\tFOREIGN KEY (`supplier_id`) REFERENCES `supplier`(`id`) ON UPDATE no action ON DELETE no action,\n\tFOREIGN KEY (`srv_id`) REFERENCES `srv`(`id`) ON UPDATE no action ON DELETE no action\n);",
+      "INSERT INTO `__new_srv_item`(\"id\", \"supplier_id\", \"srv_id\", \"po_item_id\", \"row_no\", \"material_code\", \"po_item_no\", \"lot_no\", \"srv_item_no\", \"ord_qty_m\", \"rcd_qty_m\", \"accepted_qty_m\", \"rej_qty_m\", \"challan_no\", \"challan_date\", \"invoice_no\", \"invoice_date\", \"resolved_dc_id\", \"resolved_invoice_id\") SELECT \"id\", \"supplier_id\", \"srv_id\", \"po_item_id\", ROW_NUMBER() OVER (PARTITION BY \"srv_id\" ORDER BY \"id\"), \"material_code\", \"po_item_no\", \"lot_no\", \"srv_item_no\", \"ord_qty_m\", \"rcd_qty_m\", \"accepted_qty_m\", \"rej_qty_m\", \"challan_no\", \"challan_date\", \"invoice_no\", \"invoice_date\", \"resolved_dc_id\", \"resolved_invoice_id\" FROM `srv_item`;",
+      "DROP TABLE `srv_item`;",
+      "ALTER TABLE `__new_srv_item` RENAME TO `srv_item`;",
+      "CREATE INDEX `srv_item_srv_id_idx` ON `srv_item` (`srv_id`);",
+      "CREATE INDEX `srv_item_po_item_id_idx` ON `srv_item` (`po_item_id`);",
+      "CREATE INDEX `srv_item_resolved_dc_id_idx` ON `srv_item` (`resolved_dc_id`);",
+      "CREATE INDEX `srv_item_resolved_invoice_id_idx` ON `srv_item` (`resolved_invoice_id`);",
+      "ALTER TABLE `po_item` ADD `mtrl_cat` text;",
+      "ALTER TABLE `po_item` ADD `item_value_u5` integer;",
+      "ALTER TABLE `po_lot` ADD `raw_row_json` text;",
+      "CREATE INDEX `reconciliation_issue_scope_idx` ON `reconciliation_issue` (`scope_type`,`scope_id`);",
+    ],
+  },
 ];

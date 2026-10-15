@@ -33,6 +33,9 @@ export const dc = sqliteTable(
     ...supplierSnapshot(),
     version: integer("version").notNull().default(1),
     createdAt: instant("created_at").notNull(),
+    /** The invoice the DC sheet cites, filled in by the user (EC-47). */
+    invoiceNumber: text("invoice_number"),
+    invoiceDate: isoDate("invoice_date"),
   },
   (t) => [
     // INV-22: DC numbers restart each FY. INV-26: so do GC numbers, independently of DC numbers.
@@ -56,6 +59,7 @@ export const dcItem = sqliteTable(
       .references(() => poItem.id),
     dspQty: qtyM("dsp_qty_m").notNull(),
     createdAt: instant("created_at").notNull(),
+    packets: integer("packets"),
   },
   (t) => [index("dc_item_dc_id_idx").on(t.dcId), index("dc_item_po_item_id_idx").on(t.poItemId)],
 );

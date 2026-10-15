@@ -25,5 +25,6 @@ export const reconciliationIssue = sqliteTable(
   (t) => [
     uniqueIndex("reconciliation_issue_fingerprint_uq").on(t.fingerprint),
     index("reconciliation_issue_po_id_idx").on(t.poId),
+    index("reconciliation_issue_scope_idx").on(t.scopeType, t.scopeId),
   ],
 );

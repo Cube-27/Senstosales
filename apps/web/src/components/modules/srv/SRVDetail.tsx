@@ -7,7 +7,6 @@ import { useMemo } from "react";
 
 import { useClientPage } from "../../../hooks/useClientPage.ts";
 import { apiQuery } from "../../../lib/api.ts";
-import { rawLookup } from "../../../lib/raw-header.ts";
 import {
   Badge,
   type Column,
@@ -26,15 +25,6 @@ type SrvItem = Detail["items"][number];
 type PoItem = RouteOutput<"po.detail">["items"][number];
 type Flag = Detail["flags"][number];
 type Row = SrvItem & { readonly shown: ReturnType<typeof srvLineShown>; readonly poItem: PoItem | null };
-
-/** The SRV page's header cells the SRV keeps only in its raw header (EC-60), by the labels the page may print. */
-const RAW = {
-  division: ["DIV", "DIV CODE", "DIVISION"],
-  cnoteNo: ["CNOTE NO", "C NOTE NO"],
-  cnoteDate: ["CNOTE DATE", "C NOTE DATE"],
-  financeDate: ["FINANCE DATE", "FIN DATE"],
-  pmirNo: ["PMIR NO"],
-} as const;
 
 const NO_FLAGS: readonly Flag[] = [];
 
@@ -69,8 +59,7 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
       render: (r) => (r.lotNo ? `#${r.poItemNo}.${r.lotNo}` : `#${r.poItemNo}`),
     },
     { key: "srvItemNo", header: "SRV Item", width: "72px", render: (r) => String(r.srvItemNo) },
-    // EC-60: the SRV line's revision is not stored.
-    { key: "rev", header: "Rev", width: "56px", render: () => "—" },
+    { key: "rev", header: "Rev", width: "56px", render: (r) => r.revNo ?? "—" },
     {
       key: "material",
       header: "Material",
@@ -85,7 +74,8 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
       align: "right",
       render: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : "—"),
     },
-    { key: "unit", header: "Unit", width: "64px", render: (r) => r.poItem?.unit ?? "—" },
+    // The SRV's own UNIT as printed; a row stored without one shows the PO item's.
+    { key: "unit", header: "Unit", width: "64px", render: (r) => r.unit ?? r.poItem?.unit ?? "—" },
     qtyColumn<Row>("ordQty", "Ordered", (r) => r.ordQty, { width: "88px" }),
     {
       key: "dspQty",
@@ -119,8 +109,39 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
   ];
 }
 
-/** The legacy "Receipt Details" grid; challan and invoice numbers are the first item's, as legacy showed them. */
-function ReceiptDetails({ srv, first }: { readonly srv: Detail["srv"]; readonly first: SrvItem | undefined }) {
+/** The first item's fields the receipt details show. */
+type FirstRow = Pick<
+  SrvItem,
+  | "division"
+  | "invoiceNo"
+  | "invoiceDate"
+  | "resolvedInvoiceId"
+  | "challanNo"
+  | "challanDate"
+  | "resolvedDcId"
+  | "cnoteNo"
+  | "cnoteDate"
+  | "financeDate"
+  | "pmirNo"
+>;
+
+/** An SRV always has an item; this only keeps the grid's footprint if one ever has none. */
+const NO_ROW: FirstRow = {
+  division: null,
+  invoiceNo: null,
+  invoiceDate: null,
+  resolvedInvoiceId: null,
+  challanNo: null,
+  challanDate: null,
+  resolvedDcId: null,
+  cnoteNo: null,
+  cnoteDate: null,
+  financeDate: null,
+  pmirNo: null,
+};
+
+/** The legacy "Receipt Details" grid; the per-row fields are the first item's, as legacy showed them. */
+function ReceiptDetails({ srv, first }: { readonly srv: Detail["srv"]; readonly first: FirstRow }) {
   return (
     <section aria-label="Receipt Details" className="rounded-md border border-border bg-surface p-4">
       <h2 className="mb-3 role-section-title">Receipt Details</h2>
@@ -128,23 +149,21 @@ function ReceiptDetails({ srv, first }: { readonly srv: Detail["srv"]; readonly 
         <InfoField label="SRV Number" value={srv.srvNumber} />
         <InfoField label="SRV Date" value={fmtDate(srv.srvDate)} />
         <InfoField label="PO Reference" value={<PoRef poId={srv.poId} poNumber={srv.poNumber} />} />
-        <InfoField label="Division" value={rawLookup(srv.rawHeader, RAW.division)} />
+        <InfoField label="Division" value={first.division} />
         <InfoField
           label="Invoice No"
-          value={
-            <DocNumber number={first?.invoiceNo ?? null} to="/invoice/$id" id={first?.resolvedInvoiceId ?? null} />
-          }
+          value={<DocNumber number={first.invoiceNo} to="/invoice/$id" id={first.resolvedInvoiceId} />}
         />
-        <InfoField label="Invoice Date" value={fmtDate(first?.invoiceDate ?? null)} />
+        <InfoField label="Invoice Date" value={fmtDate(first.invoiceDate)} />
         <InfoField
           label="Challan No"
-          value={<DocNumber number={first?.challanNo ?? null} to="/dc/$id" id={first?.resolvedDcId ?? null} />}
+          value={<DocNumber number={first.challanNo} to="/dc/$id" id={first.resolvedDcId} />}
         />
-        <InfoField label="Challan Date" value={fmtDate(first?.challanDate ?? null)} />
-        <InfoField label="CNote No" value={rawLookup(srv.rawHeader, RAW.cnoteNo)} />
-        <InfoField label="CNote Date" value={rawLookup(srv.rawHeader, RAW.cnoteDate)} />
-        <InfoField label="Finance Date" value={rawLookup(srv.rawHeader, RAW.financeDate)} />
-        <InfoField label="PMIR No" value={rawLookup(srv.rawHeader, RAW.pmirNo)} />
+        <InfoField label="Challan Date" value={fmtDate(first.challanDate)} />
+        <InfoField label="CNote No" value={first.cnoteNo} />
+        <InfoField label="CNote Date" value={fmtDate(first.cnoteDate)} />
+        <InfoField label="Finance Date" value={fmtDate(first.financeDate)} />
+        <InfoField label="PMIR No" value={first.pmirNo} />
       </div>
     </section>
   );
@@ -188,7 +207,7 @@ function SRVView({ detail, po }: { readonly detail: Detail; readonly po: RouteOu
           </span>
         }
       />
-      <ReceiptDetails srv={srv} first={items[0]} />
+      <ReceiptDetails srv={srv} first={items[0] ?? NO_ROW} />
       <section aria-label="Line items" className="flex flex-col gap-2">
         <div className="flex items-center gap-6 px-1">
           <span className="role-section-title">Line Items</span>

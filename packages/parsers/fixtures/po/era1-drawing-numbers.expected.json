@@ -22,9 +22,11 @@
       "description": "COUPLING HALF DRG NO. 4C12345 REV 2 TO DRAWING: A1234/5",
       "drawingNo": "4C12345, A1234/5",
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "2",
       "rate": "1800",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -33,7 +35,21 @@
           "delyDate": "2024-03-31",
           "entryAllowDate": "2024-04-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "10",
+            "MATERIAL CODE": "SYN119010",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "1800.00",
+            "ORD QTY": "2.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "2.000",
+            "DELY DATE": "31/03/2024",
+            "ENTRY ALLOW DATE": "15/04/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -43,9 +59,11 @@
       "description": "SHAFT SLEEVE DRG-77-120",
       "drawingNo": "77-120",
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "2",
       "rate": "1800",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": [
         {
@@ -54,7 +72,21 @@
           "delyDate": "2024-03-31",
           "entryAllowDate": "2024-04-15",
           "entryAllowNote": null,
-          "destCode": "11"
+          "destCode": "11",
+          "rawRow": {
+            "PO ITM": "20",
+            "MATERIAL CODE": "SYN119020",
+            "MTRL CAT": "1",
+            "UNIT": "NOS",
+            "PO RATE": "1800.00",
+            "ORD QTY": "2.000",
+            "RCD QTY": "0.000",
+            "LOT NO": "1",
+            "DELY QTY": "2.000",
+            "DELY DATE": "31/03/2024",
+            "ENTRY ALLOW DATE": "15/04/2024",
+            "DEST CODE": "11"
+          }
         }
       ]
     },
@@ -64,9 +96,11 @@
       "description": "SPACER DRG 12",
       "drawingNo": null,
       "unit": "NOS",
+      "mtrlCat": "1",
       "ordQty": "2",
       "rate": "1800",
       "rcdQty": "0",
+      "itemValue": null,
       "rejQty": null,
       "lots": []
     }
