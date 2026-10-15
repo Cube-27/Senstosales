@@ -78,7 +78,7 @@ export function createClient(fetchImpl: FetchLike) {
       const res = await fetchImpl(buildUrl(def.path, params, wireQuery), init);
       if (!res.ok) throw new ApiError(res.status, await errorBody(res));
       if (def.response === "file") {
-        const download: Download = { fileName: fileName(res), bytes: new Uint8Array(await res.arrayBuffer()) };
+        const download: Download = { fileName: downloadFileName(res), bytes: new Uint8Array(await res.arrayBuffer()) };
         return download as RouteOutput<N>;
       }
       return z.decode(def.response, await res.json()) as RouteOutput<N>;
@@ -113,14 +113,14 @@ async function errorBody(res: FetchResponse): Promise<ErrorBody> {
   return parsed.success ? parsed.data : { code: `http-${res.status}`, message: "Something went wrong. Try again." };
 }
 
-/** The `Content-Disposition` of a download named `fileName` (RFC 5987), as `fileName` below reads it back. */
+/** The `Content-Disposition` of a download named `fileName` (RFC 5987), as `downloadFileName` reads it back. */
 export function contentDisposition(fileName: string): string {
   const encoded = encodeURIComponent(fileName).replace(/['()*]/g, (ch) => `%${ch.charCodeAt(0).toString(16)}`);
   return `attachment; filename*=UTF-8''${encoded}`;
 }
 
 /** The download name from `Content-Disposition` (legacy names such as `DC_<n>.xlsx`, SPEC-12). */
-function fileName(res: FetchResponse): string {
+export function downloadFileName(res: FetchResponse): string {
   const header = res.headers.get("content-disposition") ?? "";
   const match = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(header);
   return match ? decodeURIComponent(match[1] ?? match[2] ?? "") : "download";

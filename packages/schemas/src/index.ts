@@ -22,6 +22,7 @@ export {
   ApiError,
   contentDisposition,
   createClient,
+  downloadFileName,
   type Download,
   type FetchLike,
   type FetchResponse,

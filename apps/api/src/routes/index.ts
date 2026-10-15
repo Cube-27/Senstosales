@@ -14,6 +14,7 @@ import { onboardingRoutes } from "./onboarding.ts";
 import { poManualQtyRoutes, poRoutes } from "./po.ts";
 import { poUploadRoutes } from "./po-upload.ts";
 import { reportsRoutes } from "./reports.ts";
+import { registersRoutes } from "./registers.ts";
 import { searchRoutes } from "./search.ts";
 import { settingsRoutes } from "./settings.ts";
 import { srvUploadRoutes } from "./srv-upload.ts";
@@ -42,5 +43,6 @@ export function apiRoutes(services: Services): Handlers {
     ...reportsRoutes(services.reports),
     ...dashboardRoutes(services.dashboard),
     ...searchRoutes(services.search),
+    ...registersRoutes(services.registers),
   };
 }

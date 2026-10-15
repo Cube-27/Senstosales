@@ -8,7 +8,7 @@ import { workbookGolden, workbookGoldenFile } from "./golden.ts";
 async function bytesOf(chunks: AsyncIterable<Uint8Array>) {
   const parts: Uint8Array[] = [];
   for await (const chunk of chunks) parts.push(chunk);
-  return new Uint8Array(Buffer.concat(parts));
+  return Buffer.concat(parts);
 }
 
 async function* none() {}

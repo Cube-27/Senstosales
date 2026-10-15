@@ -71,6 +71,7 @@ Review your diff as a hostile reviewer, then fix what you find:
   NOTHING`) or fail the whole batch through a guarded statement (D-0124: `CASE … ELSE NULL` into a NOT NULL column).
   A guard on the UPDATE alone beside an unconditional insert (e.g. an audit row) is a defect. Add a test that builds
   both batches before committing either.
+- **D1 parameter limit:** reads/writes by a list of ids chunk to <=100 bound parameters (D1); a test asserts the max bound per statement over >100 rows.
 - **Recurring findings:** go through `docs/plans/RECURRING.md`; don't repeat a listed mistake.
 
 ## 5. Open the PR

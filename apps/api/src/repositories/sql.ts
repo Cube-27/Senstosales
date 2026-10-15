@@ -2,7 +2,7 @@
 import { po, reconciliationIssue } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
 import type { SQLWrapper, Table } from "drizzle-orm";
-import { getTableColumns, sql } from "drizzle-orm";
+import { and, getTableColumns, gte, lte, sql } from "drizzle-orm";
 
 import { IST_OFFSET_MINUTES } from "../ports/clock.ts";
 
@@ -25,8 +25,15 @@ export const startsWith = (column: SQLWrapper, text: string) => like(column, `${
 const { fingerprint: _, ...flagApiColumns } = apiColumns(reconciliationIssue);
 export const flagColumns = flagApiColumns;
 
-/** PO numbers are digit strings, so they sort as numbers (as legacy); the text breaks ties for any that are not. */
-export const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber] as const;
+/** A document number as a number: PO, DC, invoice and SRV numbers are digit strings and sort as numbers (as legacy). */
+export const asNumber = (column: SQLWrapper) => sql<number>`CAST(${column} AS INTEGER)`;
+
+/** PO numbers sort as numbers; the text breaks ties for any that are not digits. */
+export const byPoNumber = [asNumber(po.poNumber), po.poNumber] as const;
+
+/** The list filter panels' inclusive date range; an absent bound does not limit. */
+export const inRange = (column: SQLWrapper, { from, to }: { from?: string | undefined; to?: string | undefined }) =>
+  and(from === undefined ? undefined : gte(column, from), to === undefined ? undefined : lte(column, to));
 
 /**
  * The UTC instant (ISO-8601, as stored) at which the IST calendar date `date` begins, `days` after it. IST is a fixed

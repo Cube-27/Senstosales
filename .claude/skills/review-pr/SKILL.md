@@ -34,6 +34,9 @@ tests yourself; CI did.
    the UPDATE alone beside an unconditional insert is a defect. A test builds both batches before committing
    either. A missing statement, guard or test is an Act-on item.
 
+   **D1 parameter limit.** Reads/writes by a list of ids chunk to <=100 bound parameters (D1); a test asserts the max
+   bound per statement over >100 rows. A missing chunk or test is an Act-on item.
+
 3. **Proof.** Every acceptance criterion maps to a test or command that ran green. A test that would still pass if
    the function returned a wrong value proves nothing.
 4. **Scope and simplicity.** Code outside the row, speculative options, single-caller wrappers, compatibility shims.

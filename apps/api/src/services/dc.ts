@@ -7,10 +7,10 @@ import { dc, dcItem, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
+  dcListTotals,
   defaultGc,
   deleteBlock,
   fyOf,
-  qtyValue,
   sumMoney,
   sumQty,
   validateDcLines,
@@ -83,7 +83,11 @@ type Row = Pick<Line, "id" | "number" | "dcDate" | "financialYear" | "poId" | "p
   value: Money;
 };
 
-const SORTS: Record<NonNullable<ListQuery["sort"]>, Comparator<Row>> = {
+/** The DC list's sorts, which its CSV export keeps. */
+export const DC_LIST_SORTS: Record<
+  NonNullable<ListQuery["sort"]>,
+  Comparator<Pick<Row, "number" | "dcDate" | "poNumber" | "ordQty" | "dspQty" | "rcdQty" | "value">>
+> = {
   number: on((r) => r.number, byNumber),
   dcDate: on((r) => r.dcDate, compareIsoDate),
   poNumber: on((r) => r.poNumber, byNumber),
@@ -94,29 +98,14 @@ const SORTS: Record<NonNullable<ListQuery["sort"]>, Comparator<Row>> = {
 };
 
 /** Newest first, as the legacy list opens; also the tie-break of every sort, so pages are stable. */
-const DEFAULT = [desc(SORTS.dcDate), desc(SORTS.number), desc(on<Row, string>((r) => r.id, byText))];
+const DEFAULT = [desc(DC_LIST_SORTS.dcDate), desc(DC_LIST_SORTS.number), desc(on<Row, string>((r) => r.id, byText))];
 
-/**
- * One row per DC the filters keep, as the legacy list totals it: each line adds its PO item's ordered and received
- * quantities, its dispatched quantity, and dispatched × the PO item's rate. Then the value range.
- */
+/** One row per DC the filters keep, with its list totals; then the value range. */
 function toRows(lines: readonly Line[], filters: DcFilters): Row[] {
   return [...Map.groupBy(lines, (line) => line.id).values()]
     .map((group): Row => {
       const { id, number, dcDate, financialYear, poId, poNumber } = group[0]!;
-      const sum = (key: "ordQty" | "dspQty" | "rcdQty") => sumQty(group.map((line) => line[key]));
-      return {
-        id,
-        number,
-        dcDate,
-        financialYear,
-        poId,
-        poNumber,
-        ordQty: sum("ordQty"),
-        dspQty: sum("dspQty"),
-        rcdQty: sum("rcdQty"),
-        value: sumMoney(group.map((line) => qtyValue(line.dspQty, line.rate))),
-      };
+      return { id, number, dcDate, financialYear, poId, poNumber, ...dcListTotals(group) };
     })
     .filter((row) => inValueRange(row.value, filters));
 }
@@ -309,7 +298,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     },
 
     list: async (query: ListQuery) => {
-      const { items, total } = page(await rows(query), query, SORTS, DEFAULT);
+      const { items, total } = page(await rows(query), query, DC_LIST_SORTS, DEFAULT);
       const ids = items.map((row) => row.id);
       const [invoices, flagCounts] = await Promise.all([invoicesOfDcs(db, ids), openFlagCountsOfDcs(db, ids)]);
       return {

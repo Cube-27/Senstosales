@@ -17,7 +17,7 @@ import { and, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { dcRefColumns, srvRefs, srvsResolvedTo } from "./po-list.ts";
-import { apiColumns, contains, flagColumns } from "./sql.ts";
+import { apiColumns, contains, flagColumns, inRange } from "./sql.ts";
 
 /** The filters of the invoice list and its stats. */
 export type InvoiceFilters = z.output<(typeof routes)["invoice.stats"]["query"]>;
@@ -118,7 +118,7 @@ export async function findInvoiceWithPo(db: Db, id: string) {
 }
 
 /** The legacy filter panel: text in the invoice, PO or DC number or the buyer, invoice date range, total range. */
-const where = (f: InvoiceFilters) =>
+export const invoiceListWhere = (f: InvoiceFilters) =>
   and(
     f.q
       ? or(
@@ -128,8 +128,7 @@ const where = (f: InvoiceFilters) =>
           contains(invoice.buyerName, f.q),
         )
       : undefined,
-    f.from === undefined ? undefined : gte(invoice.invoiceDate, f.from),
-    f.to === undefined ? undefined : lte(invoice.invoiceDate, f.to),
+    inRange(invoice.invoiceDate, f),
     f.valueMin === undefined ? undefined : gte(invoice.total, f.valueMin),
     f.valueMax === undefined ? undefined : lte(invoice.total, f.valueMax),
   );
@@ -158,7 +157,7 @@ export const invoiceListLines = (db: Db, filters: InvoiceFilters) =>
       .innerJoin(po, eq(po.id, invoice.poId))
       .innerJoin(invoiceItem, eq(invoiceItem.invoiceId, invoice.id))
       .leftJoin(dc, eq(dc.id, invoice.dcId))
-      .where(where(filters)),
+      .where(invoiceListWhere(filters)),
   );
 
 /** The invoice's lines with the PO item columns a document line shows, in item order. */

@@ -2,19 +2,7 @@
 // seeds the same synthetic rows its golden was worked from (C1). The derived columns are written by `recompute`, as a
 // write batch would; `dataset-db.test.ts` checks they come out as the dataset works them by hand.
 import type { Instant } from "@senstosales/db";
-import {
-  dc,
-  dcItem,
-  invoice,
-  invoiceItem,
-  po,
-  poItem,
-  poLot,
-  srv,
-  srvItem,
-  supplier,
-  WriteBatch,
-} from "@senstosales/db";
+import { dc, dcItem, invoice, invoiceItem, po, poItem, poLot, srv, srvItem, supplier } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
 import {
   DCS,
@@ -25,23 +13,17 @@ import {
   SRVS,
   SUPPLIER as DATASET_SUPPLIER,
 } from "@senstosales/documents/test/reports/dataset";
-import type { Fy, GstPct, IsoDate, Money, Qty } from "@senstosales/domain";
+import type { Fy, GstPct, Money, Qty } from "@senstosales/domain";
 import { invoiceLineTax } from "@senstosales/domain";
 import { eq } from "drizzle-orm";
 
-import { recomputePo } from "../../src/services/recompute.ts";
-import { fixedClock, supplierDb, SUPPLIER } from "../service-deps.ts";
+import { d, id as ulid, m, q, recompute } from "../seed-rows.ts";
+import { supplierDb, SUPPLIER } from "../service-deps.ts";
 
 const FY = "2025-26" as Fy;
 const S = { supplierId: SUPPLIER };
-const q = (n: number) => n as Qty;
-const m = (n: number) => n as Money;
-const d = (s: string) => s as IsoDate;
 const zeros = { dspQty: q(0), rcdQty: q(0), rejQty: q(0), balanceQty: q(0) };
 const PCT_9 = 9_00000 as GstPct;
-
-/** A ULID whose last two characters name the row. */
-const ulid = (tag: string) => `01J9Z8Q4S5T6V7W8X9Y0Z1A2${tag}`;
 
 /** The fixed id of every dataset row, by its dataset key (PO key, item key, DC or invoice number, SRV number). */
 export const reportIds = {
@@ -232,10 +214,6 @@ function srvRows(db: NodeDb) {
 export async function reportDb(): Promise<NodeDb> {
   const db = await supplierDb();
   await db.batch([...supplierRows(db), ...poRows(db), ...dcRows(db), ...invoiceRows(db), ...srvRows(db)]);
-  const batch = new WriteBatch(db);
-  for (const id of Object.values(reportIds.po)) {
-    for (const s of await recomputePo({ db, clock: fixedClock }, id)) batch.add(s);
-  }
-  await batch.commit();
+  await recompute(db, ...Object.values(reportIds.po));
   return db;
 }

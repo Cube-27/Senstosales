@@ -1,17 +1,19 @@
 // SPEC-13 PR 5: the delivery-tracker export over the report dataset (today 2025-06-01, 11:00 IST) matches its
 // legacy-derived golden, and lists the rows the tracker list shows for the same filters and sort, in its order.
 import type { NodeDb } from "@senstosales/db/node";
+import { downloadFileName } from "@senstosales/schemas";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { reportDb } from "./dataset-db.ts";
 import type { GoldenCell } from "./golden.ts";
-import { exportApp, fileNameOf, workbookGolden, workbookGoldenFile } from "./golden.ts";
+import { routesOver } from "../seed-rows.ts";
+import { workbookGolden, workbookGoldenFile } from "./golden.ts";
 
 let db: NodeDb;
-let send: ReturnType<typeof exportApp>;
+let send: ReturnType<typeof routesOver>;
 beforeEach(async () => {
   db = await reportDb();
-  send = exportApp(db);
+  send = routesOver(db);
 });
 afterEach(() => db.close());
 
@@ -20,7 +22,7 @@ const golden = workbookGoldenFile("delivery-tracker.json");
 async function exported(query = "") {
   const res = await send(`/api/delivery-tracker/export${query}`);
   expect(res.status).toBe(200);
-  return workbookGolden(new Uint8Array(await res.arrayBuffer()), fileNameOf(res), golden.styles);
+  return workbookGolden(new Uint8Array(await res.arrayBuffer()), downloadFileName(res), golden.styles);
 }
 
 /** A lot as `PO material Lot due-date`, from an export row or a list row. */

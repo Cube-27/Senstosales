@@ -5,11 +5,11 @@ import type { Db } from "@senstosales/db";
 import { dc, dcItem, invoice, invoiceItem, po, poItem, reconciliationIssue, srv, srvItem } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
-import { and, desc, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, inArray, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { dcRefs, invoiceRefs, srvRefs, srvsResolvedTo } from "./po-list.ts";
-import { contains, startsWith } from "./sql.ts";
+import { asNumber, contains, inRange, startsWith } from "./sql.ts";
 
 export type SearchQuery = z.output<(typeof routes)["search.query"]["query"]>;
 
@@ -51,12 +51,9 @@ function hasOpenFlag(db: Db, where: SQL | undefined) {
 /** Exact number first, then numbers that start with the text, then other matches; higher numbers first within each. */
 const ranked = (t: Terms, number: AnyColumn) => [
   sql`CASE WHEN ${number} = ${t.q} THEN 0 WHEN ${startsWith(number, t.q)} THEN 1 ELSE 2 END`,
-  desc(sql`CAST(${number} AS INTEGER)`),
+  desc(asNumber(number)),
   desc(number),
 ];
-
-const dated = (column: AnyColumn, f: SearchQuery) =>
-  and(f.from === undefined ? undefined : gte(column, f.from), f.to === undefined ? undefined : lte(column, f.to));
 
 const valued = (column: AnyColumn, f: SearchQuery) =>
   and(
@@ -88,7 +85,7 @@ export function searchPos(db: Db, t: Terms, f: SearchQuery, limit: number) {
       })
       .from(po)
       .where(
-        and(or(startsWith(po.poNumber, t.q), anyItemMatches(t, items)), dated(po.poDate, f), valued(po.poValue, f)),
+        and(or(startsWith(po.poNumber, t.q), anyItemMatches(t, items)), inRange(po.poDate, f), valued(po.poValue, f)),
       )
       .orderBy(...ranked(t, po.poNumber), po.id)
       .limit(limit),
@@ -126,7 +123,7 @@ export function searchDcs(db: Db, t: Terms, f: SearchQuery, limit: number) {
             anyItemMatches(t, items),
             t.numeric ? undefined : contains(dc.consigneeName, t.q),
           ),
-          dated(dc.dcDate, f),
+          inRange(dc.dcDate, f),
         ),
       )
       .orderBy(...ranked(t, dc.number), desc(dc.dcDate), dc.id)
@@ -169,7 +166,7 @@ export function searchInvoices(db: Db, t: Terms, f: SearchQuery, limit: number) 
             anyItemMatches(t, items),
             t.numeric ? undefined : contains(invoice.buyerName, t.q),
           ),
-          dated(invoice.invoiceDate, f),
+          inRange(invoice.invoiceDate, f),
           valued(invoice.total, f),
         ),
       )
@@ -208,7 +205,7 @@ export function searchSrvs(db: Db, t: Terms, f: SearchQuery, limit: number | und
           t.numeric ? startsWith(srv.poNumber, t.q) : contains(srv.poNumber, t.q),
           anyItemMatches(t, items),
         ),
-        dated(srv.srvDate, f),
+        inRange(srv.srvDate, f),
       ),
     )
     .orderBy(...ranked(t, srv.srvNumber), desc(srv.srvDate), srv.id);

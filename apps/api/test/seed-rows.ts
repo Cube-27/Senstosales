@@ -34,15 +34,20 @@ const FY = "2025-26" as Fy;
 /** A ULID whose last two characters name the row. */
 export const id = (tag: string) => `01J9Z8Q4S5T6V7W8X9Y0Z1A2${tag}`;
 
-/** Every route over `db`, signed in, with today 2025-06-01. */
-export function readApp(db: NodeDb, signedIn = true) {
+/** Every route over `db`, signed in, with today 2025-06-01: `send` answers the raw response. */
+export function routesOver(db: NodeDb, signedIn = true) {
   const services = createServices({
     db,
     clock: fixedClock,
     jobs: { enqueue: () => {}, holds: () => false },
     storage: memoryStorage(),
   });
-  const { send } = testApp(apiRoutes(services), () => Promise.resolve(signedIn));
+  return testApp(apiRoutes(services), () => Promise.resolve(signedIn)).send;
+}
+
+/** {@link routesOver}, answering the status and JSON body. */
+export function readApp(db: NodeDb, signedIn = true) {
+  const send = routesOver(db, signedIn);
   return async (path: string) => {
     const res = await send(path);
     return { status: res.status, body: (await res.json()) as unknown };

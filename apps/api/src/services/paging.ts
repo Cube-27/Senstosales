@@ -61,3 +61,22 @@ export async function pageOfRows<T>(rows: AsyncIterable<T>, { page, pageSize }: 
   }
   return { items, total };
 }
+
+/**
+ * The rows in the chosen sort, ties kept in their arriving order: an export streams in its default order and, when a
+ * column is chosen, sorts as the list does, which needs every row first.
+ */
+export async function* sortedBy<T, K extends string>(
+  rows: AsyncIterable<T>,
+  query: { sort?: K | undefined; dir: "asc" | "desc" },
+  sorts: Record<K, Comparator<T>>,
+): AsyncGenerator<T> {
+  if (query.sort === undefined) {
+    yield* rows;
+    return;
+  }
+  const compare = query.dir === "desc" ? desc(sorts[query.sort]) : sorts[query.sort];
+  const all: T[] = [];
+  for await (const row of rows) all.push(row);
+  yield* all.toSorted(compare);
+}

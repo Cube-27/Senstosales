@@ -58,23 +58,30 @@ async function write<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<
   const closed = new Promise((resolve) => out.once("close", resolve));
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: out, useStyles: true });
   const source = rows[Symbol.asyncIterator]();
-  let next = await source.next();
-  const worksheet = next.done && sheet.bareWhenEmpty ? workbook.addWorksheet(sheet.name) : addSheet(workbook, sheet);
+  const first = await source.next();
+  const worksheet = first.done && sheet.bareWhenEmpty ? workbook.addWorksheet(sheet.name) : addSheet(workbook, sheet);
   const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
-  try {
-    for (let written = 1; !next.done; written++) {
-      const row = next.value;
-      const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
-      for (const { key, numFmt, i } of formatted)
-        if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
-      added.commit();
-      if (written % PACE === 0) await writable(out);
-      if (out.destroyed) return;
-      next = await source.next();
+  // The rows again, the peeked first one included, so the source is closed when the loop stops early: by `yield*`
+  // once it delegates, by the `finally` while the loop still holds the first row.
+  async function* all() {
+    if (first.done) return;
+    let delegated = false;
+    try {
+      yield first.value;
+      delegated = true;
+      yield* { [Symbol.asyncIterator]: () => source };
+    } finally {
+      if (!delegated) await source.return?.();
     }
-  } finally {
-    // As `for await` does: a source left part-read is closed.
-    if (!next.done) await source.return?.();
+  }
+  let written = 0;
+  for await (const row of all()) {
+    const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
+    for (const { key, numFmt, i } of formatted) if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
+    added.commit();
+    written += 1;
+    if (written % PACE === 0) await writable(out);
+    if (out.destroyed) return;
   }
   worksheet.commit();
   const committed = workbook.commit();
