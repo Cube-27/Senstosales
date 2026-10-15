@@ -1,0 +1,90 @@
+// The two report tabs' columns, with the legacy headers (SPEC-17 §2): Items Summary (pending) and Audit Ledger
+// (reconciliation). Every row carries its PO and PO item, which selection and export-selected use.
+import { fmtQty, type RouteOutput } from "@senstosales/schemas";
+import { Link } from "@tanstack/react-router";
+import { Fragment } from "react";
+
+import { cn } from "../../../lib/cn.ts";
+import { Badge, type Column, qtyColumn } from "../../common/index.ts";
+
+export type PendingRow = RouteOutput<"reports.pending">["items"][number];
+export type ReconciliationRow = RouteOutput<"reports.reconciliation">["items"][number];
+type Doc = PendingRow["dcs"][number];
+
+const poLink = (r: { readonly poId: string; readonly poNumber: string }) => (
+  <Link to="/po/$id" params={{ id: r.poId }} className="role-reference-link">
+    {r.poNumber}
+  </Link>
+);
+
+/** A cell of document links, comma-separated, or "-" without any. */
+function DocLinks({ docs, to }: { readonly docs: readonly Doc[]; readonly to: "/dc/$id" | "/invoice/$id" }) {
+  if (docs.length === 0) return "-";
+  return docs.map((doc, i) => (
+    <Fragment key={doc.id}>
+      {i > 0 && ", "}
+      <Link to={to} params={{ id: doc.id }} className="role-reference-link">
+        {doc.number}
+      </Link>
+    </Fragment>
+  ));
+}
+
+const numbers = (docs: readonly Doc[]) => docs.map((d) => d.number).join(", ");
+
+export const PENDING_COLUMNS: Column<PendingRow>[] = [
+  { key: "description", header: "Material", width: "28%", sortable: true },
+  qtyColumn<PendingRow>("ordQty", "Qty", (r) => r.ordQty, { sortable: true, width: "80px" }),
+  // No v1 column stores packets: 0, as the pending workbook writes (EC-41).
+  { key: "packets", header: "Packets", width: "80px", align: "right", render: () => "0" },
+  { key: "poNumber", header: "PO #", width: "120px", sortable: true, title: (r) => r.poNumber, render: poLink },
+  {
+    key: "gemcNumbers",
+    header: "GEMC #",
+    width: "130px",
+    title: (r) => r.gemcNumbers.join(", "),
+    render: (r) =>
+      r.gemcNumbers.length === 0 ? (
+        "-"
+      ) : (
+        <Badge size="sm" className="role-reference-number-sm">
+          {r.gemcNumbers.join(", ")}
+        </Badge>
+      ),
+  },
+  {
+    key: "invoices",
+    header: "Invoice #",
+    width: "120px",
+    title: (r) => numbers(r.invoices),
+    render: (r) => <DocLinks docs={r.invoices} to="/invoice/$id" />,
+  },
+  {
+    key: "dcs",
+    header: "Challan #",
+    width: "120px",
+    title: (r) => numbers(r.dcs),
+    render: (r) => <DocLinks docs={r.dcs} to="/dc/$id" />,
+  },
+  // The legacy "Received" is the dispatched (delivered) quantity, as the workbook's Dispatch Delivered.
+  qtyColumn<PendingRow>("dspQty", "Received", (r) => r.dspQty, { sortable: true, width: "100px" }),
+];
+
+export const RECONCILIATION_COLUMNS: Column<ReconciliationRow>[] = [
+  { key: "poNumber", header: "PO Number", width: "140px", sortable: true, title: (r) => r.poNumber, render: poLink },
+  { key: "description", header: "Material", width: "36%", sortable: true },
+  qtyColumn<ReconciliationRow>("ordQty", "Ordered", (r) => r.ordQty, { sortable: true }),
+  qtyColumn<ReconciliationRow>("dspQty", "Delivered", (r) => r.dspQty, { sortable: true }),
+  // Accepted is the received quantity (INV-09).
+  qtyColumn<ReconciliationRow>("rcdQty", "Received", (r) => r.rcdQty, { sortable: true }),
+  {
+    key: "rejQty",
+    header: "Rejected",
+    width: "90px",
+    align: "right",
+    sortable: true,
+    render: (r) => (
+      <span className={cn("tabular-nums", r.rejQty > 0 ? "text-error" : "text-tertiary")}>{fmtQty(r.rejQty)}</span>
+    ),
+  },
+];
