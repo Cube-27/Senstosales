@@ -124,6 +124,7 @@ pnpm install         # dependencies
 pnpm hooks           # once per clone: the `vp staged` pre-commit hook (fmt, lint, real-data scan --staged)
 pnpm verify          # everything CI runs, in CI's order; stops at the first failure
 pnpm format          # vp fmt --write (Oxfmt)
+pnpm test [files]    # vp test run (Vitest); locally at most two workers. Run tools through pnpm, never npx
 ```
 
 The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:

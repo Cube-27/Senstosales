@@ -40,7 +40,8 @@ For each unit:
 1. Write the test that should fail: a behaviour test at the public interface, or a property test.
 2. Run it and confirm it fails for the intended reason.
 3. Make the smallest change that passes it.
-4. Run the unit's tests plus the fast checks, then commit (Conventional Commits: `type(scope): subject`).
+4. Run the unit's tests (`pnpm test <files>`, never through `npx`) plus the fast checks, then commit (Conventional
+   Commits: `type(scope): subject`).
 
 Stop and re-read `CLAUDE.md` §2 if you are about to add anything that a contract rule names, or build a candidate.
 Stay in scope: work outside the batch becomes a note in the PR body, not code. Commit row by row.

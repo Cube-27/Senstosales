@@ -114,7 +114,12 @@ export default defineConfig({
       "packages/schemas/generated/openapi.json",
     ],
   },
-  test: { include: ["{packages,apps,tools}/*/test/**/*.test.{ts,tsx}"] },
+  test: {
+    include: ["{packages,apps,tools}/*/test/**/*.test.{ts,tsx}"],
+    // Several agents test at once on one machine: locally a run is the main process plus two workers. CI keeps
+    // Vitest's default (one per core but one), so its time is unchanged.
+    ...(process.env["CI"] ? {} : { maxWorkers: 2 }),
+  },
   staged: {
     "*.{js,mjs,cjs,ts,tsx,json,jsonc,css,md,yml,yaml}": "vp check --fix",
     // C1: a function task gets no file list appended; the scan reads the staged index itself.
