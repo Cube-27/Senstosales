@@ -1,7 +1,7 @@
 // Display formatters shared by screens and exports, so the two never disagree (ARCHITECTURE §11.2). Output matches
 // the legacy frontend's visible strings (SPEC-04 §4.4, A-2); all arithmetic stays on the branded integers (C3).
 import type { Fy, IsoDate, Money, Qty } from "@senstosales/domain";
-import { MONEY_DP, QTY_DP, moneyToString, roundMoney } from "@senstosales/domain";
+import { MONEY_DP, QTY_DP, moneyToString, qtyToString, roundMoney } from "@senstosales/domain";
 
 const RUPEE = "₹";
 const ONE_UNIT = 10 ** QTY_DP;
@@ -33,6 +33,9 @@ const hundredthsNumber = (n: number, unit: number): number => roundDiv(n, unit /
 
 /** A quantity as an export's number cell: `1.255` -> `1.26` (SPEC-13, legacy `round(x, 2)`). */
 export const qtyNumber = (q: Qty): number => hundredthsNumber(q, ONE_UNIT);
+
+/** A quantity as a number cell at its full 3 dp, as the pending summary writes it: `2.125` -> `2.125`. */
+export const qtyExactNumber = (q: Qty): number => Number(qtyToString(q));
 
 /** An amount as an export's number cell: `826.004` -> `826`. */
 export const moneyNumber = (m: Money): number => hundredthsNumber(m, ONE_RUPEE);
@@ -147,6 +150,27 @@ export function fmtAmountWords(m: Money): string {
 /** `2025-01-05` -> `"05/01/2025"`; no date -> `"—"`. */
 export const fmtDate = (d: IsoDate | null): string =>
   d === null ? "—" : `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
+
+/** The pending summary's export date: `2025-06-01` -> `"01-06-2025"`. */
+export const fmtDateDashed = (d: IsoDate): string => `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}`;
+
+/**
+ * A description with each repeated line written once, as the pending summary shows it: lines trimmed, blank ones
+ * dropped, and a line already seen (case and runs of spaces ignored) left out.
+ */
+export function foldRepeatedLines(text: string): string {
+  const seen = new Set<string>();
+  return text
+    .split(/\r\n|\r|\n/)
+    .map((line) => line.trim())
+    .filter((line) => {
+      const key = line.replaceAll(/\s+/g, " ").toLowerCase();
+      if (line === "" || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join("\n");
+}
 
 /** The PO delivery and deviation screens' format: `2025-01-05` -> `"05 Jan 2025"`; no date -> `"-"`. */
 export const fmtDateMonthName = (d: IsoDate | null): string =>
