@@ -4,10 +4,10 @@ import type { Db, Instant } from "@senstosales/db";
 import { po, reconciliationIssue } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { AnyColumn, SQLWrapper } from "drizzle-orm";
-import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte } from "drizzle-orm";
 import type { z } from "zod";
 
-import { apiColumns, contains } from "./sql.ts";
+import { byPoNumber, contains, flagColumns } from "./sql.ts";
 
 /** The fingerprints of the PO's stored flags, open or acknowledged. */
 export const flagFingerprintsOfPo = (db: Db, poId: string) =>
@@ -29,15 +29,7 @@ export const flagCountsSince = (db: Db, since: Instant) =>
       .orderBy(reconciliationIssue.type),
   );
 
-type FlagListQuery = z.output<(typeof routes)["flags.list"]["query"]>;
-
-/** The API columns: no supplier and no fingerprint, which is storage only. */
-function flagColumns() {
-  const { fingerprint: _, ...columns } = apiColumns(reconciliationIssue);
-  return columns;
-}
-
-const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber];
+export type FlagListQuery = z.output<(typeof routes)["flags.list"]["query"]>;
 
 const SORTS: Record<NonNullable<FlagListQuery["sort"]>, readonly (AnyColumn | SQLWrapper)[]> = {
   openedAt: [reconciliationIssue.openedAt],
@@ -63,7 +55,7 @@ export async function listFlags(db: Db, query: FlagListQuery) {
   const [items, totals] = await Promise.all([
     db.query(
       db.build
-        .select({ ...flagColumns(), poNumber: po.poNumber })
+        .select({ ...flagColumns, poNumber: po.poNumber })
         .from(reconciliationIssue)
         .innerJoin(po, eq(po.id, reconciliationIssue.poId))
         .where(filter)
@@ -94,7 +86,7 @@ export const openFlagCounts = (db: Db) =>
 
 export async function findFlag(db: Db, id: string) {
   const rows = await db.query(
-    db.build.select(flagColumns()).from(reconciliationIssue).where(eq(reconciliationIssue.id, id)),
+    db.build.select(flagColumns).from(reconciliationIssue).where(eq(reconciliationIssue.id, id)),
   );
   return rows[0];
 }

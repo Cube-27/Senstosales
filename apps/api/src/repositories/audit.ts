@@ -2,19 +2,16 @@
 // ledger reads it; nothing here updates or deletes a row.
 import { auditLog, type Db, type Statement } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
-import { and, asc, count, desc, eq, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lt, or } from "drizzle-orm";
 import type { SQLiteInsertValue } from "drizzle-orm/sqlite-core";
 import type { z } from "zod";
 
-import { contains } from "./sql.ts";
+import { contains, istDayStart } from "./sql.ts";
 
-type AuditListQuery = z.output<(typeof routes)["audit.list"]["query"]>;
+export type AuditListQuery = z.output<(typeof routes)["audit.list"]["query"]>;
 
 export const insertAudit = (db: Db, entry: SQLiteInsertValue<typeof auditLog>): Statement =>
   db.build.insert(auditLog).values(entry);
-
-/** The IST calendar date of a row's UTC instant (C3: IST is a fixed +05:30). */
-const istDate = sql`date(${auditLog.at}, '+330 minutes')`;
 
 /** The ledger filters: text in the action, entity type or entity id; entity type; action; IST date range. */
 const where = (f: AuditListQuery) =>
@@ -24,8 +21,8 @@ const where = (f: AuditListQuery) =>
       : undefined,
     f.entityType === undefined ? undefined : eq(auditLog.entityType, f.entityType),
     f.action === undefined ? undefined : eq(auditLog.action, f.action),
-    f.from === undefined ? undefined : sql`${istDate} >= ${f.from}`,
-    f.to === undefined ? undefined : sql`${istDate} <= ${f.to}`,
+    f.from === undefined ? undefined : gte(auditLog.at, istDayStart(f.from)),
+    f.to === undefined ? undefined : lt(auditLog.at, istDayStart(f.to, 1)),
   );
 
 /** One page; newest first unless a sort is given, then newest first. */

@@ -7,19 +7,24 @@ import { FLAG_TYPES } from "@senstosales/domain";
 
 import { ConflictError, NotFoundError } from "../errors.ts";
 import type { Clock } from "../ports/clock.ts";
+import type { FlagListQuery } from "../repositories/flags.ts";
 import { acknowledgeFlag, findFlag, listFlags, openFlagCounts } from "../repositories/flags.ts";
 import { audit } from "./audit.ts";
 
 export function flagsService({ db, clock }: { db: Db; clock: Clock }) {
   return {
-    list: (query: Parameters<typeof listFlags>[1]) => listFlags(db, query),
+    list: (query: FlagListQuery) => listFlags(db, query),
 
     /** The open count for the dashboard and nav (INV-60), and open flags by type, every type listed. */
     async stats() {
       // Built from every type, so the record is complete.
       const openByType = Object.fromEntries(FLAG_TYPES.map((type) => [type, 0])) as Record<FlagType, number>;
-      for (const { type, count } of await openFlagCounts(db)) openByType[type] = count;
-      return { open: Object.values(openByType).reduce((sum, n) => sum + n, 0), openByType };
+      let open = 0;
+      for (const { type, count } of await openFlagCounts(db)) {
+        openByType[type] = count;
+        open += count;
+      }
+      return { open, openByType };
     },
 
     async acknowledge(id: string, note: string | null) {
