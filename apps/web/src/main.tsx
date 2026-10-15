@@ -3,6 +3,11 @@ import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource-variable/jetbrains-mono";
+import "@fontsource-variable/public-sans";
+import "./styles/globals.css";
+
 import { createQueryClient } from "./lib/query.ts";
 import { createAppRouter } from "./router.ts";
 
