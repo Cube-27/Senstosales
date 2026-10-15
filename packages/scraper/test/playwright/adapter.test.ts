@@ -166,7 +166,7 @@ describe("Playwright adapter in headless Edge", { timeout: 60_000 }, () => {
     expect(await session.listPoIds()).toEqual(["1000000001", "1000000002"]);
   });
 
-  it("when the portal skips the OTP step, the OTP step only confirms the login (EC-64)", async () => {
+  it("when the portal skips the OTP step, the OTP step only confirms the login (EC-65)", async () => {
     const { session, fetched } = await harness({ skipOtp: true });
     await session.prepareLogin();
     await submitLogin(session);

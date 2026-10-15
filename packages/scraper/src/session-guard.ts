@@ -15,7 +15,7 @@ export type PortalPages = {
 export type PortalDriver = {
   /** The captcha image as PNG bytes. */
   openLogin(): Promise<Uint8Array>;
-  /** Where the portal went: the OTP step, or the supplier PO page when it skipped the OTP (EC-64). */
+  /** Where the portal went: the OTP step, or the supplier PO page when it skipped the OTP (EC-65). */
   submitLogin(login: Login): Promise<"otp" | "po-list">;
   /** Rejects `wrong-otp` when the portal asks again. */
   submitOtp(otp: string): Promise<void>;
@@ -26,7 +26,7 @@ export type PortalDriver = {
 
 type Step =
   | { readonly kind: "start" | "captcha" | "closed" }
-  /** `skipped`: the portal opened the PO page without an OTP step, so `submitOtp` only confirms it (EC-64). */
+  /** `skipped`: the portal opened the PO page without an OTP step, so `submitOtp` only confirms it (EC-65). */
   | { readonly kind: "otp"; readonly skipped: boolean }
   | { readonly kind: "ready"; readonly pages: PortalPages };
 

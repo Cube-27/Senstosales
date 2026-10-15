@@ -43,7 +43,7 @@ export async function openLogin(page: Page): Promise<Uint8Array> {
   return page.locator(CAPTCHA).last().screenshot();
 }
 
-/** Submits the login form. Resolves `otp` at the OTP step, or `po-list` when the portal skips it (EC-64). */
+/** Submits the login form. Resolves `otp` at the OTP step, or `po-list` when the portal skips it (EC-65). */
 export async function submitLogin(page: Page, login: Login): Promise<"otp" | "po-list"> {
   await page.locator(LOGIN_FORM.supplierCode).fill(login.supplierCode);
   await page.locator(LOGIN_FORM.password).fill(login.password);

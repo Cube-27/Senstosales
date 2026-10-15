@@ -60,7 +60,7 @@ describe("session guard", () => {
     await session.submitCaptcha("SUP001", "secret-pass", "4821");
   });
 
-  it("when the portal skipped the OTP step, submitOtp only confirms the login (EC-64)", async () => {
+  it("when the portal skipped the OTP step, submitOtp only confirms the login (EC-65)", async () => {
     const { driver: d, calls } = driver({ submitLogin: () => Promise.resolve("po-list" as const) });
     const session = guardedSession(d);
     await session.prepareLogin();
