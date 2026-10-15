@@ -1,6 +1,6 @@
 // The typed client over the route table (SPEC-04 §4.1), on the page's own origin: the API serves the SPA.
 import { createClient, type ReadRouteName, type RouteArgs } from "@senstosales/schemas";
-import { queryOptions, useQueryClient } from "@tanstack/react-query";
+import { type Query, queryOptions, useQueryClient } from "@tanstack/react-query";
 
 export const api = createClient((url, init) => fetch(url, init));
 
@@ -9,11 +9,20 @@ export function apiQuery<N extends ReadRouteName>(name: N, ...args: RouteArgs<N>
   return queryOptions({ queryKey: [name, args[0] ?? {}] as const, queryFn: () => api.request(name, ...args) });
 }
 
+const readFrom = (resources: readonly string[]) => (q: Query) =>
+  resources.some((resource) => String(q.queryKey[0]).startsWith(`${resource}.`));
+
 /** Refetches every query read from the routes of `resources` after a write: `"po"` covers `po.list`, `po.detail`, … */
 export function useInvalidate(): (...resources: string[]) => Promise<void> {
   const queryClient = useQueryClient();
-  return (...resources) =>
-    queryClient.invalidateQueries({
-      predicate: (q) => resources.some((resource) => String(q.queryKey[0]).startsWith(`${resource}.`)),
-    });
+  return (...resources) => queryClient.invalidateQueries({ predicate: readFrom(resources) });
+}
+
+/**
+ * The same, for a create that leaves its page next: the queries are only marked stale, so the page being left is not
+ * asked again (an invoice preview of a DC that now has its invoice is a 409) and the next page fetches each one once.
+ */
+export function useMarkStale(): (...resources: string[]) => void {
+  const queryClient = useQueryClient();
+  return (...resources) => void queryClient.invalidateQueries({ predicate: readFrom(resources), refetchType: "none" });
 }

@@ -1,6 +1,7 @@
 // The legacy Access Control panel (INV-80): the default-password notice, change password and reset to defaults (the
-// confirmation phrase only, owner answer 19), each with its own button, plus the BHEL portal password, shown only as saved or not (INV-81). Change password and reset
-// end every session, so both return to the login. No length or complexity rule (C11).
+// confirmation phrase only, owner answer 19), each with its own button, plus the BHEL portal password, shown only as
+// saved or not (INV-81). Change password and reset end every session, so both return to the login. No length or
+// complexity rule (C11).
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";

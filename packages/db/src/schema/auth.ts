@@ -7,7 +7,7 @@ export const appUser = sqliteTable("app_user", {
   id: ulid("id").primaryKey(),
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  /** Set once the default password is changed; reset then asks for the current one (EC-08). */
+  /** Set once the default password is changed, so the default-password notice goes. */
   passwordChangedAt: instant("password_changed_at"),
 });
 

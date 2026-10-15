@@ -17,7 +17,7 @@ export const zChangePasswordBody = z
     message: "The two new passwords do not match.",
   });
 
-/** The legacy reset asks for the confirmation phrase, and the current password once it was changed (EC-08). */
+/** The reset to defaults asks for the confirmation phrase only (owner answer 19, EC-08). */
 export const zResetDefaultsBody = z.object({ confirmation: z.string() });
 
 export const zOnboardingStatus = z.object({ required: z.boolean() });

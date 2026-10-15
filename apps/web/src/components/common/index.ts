@@ -18,7 +18,7 @@ export {
   type UploadRun,
 } from "./FileUploadModal.tsx";
 export { FolderImport, type FolderImportProps } from "./FolderImport.tsx";
-export { FormAlert, HeaderAlert } from "./FormAlert.tsx";
+export { HeaderAlert } from "./FormAlert.tsx";
 export { FormDialog, type FormDialogProps } from "./FormDialog.tsx";
 export { FormField, type FormFieldProps } from "./FormField.tsx";
 export { GlobalSearchDialog, type GlobalSearchDialogProps } from "./GlobalSearchDialog.tsx";

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm, useFormContext } from "react-hook-form";
 
 import { useNumberCheck } from "../../../hooks/useNumberCheck.ts";
-import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
+import { api, apiQuery, useMarkStale } from "../../../lib/api.ts";
 import { todayIst } from "../../../lib/today.ts";
 import { Save } from "../../../lib/icons.ts";
 import {
@@ -315,7 +315,7 @@ function Subtitle({ preview, total }: { readonly preview: Preview | null; readon
 function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
   const navigate = useNavigate();
   const router = useRouter();
-  const invalidate = useInvalidate();
+  const markStale = useMarkStale();
   const form = useForm<InvoiceFormValues>({ defaultValues: formDefaults(preview, todayIst()) });
   const [number, invoiceDate, qty] = form.watch(["number", "invoiceDate", "qty"]);
   const [error, setError] = useState<string | null>(null);
@@ -340,9 +340,8 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
     setSaving(true);
     try {
       const invoice = await api.request("invoice.create", { body });
-      // Leave first, then refresh: this page's preview is gone by then, so it is not asked again for a DC that now has
-      // its invoice (a 409).
-      void navigate({ to: "/invoice/$id", params: { id: invoice.id } }).then(() => invalidate("invoice", "dc", "po"));
+      markStale("invoice", "dc", "po");
+      void navigate({ to: "/invoice/$id", params: { id: invoice.id } });
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
       check.refused(e, { number: body.number, date: body.invoiceDate });
