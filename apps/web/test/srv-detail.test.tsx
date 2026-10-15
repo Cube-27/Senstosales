@@ -18,11 +18,18 @@ const srvItem = (over: Record<string, unknown> = {}) => ({
   id: SRV_ITEM,
   srvId: SRV_ID,
   poItemId: ITEM_A,
+  rowNo: 1,
   materialCode: "SYN100010",
   poItemNo: 10,
+  subItemNo: "0",
   lotNo: 1,
   srvItemNo: 1,
+  revNo: "2",
+  division: "D9",
+  pmirNo: "PM-3",
+  unit: "KG",
   ordQty: "10",
+  challanQty: "6",
   rcdQty: "6",
   acceptedQty: "5",
   rejQty: "1",
@@ -30,6 +37,10 @@ const srvItem = (over: Record<string, unknown> = {}) => ({
   challanDate: "2025-02-20",
   invoiceNo: "INV/9",
   invoiceDate: "2025-02-21",
+  financeDate: "2025-03-09",
+  cnoteNo: "CN-4",
+  cnoteDate: "2025-02-22",
+  rawRow: {},
   resolvedDcId: DC_ID,
   resolvedInvoiceId: null,
   ...over,
@@ -42,7 +53,7 @@ const header = (over: Record<string, unknown> = {}) => ({
   srvNumber: "5000000101",
   srvDate: "2025-03-02",
   financialYear: "2024-25",
-  rawHeader: { "PMIR NO": "PM-3", DIV: "D9" },
+  rawHeader: {},
   ...over,
 });
 
@@ -54,7 +65,7 @@ const srvDetail = (over: Record<string, unknown> = {}) => ({
 });
 
 describe("/srv/:id (SPEC-16 PR 4)", () => {
-  it("shows the receipt details with the raw numbers, linked when resolved (INV-38)", async () => {
+  it("shows the receipt details as on the SRV page, the numbers linked when resolved (INV-38)", async () => {
     stubApi({
       [`GET /api/srv/${SRV_ID}`]: () => srvDetail(),
       [`GET /api/po/${PO_ID}`]: () => detail({ items: [item()] }),
@@ -63,8 +74,10 @@ describe("/srv/:id (SPEC-16 PR 4)", () => {
     const details = within(await screen.findByRole("region", { name: "Receipt Details" }));
     expect(details.getByRole("link", { name: "DC/7" }).getAttribute("href")).toBe(`/dc/${DC_ID}`);
     expect(details.getByText("INV/9").closest("a")).toBeNull();
-    expect([details.getByText("PM-3"), details.getByText("D9")]).toHaveLength(2);
+    for (const text of ["PM-3", "D9", "CN-4", "22/02/2025", "09/03/2025"]) expect(details.getByText(text)).toBeTruthy();
     const row = (await screen.findByText("#10.1")).closest("tr") as HTMLElement;
+    // REV NO and UNIT are the SRV row's own.
+    expect([within(row).getByText("2"), within(row).getByText("KG")]).toHaveLength(2);
     expect(await within(row).findByText("Synthetic valve body")).toBeTruthy();
     expect(within(row).getByText("100")).toBeTruthy();
     // An item not matched to a PO item shows its own number and no material.
