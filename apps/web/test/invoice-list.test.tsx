@@ -85,7 +85,7 @@ describe("/invoice (SPEC-18 PR 3)", () => {
     expect(checked("Select all rows on this page")).toBe("true");
     await userEvent.click(box("Select all rows on this page"));
     expect(checked("Select row 1")).toBe("false");
-    expect(calls.length).toBe(before);
+    expect(calls).toHaveLength(before);
   });
 
   it("downloads an invoice's Excel and the register with the list's filters", async () => {
