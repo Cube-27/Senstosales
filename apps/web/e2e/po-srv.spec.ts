@@ -69,19 +69,43 @@ test("the PO list's status filter moves nothing, and a PO opens with its items",
   await expect(page.getByRole("cell", { name: "#10", exact: true })).toBeVisible();
 });
 
-test("creates a PO by hand and opens it", async ({ page }) => {
+test("a manual dispatched quantity changes Dispatched and Pending and is there after a reload", async ({ page }) => {
+  await page.goto("/po");
+  await page.getByRole("link", { name: "4100000102", exact: true }).click();
+  const row = page.getByRole("row").filter({ has: page.getByRole("cell", { name: "#10", exact: true }) });
+  const cells = async () => (await row.getByRole("cell").allInnerTexts()).map((t) => t.trim());
+  const before = await cells();
+  await row.getByRole("button", { name: "Manual dispatched quantity for item 10" }).click();
+  await page.getByLabel("Manual dispatched qty").fill("1");
+  await page.getByLabel("Note").fill("Sent before the portal");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect.poll(cells).not.toEqual(before);
+  await page.reload();
+  const button = row.getByRole("button", { name: "Manual dispatched quantity for item 10" });
+  await expect(button).toHaveAttribute("title", "Manual 1: Sent before the portal");
+  // Ordered and the material stay; Pending and Dispatched moved.
+  const after = await cells();
+  expect(after.slice(0, 5)).toEqual(before.slice(0, 5));
+  expect([after[5], after[6]]).not.toEqual([before[5], before[6]]);
+});
+
+test("creates a GEMC PO by hand from the GST-inclusive rate and shows the stored net (INV-20)", async ({ page }) => {
   await page.goto("/po/create");
   await page.getByLabel("PO Number").fill("4100000901");
+  await page.getByLabel("GEMC No").fill("GEMC-E2E-1");
   await page.getByRole("button", { name: "Add Item" }).click();
   await page.getByLabel("Description of item 1").fill("Synthetic flange");
   await page.getByLabel("Code of item 1").fill("SYN900010");
   await page.getByLabel("Unit of item 1").fill("NOS");
   await page.getByLabel("Qty of item 1").fill("4");
-  await page.getByLabel("Rate of item 1").fill("250");
+  await page.getByLabel("Rate of item 1").fill("118");
   await page.getByRole("button", { name: "Save PO" }).click();
   await page.getByRole("button", { name: "Create PO" }).click();
   await expect(page).toHaveURL(/\/po\/[0-9A-Z]{26}$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/4100000901/);
+  // 18% GST (the onboarded 9% + 9%) taken out of 118.
+  const row = page.getByRole("row").filter({ has: page.getByRole("cell", { name: "#10", exact: true }) });
+  await expect(row.getByRole("cell", { name: /^100(\.0+)?$/ })).toBeVisible();
 });
 
 test("lists SRVs flat and by PO, opens one, and deletes it", async ({ page }) => {
