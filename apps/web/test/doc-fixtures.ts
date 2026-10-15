@@ -96,3 +96,104 @@ export const dcRow = (over: Record<string, unknown> = {}) => ({
   openFlagCount: 0,
   ...over,
 });
+
+const INVOICE_HEADER = {
+  buyerName: "Example Buyer Unit",
+  buyerGstin: "TESTGSTIN0002",
+  buyerAddress: "3 Example Avenue",
+  buyerState: "Example State",
+  buyerStateCode: "99",
+  placeOfSupply: "Example City",
+  buyersOrderDate: "2025-04-05",
+  gemcNumber: null,
+  gemcDate: null,
+  paymentTerms: "Net 30",
+  despatchDocNo: null,
+  srvNo: null,
+  srvDate: null,
+  vehicleNo: "TEST-VEH-1",
+  lrNo: null,
+  transporter: "Example Transport",
+  destination: "Example City",
+  termsOfDelivery: null,
+  remarks: null,
+  ...SUPPLIER,
+};
+
+/** A DC-sourced invoice of DC 17: 4 × 100 and 2 × 40 at 9 % + 9 %. */
+export const invoice = (over: Record<string, unknown> = {}) => ({
+  id: INVOICE_ID,
+  poId: PO_ID,
+  number: "INV-17",
+  invoiceDate: "2025-05-03",
+  financialYear: "2025-26",
+  ...INVOICE_HEADER,
+  cgstPct: "9",
+  sgstPct: "9",
+  taxable: "480",
+  cgst: "43.2",
+  sgst: "43.2",
+  igst: "0",
+  total: "566.4",
+  version: 2,
+  createdAt: CREATED,
+  kind: "dc",
+  dcId: DC_ID,
+  ...over,
+});
+
+export const invoiceLine = (over: Record<string, unknown> = {}) => ({
+  id: "01J00000000000000000000041",
+  invoiceId: INVOICE_ID,
+  poItemId: ITEM_A,
+  dcItemId: DC_ITEM_A,
+  qty: "4",
+  taxable: "400",
+  cgst: "36",
+  sgst: "36",
+  igst: "0",
+  total: "472",
+  ...itemInfo(10, "100"),
+  ...over,
+});
+
+export const DC_REF = { id: DC_ID, number: "17", date: "2025-05-02", financialYear: "2025-26" };
+
+export const invoiceDetail = (over: Record<string, unknown> = {}) => ({
+  invoice: invoice(),
+  po: PO_REF,
+  dc: DC_REF,
+  items: [
+    invoiceLine(),
+    invoiceLine({
+      id: "01J00000000000000000000042",
+      poItemId: ITEM_B,
+      dcItemId: DC_ITEM_B,
+      qty: "2",
+      taxable: "80",
+      cgst: "7.2",
+      sgst: "7.2",
+      total: "94.4",
+      ...itemInfo(20, "40"),
+    }),
+  ],
+  srvs: [],
+  flags: [],
+  ...over,
+});
+
+export const invoiceRow = (over: Record<string, unknown> = {}) => ({
+  id: INVOICE_ID,
+  number: "INV-17",
+  invoiceDate: "2025-05-03",
+  financialYear: "2025-26",
+  poId: PO_ID,
+  taxable: "480",
+  total: "566.4",
+  kind: "dc",
+  poNumber: "4100000101",
+  dc: DC_REF,
+  itemCount: 2,
+  qty: "6",
+  ...over,
+});
