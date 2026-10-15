@@ -33,8 +33,8 @@ describe.each([
     expect(res.body).toEqual(expected);
   });
 
-  test("an empty number is invalid", async () => {
+  test.each(["", "%20%20"])("an empty or blank number (%j) is invalid", async (n) => {
     const { send } = await stored();
-    expect((await send(`/api/${kind}/number-check?number=&date=2025-06-01`)).status).toBe(400);
+    expect((await send(`/api/${kind}/number-check?number=${n}&date=2025-06-01`)).status).toBe(400);
   });
 });
