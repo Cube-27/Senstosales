@@ -13,6 +13,11 @@ const IST_MS = 330 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Today's IST date, moved by `days`. */
 const istDate = (days = 0): string => new Date(Date.now() + IST_MS + days * DAY_MS).toISOString().slice(0, 10);
+/** 1 April of today's FY, where the reports' default range starts (INV-113). */
+const fyStart = (): string => {
+  const [year, month] = istDate().split("-").map(Number);
+  return `${month >= 4 ? year : year - 1}-04-01`;
+};
 
 async function post(page: Page, path: string, data: unknown): Promise<unknown> {
   const res = await page.request.post(path, { data });
@@ -180,7 +185,7 @@ test("reports: tabs move nothing; Download saves the tab's workbook and a select
   await page.getByRole("button", { name: "Items Summary" }).click();
   saved = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download" }).click();
-  expect((await saved).suggestedFilename()).toBe(`Items_Summary_${istDate(-1)}_to_${istDate()}.xlsx`);
+  expect((await saved).suggestedFilename()).toBe(`Items_Summary_${fyStart()}_to_${istDate()}.xlsx`);
 
   await page.getByRole("checkbox", { name: "Select row 1" }).click();
   saved = page.waitForEvent("download");
