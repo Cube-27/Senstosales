@@ -1,14 +1,13 @@
 import type { RouteOutput } from "@senstosales/schemas";
 import { fmtCount, fmtDate, fmtMoney, fmtMoneyCompact, fmtQty } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
-import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
+import { api, apiQuery } from "../../../lib/api.ts";
 import { useDownload } from "../../../lib/download.ts";
-import { Delete, DeliveryChallan, FileText, IndianRupee, Invoice, Package, Plus } from "../../../lib/icons.ts";
+import { Delete, DeliveryChallan, FileText, IndianRupee, Invoice, Package } from "../../../lib/icons.ts";
 import { rangeQuery } from "../../../lib/search.ts";
 import {
   Badge,
@@ -16,7 +15,6 @@ import {
   type Column,
   ConfirmDialog,
   DataTable,
-  ExcelButton,
   ListFilters,
   ListToolbar,
   PageHeader,
@@ -24,9 +22,9 @@ import {
   StatCard,
   StatCardRow,
   tableQuery,
-  useToast,
 } from "../../common/index.ts";
 import { dcDeleteReason } from "../delete-reasons.ts";
+import { ListHeaderActions, useRowDelete } from "../doc-screens.tsx";
 import type { DcSearch } from "./search.ts";
 
 type Row = RouteOutput<"dc.list">["items"][number];
@@ -154,35 +152,22 @@ function columns(actions: Actions): Column<Row>[] {
 export function DCList() {
   const list = useListSearch<DcSearch>();
   const { search, setFilters } = list;
-  const navigate = useNavigate();
-  const invalidate = useInvalidate();
-  const { toast } = useToast();
   const download = useDownload();
   const { page, pageSize, sort, dir, ...ranges } = search;
   const filters = rangeQuery(ranges);
   const rows = useQuery(apiQuery("dc.list", { query: { page, pageSize, sort, dir, ...filters } }));
   const stats = useQuery(apiQuery("dc.stats", { query: filters }));
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
-  const [deleting, setDeleting] = useState<Row | null>(null);
-  const [busy, setBusy] = useState(false);
+  const rowDelete = useRowDelete<Row>({
+    noun: "DC",
+    remove: (row) => api.request("dc.delete", { params: { id: row.id } }),
+    deleted: (row) => `DC ${row.number} has been deleted successfully.`,
+    resources: ["dc", "po"],
+  });
 
   const downloadDc = (row: Row) =>
     void download.run(row.id, `DC ${row.number}`, () => api.request("dc.excel", { params: { id: row.id } }));
-  const cols = columns({ busy: download.busy, onDownload: downloadDc, onDelete: setDeleting });
-
-  async function confirmDelete(row: Row) {
-    setBusy(true);
-    try {
-      await api.request("dc.delete", { params: { id: row.id } });
-      toast("DC deleted", `DC ${row.number} has been deleted successfully.`, "success");
-      setDeleting(null);
-      await invalidate("dc", "po");
-    } catch (error) {
-      toast("Delete failed", error instanceof Error ? error.message : "Failed to delete DC", "error");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const cols = columns({ busy: download.busy, onDownload: downloadDc, onDelete: rowDelete.ask });
 
   const s = stats.data;
   return (
@@ -191,23 +176,15 @@ export function DCList() {
         title="Delivery Challans"
         subtitle="Manage and track all delivery documentation"
         action={
-          <>
-            <ExcelButton
-              loading={download.busy === "export"}
-              onClick={() =>
-                void download.run("export", "DC list", () =>
-                  api.request("dc.export", { query: { sort, dir, ...filters } }),
-                )
-              }
-            >
-              <FileText aria-hidden />
-              Download
-            </ExcelButton>
-            <Button size="sm" onClick={() => void navigate({ to: "/dc/create" })}>
-              <Plus aria-hidden />
-              Create
-            </Button>
-          </>
+          <ListHeaderActions
+            downloading={download.busy === "export"}
+            onDownload={() =>
+              void download.run("export", "DC list", () =>
+                api.request("dc.export", { query: { sort, dir, ...filters } }),
+              )
+            }
+            createTo="/dc/create"
+          />
         }
       />
       <StatCardRow>
@@ -249,16 +226,15 @@ export function DCList() {
         />
       </div>
       <ConfirmDialog
-        open={deleting !== null}
-        onClose={() => setDeleting(null)}
-        onConfirm={() => deleting && void confirmDelete(deleting)}
+        {...rowDelete.dialog}
         title="Delete Delivery Challan?"
         warningText={
-          deleting ? `Are you sure you want to delete DC #${deleting.number}? This action cannot be undone.` : ""
+          rowDelete.deleting
+            ? `Are you sure you want to delete DC #${rowDelete.deleting.number}? This action cannot be undone.`
+            : ""
         }
         confirmLabel="Delete DC"
         variant="danger"
-        loading={busy}
       />
     </div>
   );

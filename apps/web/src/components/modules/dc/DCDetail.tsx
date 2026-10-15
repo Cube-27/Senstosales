@@ -24,6 +24,7 @@ import {
   useToast,
 } from "../../common/index.ts";
 import { dcDeleteReason } from "../delete-reasons.ts";
+import { LinkedSrvs } from "../doc-screens.tsx";
 import { DCHeaderEdit } from "./DCHeaderEdit.tsx";
 
 type Detail = RouteOutput<"dc.detail">;
@@ -128,19 +129,7 @@ function DCDetailView({ data }: { readonly data: Detail }) {
             <span>{fmtCount(items.length)} items</span>
             <span className="opacity-40">•</span>
             <span>Value: {value}</span>
-            {srvs.length > 0 && (
-              <>
-                <span className="opacity-40">•</span>
-                <span className="inline-flex gap-1">
-                  SRV:
-                  {srvs.map((srv) => (
-                    <Link key={srv.id} to="/srv/$id" params={{ id: srv.id }} className="role-reference-link">
-                      {srv.number}
-                    </Link>
-                  ))}
-                </span>
-              </>
-            )}
+            <LinkedSrvs srvs={srvs} />
           </span>
         }
         action={

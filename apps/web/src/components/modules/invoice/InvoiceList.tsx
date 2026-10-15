@@ -1,21 +1,19 @@
 import type { RouteOutput } from "@senstosales/schemas";
 import { fmtCount, fmtDate, fmtMoney, fmtMoneyCompact } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
-import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
+import { api, apiQuery } from "../../../lib/api.ts";
 import { useDownload } from "../../../lib/download.ts";
-import { Delete, FileText, IndianRupee, Invoice, Package, Plus, Receipt } from "../../../lib/icons.ts";
+import { Delete, FileText, IndianRupee, Invoice, Package, Receipt } from "../../../lib/icons.ts";
 import { rangeQuery } from "../../../lib/search.ts";
 import {
   Button,
   type Column,
   ConfirmDialog,
   DataTable,
-  ExcelButton,
   ListFilters,
   ListToolbar,
   PageHeader,
@@ -23,8 +21,8 @@ import {
   StatCard,
   StatCardRow,
   tableQuery,
-  useToast,
 } from "../../common/index.ts";
+import { ListHeaderActions, useRowDelete } from "../doc-screens.tsx";
 import type { InvoiceSearch } from "./search.ts";
 
 type Row = RouteOutput<"invoice.list">["items"][number];
@@ -131,17 +129,18 @@ function columns({ busy, onDownload, onDelete }: Actions): Column<Row>[] {
 export function InvoiceList() {
   const list = useListSearch<InvoiceSearch>();
   const { search, setFilters } = list;
-  const navigate = useNavigate();
-  const invalidate = useInvalidate();
-  const { toast } = useToast();
   const download = useDownload();
   const { page, pageSize, sort, dir, ...ranges } = search;
   const filters = rangeQuery(ranges);
   const rows = useQuery(apiQuery("invoice.list", { query: { page, pageSize, sort, dir, ...filters } }));
   const stats = useQuery(apiQuery("invoice.stats", { query: filters }));
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
-  const [deleting, setDeleting] = useState<Row | null>(null);
-  const [busy, setBusy] = useState(false);
+  const rowDelete = useRowDelete<Row>({
+    noun: "Invoice",
+    remove: (row) => api.request("invoice.delete", { params: { id: row.id } }),
+    deleted: (row) => `Invoice ${row.number} has been deleted successfully.`,
+    resources: ["invoice", "dc", "po"],
+  });
 
   const cols = columns({
     busy: download.busy,
@@ -149,23 +148,8 @@ export function InvoiceList() {
       void download.run(row.id, `Invoice ${row.number}`, () =>
         api.request("invoice.excel", { params: { id: row.id } }),
       ),
-    onDelete: setDeleting,
+    onDelete: rowDelete.ask,
   });
-
-  async function confirmDelete(row: Row) {
-    setBusy(true);
-    try {
-      await api.request("invoice.delete", { params: { id: row.id } });
-      toast("Invoice deleted", `Invoice ${row.number} has been deleted successfully.`, "success");
-      setDeleting(null);
-      await invalidate("invoice", "dc", "po");
-    } catch (error) {
-      toast("Delete failed", error instanceof Error ? error.message : "Failed to delete invoice", "error");
-      setDeleting(null);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const s = stats.data;
   return (
@@ -174,23 +158,15 @@ export function InvoiceList() {
         title="Invoices"
         subtitle="Manage billing and payment tracking"
         action={
-          <>
-            <ExcelButton
-              loading={download.busy === "export"}
-              onClick={() =>
-                void download.run("export", "Invoice register", () =>
-                  api.request("invoice.export", { query: { sort, dir, ...filters } }),
-                )
-              }
-            >
-              <FileText aria-hidden />
-              Download
-            </ExcelButton>
-            <Button size="sm" onClick={() => void navigate({ to: "/invoice/create" })}>
-              <Plus aria-hidden />
-              Create
-            </Button>
-          </>
+          <ListHeaderActions
+            downloading={download.busy === "export"}
+            onDownload={() =>
+              void download.run("export", "Invoice register", () =>
+                api.request("invoice.export", { query: { sort, dir, ...filters } }),
+              )
+            }
+            createTo="/invoice/create"
+          />
         }
       />
       <StatCardRow>
@@ -227,16 +203,15 @@ export function InvoiceList() {
         />
       </div>
       <ConfirmDialog
-        open={deleting !== null}
-        onClose={() => setDeleting(null)}
-        onConfirm={() => deleting && void confirmDelete(deleting)}
+        {...rowDelete.dialog}
         title="Delete Invoice?"
         warningText={
-          deleting ? `Are you sure you want to delete Invoice #${deleting.number}? This action cannot be undone.` : ""
+          rowDelete.deleting
+            ? `Are you sure you want to delete Invoice #${rowDelete.deleting.number}? This action cannot be undone.`
+            : ""
         }
         confirmLabel="Delete Invoice"
         variant="danger"
-        loading={busy}
       />
     </div>
   );

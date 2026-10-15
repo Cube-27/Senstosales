@@ -22,6 +22,7 @@ import {
   useToast,
 } from "../../common/index.ts";
 import { invoiceDeleteReason } from "../delete-reasons.ts";
+import { LinkedSrvs } from "../doc-screens.tsx";
 import { InvoiceHeaderEdit } from "./InvoiceHeaderEdit.tsx";
 import { PartyBlock, SourceLink } from "./parties.tsx";
 
@@ -138,19 +139,7 @@ function InvoiceDetailView({ data }: { readonly data: Detail }) {
             <span>{fmtCount(items.length)} items</span>
             <span className="opacity-40">•</span>
             <span>{fmtMoney(invoice.total, { gemc })}</span>
-            {srvs.length > 0 && (
-              <>
-                <span className="opacity-40">•</span>
-                <span className="inline-flex gap-1">
-                  SRV:
-                  {srvs.map((srv) => (
-                    <Link key={srv.id} to="/srv/$id" params={{ id: srv.id }} className="role-reference-link">
-                      {srv.number}
-                    </Link>
-                  ))}
-                </span>
-              </>
-            )}
+            <LinkedSrvs srvs={srvs} />
           </span>
         }
         action={
