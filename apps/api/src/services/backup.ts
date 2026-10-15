@@ -42,10 +42,7 @@ export const safetyBackupName = (now: Instant): string => `safety-${fileStamp(no
 /** The daily backups rotation removes: all but the newest 14 and the newest of each of the 12 newest months that
  * have one (INV-103). Other files are never removed. */
 export function planRotation(files: readonly string[]): string[] {
-  const daily = files
-    .filter((name) => parseBackupName(name)?.kind === "daily")
-    .toSorted()
-    .toReversed();
+  const daily = files.filter((name) => parseBackupName(name)?.kind === "daily").toSorted((a, b) => b.localeCompare(a));
   const keep = new Set(daily.slice(0, KEEP_DAILY));
   const months = new Set<string>();
   for (const name of daily) {
@@ -55,7 +52,7 @@ export function planRotation(files: readonly string[]): string[] {
       keep.add(name);
     }
   }
-  return daily.filter((name) => !keep.has(name)).toSorted();
+  return daily.filter((name) => !keep.has(name)).toReversed();
 }
 
 interface BackupDeps {
