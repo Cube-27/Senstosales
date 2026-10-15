@@ -8,9 +8,6 @@ import { ScraperError } from "../../port.ts";
 export const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0";
 
-export const LAUNCH_OPTIONS = { channel: "msedge", headless: true } as const;
-export const CONTEXT_OPTIONS = { userAgent: USER_AGENT } as const;
-
 export type Edge = { readonly browser: Browser; readonly page: Page };
 
 /** Opens Edge with one page. Rejects with `edge-unavailable` when Edge cannot be started. playwright-core is loaded on
@@ -19,12 +16,12 @@ export async function launchEdge(browserType?: Pick<BrowserType, "launch">): Pro
   let browser: Browser;
   try {
     const type = browserType ?? (await import("playwright-core")).chromium;
-    browser = await type.launch({ ...LAUNCH_OPTIONS });
+    browser = await type.launch({ channel: "msedge", headless: true });
   } catch {
     throw new ScraperError("edge-unavailable");
   }
   try {
-    const context = await browser.newContext({ ...CONTEXT_OPTIONS });
+    const context = await browser.newContext({ userAgent: USER_AGENT });
     return { browser, page: await context.newPage() };
   } catch {
     await browser.close();

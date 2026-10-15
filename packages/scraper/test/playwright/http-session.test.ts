@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { ScraperError } from "../../src/port.ts";
 import { createHttpSession } from "../../src/platform/playwright/http-session.ts";
+import { codeOf } from "../code-of.ts";
 import { PO_LIST_HTML } from "./fixtures.ts";
 import { startStubPortal, type StubPortal, type StubReply, type StubRequest } from "./stub-portal.ts";
 
@@ -9,7 +10,8 @@ const COOKIES = [
   { name: "ASPSESSIONIDAB", value: "synthetic-session" },
   { name: "portal_token", value: "t-1" },
 ];
-const UA = "SyntheticAgent/1.0";
+const UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0";
 
 let portal: StubPortal | undefined;
 afterEach(async () => {
@@ -28,15 +30,7 @@ function portalPages({ method, path, body }: StubRequest): StubReply {
 
 async function session(reply: (request: StubRequest) => StubReply = portalPages) {
   portal = await startStubPortal(reply);
-  return { http: createHttpSession(COOKIES, UA, portal.fetch), requests: portal.requests };
-}
-
-async function codeOf(call: Promise<unknown>): Promise<string> {
-  const error: unknown = await call.then(
-    () => undefined,
-    (e: unknown) => e,
-  );
-  return error instanceof ScraperError ? error.code : `not a ScraperError: ${String(error)}`;
+  return { http: createHttpSession(COOKIES, portal.fetch), requests: portal.requests };
 }
 
 /** The parts of a request the portal sees that matter here. */
@@ -52,9 +46,9 @@ const seen = ({ method, path, headers, body }: StubRequest) => ({
 });
 
 describe("HTTP session on the login cookies", () => {
-  it("lists PO ids from the supplier PO page with the login cookies", async () => {
+  it("lists the PO id links of the supplier PO page with the login cookies and the browser's user agent", async () => {
     const { http, requests } = await session();
-    expect(await http.listPoIds()).toEqual(["1000000001", "1000000002"]);
+    expect(await http.listPoIds()).toEqual(["1000000001", "1000000002", "12AB", "10000000003"]);
     expect(requests.map(seen)).toEqual([
       {
         method: "GET",
@@ -93,15 +87,6 @@ describe("HTTP session on the login cookies", () => {
       ["/mm/podtls.asp", "pono=1000000001", "https://bpl.bhel.com/mm/suppliers_po_page.asp"],
       ["/mm/listsrv.asp", "pono=1000000001", "https://bpl.bhel.com/mm/podtls.asp"],
     ]);
-  });
-
-  it("rejects an invalid PO id before any request (INV-97)", async () => {
-    const { http, requests } = await session();
-    for (const id of ["", "12AB", "12345678901", "1&pono=2", "../x"]) {
-      expect(await codeOf(http.fetchPoHtml(id))).toBe("invalid-po-id");
-      expect(await codeOf(http.fetchSrvHtml(id))).toBe("invalid-po-id");
-    }
-    expect(requests).toEqual([]);
   });
 
   it("answers fetch-failed for an error status, with no page detail", async () => {

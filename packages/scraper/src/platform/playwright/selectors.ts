@@ -4,8 +4,6 @@
 // SPEC-01 spike records the live flow (D-0530). Page content is only ever read, never executed or used as a URL (C17).
 import { load } from "cheerio";
 
-import { isPoId } from "../../port.ts";
-
 /** INV-97: the only origin the adapter ever contacts. */
 export const PORTAL_ORIGIN = "https://bpl.bhel.com";
 export const LOGIN_URL = `${PORTAL_ORIGIN}/mm/`;
@@ -37,23 +35,21 @@ export const OTP_SUBMIT =
 /** The first cell of each PO list row links the PO id. */
 const PO_ID_LINK = "table tr td:first-child a";
 
-/** The portal is asking for the e-mailed OTP. */
-export function isOtpPage(html: string): boolean {
-  return load(html)(OTP_INPUT).length > 0;
+/** Where a page shows the portal to be: the supplier PO page (which confirms the login, ARCHITECTURE §7.5), the OTP
+ * step, or anywhere else. */
+export function classifyPage(url: string, html: string): "po-list" | "otp" | "other" {
+  if (new URL(url).pathname.toLowerCase().endsWith("/suppliers_po_page.asp")) return "po-list";
+  const $ = load(html);
+  const text = $.text().toLowerCase();
+  if (text.includes("purchase orders on:") && text.includes("po status")) return "po-list";
+  return $(OTP_INPUT).length > 0 ? "otp" : "other";
 }
 
-/** The supplier PO page, which confirms the login (ARCHITECTURE §7.5). */
-export function isPoListPage(url: string, html: string): boolean {
-  if (new URL(url).pathname.toLowerCase().endsWith("/suppliers_po_page.asp")) return true;
-  const text = load(html).text().toLowerCase();
-  return text.includes("purchase orders on:") && text.includes("po status");
-}
-
-/** The PO ids the supplier PO page links, in page order; anything not 1 to 10 digits is dropped (INV-97). */
+/** The texts of the PO id links on the supplier PO page, in page order. The session guard drops any that is not a PO
+ * id (INV-97). */
 export function readPoIds(html: string): string[] {
   const $ = load(html);
   return $(PO_ID_LINK)
     .map((_, a) => $(a).text().trim())
-    .get()
-    .filter(isPoId);
+    .get();
 }

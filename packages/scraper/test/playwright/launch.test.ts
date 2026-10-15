@@ -32,13 +32,6 @@ function fakeBrowserType(fail?: "launch" | "newContext"): { browserType: Pick<Br
   };
 }
 
-async function errorOf(call: Promise<unknown>): Promise<unknown> {
-  return call.then(
-    () => "resolved",
-    (e: unknown) => e,
-  );
-}
-
 describe("launchEdge", () => {
   it("passes only channel, headless and the user agent (INV-86)", async () => {
     const { browserType, calls } = fakeBrowserType();
@@ -54,7 +47,7 @@ describe("launchEdge", () => {
   });
 
   it("maps a failed launch to edge-unavailable with the EC-09 message and no launch detail", async () => {
-    const error = await errorOf(launchEdge(fakeBrowserType("launch").browserType));
+    const error = await launchEdge(fakeBrowserType("launch").browserType).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ScraperError);
     expect((error as ScraperError).code).toBe("edge-unavailable");
     expect((error as ScraperError).message).toBe(
@@ -64,7 +57,7 @@ describe("launchEdge", () => {
 
   it("closes the browser and answers edge-unavailable when its page cannot be opened", async () => {
     const { browserType, calls } = fakeBrowserType("newContext");
-    const error = await errorOf(launchEdge(browserType));
+    const error = await launchEdge(browserType).catch((e: unknown) => e);
     expect((error as ScraperError).code).toBe("edge-unavailable");
     expect(calls.closed).toBe(1);
   });

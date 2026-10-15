@@ -3,8 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   CAPTCHA,
-  isOtpPage,
-  isPoListPage,
+  classifyPage,
   LOGIN_FORM,
   OTP_INPUT,
   POPUPS,
@@ -37,24 +36,23 @@ describe("selectors on the synthetic login page", () => {
   });
 });
 
-describe("page checks", () => {
-  it("the OTP step is the page with an OTP field, also after a wrong OTP", () => {
-    expect([LOGIN_HTML, OTP_HTML, OTP_INVALID_HTML, PO_LIST_HTML].map(isOtpPage)).toEqual([false, true, true, false]);
+describe("classifyPage", () => {
+  it("reads each synthetic page as the step it shows", () => {
+    expect([LOGIN_HTML, OTP_HTML, OTP_INVALID_HTML, PO_LIST_HTML].map((html) => classifyPage(OTHER_URL, html))).toEqual(
+      ["other", "otp", "otp", "po-list"],
+    );
     expect(load(OTP_HTML)(OTP_INPUT).attr("name")).toBe("txtOTP");
   });
 
-  it("the supplier PO page is known by its URL or by its headings", () => {
-    expect(isPoListPage("https://bpl.bhel.com/mm/suppliers_po_page.asp", "<html></html>")).toBe(true);
-    expect(isPoListPage("https://bpl.bhel.com/MM/Suppliers_PO_Page.asp?x=1", "<html></html>")).toBe(true);
-    expect(isPoListPage(OTHER_URL, PO_LIST_HTML)).toBe(true);
-    expect(isPoListPage(OTHER_URL, LOGIN_HTML)).toBe(false);
-    expect(isPoListPage(OTHER_URL, OTP_HTML)).toBe(false);
+  it("knows the supplier PO page by its URL alone", () => {
+    expect(classifyPage("https://bpl.bhel.com/mm/suppliers_po_page.asp", "<html></html>")).toBe("po-list");
+    expect(classifyPage("https://bpl.bhel.com/MM/Suppliers_PO_Page.asp?x=1", "<html></html>")).toBe("po-list");
   });
 });
 
 describe("readPoIds", () => {
-  it("reads the first-column links in page order and drops ids that are not 1 to 10 digits (INV-97)", () => {
-    expect(readPoIds(PO_LIST_HTML)).toEqual(["1000000001", "1000000002"]);
+  it("reads the first-column link texts in page order, trimmed", () => {
+    expect(readPoIds(PO_LIST_HTML)).toEqual(["1000000001", "1000000002", "12AB", "10000000003"]);
   });
 
   it("reads nothing from a page with no PO list", () => {

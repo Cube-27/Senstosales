@@ -3,11 +3,13 @@
 // stub never answers with a redirect: Playwright does not route the request a redirect leads to. As a backstop, the
 // test browser's proxy is a closed local port, so any request a route does not answer fails without leaving the
 // machine.
-import { chromium, type BrowserType, type Route } from "playwright-core";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { chromium, type Browser, type BrowserContext, type BrowserType, type Route } from "playwright-core";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vite-plus/test";
 
-import { ScraperError, type ScraperSession } from "../../src/port.ts";
-import { createPlaywrightScraper, PORTAL_ORIGIN } from "../../src/platform/playwright/index.ts";
+import type { ScraperSession } from "../../src/port.ts";
+import { createPlaywrightScraper } from "../../src/platform/playwright/index.ts";
+import { PORTAL_ORIGIN } from "../../src/platform/playwright/selectors.ts";
+import { codeOf } from "../code-of.ts";
 import { LOGIN_HTML, OTP_HTML, OTP_INVALID_HTML, PO_LIST_HTML } from "./fixtures.ts";
 
 const LOGIN = { supplierCode: "SUP001", password: "synthetic-pass", captcha: "4821" };
@@ -62,42 +64,58 @@ const DEAD_PROXY = { server: "http://127.0.0.1:9" };
 
 type Harness = { session: ScraperSession; fetched: Array<{ url: string; cookie: string | null }>; offPortal: string[] };
 
+// One headless Edge behind the dead proxy for the whole file; each session gets its own context, so cookies and
+// routes never mix between tests.
+let edge: Browser | undefined;
+beforeAll(async () => {
+  edge = await chromium.launch({ channel: "msedge", headless: true, proxy: DEAD_PROXY });
+});
+afterAll(async () => {
+  await edge?.close();
+});
+
 const open: ScraperSession[] = [];
 afterEach(async () => {
   await Promise.all(open.splice(0).map((s) => s.close()));
 });
 
-/** A session whose Edge contexts route every request to the synthetic portal. */
+function sharedEdge(): Browser {
+  if (!edge) throw new Error("Edge was not launched");
+  return edge;
+}
+
+/** A browser type whose "browser" is one routed context of the shared Edge; closing it closes that context. */
+function routedBrowserType(options: PortalOptions, offPortal: string[]): Pick<BrowserType, "launch"> {
+  return {
+    async launch() {
+      let context: BrowserContext | undefined;
+      const browser: Pick<Browser, "newContext" | "close"> = {
+        async newContext(contextOptions) {
+          context = await sharedEdge().newContext(contextOptions);
+          await context.route("**/*", portal(options, offPortal));
+          return context;
+        },
+        async close() {
+          await context?.close();
+        },
+      };
+      return browser as Browser;
+    },
+  };
+}
+
+/** A logged-out session on the synthetic portal; listing and fetching go to a fetch that records each request. */
 async function harness(options: PortalOptions = {}): Promise<Harness> {
   const offPortal: string[] = [];
   const fetched: Harness["fetched"] = [];
-  const browserType: Pick<BrowserType, "launch"> = {
-    async launch(launchOptions) {
-      const browser = await chromium.launch({ ...launchOptions, proxy: DEAD_PROXY });
-      const newContext = browser.newContext.bind(browser);
-      browser.newContext = async (contextOptions) => {
-        const context = await newContext(contextOptions);
-        await context.route("**/*", portal(options, offPortal));
-        return context;
-      };
-      return browser;
-    },
-  };
   const fakeFetch: typeof fetch = async (input, init) => {
     fetched.push({ url: String(input), cookie: new Headers(init?.headers).get("cookie") });
     return new Response(PO_LIST_HTML);
   };
+  const browserType = routedBrowserType(options, offPortal);
   const session = await createPlaywrightScraper({ browserType, fetch: fakeFetch }).openSession();
   open.push(session);
   return { session, fetched, offPortal };
-}
-
-async function codeOf(call: Promise<unknown>): Promise<string> {
-  const error: unknown = await call.then(
-    () => undefined,
-    (e: unknown) => e,
-  );
-  return error instanceof ScraperError ? error.code : `not a ScraperError: ${String(error)}`;
 }
 
 const submitLogin = (session: ScraperSession, captcha = LOGIN.captcha) =>
@@ -105,13 +123,12 @@ const submitLogin = (session: ScraperSession, captcha = LOGIN.captcha) =>
 
 describe("Playwright adapter in headless Edge", { timeout: 60_000 }, () => {
   it("the test browser cannot reach the network: an unrouted request fails at the dead proxy", async () => {
-    const browser = await chromium.launch({ channel: "msedge", headless: true, proxy: DEAD_PROXY });
+    const page = await sharedEdge().newPage();
     try {
-      const page = await browser.newPage();
       const error: unknown = await page.goto("http://unrouted.example.test/").catch((e: unknown) => e);
       expect(String(error)).toContain("ERR_PROXY_CONNECTION_FAILED");
     } finally {
-      await browser.close();
+      await page.context().close();
     }
   });
 
@@ -160,15 +177,5 @@ describe("Playwright adapter in headless Edge", { timeout: 60_000 }, () => {
   it("answers portal-unreachable when the portal does not load", async () => {
     const { session } = await harness({ down: true });
     expect(await codeOf(session.prepareLogin())).toBe("portal-unreachable");
-  });
-
-  it("refuses listing before the login and every call after close", async () => {
-    const { session } = await harness();
-    expect(await codeOf(session.listPoIds())).toBe("out-of-order");
-    expect(await codeOf(session.submitOtp(OTP))).toBe("out-of-order");
-    await session.close();
-    await session.close();
-    expect(await codeOf(session.prepareLogin())).toBe("closed");
-    expect(await codeOf(session.fetchPoHtml("1000000001"))).toBe("closed");
   });
 });
