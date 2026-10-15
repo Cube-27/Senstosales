@@ -179,7 +179,8 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       supplierId: supplier,
       invoiceId: id,
       ...line,
-      hsn: line.hsn ?? defaultHsn,
+      // A blank HSN arrives as "" (trimmed); either takes the default.
+      hsn: line.hsn || defaultHsn,
       ...invoiceLineTax({ ...line, cgstPct, sgstPct, gemc: row.isGemc }),
     }));
     const totals = invoiceTotals(itemRows);
