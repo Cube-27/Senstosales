@@ -9,7 +9,7 @@ import { afterEach, describe, expect, test } from "vite-plus/test";
 
 import type { AppOverrides } from "./api-app.ts";
 import { closeApiApps, onboardedApp } from "./api-app.ts";
-import { json } from "./helpers.ts";
+import { ID, json } from "./helpers.ts";
 import { NOW } from "./service-deps.ts";
 import { srvPage } from "./srv-pages.ts";
 
@@ -329,8 +329,8 @@ describe("POST /api/invoice from a DC", () => {
         "invoice-number-taken",
         "Invoice 344 already exists in FY 2025-26.",
       ]);
-      const [invoices, lines, audit] = await written();
-      expect([invoices, lines, audit]).toEqual(before.slice(0, 3));
+      // Only the PO items changed: DC 3 was stored.
+      expect((await written()).slice(0, 3)).toEqual(before.slice(0, 3));
     });
 
     test("surrounding spaces are trimmed; a blank number is a 400", async () => {
@@ -346,7 +346,7 @@ describe("POST /api/invoice from a DC", () => {
   test("an unknown DC is a 404", async () => {
     const { createInvoice, invoices } = await ready();
     const res = await createInvoice({
-      dcId: "01J9Z8Q4S5T6V7W8X9Y0Z1A2B3",
+      dcId: ID,
       number: "1",
       invoiceDate: "2025-04-03",
       lines: [{ dcItemId: "01J9Z8Q4S5T6V7W8X9Y0Z1A2B4", qty: "1", rate: "100" }],

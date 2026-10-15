@@ -3,14 +3,7 @@
 // the invoice (INV-41, A2-4). A create is one batch: the PO version guard, the invoice and its lines, the SRV links to
 // its number, the PO recompute with its flags, and the audit row (C4).
 import type { Statement } from "@senstosales/db";
-import {
-  ConflictError as StaleVersionError,
-  invoice,
-  invoiceItem,
-  po,
-  updateWithVersion,
-  WriteBatch,
-} from "@senstosales/db";
+import { invoice, invoiceItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
 import type { Issue } from "@senstosales/domain";
 import { fyOf, invoiceLineTax, invoiceTotals, validateDcInvoiceLines } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
@@ -25,33 +18,34 @@ import { audit } from "./audit.ts";
 import type { SupplierDeps } from "./index.ts";
 import { reresolveLinks } from "./links.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
-import type { SettingsService } from "./settings.ts";
+import { retrying } from "./retry.ts";
+import { gstRatesOf } from "./settings.ts";
 
 export type InvoiceCreate = z.output<(typeof routes)["invoice.create"]["body"]>;
 type DcInvoiceCreate = Extract<InvoiceCreate, { kind: "dc" }>;
 
-/** A create whose PO changed between its read and its commit is rebuilt from fresh rows (D-0247). */
-const ATTEMPTS = 3;
-
-type Deps = Pick<SupplierDeps, "db" | "clock" | "supplierId"> & { readonly settings: SettingsService };
-
-export function invoiceService({ db, clock, supplierId, settings }: Deps) {
-  /** One attempt: reads the DC and its PO, then builds and commits the batch. */
+export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
+  /**
+   * One attempt: reads the DC and its PO, then builds and commits the batch. A retry reads the DC again, so a DC
+   * deleted meanwhile is a 404.
+   */
   async function createOnce(supplier: string, body: DcInvoiceCreate, number: string) {
-    const stored = await findDc(db, body.dcId);
+    const [stored, dcLines, rates] = await Promise.all([
+      findDc(db, body.dcId),
+      dcLinesToInvoice(db, body.dcId),
+      gstRatesOf(db, supplier),
+    ]);
     if (stored === undefined) throw new NotFoundError("dc-not-found", "This DC was not found.");
+    const issues = validateDcInvoiceLines({ dcLines, lines: body.lines });
+    if (issues.length > 0) throw linesError(issues);
     const { poId } = stored;
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
     const row = await findPoRow(db, poId);
     if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
-    const [snapshot, dcLines, rates, numbered] = await Promise.all([
+    const [snapshot, numbered] = await Promise.all([
       loadPoSnapshot(db, poId),
-      dcLinesToInvoice(db, body.dcId),
-      settings.get(),
       invoicesNumbered(db, supplier, [number]),
     ]);
-    const issues = validateDcInvoiceLines({ dcLines, lines: body.lines });
-    if (issues.length > 0) throw linesError(issues);
 
     const now = clock.now();
     const id = newId();
@@ -147,14 +141,8 @@ export function invoiceService({ db, clock, supplierId, settings }: Deps) {
       // Numbers are looked up trimmed (INV-24), so they are stored trimmed (D-0248).
       const number = body.number.trim();
       if (number === "") throw fieldError("number-blank", "number", "Enter the invoice number.");
-      for (let attempt = 1; ; attempt++) {
-        try {
-          return (await findInvoice(db, await createOnce(supplier, body, number)))!;
-        } catch (err) {
-          const poChanged = err instanceof StaleVersionError && err.table === "po";
-          if (!poChanged || attempt === ATTEMPTS) throw err;
-        }
-      }
+      const id = await retrying(["po"], () => createOnce(supplier, body, number));
+      return (await findInvoice(db, id))!;
     },
   };
 }

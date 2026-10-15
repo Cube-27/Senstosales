@@ -41,12 +41,11 @@ export interface SupplierDeps extends ServiceDeps {
 export function createServices(deps: ServiceDeps) {
   const withSupplier: SupplierDeps = { ...deps, supplierId: supplierRef(deps.db) };
   const tracker = deliveryTrackerService(deps);
-  const settings = createSettingsService(withSupplier);
   return {
     auth: createAuthService(deps),
     onboarding: createOnboardingService(withSupplier),
     supplier: createSupplierService(withSupplier),
-    settings,
+    settings: createSettingsService(withSupplier),
     buyers: createBuyersService(withSupplier),
     secrets: createSecretsService(withSupplier),
     jobs: jobsService(deps),
@@ -57,7 +56,7 @@ export function createServices(deps: ServiceDeps) {
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),
     dc: dcService(withSupplier),
-    invoice: invoiceService({ ...withSupplier, settings }),
+    invoice: invoiceService(withSupplier),
     flags: flagsService(deps),
     audit: auditService(deps),
     deliveryTracker: tracker,
