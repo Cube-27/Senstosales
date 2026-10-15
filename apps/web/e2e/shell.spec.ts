@@ -1,6 +1,7 @@
 // The harness end to end: the API on a temp data folder serves the built SPA, and the shell holds still.
 import { expect, test } from "./fixtures.ts";
 import { expectNoLayoutShift } from "./layout.ts";
+import { signIn } from "./session.ts";
 
 test("the API answers its health check on loopback", async ({ request }) => {
   const res = await request.get("/api/health");
@@ -13,6 +14,8 @@ test("the onboarded dataset needs no onboarding", async ({ request }) => {
 });
 
 test("the shell serves every screen and the theme switch moves nothing", async ({ page }) => {
+  // Screens open only with a session (SPEC-15 PR 1).
+  await signIn(page);
   await page.goto("/po");
   const sidebar = page.getByRole("complementary", { name: "Main navigation" });
   await expect(sidebar.getByRole("link", { name: "Purchase Orders" })).toBeVisible();
