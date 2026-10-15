@@ -61,13 +61,13 @@ const zeros = { dspQty: q(0), rcdQty: q(0), rejQty: q(0), balanceQty: q(0) };
 export function rows(db: NodeDb) {
   const b = db.build;
   return {
-    po: (row: { id: string; poNumber: string; poDate: string; poValue?: number; gemcNumber?: string }) =>
+    po: (row: { id: string; poNumber: string; poDate: string | null; poValue?: number; gemcNumber?: string }) =>
       b.insert(po).values({
         ...S,
         ...zeros,
         id: row.id,
         poNumber: row.poNumber,
-        poDate: d(row.poDate),
+        poDate: row.poDate === null ? null : d(row.poDate),
         poValue: row.poValue === undefined ? null : m(row.poValue),
         amendNo: 0,
         isGemc: row.gemcNumber !== undefined,

@@ -3,16 +3,12 @@ import { Readable } from "node:stream";
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { Row, Sheet } from "../../src/index.ts";
+import type { Sheet } from "../../src/index.ts";
 import { xlsxChunks } from "../../src/index.ts";
 import type { Key } from "./rows.ts";
-import { collect, COLUMNS, settle, source } from "./rows.ts";
+import { collect, COLUMNS, of, settle, source } from "./rows.ts";
 
 const SHEET: Sheet<Key> = { name: "Register", columns: COLUMNS, pageSetup: { orientation: "landscape" } };
-
-async function* of(...rows: Row<Key>[]) {
-  yield* rows;
-}
 
 async function read(chunks: AsyncIterable<Uint8Array>) {
   const workbook = new ExcelJS.Workbook();

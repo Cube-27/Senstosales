@@ -3,11 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Row } from "../../src/index.ts";
 import { csvChunks } from "../../src/index.ts";
 import type { Key } from "./rows.ts";
-import { collect, COLUMNS, source } from "./rows.ts";
-
-async function* of(...rows: Row<Key>[]) {
-  yield* rows;
-}
+import { collect, COLUMNS, of, source } from "./rows.ts";
 
 const csv = async (...rows: Row<Key>[]) => (await collect(csvChunks(COLUMNS, of(...rows)))).join("");
 

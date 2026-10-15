@@ -1,18 +1,18 @@
 // Keyset paging for exports (SPEC-13 §4.2, INV-99): every row in a fixed order, one page at a time, each page starting
-// after the last row of the one before. No row is read twice or skipped, and no page costs more than the one before,
-// as an OFFSET page would.
+// after the last row of the one before (no OFFSET), so no row is read twice or skipped.
 import type { SQL, SQLWrapper } from "drizzle-orm";
 import { and, asc, desc, eq, gt, lt, or } from "drizzle-orm";
 
 /**
- * One part of the sort key: a NOT NULL column or expression, its direction, and its value in a fetched row. A
- * nullable column goes in as `COALESCE(column, <value>)`, with `of` giving the same value: a NULL compares as nothing,
- * so rows after it would be skipped.
+ * One part of the sort key: a NOT NULL column or expression, its direction, and the field of the fetched row that
+ * holds its value. The fetch selects `by` itself under that field, so the cursor compares SQL values with SQL values.
+ * A nullable column goes in as `COALESCE(column, <value>)`: a NULL compares as nothing, so rows after it would be
+ * skipped.
  */
 export interface KeyPart<Row> {
   readonly by: SQLWrapper;
   readonly dir: "asc" | "desc";
-  readonly of: (row: Row) => unknown;
+  readonly field: keyof Row;
 }
 
 export interface KeysetPage {
@@ -24,11 +24,12 @@ export interface KeysetPage {
 
 /** Rows strictly after `last` in key order: equal on the leading parts, then past it on the next one. */
 function after<Row>(key: readonly KeyPart<Row>[], last: Row): SQL | undefined {
+  const values = key.map((part) => last[part.field]);
   return or(
     ...key.map((part, i) =>
       and(
-        ...key.slice(0, i).map((p) => eq(p.by, p.of(last))),
-        part.dir === "asc" ? gt(part.by, part.of(last)) : lt(part.by, part.of(last)),
+        ...key.slice(0, i).map((p, j) => eq(p.by, values[j])),
+        part.dir === "asc" ? gt(part.by, values[i]) : lt(part.by, values[i]),
       ),
     ),
   );
@@ -49,6 +50,7 @@ export async function* keysetRows<Row>(
     const rows = await fetch({ after: last === undefined ? undefined : after(key, last), orderBy, limit: pageSize });
     yield* rows;
     last = rows.at(-1);
+    // `last` is undefined only for an empty page, which is also short; the check narrows its type.
     if (rows.length < pageSize || last === undefined) return;
   }
 }

@@ -1,4 +1,4 @@
-// Synthetic rows for the streaming writer tests (C1): a counting async source and a chunk collector.
+// Synthetic rows for the streaming writer tests (C1): async sources and a chunk collector.
 import type { Column, Row } from "../../src/index.ts";
 
 export type Key = "number" | "note" | "qty";
@@ -42,4 +42,9 @@ export async function settle(read: () => number, quiet = 50): Promise<number> {
     last = now;
   }
   return last;
+}
+
+/** The given rows as an async source. */
+export async function* of(...rows: Row<Key>[]): AsyncGenerator<Row<Key>> {
+  yield* rows;
 }

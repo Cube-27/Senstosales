@@ -40,12 +40,11 @@ async function write<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<
   const worksheet = workbook.addWorksheet(sheet.name, sheet.pageSetup ? { pageSetup: sheet.pageSetup } : {});
   worksheet.columns = sheet.columns.map((c) => ({ width: c.width }));
   worksheet.addRow(sheet.columns.map((c) => c.header)).commit();
+  const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
   let written = 0;
   for await (const row of rows) {
     const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
-    sheet.columns.forEach((c, i) => {
-      if (c.numFmt !== undefined && typeof row[c.key] === "number") added.getCell(i + 1).numFmt = c.numFmt;
-    });
+    for (const { key, numFmt, i } of formatted) if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
     added.commit();
     written += 1;
     if (written % PACE === 0) await writable(out);
