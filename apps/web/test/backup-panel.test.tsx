@@ -100,6 +100,19 @@ describe("Settings backups (SPEC-21 PR 3)", () => {
     );
   });
 
+  it("a job that cannot be followed says why and frees the buttons", async () => {
+    stubApi(
+      settingsApi({
+        "POST /api/jobs": JOB,
+        [`GET /api/jobs/${JOB.id}`]: reply(404, { code: "job-not-found", message: "This job was not found." }),
+      }),
+    );
+    const panel = await openBackups();
+    await userEvent.click(within(panel).getByRole("button", { name: "Backup now" }));
+    await waitFor(() => expect(within(panel).getByRole("status").textContent).toBe("This job was not found."));
+    expect(within(panel).getByRole("button", { name: "Backup now" }).hasAttribute("disabled")).toBe(false);
+  });
+
   it("Restore asks first in plain words, restores the chosen backup and reloads the app", async () => {
     const calls = stubApi(
       settingsApi({

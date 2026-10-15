@@ -49,20 +49,28 @@ function panelOutcome(error: Error | null, idle: boolean, job: Job | undefined):
 function useBackupNow() {
   const start = useMutation({ mutationFn: () => api.request("jobs.start", { body: { type: "backup" } }) });
   const jobId = start.data?.id;
-  const job = useQuery({ ...jobQuery(jobId ?? ""), enabled: jobId !== undefined }).data?.job;
+  const detail = useQuery({ ...jobQuery(jobId ?? ""), enabled: jobId !== undefined });
+  const job = detail.data?.job;
   const finished = job !== undefined && !isActive(job);
   return {
     start,
     job,
+    /** Why the job could not be followed; the backup may still finish, and the list shows it on the next visit. */
+    followError: detail.error,
     /** The finished job's id, once there is one. */
     finishedId: finished ? job.id : null,
-    running: start.isPending || (jobId !== undefined && !finished),
+    running: start.isPending || (jobId !== undefined && !finished && detail.error === null),
   };
+}
+
+function tableState(query: { readonly isError: boolean; readonly data: unknown }): "error" | "ready" | "loading" {
+  if (query.isError) return "error";
+  return query.data === undefined ? "loading" : "ready";
 }
 
 export function BackupPanel() {
   const [chosen, setChosen] = useState<string | null>(null);
-  const { start, job, finishedId, running: backingUp } = useBackupNow();
+  const { start, job, followError, finishedId, running: backingUp } = useBackupNow();
   const restore = useMutation({
     mutationFn: (name: string) => api.request("backups.restore", { body: { name } }),
     onSuccess: reloadApp,
@@ -72,7 +80,7 @@ export function BackupPanel() {
   const paged = useClientPage(backups.data ?? []);
 
   // The latest action's outcome: starting either one resets the other.
-  const outcome = panelOutcome(restore.error ?? start.error, start.isIdle, job);
+  const outcome = panelOutcome(restore.error ?? start.error ?? followError, start.isIdle, job);
 
   const columns: Column<Backup>[] = [
     ...COLUMNS,
@@ -110,14 +118,14 @@ export function BackupPanel() {
       <p className="role-helper-text">
         A copy of your data is saved on the first launch each day. Restore replaces your current data with a backup.
       </p>
-      <p role="status" className={cn("my-2 h-5 truncate role-helper-text", outcome?.failed && "text-error")}>
+      <output className={cn("my-2 block h-5 truncate role-helper-text", outcome?.failed && "text-error")}>
         {outcome?.text ?? ""}
-      </p>
+      </output>
       <DataTable
         {...paged}
         columns={columns}
         rows={backups.data && paged.rows}
-        state={backups.isError ? "error" : backups.data ? "ready" : "loading"}
+        state={tableState(backups)}
         error="Backups could not be loaded."
         emptyText="No backups yet"
       />

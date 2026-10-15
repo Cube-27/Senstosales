@@ -51,20 +51,23 @@ function ErrorBanner({ message }: { readonly message: string | null }) {
 /** The step's code from the submitted form, trimmed; empty codes are not sent. */
 function submitted(event: FormEvent<HTMLFormElement>, send: (code: string) => void): void {
   event.preventDefault();
-  const code = String(new FormData(event.currentTarget).get("code") ?? "").trim();
+  const value = new FormData(event.currentTarget).get("code");
+  const code = typeof value === "string" ? value.trim() : "";
   if (code !== "") send(code);
 }
 
 /** A code field and its prompt; a new step or captcha remounts it, so it starts empty. */
-function CodeForm(props: {
-  readonly prompt: string;
-  readonly label: string;
-  readonly placeholder: string;
-  readonly autoComplete: string;
-  readonly message: string | null;
-  readonly children?: ReactNode;
-  onSubmit(code: string): void;
-}) {
+function CodeForm(
+  props: Readonly<{
+    readonly prompt: string;
+    readonly label: string;
+    readonly placeholder: string;
+    readonly autoComplete: string;
+    readonly message: string | null;
+    readonly children?: ReactNode;
+    onSubmit(code: string): void;
+  }>,
+) {
   return (
     <form id={FORM_ID} className="flex flex-col gap-3" onSubmit={(e) => submitted(e, props.onSubmit)}>
       <p className="role-helper-text">{props.prompt}</p>
@@ -82,7 +85,7 @@ function CodeForm(props: {
   );
 }
 
-function StepBody({ login, onSubmit }: Pick<LoginDialogProps, "login" | "onSubmit">) {
+function StepBody({ login, onSubmit }: Readonly<Pick<LoginDialogProps, "login" | "onSubmit">>) {
   switch (login.step) {
     case "captcha":
       return (
@@ -123,16 +126,20 @@ function StepBody({ login, onSubmit }: Pick<LoginDialogProps, "login" | "onSubmi
       );
     default:
       return (
-        <div role="status" className="flex flex-col items-center gap-3 py-8">
+        <output className="flex flex-col items-center gap-3 py-8">
           <Loading className="size-7 animate-spin text-primary" aria-hidden />
-          <p className="text-center role-helper-text">Launching browser and loading BHEL portal…</p>
-        </div>
+          <span className="text-center role-helper-text">Launching browser and loading BHEL portal…</span>
+        </output>
       );
   }
 }
 
 /** The step's one action in a fixed-width slot that is always there, so Cancel never moves (C8). */
-function PrimaryAction({ login, submitting, onRetry }: Pick<LoginDialogProps, "login" | "submitting" | "onRetry">) {
+function PrimaryAction({
+  login,
+  submitting,
+  onRetry,
+}: Readonly<Pick<LoginDialogProps, "login" | "submitting" | "onRetry">>) {
   const slot = "w-28";
   switch (login.step) {
     case "captcha":
@@ -153,7 +160,7 @@ function PrimaryAction({ login, submitting, onRetry }: Pick<LoginDialogProps, "l
   }
 }
 
-export function LoginDialog({ login, submitting, onSubmit, onRetry, onCancel }: LoginDialogProps) {
+export function LoginDialog({ login, submitting, onSubmit, onRetry, onCancel }: Readonly<LoginDialogProps>) {
   const open = login.step !== "idle" && login.step !== "ready";
   return (
     <Dialog open={open}>

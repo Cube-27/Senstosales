@@ -41,6 +41,12 @@ function SectionTitle({ children }: { readonly children: ReactNode }) {
   return <h2 className="mb-3 role-section-title">{children}</h2>;
 }
 
+/** The stored BHEL password as the card shows it: only whether it is saved (INV-81); nothing before it loads. */
+function passwordStatus(saved: boolean | undefined): string {
+  if (saved === undefined) return "";
+  return saved ? "Saved" : "Not saved";
+}
+
 export interface AuthCardProps {
   readonly supplierCode: string | null | undefined;
   readonly passwordSaved: boolean | undefined;
@@ -51,7 +57,7 @@ export interface AuthCardProps {
   onLogout(): void;
 }
 
-export function AuthCard(props: AuthCardProps) {
+export function AuthCard(props: Readonly<AuthCardProps>) {
   const { supplierCode, passwordSaved, authenticated } = props;
   return (
     <section aria-labelledby="bhel-auth" className={CARD}>
@@ -65,9 +71,7 @@ export function AuthCard(props: AuthCardProps) {
         </div>
         <div className="flex w-40 flex-col gap-1">
           <span className="role-field-label">Password</span>
-          <span className="flex h-8 items-center role-body-text-sm">
-            {passwordSaved === undefined ? "" : passwordSaved ? "Saved" : "Not saved"}
-          </span>
+          <span className="flex h-8 items-center role-body-text-sm">{passwordStatus(passwordSaved)}</span>
         </div>
         <Link to="/settings" className="flex h-8 items-center role-reference-link">
           Change in Settings
@@ -113,7 +117,16 @@ function statusLine(kind: Kind, job: Job | undefined, hasRun: boolean): { label:
   }
 }
 
-function StatusDot({ tone }: { readonly tone: "idle" | "active" | "done" | "error" }) {
+/** The status dot: pulsing while the run is active, then done or error; grey before a run. */
+function dotTone(running: boolean, ended: boolean, job: Job | undefined): Tone {
+  if (running) return "active";
+  if (!ended) return "idle";
+  return job?.status === "failed" ? "error" : "done";
+}
+
+type Tone = "idle" | "active" | "done" | "error";
+
+function StatusDot({ tone }: { readonly tone: Tone }) {
   const color = { idle: "bg-border", active: "bg-primary animate-pulse", done: "bg-success", error: "bg-error" }[tone];
   return <span aria-hidden className={cn("mt-1.5 size-2 shrink-0 rounded-full", color)} />;
 }
@@ -133,10 +146,10 @@ export interface ControlCardProps {
   onReset(): void;
 }
 
-export function ControlCard({ kind, jobId, job, running, authenticated, ...props }: ControlCardProps) {
+export function ControlCard({ kind, jobId, job, running, authenticated, ...props }: Readonly<ControlCardProps>) {
   const ended = jobId !== null && !running;
   const { label, message } = statusLine(kind, job, jobId !== null);
-  const tone = running ? "active" : !ended ? "idle" : job?.status === "failed" ? "error" : "done";
+  const tone = dotTone(running, ended, job);
   return (
     <section aria-labelledby="bhel-status" className={CARD}>
       <div className="flex items-start justify-between gap-4">
@@ -194,7 +207,7 @@ export interface PipelineCardProps {
   onChange(config: PipelineConfig): void;
 }
 
-export function PipelineCard({ kind, config, enabled, error, onChange }: PipelineCardProps) {
+export function PipelineCard({ kind, config, enabled, error, onChange }: Readonly<PipelineCardProps>) {
   const count = filterIds(config.poNumbers).length;
   const filterId = `${kind.toLowerCase()}-po-numbers`;
   return (
@@ -237,7 +250,7 @@ export function PipelineCard({ kind, config, enabled, error, onChange }: Pipelin
               />
               <span className="role-helper-text">— optional</span>
             </div>
-            <span className={cn("text-xs font-medium text-accent", count === 0 && "invisible")}>
+            <span className={cn("role-body-text-xs", count === 0 && "invisible")}>
               {count} PO{count === 1 ? "" : "s"} specified
             </span>
           </div>
