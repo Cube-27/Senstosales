@@ -1,9 +1,7 @@
 # SPEC-07 decisions
 
 Decisions for [SPEC-07 — API foundation, startup, auth, onboarding and settings](../specs/SPEC-07-api-foundation-auth-settings.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0004 — Initial password `admin`, no forced change
 

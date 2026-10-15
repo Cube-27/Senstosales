@@ -7,13 +7,12 @@ them in its tracker commit before `READY`, under the IDs the orchestrator gave a
 
 **Where an entry goes:**
 
-- A decision that belongs to one spec goes at the end of that spec's file, `docs/decisions/SPEC-NN.md`. When a
-  PR spans specs, it goes in the file of the spec the decision is about.
+- A decision that belongs to one spec goes at the end of that spec's file, `docs/decisions/SPEC-NN.md` (on a spec's
+  first decision, create the file with the two-line header the others have). When a PR spans specs, it goes in the
+  file of the spec the decision is about.
 - Cross-cutting and process decisions (tooling, CI, orchestration, rules for every spec) and every `needs-owner` or
   `pending-owner` entry go in Entries below; open ones are also listed in the index of open items.
-- D-IDs are one sequence across all files. Find any entry with `grep -rn "### D-NNNN" docs/DECISIONS.md docs/decisions`.
-- Never read this file or the per-spec files in full: read your spec's file, the open items and the entries you
-  are pointed to.
+- D-IDs are one sequence across all files. Older text that says "DECISIONS.md" means this log as a whole.
 
 **Statuses:**
 
@@ -49,17 +48,6 @@ them in its tracker commit before `READY`, under the IDs the orchestrator gave a
 Items with status `needs-owner` or `pending-owner`. Keep this list current.
 
 None.
-
----
-
-## Per-spec files
-
-One file per spec, `docs/decisions/SPEC-00.md` to `docs/decisions/SPEC-22.md`, each linked to its spec. A spec with
-no decisions yet has a file with only its header.
-
-The split from one file (#PR) put each entry in the file of the first spec its `Spec/PR` field names, except
-D-0397 (in SPEC-05.md; its field names SPEC-07 PR 6 + SPEC-05 follow-ups) and the cross-cutting entries below.
-SPEC-05 follow-ups decided in #80 (D-0395, D-0398, D-0399) are in SPEC-07.md.
 
 ---
 

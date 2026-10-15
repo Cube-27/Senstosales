@@ -1,9 +1,7 @@
 # SPEC-09 decisions
 
 Decisions for [SPEC-09 — Corpus import and report (local only)](../specs/SPEC-09-corpus-import-report.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0232 — Corpus folder layout
 

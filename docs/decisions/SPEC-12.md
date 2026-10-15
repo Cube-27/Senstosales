@@ -1,9 +1,7 @@
 # SPEC-12 decisions
 
 Decisions for [SPEC-12 — DC, invoice and GC Excel documents](../specs/SPEC-12-excel-documents.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0007 — Downloads are not logged
 

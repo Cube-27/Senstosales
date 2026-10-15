@@ -1,9 +1,7 @@
 # SPEC-03 decisions
 
 Decisions for [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0009 — Money rounding: half-up
 

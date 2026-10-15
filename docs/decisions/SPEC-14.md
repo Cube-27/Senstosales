@@ -1,9 +1,7 @@
 # SPEC-14 decisions
 
 Decisions for [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0015 — UI primitives from shadcn/ui
 

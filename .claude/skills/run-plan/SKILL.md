@@ -14,10 +14,9 @@ Requires herdr (`HERDR_ENV=1`). Without it, run `/implement-pr` solo instead.
 
 ## 0. Frame (once per session)
 
-1. Read `CLAUDE.md`, `docs/ENGINEERING.md`, `docs/specs/README.md` (dependencies), the open items in
-   `docs/DECISIONS.md`, and from `docs/plans/ACTIVE.md` the human tasks, "Current focus" and the tables of specs
-   with rows not done ("Done specs" are one line each). Never read `ACTIVE.md`, `ARCHITECTURE.md` or `DECISIONS.md` in full (`CLAUDE.md` §1): find sections with
-   `grep -n "^#"` and read line ranges.
+1. Read `CLAUDE.md`, `docs/ENGINEERING.md`, the Dependency graph section of `docs/specs/README.md`, the "Index of
+   open items" in `docs/DECISIONS.md`, and from `docs/plans/ACTIVE.md` the human tasks, "Current focus",
+   "Follow-ups" and the tables of specs with rows not done. Read by section, never in full (`CLAUDE.md` §1).
 2. Write the exit predicate as something countable. Take it from the owner's request; the default is "every row of
    the current layer is `done`, CI on `main` is green". "Current focus" is refreshed only when it materially
    changes: ask the next implementor to replace it in its tracker commit.
@@ -81,8 +80,8 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
 
 For the `CLAUDE.md` §4 list, or a dead end after 3 attempts:
 
-1. Add a `needs-owner` entry to `docs/DECISIONS.md` (not a spec's decisions file) (question, options, recommendation, what is blocked) and copy it as a
-   row to OPEN_QUESTIONS.md.
+1. Add a `needs-owner` entry to `docs/DECISIONS.md` (question, options, recommendation, what is blocked) and copy
+   it as a row to OPEN_QUESTIONS.md.
 2. Mark the affected rows `blocked (D-NNNN)`. Do 1–2 in a small `chore(plan): escalate …` PR from its own worktree;
    it touches only tracker files, so its one `/review-pr` is short, but it still needs that verdict (`CLAUDE.md` §3).
 3. Notify the owner once, briefly.

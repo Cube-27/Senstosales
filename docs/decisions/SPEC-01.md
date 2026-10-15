@@ -1,9 +1,7 @@
 # SPEC-01 decisions
 
 Decisions for [SPEC-01 — Spikes (L0.5)](../specs/SPEC-01-spikes.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0017 — Db port executors
 

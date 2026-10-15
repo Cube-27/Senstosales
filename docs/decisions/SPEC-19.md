@@ -1,9 +1,7 @@
 # SPEC-19 decisions
 
 Decisions for [SPEC-19 — BHEL scraper and sync](../specs/SPEC-19-bhel-scraper-sync.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0375 — Scraper errors are one class with codes
 

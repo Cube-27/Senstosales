@@ -1,9 +1,7 @@
 # SPEC-11 decisions
 
 Decisions for [SPEC-11 — DC and invoice services and APIs](../specs/SPEC-11-dc-invoice-services.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0247 — DC create guards and retries on the PO version
 

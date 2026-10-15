@@ -1,9 +1,7 @@
 # SPEC-13 decisions
 
 Decisions for [SPEC-13 — Reports and exports](../specs/SPEC-13-reports-exports.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0005 — Cell safety applies to text cells only
 

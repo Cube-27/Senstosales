@@ -1,9 +1,7 @@
 # SPEC-04 decisions
 
 Decisions for [SPEC-04 — Schemas, route table and formatters](../specs/SPEC-04-schemas-routes-formatters.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0050 — Wire codecs via z.codec
 

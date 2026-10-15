@@ -14,8 +14,8 @@ Adapted from pstack's session-pickup and pause-safely playbooks (MIT, see `NOTIC
 1. **Locate the trail.**
    - In-flight work lives in GitHub, not ACTIVE.md: `gh pr list --state open`, remote `spec-*` branches,
      `git worktree list`, `git log origin/main..<branch>`.
-   - `docs/plans/ACTIVE.md`: rows that are `todo` but have one of these branches. Read only the tables of specs
-     with rows not done, never the whole file or `ARCHITECTURE.md`/`DECISIONS.md` in full (`CLAUDE.md` §1).
+   - `docs/plans/ACTIVE.md`: rows that are `todo` but have one of these branches (grep, don't read it in full;
+     `CLAUDE.md` §1).
    - A resume note at `C:/Projects/SenstoSales-worktrees/<name>/RESUME.md`, if the earlier agent paused.
 2. **Rebuild the state** of each in-flight branch (one PR, a batch of rows, `spec-NN/pr-A-B-<name>`): what is committed, whether a PR is open and what CI says, what
    review verdicts exist.

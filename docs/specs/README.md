@@ -11,7 +11,7 @@ Rules every spec follows:
 
 - **No invented business rules.** Every rule cites the legacy business spec (`spec §n`), an owner decision (`A-n`,
   `A2-n`) or an invariant (`INV-NN`). Under-specified mechanics take the most conservative reading, are marked
-  "implementation detail" and are listed in Open issues (and the spec's `docs/decisions/SPEC-NN.md` when implemented). Uncovered business
+  "implementation detail" and are listed in Open issues (and the decisions log when implemented). Uncovered business
   edge cases go to `EDGE_CASES.md` with the spec's behaviour (C18).
 - **Frozen output, free mechanism.** The UI/UX flows and on-screen elements must match legacy (minor visual
   changes allowed, D-0016) and the CSV/Excel formats match cell for cell (golden tests, screenshots); how they are built is new and the simplest efficient way (A-2, A-26, C16).
@@ -132,7 +132,8 @@ SPEC-11 (an L6 API) may start as soon as SPEC-10 is in; layers describe exit mil
 
 ## Reading order
 
-1. `docs/ARCHITECTURE.md` in full, then `INVARIANTS.md`, `EDGE_CASES.md`, `CLAUDE.md`.
+1. `CLAUDE.md`, then what its §1 names: ARCHITECTURE §2 and the sections your spec cites; `INVARIANTS.md` and
+   `EDGE_CASES.md` rows by grep.
 2. SPEC-00 (toolchain, CI, contract enforcement, agent process) — everyone.
 3. SPEC-01 records as they land (DECISIONS.md, `docs/adr/`).
 4. Domain: SPEC-02 → SPEC-03. Shared types: SPEC-04. Storage: SPEC-05.

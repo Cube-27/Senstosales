@@ -1,9 +1,7 @@
 # SPEC-02 decisions
 
 Decisions for [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0020 — Signed decimals parse
 

@@ -1,9 +1,7 @@
 # SPEC-05 decisions
 
 Decisions for [SPEC-05 — Database: schema, migrations, Db port, seed](../specs/SPEC-05-db-schema-migrations.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0003 — BHEL buyer seed: none
 

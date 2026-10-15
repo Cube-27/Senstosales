@@ -40,7 +40,7 @@ In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 
 
 ## Done specs
 
-Every row of these specs is done. Their PR tables were collapsed to one line each; the full rows are in git history.
+Full rows are in git history.
 
 - [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md): PRs 1–5 (#7, #8, #9, #11, #19)
 - [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md): PRs 1–6 (#12, #14, #15, #16, #17, #18)
@@ -54,17 +54,15 @@ Every row of these specs is done. Their PR tables were collapsed to one line eac
 
 ## Follow-ups
 
-Open notes from done rows and reviews, not yet rows. Each names the spec (and PR) it came from.
+Open notes, not yet rows. Notes on rows not done stay on those rows.
 
-- INV rows for the delivery-tracker and dashboard rules (SPEC-10).
-- SRV search with a value range reads all candidate SRVs (SPEC-10, #53 review).
-- SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links (SPEC-08/SPEC-11, #55).
-- A DC create racing a DC edit that frees the same number (SRV items on a third PO) (SPEC-11, #59 review).
-- Held-batch test for a DC delete committing between an invoice create's read and commit (SPEC-11, #60 review).
-- Indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id) (SPEC-05, #80 simplify).
-- finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting (SPEC-08 PR 5, #47 review).
-- Client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131) (SPEC-08 PR 3; also on SPEC-16 PR 1).
-- static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (SPEC-14 PR 1, #36 review; also on SPEC-18 PR 1).
+- SPEC-10: INV rows for the delivery-tracker and dashboard rules.
+- SPEC-10 (#53 review): SRV search with a value range reads all candidate SRVs.
+- SPEC-08/SPEC-11 (#55): SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links.
+- SPEC-11 (#59 review): a DC create racing a DC edit that frees the same number (SRV items on a third PO).
+- SPEC-11 (#60 review): held-batch test for a DC delete committing between an invoice create's read and commit.
+- SPEC-05 (#80 simplify): indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id).
+- SPEC-08 PR 5 (#47 review): finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting.
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 

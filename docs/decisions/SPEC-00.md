@@ -1,9 +1,7 @@
 # SPEC-00 decisions
 
 Decisions for [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0008 — Minimal Rust Tauri scaffold outside the language check
 

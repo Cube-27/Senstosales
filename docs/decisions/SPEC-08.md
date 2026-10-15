@@ -1,9 +1,7 @@
 # SPEC-08 decisions
 
 Decisions for [SPEC-08 — Ingestion services and the job model](../specs/SPEC-08-ingestion-jobs.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0140 — Recompute accepts loaded rows with pending changes
 

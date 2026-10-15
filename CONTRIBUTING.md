@@ -26,8 +26,8 @@ job must pass before merge.
 
 ## Decisions and escalation
 
-Implementation choices within a spec's scope are decided and logged in the spec's `docs/decisions/SPEC-NN.md` (or in the PR body under
-`## Decisions` while an orchestrator runs). Changes to `docs/ARCHITECTURE.md` or `docs/OPEN_QUESTIONS.md`,
+Implementation choices within a spec's scope are decided and logged in the decisions log (`docs/DECISIONS.md`,
+"Where an entry goes"; in the PR body under `## Decisions` while an orchestrator runs). Changes to `docs/ARCHITECTURE.md` or `docs/OPEN_QUESTIONS.md`,
 candidates, secrets and paid accounts are escalated to the owner (`CLAUDE.md` §4–§5).
 
 ## Licensing

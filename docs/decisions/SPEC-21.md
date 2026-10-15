@@ -1,9 +1,7 @@
 # SPEC-21 decisions
 
 Decisions for [SPEC-21 — Operations: backups, restore, logs and the operations guide](../specs/SPEC-21-operations-backup-logs.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0385 — Monthly backup retention counts months that have a backup
 

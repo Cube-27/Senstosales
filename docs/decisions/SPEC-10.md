@@ -1,9 +1,7 @@
 # SPEC-10 decisions
 
 Decisions for [SPEC-10 — PO, SRV, flags, audit, dashboard and search APIs](../specs/SPEC-10-po-srv-flags-read-api.md).
-Template, statuses and rules: [DECISIONS.md](../DECISIONS.md). Append new entries at the end.
-
-## Entries
+Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0172 — PO list text filter
 
