@@ -6796,6 +6796,13 @@
             "schema": {
               "$ref": "#/components/schemas/IsoDate"
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6998,6 +7005,13 @@
             "schema": {
               "$ref": "#/components/schemas/IsoDate"
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7081,6 +7095,13 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/IsoDate"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -7235,6 +7256,13 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/IsoDate"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -7681,6 +7709,9 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -7702,7 +7733,8 @@
                           "poItemId",
                           "poNumber",
                           "pendingValue",
-                          "daysToDue"
+                          "daysToDue",
+                          "overdue"
                         ]
                       }
                     },
@@ -8128,6 +8160,22 @@
                           },
                           "poNumber": {
                             "type": "string"
+                          },
+                          "srvId": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/components/schemas/Id"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "srvNumber": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -8141,7 +8189,9 @@
                           "note",
                           "openedAt",
                           "acknowledgedAt",
-                          "poNumber"
+                          "poNumber",
+                          "srvId",
+                          "srvNumber"
                         ]
                       }
                     },

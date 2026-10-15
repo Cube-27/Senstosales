@@ -14,6 +14,7 @@ import {
   fmtFy,
   fmtFlagType,
   fmtInstantDate,
+  fmtInstantDateTime,
   fmtMoney,
   fmtMoneyCompact,
   fmtMoneyCompactSpaced,
@@ -21,6 +22,7 @@ import {
   fmtQtyInput,
   fmtRate,
   foldRepeatedLines,
+  istDateOf,
   moneyNumber,
   parseDateInput,
   parseQtyInput,
@@ -388,5 +390,25 @@ describe("fmtInstantDate: an instant's IST calendar date", () => {
     ["2024-12-31T20:00:00.000Z", "01/01/2025"],
   ])("%s -> %s", (at, expected) => {
     expect(fmtInstantDate(at)).toBe(expected);
+  });
+});
+
+describe("istDateOf: an instant's IST calendar date as a date value", () => {
+  it.each([
+    ["2025-06-01T18:29:59.999Z", "2025-06-01"],
+    ["2025-06-01T18:30:00.000Z", "2025-06-02"],
+    ["2024-12-31T20:00:00.000Z", "2025-01-01"],
+  ])("%s -> %s", (at, expected) => {
+    expect(istDateOf(at)).toBe(expected);
+  });
+});
+
+describe("fmtInstantDateTime: the ledger and deviations timestamp, in IST as legacy", () => {
+  it.each([
+    ["2025-06-01T05:30:00.000Z", "01/06/2025, 11:00:00 IST"],
+    ["2025-06-01T18:30:05.900Z", "02/06/2025, 00:00:05 IST"],
+    ["2024-12-31T20:00:00.000Z", "01/01/2025, 01:30:00 IST"],
+  ])("%s -> %s", (at, expected) => {
+    expect(fmtInstantDateTime(at)).toBe(expected);
   });
 });

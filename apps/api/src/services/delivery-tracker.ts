@@ -49,8 +49,8 @@ function keptRow(lot: TrackerLot, today: IsoDate, filters: Partial<TrackerFilter
 
 const withStatus = (status: TrackerFilters["status"]) => (r: Row) => status === undefined || r.due[BUCKET[status]];
 
-/** A row as the list sends it. */
-const listed = ({ due: _, lotValue: __, unit: ___, ...row }: Row) => row;
+/** A row as the list sends it; `overdue` marks the screen's highlighted rows. */
+const listed = ({ due, lotValue: _, unit: __, ...row }: Row) => ({ ...row, overdue: due.overdue });
 
 /** Export cells (SPEC-13 catalog): quantities and amounts as numbers at 2 dp, dates and codes as text. */
 async function* cells(rows: AsyncIterable<Row>) {

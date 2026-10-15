@@ -1,10 +1,10 @@
 // Reconciliation issue rows (ARCHITECTURE §6.9, §8.2) and the deviations screen reads (SPEC-10 PR 5). Plain rows;
 // filters and sorts run in SQL over stored columns.
 import type { Db, Instant } from "@senstosales/db";
-import { po, reconciliationIssue } from "@senstosales/db";
+import { po, reconciliationIssue, srv, srvItem } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { AnyColumn, SQLWrapper } from "drizzle-orm";
-import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { byPoNumber, contains, flagColumns } from "./sql.ts";
@@ -38,16 +38,38 @@ const SORTS: Record<NonNullable<FlagListQuery["sort"]>, readonly (AnyColumn | SQ
   poNumber: byPoNumber,
 };
 
-/** The deviations screen filters: text in the PO number, type, status, one PO. */
+/** A value of the flag's details JSON (D1 runs `json_extract`). */
+const detail = (key: "field" | "expected" | "actual") => {
+  const path = "$." + key;
+  return sql`json_extract(${reconciliationIssue.details}, ${path})`;
+};
+
+/**
+ * The search box, as legacy matched it: the PO number, the SRV number, the type and scope codes, and the details'
+ * field, expected and actual values.
+ */
+const searched = (q: string) =>
+  or(
+    ...[po.poNumber, srv.srvNumber, reconciliationIssue.type, reconciliationIssue.scopeType].map((c) => contains(c, q)),
+    ...(["field", "expected", "actual"] as const).map((key) => contains(detail(key), q)),
+  );
+
+/** The flag's SRV line, for a flag on one. */
+const srvItemOfFlag = and(eq(reconciliationIssue.scopeType, "srv_item"), eq(srvItem.id, reconciliationIssue.scopeId));
+
+/** The deviations screen filters: the search text, type, status, one PO. */
 const where = (f: FlagListQuery) =>
   and(
-    f.q ? contains(po.poNumber, f.q) : undefined,
+    f.q ? searched(f.q) : undefined,
     f.type === undefined ? undefined : eq(reconciliationIssue.type, f.type),
     f.status === undefined ? undefined : eq(reconciliationIssue.status, f.status),
     f.poId === undefined ? undefined : eq(reconciliationIssue.poId, f.poId),
   );
 
-/** One page with each flag's PO number; newest first unless a sort is given, then newest first. */
+/**
+ * One page with each flag's PO number, and for a flag on an SRV line its SRV (the deviations screen links both);
+ * newest first unless a sort is given, then newest first.
+ */
 export async function listFlags(db: Db, query: FlagListQuery) {
   const filter = where(query);
   const dir = query.dir === "desc" ? desc : asc;
@@ -55,9 +77,11 @@ export async function listFlags(db: Db, query: FlagListQuery) {
   const [items, totals] = await Promise.all([
     db.query(
       db.build
-        .select({ ...flagColumns, poNumber: po.poNumber })
+        .select({ ...flagColumns, poNumber: po.poNumber, srvId: srv.id, srvNumber: srv.srvNumber })
         .from(reconciliationIssue)
         .innerJoin(po, eq(po.id, reconciliationIssue.poId))
+        .leftJoin(srvItem, srvItemOfFlag)
+        .leftJoin(srv, eq(srv.id, srvItem.srvId))
         .where(filter)
         .orderBy(...chosen, desc(reconciliationIssue.openedAt), desc(reconciliationIssue.id))
         .limit(query.pageSize)
@@ -68,6 +92,8 @@ export async function listFlags(db: Db, query: FlagListQuery) {
         .select({ total: count() })
         .from(reconciliationIssue)
         .innerJoin(po, eq(po.id, reconciliationIssue.poId))
+        .leftJoin(srvItem, srvItemOfFlag)
+        .leftJoin(srv, eq(srv.id, srvItem.srvId))
         .where(filter),
     ),
   ]);

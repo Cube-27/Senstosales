@@ -19,7 +19,8 @@ Core:
 - `/system/ledger`: audit list with filters; read-only; no delete or prune control (INV-83).
 - `/delivery-tracker`: list, stats, smart filter chips, export button (SPEC-13).
 - `/reports`: legacy tabs except daily-dispatch (A-16, INV-87); each tab a DataTable over the report list endpoint;
-  export buttons and export-selected (SPEC-13); GC report for a chosen DC.
+  export buttons and export-selected (SPEC-13). The GC report is reached from DC detail (SPEC-18), not from
+  `/reports`: the legacy reports screen had no GC control (C7, D-0476).
 
 Out of scope:
 
@@ -54,12 +55,12 @@ ledger shows the audit rows of earlier actions.
 
 ## 8. PR plan
 
-| #   | Title             | Scope / files                                                               | Checks         | Done when                                                                                  |
-| --- | ----------------- | --------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------ |
-| 1   | Deviations screen | `routes/deviations.tsx`, `components/modules/deviations/*`, e2e             | `check`, `e2e` | Acknowledge e2e passes; filters keep layout.                                               |
-| 2   | Ledger screen     | `routes/system/ledger.tsx`, `components/modules/ledger/*`, e2e              | `check`, `e2e` | Audit rows listed and filterable; no delete control.                                       |
-| 3   | Delivery tracker  | `routes/delivery-tracker.tsx`, `components/modules/delivery-tracker/*`, e2e | `check`, `e2e` | Chips and stats work without shift; export downloads the tracker file.                     |
-| 4   | Reports           | `routes/reports.tsx`, `components/modules/reports/*`, e2e                   | `check`, `e2e` | Each tab lists and exports; export-selected and GC report download; no daily-dispatch tab. |
+| #   | Title             | Scope / files                                                               | Checks         | Done when                                                                                          |
+| --- | ----------------- | --------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------- |
+| 1   | Deviations screen | `routes/deviations.tsx`, `components/modules/deviations/*`, e2e             | `check`, `e2e` | Acknowledge e2e passes; filters keep layout.                                                       |
+| 2   | Ledger screen     | `routes/system/ledger.tsx`, `components/modules/ledger/*`, e2e              | `check`, `e2e` | Audit rows listed and filterable; no delete control.                                               |
+| 3   | Delivery tracker  | `routes/delivery-tracker.tsx`, `components/modules/delivery-tracker/*`, e2e | `check`, `e2e` | Chips and stats work without shift; export downloads the tracker file.                             |
+| 4   | Reports           | `routes/reports.tsx`, `components/modules/reports/*`, e2e                   | `check`, `e2e` | Each tab lists and exports; export-selected; no daily-dispatch tab (GC report: DC detail, D-0476). |
 
 ## 9. Open issues
 

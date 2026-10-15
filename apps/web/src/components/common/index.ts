@@ -5,7 +5,8 @@ export { Autocomplete, type AutocompleteOption, type AutocompleteProps } from ".
 export { ButtonGroup, type ButtonGroupOption, type ButtonGroupProps } from "./ButtonGroup.tsx";
 export { qtyColumn } from "./columns.tsx";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog.tsx";
-export { type Column, DataTable, type DataTableProps } from "./DataTable.tsx";
+export { type Column, DataTable, type DataTableProps, type Selection, tableQuery } from "./DataTable.tsx";
+export { DownloadButton, type DownloadButtonProps } from "./DownloadButton.tsx";
 export { DatePicker, type DatePickerProps } from "./DatePicker.tsx";
 export { type DetailTab, DetailTabs, type DetailTabsProps } from "./DetailTabs.tsx";
 export { FileUploadModal, type FileUploadModalProps, type UploadOutcome } from "./FileUploadModal.tsx";

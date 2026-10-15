@@ -3,6 +3,7 @@ import { type ReactNode, useMemo } from "react";
 
 import { ArrowDown, ArrowUp, Loading, Sortable } from "../../lib/icons.ts";
 import { cn } from "../../lib/cn.ts";
+import { Checkbox } from "../ui/checkbox.tsx";
 import { Pagination } from "./Pagination.tsx";
 
 /** One column (SPEC-14 §4.2). `width` is required: the table never sizes a column by its content (C8, INV-70). */
@@ -33,7 +34,61 @@ export interface DataTableProps<Row> {
   onSort(key: string): void;
   /** Flagged rows (§12.3): a tinted row with a bar on its left edge. */
   readonly rowHighlight?: (row: Row) => boolean;
+  /** A click anywhere on a row (a control in the row handles its own click). */
+  readonly onRowClick?: (row: Row) => void;
+  /**
+   * Selectable rows (the legacy report tabs): a checkbox column first, a header box for the page's rows, and a click
+   * on a row toggles it unless `onRowClick` is given.
+   */
+  readonly selection?: Selection<Row>;
 }
+
+export interface Selection<Row> {
+  readonly rowKey: (row: Row) => string;
+  readonly selected: ReadonlySet<string>;
+  onChange(selected: ReadonlySet<string>): void;
+}
+
+const SELECT_WIDTH = 40;
+
+/** The least width of a percentage column. */
+const SHARE_FLOOR = 160;
+
+/**
+ * The table's least width: its pixel columns at their widths and each percentage column at `SHARE_FLOOR`. A narrower
+ * window scrolls the table sideways instead of squeezing a column.
+ */
+const minWidth = (columns: readonly Pick<Column<never>, "width">[], selectable: boolean): number =>
+  columns.reduce(
+    (sum, { width }) => sum + (width.endsWith("%") ? SHARE_FLOOR : Number.parseFloat(width)),
+    selectable ? SELECT_WIDTH : 0,
+  );
+
+/** The selection with `key` toggled. */
+function toggled(selected: ReadonlySet<string>, key: string): ReadonlySet<string> {
+  const next = new Set(selected);
+  if (!next.delete(key)) next.add(key);
+  return next;
+}
+
+interface ListQuery {
+  readonly data?: { readonly total: number } | undefined;
+  readonly isError: boolean;
+  readonly isFetching: boolean;
+  readonly error: Error | null;
+}
+
+function queryState(q: ListQuery): DataTableProps<unknown>["state"] {
+  if (q.isError) return "error";
+  return q.isFetching ? "loading" : "ready";
+}
+
+/** A list query's total, state and error as the table takes them. */
+export const tableQuery = (q: ListQuery) => ({
+  total: q.data?.total ?? 0,
+  state: queryState(q),
+  error: q.error?.message,
+});
 
 /** Every body row is this tall, so a page's body is `pageSize × ROW_HEIGHT` whatever it holds. */
 const ROW_HEIGHT = 40;
@@ -77,7 +132,8 @@ function Header({ column, sort, onSort }: HeaderProps) {
           type="button"
           onClick={() => onSort(column.key)}
           className={cn(
-            "inline-flex max-w-full items-center gap-1 hover:text-foreground",
+            // A button does not inherit the uppercase of the header on its own.
+            "inline-flex max-w-full items-center gap-1 [text-transform:inherit] hover:text-foreground",
             column.align === "right" && "flex-row-reverse",
           )}
         >
@@ -91,6 +147,55 @@ function Header({ column, sort, onSort }: HeaderProps) {
         <span className="block truncate">{column.header}</span>
       )}
     </th>
+  );
+}
+
+/** The header box: checked when every row of the page is selected, mixed when some are. */
+function SelectAll<Row>({ selection, rows }: { readonly selection: Selection<Row>; readonly rows: readonly Row[] }) {
+  const keys = rows.map(selection.rowKey);
+  const count = keys.filter((key) => selection.selected.has(key)).length;
+  const all = count > 0 && count === keys.length;
+  const toggle = (): void => {
+    const next = new Set(selection.selected);
+    for (const key of keys) {
+      if (all) next.delete(key);
+      else next.add(key);
+    }
+    selection.onChange(next);
+  };
+  return (
+    <th scope="col" className="h-9 px-3">
+      <Checkbox
+        aria-label="Select all rows on this page"
+        checked={all || (count > 0 && "indeterminate")}
+        disabled={keys.length === 0}
+        onCheckedChange={toggle}
+        className="size-4 align-middle"
+      />
+    </th>
+  );
+}
+
+function SelectRow<Row>({
+  selection,
+  row,
+  n,
+}: {
+  readonly selection: Selection<Row>;
+  readonly row: Row;
+  readonly n: number;
+}) {
+  const key = selection.rowKey(row);
+  return (
+    // The row's own click would toggle it a second time.
+    <td className="px-3" onClick={(e) => e.stopPropagation()}>
+      <Checkbox
+        aria-label={`Select row ${n}`}
+        checked={selection.selected.has(key)}
+        onCheckedChange={() => selection.onChange(toggled(selection.selected, key))}
+        className="size-4 align-middle"
+      />
+    </td>
   );
 }
 
@@ -130,7 +235,7 @@ function BodyState({ state, error, emptyText, pageSize, colSpan }: BodyStateProp
  * always there.
  */
 export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
-  const { columns, rows, pageSize, state, rowHighlight } = props;
+  const { columns, rows, pageSize, state, rowHighlight, onRowClick, selection } = props;
   const defs = useMemo<ColumnDef<typeof FEATURES, Row>[]>(
     () =>
       columns.map((column) => ({
@@ -145,18 +250,28 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
   const bodyRows = table.getRowModel().rows;
   // Rows already on screen stay while the next page loads (keepPreviousData); with none, the body says it loads.
   const showRows = state !== "error" && bodyRows.length > 0;
+  const colSpan = columns.length + (selection ? 1 : 0);
+  const rowClick =
+    onRowClick ?? (selection && ((row: Row) => selection.onChange(toggled(selection.selected, selection.rowKey(row)))));
 
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-card">
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed border-collapse text-left" aria-busy={state === "loading"}>
+        <table
+          className="w-full table-fixed border-collapse text-left"
+          style={{ minWidth: minWidth(columns, selection !== undefined) }}
+          aria-busy={state === "loading"}
+        >
           <colgroup>
+            {selection && <col style={{ width: SELECT_WIDTH }} />}
             {columns.map((column) => (
               <col key={column.key} style={{ width: column.width }} />
             ))}
           </colgroup>
           <thead className="bg-surface-sunken">
             <tr className="border-b border-border">
+              {/* Only the rows on screen: an error hides the cached ones. */}
+              {selection && <SelectAll selection={selection} rows={showRows ? data : []} />}
               {columns.map((column) => (
                 <Header key={column.key} column={column} sort={props.sort} onSort={props.onSort} />
               ))}
@@ -165,13 +280,25 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
           <tbody className={cn(state === "loading" && showRows && "opacity-80")}>
             {showRows ? (
               <>
-                {bodyRows.map((row) => (
+                {bodyRows.map((row, n) => (
                   <tr
                     key={row.id}
                     style={{ height: ROW_HEIGHT }}
                     data-highlighted={rowHighlight?.(row.original) || undefined}
-                    className="border-b border-border/50 hover:bg-surface-sunken/65 data-[highlighted]:bg-warning/[0.04] data-[highlighted]:shadow-[inset_2px_0_0_var(--warning)]"
+                    onClick={
+                      rowClick &&
+                      ((e) => {
+                        // A link in the row opens its document (a modifier-click a new tab) without the row's click.
+                        if (e.target instanceof Element && e.target.closest("a")) return;
+                        rowClick(row.original);
+                      })
+                    }
+                    className={cn(
+                      "border-b border-border/50 hover:bg-surface-sunken/65 data-[highlighted]:bg-warning/[0.04] data-[highlighted]:shadow-[inset_2px_0_0_var(--warning)]",
+                      rowClick && "cursor-pointer",
+                    )}
                   >
+                    {selection && <SelectRow selection={selection} row={row.original} n={n + 1} />}
                     {row.getAllCells().map((cell, i) => {
                       const column = columns[i];
                       if (!column) return null;
@@ -200,7 +327,7 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
                     style={{ height: ROW_HEIGHT }}
                     className="border-b border-transparent"
                   >
-                    <td colSpan={columns.length} />
+                    <td colSpan={colSpan} />
                   </tr>
                 ))}
               </>
@@ -210,7 +337,7 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
                 error={props.error}
                 emptyText={props.emptyText}
                 pageSize={pageSize}
-                colSpan={columns.length}
+                colSpan={colSpan}
               />
             )}
           </tbody>

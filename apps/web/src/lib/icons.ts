@@ -62,3 +62,5 @@ export {
 } from "lucide-react";
 // The BHEL sync screen (SPEC-19).
 export { ArrowRightLeft, Lock, Play, RefreshCw as Reset, Shield } from "lucide-react";
+// The deviations, ledger, delivery tracker and reports screens (SPEC-17).
+export { ExternalLink, Eye, FileDown, History, RefreshCw as Refresh, TrendingDown } from "lucide-react";

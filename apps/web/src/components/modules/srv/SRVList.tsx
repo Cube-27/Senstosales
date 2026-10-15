@@ -27,6 +27,7 @@ import {
   qtyColumn,
   StatCardRow,
   useToast,
+  tableQuery,
 } from "../../common/index.ts";
 import { poSort, type SrvSearch, srvSort } from "./search.ts";
 
@@ -298,13 +299,7 @@ export function SRVList() {
     void navigate({ to: "/srv", search: (prev) => ({ ...prev, view, sort: undefined, page: 1 }), replace: true });
 
   const active = byPo ? poRows : srvRows;
-  const tableState = active.isError ? "error" : active.isFetching ? "loading" : "ready";
-  const table = {
-    ...list.table,
-    state: tableState,
-    error: active.error?.message,
-    total: active.data?.total ?? 0,
-  } as const;
+  const table = { ...list.table, ...tableQuery(active) };
   return (
     <div className="flex flex-col gap-4">
       <PageHeader title="Store Receipt Vouchers" subtitle="Track material receipts and inspections" />

@@ -14,7 +14,8 @@ export const zFlagListQuery = zListQuery(["openedAt", "type", "status", "poNumbe
   poId: zId.optional(),
 });
 
-export const zFlagRow = zFlag.extend({ poNumber: z.string() });
+/** A flag with its PO number and, for a flag on an SRV line, its SRV; null otherwise. */
+export const zFlagRow = zFlag.extend({ poNumber: z.string(), srvId: zId.nullable(), srvNumber: z.string().nullable() });
 
 /** The open count for the dashboard and nav (INV-60), and open flags by type. */
 export const zFlagStats = z.object({ open: zCount, openByType: z.record(zFlagType, zCount) });

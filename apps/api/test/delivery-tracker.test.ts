@@ -114,10 +114,23 @@ describe("GET /api/delivery-tracker", () => {
           balanceQty: "10",
           pendingValue: "1000",
           daysToDue: -2,
+          overdue: true,
         },
       ],
       total: 1,
     });
+  });
+
+  test("marks a lot overdue when it is past its date and its item is Pending; a Delivered item's never is", async () => {
+    const { body } = await get("/api/delivery-tracker?sort=delyDate&dir=asc");
+    const items = (body as { items: { lotId: string; overdue: boolean }[] }).items;
+    expect(items.map(({ lotId, overdue }) => [lotId, overdue])).toEqual([
+      [id("T3"), false],
+      [id("T1"), true],
+      [id("T2"), false],
+      [id("T7"), false],
+      [id("T4"), false],
+    ]);
   });
 
   test("lists the dated lots of items not received in full, latest delivery date first", async () => {
