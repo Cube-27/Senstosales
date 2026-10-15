@@ -11,6 +11,7 @@ import { type FieldErrors, FormProvider, useForm } from "react-hook-form";
 import { serverErrors, showServerErrors } from "../../../lib/form-errors.ts";
 import { LOGIN } from "../../../lib/session.ts";
 import { Button, ButtonGroup, ConfirmDialog, PageHeader, useToast } from "../../common/index.ts";
+import { BackupPanel } from "./BackupPanel.tsx";
 import { BuyersSection } from "./BuyersSection.tsx";
 import {
   settingsBody,
@@ -145,6 +146,7 @@ export function SettingsScreen() {
             {/* Outside the Save form: these write on their own buttons, as legacy. */}
             <div hidden={section !== "system"} className="p-4">
               <SystemAccessPanel />
+              <BackupPanel />
             </div>
             <div hidden={section !== "buyers"} className="p-4">
               <BuyersSection />

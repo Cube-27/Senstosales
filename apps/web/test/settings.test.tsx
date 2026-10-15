@@ -40,6 +40,7 @@ function settingsApi(extra: FakeApi = {}, isDefaultPassword = false): FakeApi {
     "PUT /api/settings": (body: unknown) => body,
     "GET /api/buyers": [BUYER],
     "GET /api/settings/bhel-password": { saved: true },
+    "GET /api/backups": [],
     ...extra,
   };
 }
