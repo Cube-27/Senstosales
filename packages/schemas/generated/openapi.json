@@ -7709,6 +7709,9 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -7730,7 +7733,8 @@
                           "poItemId",
                           "poNumber",
                           "pendingValue",
-                          "daysToDue"
+                          "daysToDue",
+                          "overdue"
                         ]
                       }
                     },

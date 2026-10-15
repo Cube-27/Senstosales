@@ -75,6 +75,8 @@ export const zTrackerRow = zPoLot
     pendingValue: zMoney,
     /** Days until the delivery date, negative when overdue; `null` without a date. */
     daysToDue: z.int().nullable(),
+    /** Past its date with the item not dispatched in full (the domain's `deliveryDue`): a highlighted row. */
+    overdue: z.boolean(),
   });
 
 export const zTrackerStatsQuery = z.object(trackerFilters);
