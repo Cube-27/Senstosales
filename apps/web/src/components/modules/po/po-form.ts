@@ -6,6 +6,7 @@ import type { RouteInput, RouteOutput } from "@senstosales/schemas";
 import { fmtDate, parseDateInput } from "@senstosales/schemas/formatters";
 
 import { moneyOf } from "../../../lib/search.ts";
+import { blankToNull } from "../../../lib/text.ts";
 import { type RawField, rawValue, withRawValues } from "./header-fields.ts";
 
 type Detail = RouteOutput<"po.detail">;
@@ -145,8 +146,6 @@ export function formError(values: FormValues): string | null {
   return `Item ${item} has missing mandatory fields (Description, Code, Unit, Qty, Rate)`;
 }
 
-const orNull = (text: string): string | null => (text.trim() === "" ? null : text.trim());
-
 /** What an edit keeps from the stored PO: the enquiry and the raw-header labels the form does not show. */
 export type Stored = Pick<Detail["po"], "enquiry" | "rawHeader">;
 
@@ -158,20 +157,20 @@ export function formBody(values: FormValues, stored: Stored = NOTHING_STORED): B
     poNumber: values.poNumber.trim(),
     poDate: values.poDate === "" ? null : values.poDate,
     enquiry: stored.enquiry,
-    quotation: orNull(values.quotation),
-    orderType: orNull(values.orderType),
-    gemcNumber: orNull(values.gemcNumber),
-    remarks: orNull(values.remarks),
+    quotation: blankToNull(values.quotation),
+    orderType: blankToNull(values.orderType),
+    gemcNumber: blankToNull(values.gemcNumber),
+    remarks: blankToNull(values.remarks),
     rawHeader: withRawValues(stored.rawHeader, {
       ...values.raw,
       gemcDate: values.gemcDate === "" ? "" : fmtDate(values.gemcDate),
     }),
     items: values.items.map((item) => ({
       poItemNo: item.poItemNo,
-      materialCode: orNull(item.materialCode),
-      description: orNull(item.description),
+      materialCode: blankToNull(item.materialCode),
+      description: blankToNull(item.description),
       drawingNo: item.drawingNo,
-      unit: orNull(item.unit),
+      unit: blankToNull(item.unit),
       ordQty: item.ordQty,
       rateSource: rateOf(item.rate) ?? (0 as Money),
       lots: item.lots,

@@ -6,12 +6,13 @@ import { useState } from "react";
 import { Controller, type FieldPathByValue, useFieldArray, useForm, type UseFormRegister } from "react-hook-form";
 
 import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
-import { AlertCircle, Delete, Plus, Save } from "../../../lib/icons.ts";
+import { Delete, Plus, Save } from "../../../lib/icons.ts";
 import { todayIst } from "../../../lib/today.ts";
 import {
   Button,
   ConfirmDialog,
   DatePicker,
+  FormAlert,
   FormField,
   Input,
   PageHeader,
@@ -31,8 +32,6 @@ import {
 } from "./po-form.ts";
 
 type Detail = RouteOutput<"po.detail">;
-
-/** Today's IST calendar date, the legacy form's default PO date. */
 
 type TextField = { readonly name: FieldPathByValue<FormValues, string>; readonly label: string };
 
@@ -139,14 +138,7 @@ function POFormView({ detail }: POFormProps) {
           </>
         }
       />
-      {/* The message slot is always there, so an error moves nothing below it (C8). */}
-      <div
-        role="alert"
-        className={`flex min-h-10 items-center gap-2 rounded-md border border-error/20 bg-error/10 px-3 role-body-text text-error ${error ? "" : "invisible"}`}
-      >
-        <AlertCircle className="size-4" aria-hidden />
-        <span>{error}</span>
-      </div>
+      <FormAlert message={error} />
       <section aria-label="Header Information" className="rounded-md border border-border bg-surface p-4">
         <h2 className="mb-3 role-section-title">Header Information</h2>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4 lg:grid-cols-6">

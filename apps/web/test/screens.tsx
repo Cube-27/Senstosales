@@ -1,6 +1,7 @@
 // The request stub of the PO and SRV screen tests, over the shared app harness (`app.tsx`): each request goes to a
 // handler keyed `"<METHOD> <path>"` that sees the method, path, query and body; an unhandled request fails the test.
 // The install is set up and signed in, so the session gate opens every screen.
+import { contentDisposition } from "@senstosales/schemas";
 import { configure } from "@testing-library/react";
 import { vi } from "vite-plus/test";
 
@@ -21,6 +22,9 @@ type Handler = (call: Call) => unknown;
 
 /** An answer other than 200, with the API's error body. */
 export const fail = (status: number, code: string, message: string) => ({ __status: status, body: { code, message } });
+
+/** A download: `text` as the file's bytes, named `name` by `Content-Disposition`. */
+export const file = (name: string, text = "synthetic file") => ({ __file: name, text });
 
 const SIGNED_IN: Record<string, Handler> = {
   "GET /api/onboarding": () => ({ required: false }),
@@ -43,6 +47,10 @@ export function stubApi(handlers: Record<string, Handler>): Call[] {
     if (!handler) return Promise.reject(new Error(`unexpected request ${key}`));
     if (handlers[key]) calls.push(call);
     const answer = handler(call);
+    if (typeof answer === "object" && answer !== null && "__file" in answer) {
+      const headers = { "content-disposition": contentDisposition(String(Reflect.get(answer, "__file"))) };
+      return Promise.resolve(new Response(String(Reflect.get(answer, "text")), { status: 200, headers }));
+    }
     const failed = typeof answer === "object" && answer !== null && "__status" in answer;
     const [status, body] = failed
       ? [Number(Reflect.get(answer, "__status")), Reflect.get(answer, "body")]
