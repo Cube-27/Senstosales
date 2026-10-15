@@ -14,6 +14,11 @@ describe("apiQuery (ARCHITECTURE §12.1)", () => {
     expect(apiQuery("onboarding.status").queryKey).toEqual(["onboarding.status", {}]);
   });
 
+  it("takes read routes only", () => {
+    // @ts-expect-error a write route is not a query
+    expect(apiQuery("buyers.delete", { params: { id: "b1" } }).queryKey[0]).toBe("buyers.delete");
+  });
+
   it("reads through the typed client on the page's origin", async () => {
     const urls: string[] = [];
     vi.stubGlobal("fetch", (url: string) => {

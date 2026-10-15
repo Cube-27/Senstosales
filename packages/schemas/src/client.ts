@@ -8,6 +8,8 @@ import { ApiError } from "./errors.ts";
 import { type PathParams, type RouteDef, routes } from "./routes.ts";
 
 export type RouteName = keyof typeof routes;
+/** The routes that only read (`GET`): the ones a query may call. */
+export type ReadRouteName = { [K in RouteName]: (typeof routes)[K]["method"] extends "GET" ? K : never }[RouteName];
 type Def<N extends RouteName> = (typeof routes)[N];
 
 /**
