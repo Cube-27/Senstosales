@@ -9,6 +9,7 @@
     "readable-stream": "^4.8.0"
   },
   "devDependencies": {
-    "@types/readable-stream": "^4.0.25"
+    "@types/readable-stream": "^4.0.25",
+    "fflate": "^0.8.3"
   }
 }
