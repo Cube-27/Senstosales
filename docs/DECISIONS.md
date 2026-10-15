@@ -2638,3 +2638,11 @@ None.
 - Alternatives: Singular for one day.
 - Why: Frozen export text (INV-68).
 - Reversible: yes.
+
+### D-0323 — One synthetic dataset for the cross-flow suite
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 6 (#67) · Status: decided
+- Decision: Read "one synthetic dataset" as one dataset definition (`dataset()`), rebuilt fresh for each flow, plus one lifecycle test that chains DC, invoice, SRV and the guarded deletes on one PO.
+- Alternatives: One shared mutable dataset that the tests walk through in sequence.
+- Why: Each test stays independent of order; the lifecycle test still covers how the flows interact.
+- Reversible: yes.
