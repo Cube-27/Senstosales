@@ -33,7 +33,7 @@ export const moneyOf = (text: string): Money | null => {
 };
 
 /** An amount typed in a filter, or no filter when the text is not an amount. */
-const money = (text: string | undefined): Money | undefined =>
+export const money = (text: string | undefined): Money | undefined =>
   text === undefined ? undefined : (moneyOf(text) ?? undefined);
 
 /** The range filters of a list query (`zRangeFilters`) from the URL's. */
