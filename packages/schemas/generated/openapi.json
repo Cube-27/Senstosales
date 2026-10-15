@@ -11289,6 +11289,11 @@
               }
             ]
           },
+          "rowNo": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
           "materialCode": {
             "type": [
               "string",
@@ -11300,18 +11305,65 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
+          "subItemNo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "lotNo": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "srvItemNo": {
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
           },
+          "revNo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "division": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pmirNo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "ordQty": {
             "$ref": "#/components/schemas/Qty"
+          },
+          "challanQty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Qty"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "rcdQty": {
             "$ref": "#/components/schemas/Qty"
@@ -11354,6 +11406,48 @@
               }
             ]
           },
+          "financeDate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IsoDate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cnoteNo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cnoteDate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IsoDate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rawRow": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "resolvedDcId": {
             "anyOf": [
               {
@@ -11379,11 +11473,18 @@
           "id",
           "srvId",
           "poItemId",
+          "rowNo",
           "materialCode",
           "poItemNo",
+          "subItemNo",
           "lotNo",
           "srvItemNo",
+          "revNo",
+          "division",
+          "pmirNo",
+          "unit",
           "ordQty",
+          "challanQty",
           "rcdQty",
           "acceptedQty",
           "rejQty",
@@ -11391,6 +11492,10 @@
           "challanDate",
           "invoiceNo",
           "invoiceDate",
+          "financeDate",
+          "cnoteNo",
+          "cnoteDate",
+          "rawRow",
           "resolvedDcId",
           "resolvedInvoiceId"
         ]

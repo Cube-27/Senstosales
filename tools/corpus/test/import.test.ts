@@ -41,8 +41,8 @@ describe("importCorpus", () => {
           status: "done",
           error: null,
           summary: {
-            total: 43,
-            done: 42,
+            total: 44,
+            done: 43,
             skipped: 0,
             failed: 1,
             skippedDocuments: [],
@@ -62,13 +62,13 @@ describe("importCorpus", () => {
           status: "done",
           error: null,
           summary: {
-            total: 30,
-            done: 30,
+            total: 31,
+            done: 31,
             skipped: 0,
             failed: 0,
             skippedDocuments: [],
             failedDocuments: [],
-            flags: { DOC_NUMBER_CONFLICT: 102, QTY_MISMATCH: 1 },
+            flags: { DOC_NUMBER_CONFLICT: 110, QTY_MISMATCH: 1 },
           },
         },
         tooLarge: [],
@@ -77,13 +77,13 @@ describe("importCorpus", () => {
       totals: {
         flagsByType: {
           QTY_MISMATCH: 1,
-          DOC_NUMBER_CONFLICT: 102,
+          DOC_NUMBER_CONFLICT: 110,
           OVER_DISPATCH: 0,
           OVER_INVOICE: 0,
           DOC_ON_CANCELLED_ITEM: 0,
           MANUAL_ADJUSTMENT_OVERLAP: 0,
         },
-        posByStatus: { Pending: 25, Delivered: 0, Closed: 17 },
+        posByStatus: { Pending: 26, Delivered: 0, Closed: 17 },
         srvsPoNotFound: 0,
       },
       passed: true,
@@ -93,8 +93,8 @@ describe("importCorpus", () => {
     // no flag is opened twice.
     const again = await importCorpus({ corpusDir, dataDir });
     expect(again.passed).toBe(true);
-    expect(again.po.job.summary).toMatchObject({ total: 43, done: 42, failed: 1, flags: {} });
-    expect(again.srv.job.summary).toMatchObject({ total: 30, done: 30, flags: {} });
+    expect(again.po.job.summary).toMatchObject({ total: 44, done: 43, failed: 1, flags: {} });
+    expect(again.srv.job.summary).toMatchObject({ total: 31, done: 31, flags: {} });
   });
 
   test("refuses a corpus without SRV pages before it makes a database", async () => {
