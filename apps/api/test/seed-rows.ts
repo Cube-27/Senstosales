@@ -113,7 +113,16 @@ export function rows(db: NodeDb) {
       },
     ) => b.insert(poLot).values({ ...S, ...row, delyQty: q(row.delyQty) }),
 
-    dc: (row: { id: string; poId: string; number: string; dcDate: string; createdAt: string; consignee?: string }) =>
+    dc: (row: {
+      id: string;
+      poId: string;
+      number: string;
+      dcDate: string;
+      createdAt: string;
+      consignee?: string;
+      departmentNo?: string;
+      invoiceNumber?: string;
+    }) =>
       b.insert(dc).values({
         ...S,
         id: row.id,
@@ -124,10 +133,12 @@ export function rows(db: NodeDb) {
         gcNumber: row.number,
         gcDate: d(row.dcDate),
         consigneeName: row.consignee ?? null,
+        departmentNo: row.departmentNo ?? null,
+        invoiceNumber: row.invoiceNumber ?? null,
         createdAt: at(row.createdAt),
       }),
 
-    dcItem: (row: { id: string; dcId: string; poItemId: string; dspQty: number }) =>
+    dcItem: (row: { id: string; dcId: string; poItemId: string; dspQty: number; packets?: number }) =>
       b.insert(dcItem).values({ ...S, ...row, dspQty: q(row.dspQty), createdAt: at("2025-04-20T00:00:00.000Z") }),
 
     invoice: (row: {
@@ -139,6 +150,7 @@ export function rows(db: NodeDb) {
       total: number;
       createdAt: string;
       buyer?: string;
+      gemcNumber?: string;
     }) =>
       b.insert(invoice).values({
         ...S,
@@ -150,6 +162,7 @@ export function rows(db: NodeDb) {
         invoiceDate: d(row.invoiceDate),
         financialYear: FY,
         buyerName: row.buyer ?? null,
+        gemcNumber: row.gemcNumber ?? null,
         cgstPct: 900000 as GstPct,
         sgstPct: 900000 as GstPct,
         taxable: m(row.total),

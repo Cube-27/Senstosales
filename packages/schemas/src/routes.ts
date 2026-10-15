@@ -183,7 +183,7 @@ export const routes = withParams({
   "invoice.delete": { method: "DELETE", path: "/api/invoice/:id", response: zOk },
   "invoice.excel": { method: "GET", path: "/api/invoice/:id/excel", response: file },
 
-  // Reports and exports (SPEC-13): the two /reports tabs, their exports, the registers and the GC report. Exports
+  // Reports and exports (SPEC-13): the three /reports tabs, their exports, the registers and the GC report. Exports
   // keep the tab's filters and sort but are not paged (INV-99).
   "reports.pending": {
     method: "GET",
@@ -207,6 +207,18 @@ export const routes = withParams({
     method: "GET",
     path: "/api/reports/reconciliation/export",
     query: zUnpaged(reports.zReconciliationQuery),
+    response: file,
+  },
+  "reports.dispatch": {
+    method: "GET",
+    path: "/api/reports/daily-dispatch",
+    query: reports.zDispatchQuery,
+    response: zPaged(reports.zDispatchRow),
+  },
+  "reports.dispatchExport": {
+    method: "GET",
+    path: "/api/reports/daily-dispatch/export",
+    query: zUnpaged(reports.zDispatchQuery),
     response: file,
   },
   "reports.exportSelected": {

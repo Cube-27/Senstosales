@@ -120,6 +120,8 @@ const RESOURCES: [string, string[]][] = [
       "reports.pendingExport",
       "reports.reconciliation",
       "reports.reconciliationExport",
+      "reports.dispatch",
+      "reports.dispatchExport",
       "reports.exportSelected",
       "reports.guaranteeCertificateExport",
     ],
@@ -146,7 +148,6 @@ describe("dropped legacy endpoints are absent (INV-87, INV-83)", () => {
   it.each([
     ["procurement and analytics", /\/(analytics|procurement|intelligence|quality)\b/],
     ["dashboard insights and forecast", /\/(insights|forecast)\b/],
-    ["the daily-dispatch report", /daily-dispatch/],
     ["HTTP reconcile-all", /reconcile/],
     ["download-folder preferences", /download-folder/],
     ["health aliases", /\/(ping|ready|live|metrics)\b|\/health\/./],

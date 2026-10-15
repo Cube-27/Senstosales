@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { zPoItem, zPoLot } from "../entities/po.ts";
-import { zCount, zId, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zCount, zId, zIsoDate, zMoney, zPackets, zQty } from "../primitives.ts";
 import { zDateRange, zFyDocRef, zItemInfo, zListQuery, zRangeFilters } from "./common.ts";
 
 /** The PO item columns both tabs and their exports show. */
@@ -36,6 +36,25 @@ export const zReconciliationQuery = zListQuery(
 
 /** Ordered, delivered (dispatched), received, rejected and balance per PO item. */
 export const zReconciliationRow = zReportItem.extend({ rcdQty: zQty, rejQty: zQty, balanceQty: zQty });
+
+export const zDispatchQuery = zListQuery(["dcDate"], { ...zDateRange, ...zReportSearch });
+
+/**
+ * A DC line dispatched in the range (the daily dispatch summary, A-16 reversed): its item, packets, PO, GEMC number
+ * (the DC's invoice's, else the PO's), the invoice it cites, and the department it went to.
+ */
+export const zDispatchRow = zPoItem.pick({ poId: true, poItemNo: true, description: true, unit: true }).extend({
+  dcItemId: zId,
+  dcId: zId,
+  dcNumber: z.string(),
+  dcDate: zIsoDate,
+  poNumber: z.string(),
+  dspQty: zQty,
+  packets: zPackets,
+  gemcNumber: z.string().nullable(),
+  invoiceNumber: z.string().nullable(),
+  departmentNo: z.string().nullable(),
+});
 
 export const zRegisterExportQuery = z.object(zDateRange);
 
