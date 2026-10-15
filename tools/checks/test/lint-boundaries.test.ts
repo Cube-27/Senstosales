@@ -64,6 +64,21 @@ describe("lint boundaries (C12, C3)", () => {
     ]);
   }, 60_000);
 
+  it("rejects Tauri and node modules in the web app outside its platform adapter", () => {
+    const tauri = 'import { TrayIcon } from "@tauri-apps/api/tray";\nexport const t = TrayIcon;\n';
+    const fs = 'import { readFileSync } from "node:fs";\nexport const r = readFileSync;\n';
+    expect(
+      lint({
+        "apps/web/src/components/common/a.tsx": tauri,
+        "apps/web/src/lib/b.ts": fs,
+        "apps/web/src/platform/tauri.ts": tauri,
+      }),
+    ).toEqual([
+      "apps/web/src/components/common/a.tsx no-restricted-imports",
+      "apps/web/src/lib/b.ts no-restricted-imports",
+    ]);
+  }, 60_000);
+
   it("rejects runtime subpaths more than one level deep", () => {
     const deep = [
       "node:fs/promises",
