@@ -19,26 +19,25 @@ export function poManualQtyService({ db, clock }: Pick<ServiceDeps, "db" | "cloc
       // from rows it no longer has (INV-95).
       const row = await findPoRow(db, poId);
       if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
-      const [items, snapshot] = await Promise.all([itemsOfPo(db, poId), loadPoSnapshot(db, poId)]);
-      const item = items.find((i) => i.id === itemId);
+      const [stored, snapshot] = await Promise.all([itemsOfPo(db, poId), loadPoSnapshot(db, poId)]);
+      const item = stored.find((i) => i.id === itemId);
       if (item === undefined) throw new NotFoundError("po-item-not-found", "This PO item was not found.");
 
-      const now = clock.now();
       const manual = { manualDispatchedQty: qty, manualNote: note ?? null };
+      const set = { ...manual, manualSetAt: clock.now() };
       const batch = new WriteBatch(db);
+      // A user edit of the PO, unlike recompute (D-0142): an edit form opened before it is stale (INV-95).
       batch.add(updateWithVersion(db, po, poId, row.version, {}));
       batch.add(
         db.build
           .update(poItem)
-          .set({ ...manual, manualSetAt: now })
+          .set(set)
           .where(and(eq(poItem.id, itemId), eq(poItem.poId, poId))),
       );
-      const changed = snapshot.items.map((i) =>
-        i.id === itemId ? { ...i, manualDispatchedQty: qty, manualSetAt: now } : i,
-      );
-      for (const statement of recomputeStatements({ db, clock }, { ...snapshot, items: changed })) batch.add(statement);
+      const items = snapshot.items.map((i) => (i.id === itemId ? { ...i, ...set } : i));
+      for (const statement of recomputeStatements({ db, clock }, { ...snapshot, items })) batch.add(statement);
       batch.add(
-        audit(db, now, {
+        audit(db, set.manualSetAt, {
           action: "po_item.manual_dispatched",
           entityType: "po_item",
           entityId: itemId,
