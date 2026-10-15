@@ -1,0 +1,243 @@
+{
+  "fileName": "DC_7.xlsx",
+  "pageSetup": {
+    "printArea": "B1:J42",
+    "printTitlesRow": null,
+    "printTitlesColumn": null,
+    "orientation": "portrait",
+    "paperSize": 9,
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 1,
+    "scale": 100,
+    "horizontalCentered": true,
+    "verticalCentered": false,
+    "margins": {
+      "left": 0.3,
+      "right": 0.3,
+      "top": 0.35,
+      "bottom": 0.35,
+      "header": 0.2,
+      "footer": 0.2
+    }
+  },
+  "styleRows": [[1, 42, 1, 42]],
+  "merges": [
+    "B10:G10",
+    "B11:G11",
+    "B9:G9",
+    "C20:H20",
+    "C21:H21",
+    "C22:H22",
+    "C23:H23",
+    "C24:H24",
+    "C25:H25",
+    "C26:H26",
+    "C27:H27",
+    "C28:H28",
+    "C29:H29",
+    "C30:J30",
+    "C31:J31",
+    "C32:J32",
+    "C33:J33",
+    "C34:J34",
+    "C37:J37",
+    "C38:J38",
+    "C39:J39",
+    "C40:J40",
+    "D14:E14",
+    "F14:G14",
+    "I10:J10",
+    "I11:J11",
+    "I14:J14",
+    "I17:J17",
+    "I20:J20",
+    "I21:J21",
+    "I22:J22",
+    "I23:J23",
+    "I24:J24",
+    "I25:J25",
+    "I26:J26",
+    "I27:J27",
+    "I28:J28",
+    "I29:J29",
+    "I9:J9"
+  ],
+  "rows": {
+    "1": {
+      "size": 14.25
+    },
+    "2": {
+      "size": 14.25
+    },
+    "3": {
+      "size": 21
+    },
+    "4": {
+      "size": 13.5
+    },
+    "5": {
+      "size": 13.5
+    },
+    "6": {
+      "size": 2.25
+    },
+    "7": {
+      "size": 21
+    },
+    "8": {
+      "size": 8.25
+    },
+    "9": {
+      "size": 14.25
+    },
+    "10": {
+      "size": 14.25
+    },
+    "11": {
+      "size": 14.25
+    },
+    "12": {
+      "size": 14.25
+    },
+    "13": {
+      "size": 6
+    },
+    "14": {
+      "size": 12.75
+    },
+    "15": {
+      "size": 14.25
+    },
+    "16": {
+      "size": 6
+    },
+    "17": {
+      "size": 14.25
+    },
+    "18": {
+      "size": 6.75
+    },
+    "19": {
+      "hidden": true
+    },
+    "20": {
+      "size": 36
+    },
+    "21": {
+      "size": 54.95
+    },
+    "22": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "23": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "24": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "25": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "26": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "27": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "28": {
+      "size": 54.95,
+      "hidden": true
+    },
+    "29": {
+      "size": 54.95
+    },
+    "30": {
+      "hidden": true
+    },
+    "31": {
+      "size": 14.25
+    },
+    "32": {
+      "size": 14.25
+    },
+    "33": {
+      "size": 14.25
+    },
+    "34": {
+      "size": 14.25
+    },
+    "35": {
+      "size": 14.25
+    },
+    "36": {
+      "size": 14.25
+    },
+    "37": {
+      "size": 14.25
+    },
+    "38": {
+      "size": 14.25
+    },
+    "39": {
+      "size": 14.25
+    },
+    "40": {
+      "size": 14.25
+    },
+    "41": {
+      "size": 15.75
+    },
+    "42": {
+      "size": 14.25
+    }
+  },
+  "values": {
+    "B1": "Tel. No. 0000-000000",
+    "H1": "GSTIN: TESTGSTIN0000X1",
+    "F3": "EXAMPLE PRECISION WORKS",
+    "F4": "Manufacturers of Example Machined Components",
+    "F5": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "F7": "DELIVERY CHALLAN",
+    "B9": "The Example Manager (Stores)\nExample Unit\nExample Road\nExample City - 000000",
+    "H9": " Challan No. :",
+    "I9": "7",
+    "H10": " Date :",
+    "I10": "03/06/2025",
+    "H11": " Our Ref :",
+    "I11": "REF-0001",
+    "B14": "Your Order No.  :",
+    "D14": "4500000001",
+    "F14": "Date: 15/04/2025",
+    "H14": "Amd. Date:",
+    "B15": "Goods Dispatched Delivered to: ",
+    "F15": 123,
+    "H17": "GST Invoice No: ",
+    "I17": "INV-7  Dt.",
+    "B20": "P.O.Sl. No.",
+    "C20": "Description",
+    "I20": "Quantity",
+    "B21": 10,
+    "C21": "Bracket, mild steel, 10 x 5 mm, drawing EX-1000",
+    "I21": "1  NOS",
+    "B31": 1,
+    "C31": "GST Bill No. INV-7 Dt.",
+    "B32": 2,
+    "C32": "Guarantee Certificate No. 7   Dt. 03/06/2025",
+    "B33": 3,
+    "C33": "Dimension Report REF-0001",
+    "B34": 4,
+    "C34": "TC No  dt.  Of",
+    "C37": "Lot No.",
+    "C38": "Consignment Value of BHEL PO 1.00",
+    "C41": "Received the Goods in good condition",
+    "H41": "                 For EXAMPLE PRECISION WORKS",
+    "C42": "E. & O.E."
+  }
+}

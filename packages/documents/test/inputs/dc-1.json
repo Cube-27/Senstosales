@@ -1,0 +1,37 @@
+{
+  "supplier": {
+    "name": "EXAMPLE PRECISION WORKS",
+    "description": "Manufacturers of Example Machined Components",
+    "address": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "gstin": "TESTGSTIN0000X1",
+    "contact": "0000-000000",
+    "state": "Example State",
+    "stateCode": "00",
+    "jurisdiction": "EXAMPLE CITY"
+  },
+  "dc": {
+    "number": "7",
+    "dcDate": "2025-06-03",
+    "gcNumber": "7",
+    "gcDate": "2025-06-03",
+    "ourRef": "REF-0001",
+    "departmentNo": "123",
+    "consigneeName": "The Example Manager (Stores)",
+    "consigneeAddress": "Example Unit\r\nExample Road\n\nExample City - 000000"
+  },
+  "po": {
+    "poNumber": "4500000001",
+    "poDate": "2025-04-15",
+    "isGemc": false
+  },
+  "invoiceNumber": "INV-7",
+  "items": [
+    {
+      "poItemNo": 10,
+      "description": "Bracket, mild steel, 10 x 5 mm, drawing EX-1000",
+      "unit": "NOS",
+      "dspQty": 1000,
+      "rate": 100000
+    }
+  ]
+}

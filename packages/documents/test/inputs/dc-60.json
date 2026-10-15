@@ -1,0 +1,450 @@
+{
+  "supplier": {
+    "name": "EXAMPLE PRECISION WORKS",
+    "description": "Manufacturers of Example Machined Components",
+    "address": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "gstin": "TESTGSTIN0000X1",
+    "contact": "0000-000000",
+    "state": "Example State",
+    "stateCode": "00",
+    "jurisdiction": "EXAMPLE CITY"
+  },
+  "dc": {
+    "number": "60",
+    "dcDate": "2026-03-31",
+    "gcNumber": "60",
+    "gcDate": "2026-03-31",
+    "ourRef": "REF-0060",
+    "departmentNo": "0456",
+    "consigneeName": "The Example Manager (Stores)",
+    "consigneeAddress": "Example Unit\nExample City - 000000"
+  },
+  "po": {
+    "poNumber": "4500000004",
+    "poDate": "2025-05-20",
+    "isGemc": false
+  },
+  "invoiceNumber": "INV-60",
+  "items": [
+    {
+      "poItemNo": 10,
+      "description": "Bracket, mild steel, 10 x 5 mm, drawing EX-1000",
+      "unit": "NOS",
+      "dspQty": 1000,
+      "rate": 100000
+    },
+    {
+      "poItemNo": 20,
+      "description": "Flange, brass, 11 x 6 mm, drawing EX-1001",
+      "unit": "nos",
+      "dspQty": 2000,
+      "rate": 212345
+    },
+    {
+      "poItemNo": 30,
+      "description": "Bush, stainless steel, 12 x 7 mm, drawing EX-1002",
+      "unit": "KG",
+      "dspQty": 3000,
+      "rate": 324690
+    },
+    {
+      "poItemNo": 40,
+      "description": "Spacer, aluminium, 13 x 8 mm, drawing EX-1003",
+      "unit": null,
+      "dspQty": 4250,
+      "rate": 437035
+    },
+    {
+      "poItemNo": 50,
+      "description": "Shaft, copper, 14 x 9 mm, drawing EX-1004; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "SET",
+      "dspQty": 5000,
+      "rate": 500000
+    },
+    {
+      "poItemNo": 60,
+      "description": "Plate, mild steel, 15 x 10 mm, drawing EX-1005",
+      "unit": "MTR",
+      "dspQty": 6000,
+      "rate": 612345
+    },
+    {
+      "poItemNo": 70,
+      "description": "Gasket, brass, 16 x 11 mm, drawing EX-1006; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+      "unit": "NOS",
+      "dspQty": 7000,
+      "rate": 724690
+    },
+    {
+      "poItemNo": 80,
+      "description": "Pin, stainless steel, 17 x 5 mm, drawing EX-1007",
+      "unit": "nos",
+      "dspQty": 8000,
+      "rate": 837035
+    },
+    {
+      "poItemNo": 90,
+      "description": "Bracket, aluminium, 18 x 6 mm, drawing EX-1008",
+      "unit": "KG",
+      "dspQty": 9250,
+      "rate": 900000
+    },
+    {
+      "poItemNo": 100,
+      "description": "Flange, copper, 19 x 7 mm, drawing EX-1009",
+      "unit": null,
+      "dspQty": 10000,
+      "rate": 1012345
+    },
+    {
+      "poItemNo": 110,
+      "description": null,
+      "unit": "SET",
+      "dspQty": 11000,
+      "rate": 1124690
+    },
+    {
+      "poItemNo": 120,
+      "description": "Spacer, brass, 21 x 9 mm, drawing EX-1011",
+      "unit": "MTR",
+      "dspQty": 12000,
+      "rate": 1237035
+    },
+    {
+      "poItemNo": 130,
+      "description": "Shaft, stainless steel, 22 x 10 mm, drawing EX-1012",
+      "unit": "NOS",
+      "dspQty": 13000,
+      "rate": 1300000
+    },
+    {
+      "poItemNo": 140,
+      "description": "Plate, aluminium, 23 x 11 mm, drawing EX-1013; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "nos",
+      "dspQty": 14250,
+      "rate": 1412345
+    },
+    {
+      "poItemNo": 150,
+      "description": "Gasket, copper, 24 x 5 mm, drawing EX-1014",
+      "unit": "KG",
+      "dspQty": 15000,
+      "rate": 1524690
+    },
+    {
+      "poItemNo": 160,
+      "description": "Pin, mild steel, 25 x 6 mm, drawing EX-1015",
+      "unit": null,
+      "dspQty": 16000,
+      "rate": 1637035
+    },
+    {
+      "poItemNo": 170,
+      "description": "Bracket, brass, 26 x 7 mm, drawing EX-1016",
+      "unit": "SET",
+      "dspQty": 17000,
+      "rate": 1700000
+    },
+    {
+      "poItemNo": 180,
+      "description": "Flange, stainless steel, 27 x 8 mm, drawing EX-1017",
+      "unit": "MTR",
+      "dspQty": 18000,
+      "rate": 1812345
+    },
+    {
+      "poItemNo": 190,
+      "description": "Bush, aluminium, 28 x 9 mm, drawing EX-1018",
+      "unit": "NOS",
+      "dspQty": 19250,
+      "rate": 1924690
+    },
+    {
+      "poItemNo": 200,
+      "description": "Spacer, copper, 29 x 10 mm, drawing EX-1019; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+      "unit": "nos",
+      "dspQty": 20000,
+      "rate": 2037035
+    },
+    {
+      "poItemNo": 210,
+      "description": "Shaft, mild steel, 30 x 11 mm, drawing EX-1020",
+      "unit": "KG",
+      "dspQty": 21000,
+      "rate": 2100000
+    },
+    {
+      "poItemNo": 220,
+      "description": null,
+      "unit": null,
+      "dspQty": 22000,
+      "rate": 2212345
+    },
+    {
+      "poItemNo": 230,
+      "description": "Gasket, stainless steel, 32 x 6 mm, drawing EX-1022; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "SET",
+      "dspQty": 23000,
+      "rate": 2324690
+    },
+    {
+      "poItemNo": 240,
+      "description": "Pin, aluminium, 33 x 7 mm, drawing EX-1023",
+      "unit": "MTR",
+      "dspQty": 24250,
+      "rate": 2437035
+    },
+    {
+      "poItemNo": 250,
+      "description": "Bracket, copper, 34 x 8 mm, drawing EX-1024",
+      "unit": "NOS",
+      "dspQty": 25000,
+      "rate": 2500000
+    },
+    {
+      "poItemNo": 260,
+      "description": "Flange, mild steel, 35 x 9 mm, drawing EX-1025",
+      "unit": "nos",
+      "dspQty": 26000,
+      "rate": 2612345
+    },
+    {
+      "poItemNo": 270,
+      "description": "Bush, brass, 36 x 10 mm, drawing EX-1026",
+      "unit": "KG",
+      "dspQty": 27000,
+      "rate": 2724690
+    },
+    {
+      "poItemNo": 280,
+      "description": "Spacer, stainless steel, 37 x 11 mm, drawing EX-1027",
+      "unit": null,
+      "dspQty": 28000,
+      "rate": 2837035
+    },
+    {
+      "poItemNo": 290,
+      "description": "Shaft, aluminium, 38 x 5 mm, drawing EX-1028",
+      "unit": "SET",
+      "dspQty": 29250,
+      "rate": 2900000
+    },
+    {
+      "poItemNo": 300,
+      "description": "Plate, copper, 39 x 6 mm, drawing EX-1029",
+      "unit": "MTR",
+      "dspQty": 30000,
+      "rate": 3012345
+    },
+    {
+      "poItemNo": 310,
+      "description": "Gasket, mild steel, 40 x 7 mm, drawing EX-1030",
+      "unit": "NOS",
+      "dspQty": 31000,
+      "rate": 3124690
+    },
+    {
+      "poItemNo": 320,
+      "description": "Pin, brass, 41 x 8 mm, drawing EX-1031; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "nos",
+      "dspQty": 32000,
+      "rate": 3237035
+    },
+    {
+      "poItemNo": 330,
+      "description": "Bracket, stainless steel, 42 x 9 mm, drawing EX-1032; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+      "unit": "KG",
+      "dspQty": 33000,
+      "rate": 3300000
+    },
+    {
+      "poItemNo": 340,
+      "description": "Flange, aluminium, 43 x 10 mm, drawing EX-1033",
+      "unit": null,
+      "dspQty": 34250,
+      "rate": 3412345
+    },
+    {
+      "poItemNo": 350,
+      "description": "Bush, copper, 44 x 11 mm, drawing EX-1034",
+      "unit": "SET",
+      "dspQty": 35000,
+      "rate": 3524690
+    },
+    {
+      "poItemNo": 360,
+      "description": "Spacer, mild steel, 45 x 5 mm, drawing EX-1035",
+      "unit": "MTR",
+      "dspQty": 36000,
+      "rate": 3637035
+    },
+    {
+      "poItemNo": 370,
+      "description": "Shaft, brass, 46 x 6 mm, drawing EX-1036",
+      "unit": "NOS",
+      "dspQty": 37000,
+      "rate": 3700000
+    },
+    {
+      "poItemNo": 380,
+      "description": "Plate, stainless steel, 47 x 7 mm, drawing EX-1037",
+      "unit": "nos",
+      "dspQty": 38000,
+      "rate": 3812345
+    },
+    {
+      "poItemNo": 390,
+      "description": "Gasket, aluminium, 48 x 8 mm, drawing EX-1038",
+      "unit": "KG",
+      "dspQty": 39250,
+      "rate": 3924690
+    },
+    {
+      "poItemNo": 400,
+      "description": "Pin, copper, 49 x 9 mm, drawing EX-1039",
+      "unit": null,
+      "dspQty": 40000,
+      "rate": 4037035
+    },
+    {
+      "poItemNo": 410,
+      "description": "Bracket, mild steel, 50 x 10 mm, drawing EX-1040; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "SET",
+      "dspQty": 41000,
+      "rate": 4100000
+    },
+    {
+      "poItemNo": 420,
+      "description": "Flange, brass, 51 x 11 mm, drawing EX-1041",
+      "unit": "MTR",
+      "dspQty": 42000,
+      "rate": 4212345
+    },
+    {
+      "poItemNo": 430,
+      "description": "Bush, stainless steel, 52 x 5 mm, drawing EX-1042",
+      "unit": "NOS",
+      "dspQty": 43000,
+      "rate": 4324690
+    },
+    {
+      "poItemNo": 440,
+      "description": null,
+      "unit": "nos",
+      "dspQty": 44250,
+      "rate": 4437035
+    },
+    {
+      "poItemNo": 450,
+      "description": "Shaft, copper, 54 x 7 mm, drawing EX-1044",
+      "unit": "KG",
+      "dspQty": 45000,
+      "rate": 4500000
+    },
+    {
+      "poItemNo": 460,
+      "description": "Plate, mild steel, 55 x 8 mm, drawing EX-1045; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+      "unit": null,
+      "dspQty": 46000,
+      "rate": 4612345
+    },
+    {
+      "poItemNo": 470,
+      "description": "Gasket, brass, 56 x 9 mm, drawing EX-1046",
+      "unit": "SET",
+      "dspQty": 47000,
+      "rate": 4724690
+    },
+    {
+      "poItemNo": 480,
+      "description": "Pin, stainless steel, 57 x 10 mm, drawing EX-1047",
+      "unit": "MTR",
+      "dspQty": 48000,
+      "rate": 4837035
+    },
+    {
+      "poItemNo": 490,
+      "description": "Bracket, aluminium, 58 x 11 mm, drawing EX-1048",
+      "unit": "NOS",
+      "dspQty": 49250,
+      "rate": 4900000
+    },
+    {
+      "poItemNo": 500,
+      "description": "Flange, copper, 59 x 5 mm, drawing EX-1049; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "nos",
+      "dspQty": 50000,
+      "rate": 5012345
+    },
+    {
+      "poItemNo": 510,
+      "description": "Bush, mild steel, 60 x 6 mm, drawing EX-1050",
+      "unit": "KG",
+      "dspQty": 51000,
+      "rate": 5124690
+    },
+    {
+      "poItemNo": 520,
+      "description": "Spacer, brass, 61 x 7 mm, drawing EX-1051",
+      "unit": null,
+      "dspQty": 52000,
+      "rate": 5237035
+    },
+    {
+      "poItemNo": 530,
+      "description": "Shaft, stainless steel, 62 x 8 mm, drawing EX-1052",
+      "unit": "SET",
+      "dspQty": 53000,
+      "rate": 5300000
+    },
+    {
+      "poItemNo": 540,
+      "description": "Plate, aluminium, 63 x 9 mm, drawing EX-1053",
+      "unit": "MTR",
+      "dspQty": 54250,
+      "rate": 5412345
+    },
+    {
+      "poItemNo": 550,
+      "description": null,
+      "unit": "NOS",
+      "dspQty": 55000,
+      "rate": 5524690
+    },
+    {
+      "poItemNo": 560,
+      "description": "Pin, mild steel, 65 x 11 mm, drawing EX-1055",
+      "unit": "nos",
+      "dspQty": 56000,
+      "rate": 5637035
+    },
+    {
+      "poItemNo": 570,
+      "description": "Bracket, brass, 66 x 5 mm, drawing EX-1056",
+      "unit": "KG",
+      "dspQty": 57000,
+      "rate": 5700000
+    },
+    {
+      "poItemNo": 580,
+      "description": "Flange, stainless steel, 67 x 6 mm, drawing EX-1057",
+      "unit": null,
+      "dspQty": 58000,
+      "rate": 5812345
+    },
+    {
+      "poItemNo": 590,
+      "description": "Bush, aluminium, 68 x 7 mm, drawing EX-1058; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+      "unit": "SET",
+      "dspQty": 59250,
+      "rate": 5924690
+    },
+    {
+      "poItemNo": 600,
+      "description": "Spacer, copper, 69 x 8 mm, drawing EX-1059",
+      "unit": "MTR",
+      "dspQty": 60000,
+      "rate": 6037035
+    }
+  ]
+}
