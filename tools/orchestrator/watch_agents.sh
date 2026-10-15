@@ -4,7 +4,7 @@
 # (SETTLED <name> <status>, including one already idle at start; `unknown` counts as working, since herdr reports it
 # briefly mid-turn), disappears (GONE <name>), free memory falls below MIN_FREE_MB (LOWMEM <MB>), or a new comment
 # starting READY, BLOCKED or ESCALATE appears on an open PR (PRCOMMENT <n>; counted from start).
-# IGNORE: comma-separated agent names to skip, e.g. implementors waiting for `YOUR TURN`. INTERVAL: poll seconds.
+# IGNORE: comma-separated agent names to skip, e.g. implementors waiting on their reviewer. INTERVAL: poll seconds.
 # Single instance: exits 2 with "ERROR another watcher is running (pid N, windows pid W)" while a live watcher holds
 # the pidfile; a stale pidfile is cleared. Start it only as a tracked background task, never with `&`.
 source "$(dirname "$0")/config.sh"

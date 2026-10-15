@@ -29,10 +29,10 @@ bash "$(dirname "$0")/wait_ci.sh" "$pr" "$sha"
 full=$(gh pr view "$pr" --json headRefOid --jq .headRefOid)
 if [[ $full != "$sha"* ]]; then err "head is $full, not $sha"; fi
 
-# Recurring: a spec PR was merged without the YOUR TURN tracker commit. A failed `gh pr diff` also refuses. Checked
+# Recurring: a spec PR was merged without the tracker commit. A failed `gh pr diff` also refuses. Checked
 # once the head is verified, so it reads the diff that gets merged.
 if [[ $branch =~ ^spec-[0-9]+/ ]] && ! gh pr diff "$pr" --name-only | grep -qxF "$tracker"; then
-  err "PR #$pr ($branch) does not touch $tracker: the tracker commit is missing. Send YOUR TURN and wait for READY before merging."
+  err "PR #$pr ($branch) does not touch $tracker: the tracker commit is missing. The implementor adds it before READY (/implement-pr §6.3)."
 fi
 # GitHub deletes a merged PR's head branch and closes every open PR based on it (#43, stacked on #42, was closed).
 # Retarget those to the merged PR's base first; a failed list or retarget refuses the merge.

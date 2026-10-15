@@ -72,8 +72,9 @@ If all you have are nits, the code is fine; say so.
 
 ## 4. Verdict
 
-Post the review as a PR comment (`gh pr review <n> --comment --body-file …`) with the intent, the buckets and one
-verdict:
+Post the review as a PR comment (`gh pr comment <n> --body-file …`), never with `gh pr review`: implementors and
+`watch_agents.sh` read comments only, and verdicts posted as reviews were missed. The comment holds the intent, the
+buckets and one verdict:
 
 - `MERGE`: no Act-on items and CI green;
 - `MERGE AFTER FIX`: merges once the listed Act-on items are fixed and CI is green again. There is no second review,
