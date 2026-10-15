@@ -11,7 +11,13 @@ const zReportItem = zPoItem
   .pick({ poId: true, poItemNo: true, description: true, ordQty: true, dspQty: true })
   .extend({ poItemId: zId, poNumber: z.string(), poDate: zIsoDate.nullable() });
 
-export const zPendingQuery = zListQuery(["description", "poNumber", "poDate", "ordQty", "dspQty"], zDateRange);
+/** `q`: the tab's search box, text in the PO number or the description. */
+const zReportSearch = { q: z.string().optional() };
+
+export const zPendingQuery = zListQuery(["description", "poNumber", "poDate", "ordQty", "dspQty"], {
+  ...zDateRange,
+  ...zReportSearch,
+});
 
 /** A PO item with quantity still to supply, and the documents raised on it. */
 export const zPendingRow = zReportItem.extend({
@@ -21,7 +27,7 @@ export const zPendingRow = zReportItem.extend({
   invoices: z.array(zFyDocRef),
 });
 
-const reconciliationFilters = { ...zDateRange, poId: zId.optional() };
+const reconciliationFilters = { ...zDateRange, ...zReportSearch, poId: zId.optional() };
 
 export const zReconciliationQuery = zListQuery(
   ["description", "poNumber", "ordQty", "dspQty", "rcdQty", "rejQty"],

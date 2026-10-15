@@ -104,6 +104,10 @@ describe("GET /api/reports/pending", () => {
     ["sort=dspQty&dir=asc", ["4500102", "4500101"]],
     ["sort=poDate&dir=desc", ["4500102", "4500101"]],
     ["sort=description&dir=asc", ["4500102", "4500101"]],
+    // The tab's search box: text in the PO number or the description, any case.
+    ["q=0102", ["4500102"]],
+    ["q=GASKET", ["4500102"]],
+    ["q=nothing", []],
   ])("%s", async (query, expected) => {
     const { items } = await list<PendingRow>(`/api/reports/pending?${query}`);
     expect(items.map((r) => r.poNumber)).toEqual(expected);
@@ -139,6 +143,15 @@ describe("GET /api/reports/reconciliation", () => {
       expect(await list(`/api/reports/reconciliation?${query}`)).toEqual({ items: [], total: 0 });
     },
   );
+
+  it.each([
+    ["q=4500103", ["4500103/10"]],
+    ["q=hex bolt", ["4500101/10"]],
+    ["q=nothing", []],
+  ])("searches the PO number and description in the range: %s", async (query, expected) => {
+    const { items } = await list<ReconciliationRow>(`/api/reports/reconciliation?${range}&${query}`);
+    expect(items.map((r) => `${r.poNumber}/${r.poItemNo}`)).toEqual(expected);
+  });
 
   it("sorts and pages", async () => {
     const { items, total } = await list<ReconciliationRow>(

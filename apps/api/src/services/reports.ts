@@ -10,7 +10,7 @@ import { addDays, qtyToString, sumQty, TOL } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import { fmtDateDashed, foldRepeatedLines, qtyExactNumber, qtyNumber } from "@senstosales/schemas";
 import type { SQL } from "drizzle-orm";
-import { and, eq, gt, gte, lte } from "drizzle-orm";
+import { and, eq, gt, gte, lte, or } from "drizzle-orm";
 import type { z } from "zod";
 
 import { dcNotFound, onboardingRequired, poNotFound } from "../errors.ts";
@@ -29,7 +29,7 @@ import {
   reportColumns,
   reportItems,
 } from "../repositories/reports.ts";
-import { inBatches } from "../repositories/sql.ts";
+import { contains, inBatches } from "../repositories/sql.ts";
 import { findSupplier } from "../repositories/supplier.ts";
 import { gcFile, mapped, summaryFile, xlsxFile } from "./exports.ts";
 import { byNumber, LIST_READ_PAGE, pageOfRows } from "./paging.ts";
@@ -46,14 +46,23 @@ const DEFAULT_RANGE_DAYS = 30;
 const dated = (from: IsoDate | undefined, to: IsoDate | undefined): SQL | undefined =>
   and(from === undefined ? undefined : gte(po.poDate, from), to === undefined ? undefined : lte(po.poDate, to));
 
+/** The tab's search box: text in the PO number or the item description. */
+const searched = (text: string | undefined): SQL | undefined =>
+  text ? or(contains(po.poNumber, text), contains(poItem.description, text)) : undefined;
+
 /**
  * Pending: dated in the range with quantity still to supply, `gtTol(balance, 0)` (INV-02) as legacy's
  * `balance > 0.001`, read in SQL so items with nothing to supply are never fetched.
  */
-const pendingWhere = (q: PendingQuery) => and(dated(q.from, q.to), gt(poItem.balanceQty, TOL));
+const pendingWhere = (q: PendingQuery) => and(dated(q.from, q.to), gt(poItem.balanceQty, TOL), searched(q.q));
+
+/** The tab's rows, narrowed by its search box. */
+function reconciliationWhere(q: ReconciliationQuery, today: IsoDate) {
+  return and(reconciliationScope(q, today), searched(q.q));
+}
 
 /** One PO (EC-42), the range, or without both range ends the 30 days to today, as the legacy tab. */
-function reconciliationWhere(q: ReconciliationQuery, today: IsoDate) {
+function reconciliationScope(q: ReconciliationQuery, today: IsoDate) {
   if (q.poId !== undefined) return eq(po.id, q.poId);
   if (q.from === undefined || q.to === undefined) return dated(addDays(today, -DEFAULT_RANGE_DAYS), today);
   return dated(q.from, q.to);
