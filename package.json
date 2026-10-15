@@ -11,7 +11,7 @@
     "import:corpus": "node tools/corpus/src/import.ts",
     "hooks": "vp config --hooks --no-agent",
     "format": "vp fmt --write",
-    "check:code": "vp check && node tools/checks/src/language.ts && node tools/checks/src/status-source.ts && node tools/checks/src/migration-sql-lint.ts && node tools/checks/src/d1-dialect.ts && tsc -b && vp test run",
+    "check:code": "vp check && node tools/checks/src/language.ts && node tools/checks/src/status-source.ts && node tools/checks/src/migration-sql-lint.ts && node tools/checks/src/d1-dialect.ts && node tools/checks/src/validate-colors.ts && node tools/checks/src/validate-typography.ts && node tools/checks/src/validate-imports.ts && node tools/checks/src/validate-icons.ts && node tools/checks/src/validate-components.ts && tsc -b && vp test run",
     "check:real-data": "node tools/checks/src/real-data-scan.ts",
     "check:licenses": "node -e \"require('fs').mkdirSync('license-report',{recursive:true})\" && pnpm licenses list --json --recursive > license-report/licenses.json && node tools/checks/src/license-check.ts license-report/licenses.json",
     "check:build": "pnpm -r --if-present build && node tools/checks/src/bundle-budget.ts",

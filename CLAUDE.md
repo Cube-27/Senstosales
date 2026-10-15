@@ -127,10 +127,10 @@ The checks CI runs, by job (every job must pass before merge). Each is a root sc
 
 ```sh
 pnpm check:code        # check: vp check (Oxfmt + Oxlint), language (INV-90), status-source (INV-64), migration SQL lint
-                       # and D1 dialect step (INV-84), tsc -b, vp test run (incl. tools)
+                       # and D1 dialect step (INV-84), design validators (INV-66), tsc -b, vp test run (incl. tools)
 pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
-pnpm check:build       # build: pnpm -r build
+pnpm check:build       # build: pnpm -r build, then the web shell bundle budget (INV-104)
 pnpm check:audit       # audit: pnpm audit --prod at high, action pins and read-only permissions (INV-108)
 ```
 
