@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-11 PR 4, SPEC-13 PR 1 (re-scoped: legacy-code-derived goldens; H5 confirmation as PR 1b). Next: SPEC-11 PR 5-6, SPEC-13 PR 3-5. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2-5 (H5), SPEC-13 PR 1b (H5).
+In flight: SPEC-11 PR 4, SPEC-12 PR 3 (re-scoped: legacy-code-derived goldens; SPEC-12 PR 2 is the H5 confirmation). Next: SPEC-11 PR 5-6, SPEC-12 PR 4-6, SPEC-13 PR 3-5. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -178,7 +178,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 
 | PR  | Scope                                               | Status     | Notes                                                                                          |
 | --- | --------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
-| 1   | Export inventory and goldens                        | todo       | goldens from legacy code (H5 moved to PR 1b)                                                   |
+| 1   | Export inventory and goldens                        | done (#62) | goldens from legacy code (H5 moved to PR 1b)                                                   |
 | 1b  | Confirm goldens against H5 legacy output            | todo       | H5                                                                                             |
 | 2   | Streaming writers and keyset paging                 | done (#58) |                                                                                                |
 | 3   | Registers and list CSVs                             | todo       | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |

@@ -2141,7 +2141,7 @@ None.
 
 ### D-0261 — CSV form: UTF-8 without BOM, CRLF, RFC 4180 quoting
 
-- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided; BOM part superseded by D-0287
 - Decision: CSV is UTF-8 with no BOM, CRLF line endings and RFC 4180 quoting; headers are quoted by the same rule but never prefixed.
 - Alternatives: LF endings; a BOM.
 - Why: No golden exists yet (H5). This is the conventional CSV form; SPEC-13 PR 3's exact-text goldens confirm or change it in one place (`line`).
@@ -2315,3 +2315,59 @@ None.
 - Alternatives: Wait for the SPEC-01 PR 4 ADR (blocked on H5); compare bytes.
 - Why: SPEC-12 PR 1 needs a format now. A writer that omits a default and one that writes it should compare equal. ADR 0003 can revise the format before SPEC-12 PR 2's goldens are committed.
 - Reversible: yes; goldens are regenerated with the tool.
+
+### D-0283 — SPEC-13 PR 1 re-scoped: goldens from the legacy code, H5 confirmation in PR 1b
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: The report goldens are derived from the legacy code's visible export output (headers, order, formats, merges, file names). A new row, SPEC-13 PR 1b (todo, H5), confirms them against real legacy output.
+- Alternatives: Keep PR 1 blocked on H5.
+- Why: H5 is unavailable; reading visible output is allowed by C16 and unblocks SPEC-13 PR 3–5.
+- Reversible: yes.
+
+### D-0284 — Report golden format
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: A report workbook golden is compact JSON: file name, sheet, widths, page setup, footer, named exceljs styles, merges and a cell grid of `value` or `{ v, s }`; a merged range carries its top-left cell's style. A CSV golden is exact bytes.
+- Alternatives: The SPEC-12 xlsx snapshot format (D-0282).
+- Why: The goldens are written by hand and must be readable; SPEC-13 PR 3 projects writer output onto this shape.
+- Reversible: yes.
+
+### D-0285 — Fixed column widths in list workbooks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: Each list-workbook column has a fixed width: header length + 2 and at least 12, 30 for names, 60 for descriptions. Legacy fitted each column to its longest value, at most 60.
+- Alternatives: Two passes, or a max-length query before streaming.
+- Why: The streaming `WorkbookWriter` writes column widths before the first row (INV-99). Widths are not cell content, so this is a minor visual change that C7 allows for performance.
+- Reversible: yes.
+
+### D-0286 — Export file names are the legacy server's
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: `PO_Register.xlsx`, `DC_Register.xlsx`, `Invoice_Register.xlsx`, `Items_Summary[_<from>_to_<to>].xlsx`, `PO_Reconciliation_Report.xlsx`, `PO_Reconciliation_<po>.xlsx`, `GC_<dc>.xlsx`, `Delivery_Tracker_<YYYYMMDD>_<HHMM>.xlsx` (IST), `DC_List_Export_<po or All>.csv`, `Invoice_List_Export.csv`; numbers cleaned as legacy did (`..`, `/`, `\` to `_`, at most 50 characters).
+- Alternatives: The legacy browser's fallback names (`<type>_report.xlsx`, `Selected_Summary.xlsx`).
+- Why: SPEC-13 §2 names the date-range variant, which only the server produced; D-0006 keeps the `.csv` names.
+- Reversible: yes.
+
+### D-0287 — CSV exports start with a UTF-8 BOM
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: CSV exports start with a UTF-8 BOM, as the legacy CSV writer did; CRLF line ends and minimal quoting stay. Supersedes D-0261's no-BOM choice; SPEC-13 PR 3 adds the BOM in `csvChunks`.
+- Alternatives: No BOM (D-0261).
+- Why: D-0261 chose no BOM only because no golden existed and left the goldens to confirm or change it; the legacy output has the BOM.
+- Reversible: yes.
+
+### D-0288 — CSV numbers without a trailing `.0`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: CSV numbers are plain decimals (`11`, `1.25`); legacy wrote Python's `str(float)` (`11.0`).
+- Alternatives: Reproduce `11.0`.
+- Why: A spreadsheet reads both as the same cell value; the `.0` is a float artefact, as in D-0055.
+- Reversible: yes.
+
+### D-0289 — Edge-case readings EC-39 to EC-45
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 1 (#62) · Status: decided
+- Decision: EC-39 (DC list Status, Pending Qty) and EC-40 (invoice list Delivered Qty, Status, Pending Qty) as legacy, through the resolved SRV links; EC-41 packets 0 and an empty description row; EC-42 one-PO reconciliation as item rows; EC-43 export-selected as the selected POs' reconciliation rows (D-0100); EC-44 the install's supplier name; EC-45 the bare `Report` sheet.
+- Alternatives: Per row in EDGE_CASES.md.
+- Why: C18. In the synthetic dataset the EC-39 legacy formulas agree with the item balance, so `dc-list.csv` holds under either reading; the other goldens depend on their readings: `invoice-list.csv` on EC-40, `pending.json` on EC-41, `reconciliation-one-po.json` on EC-42, `export-selected.json` on EC-43, `po-register.json` on EC-44, `po-register-empty.json` on EC-45.
+- Reversible: yes.
