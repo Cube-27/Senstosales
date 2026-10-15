@@ -162,3 +162,67 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Change the label lookup (inventing handling, C18).
 - Why: Found while building the fixtures; neither the spec nor any decision covers it. The SPEC-06 PR 6 corpus test shows whether real pages have such values.
 - Reversible: yes.
+
+### D-0550 — An SRV row's identity is its place in its SRV
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: `srv_item.row_no` numbers rows in file order within their SRV; the old unique `(po_item_no, lot_no, srv_item_no)` key is dropped. Migration 0004 numbers rows stored before it by id.
+- Alternatives: A synthetic unique key; keeping the old key and refusing repeats.
+- Why: Real pages repeat the key and the owner's rule is to store them as printed (A2-10, INV-111).
+- Reversible: no (schema).
+
+### D-0551 — A re-uploaded SRV keeps its rows' ids by occurrence
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: Ingest matches stored rows to page rows by `srv/po_item/lot/srv_item#n`, the n-th row with that key, so flags keep citing the same row (INV-59).
+- Alternatives: Match by `row_no`; new ids every upload.
+- Why: A row inserted above others would shift every `row_no`; the occurrence key survives that for unrepeated keys.
+- Reversible: yes.
+
+### D-0552 — A full stop right after a drawing number is not part of it
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: When the drawing number is followed by a space, a comma or the end, trailing full stops are dropped.
+- Alternatives: Keep the full stop as printed.
+- Why: It ends the sentence in the description; legacy output has no trailing dot.
+- Reversible: yes.
+
+### D-0553 — Empty SRV quantity cells are null
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: An empty ORDER, CHALLAN, RECVD, ACCEPTED or REJ cell is stored as null, never 0.
+- Alternatives: Read empty as 0.
+- Why: Verbatim import: an empty cell is not a zero (INV-112).
+- Reversible: yes.
+
+### D-0554 — The manual PO form keeps the stored MTRL CAT and ITEM VALUE
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: Editing a PO by hand keeps each item's stored `mtrlCat` and `itemValue`; the form does not show them (C7).
+- Alternatives: Clear them on a manual edit.
+- Why: They are BHEL's values; the form has no field for them.
+- Reversible: yes.
+
+### D-0555 — Rows stored before migration 0004 have no raw row
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: `raw_row_json` is null on rows stored before 0004; re-uploading the page fills it.
+- Alternatives: Rebuild a raw row from the stored columns.
+- Why: A rebuilt row would not be the page as printed.
+- Reversible: yes.
+
+### D-0556 — A repeated PO item row adds a lot
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: When an item number repeats, the first row's item values are kept and every row's lot is stored, as printed (no max, no replace).
+- Alternatives: Take the larger quantity; replace the earlier lot.
+- Why: Real pages print one row per lot with the item cells repeated (A2-10, INV-111).
+- Reversible: yes.
+
+### D-0557 — A manual PO edit matches repeated lots by occurrence
+
+- Date: 2026-10-16 · Spec/PR: E2E FIX-1 (#92) · Status: decided
+- Decision: The n-th form lot with a lot number keeps the n-th stored lot's entry-allow date, note and page row; stored lots are read in page order.
+- Alternatives: Match by lot number alone (every repeat took the last one's values).
+- Why: Review of #92: repeated lot numbers are now stored (A2-10).
+- Reversible: yes.

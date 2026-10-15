@@ -16,7 +16,7 @@ from unmerged work is fully specified (types, API shapes, table columns). Readin
 - `human`: waits on a human-only task (below).
 - `deferred`: not in the current exit predicate.
 
-Updated: 2026-10-15.
+Updated: 2026-10-16.
 
 ## Human-only tasks
 
@@ -80,6 +80,18 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-18 (#88): static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review).
 - SPEC-18 (#88 review): `LineTable` clips its right-hand columns in a narrow window (`overflow-x-auto`); DC and invoice list values format every row as non-GEMC (list rows carry no `isGemc`).
 - SPEC-18 (#88): DC detail reads `po.detail` only for Received; `dc.detail` could carry it (D-0486).
+
+## E2E fixes (2026-10-15)
+
+Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE rev 1.8 onward).
+
+| Batch | Scope                                                                                       | Status     | Notes                                                                                |
+| ----- | ------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| FIX-1 | SRV parser reads every column; LOT NO and material optional; odd rows kept; per-SRV failure | done (#92) | Migration 0004; D-0550..D-0557.                                                      |
+| FIX-1 | PO parser: REMARKS below, INSPECTION BY, inline labels, MTRL CAT, ITEM VALUE, rows kept     | done (#92) | GEMC from the remarks only.                                                          |
+| FIX-1 | Migrations 0003 (document fields) and 0004 (verbatim source rows)                           | done (#92) | 0003 columns serve FIX-3; 0004 indexes serve FIX-2.                                  |
+| FIX-1 | SRV detail shows the SRV's own source fields                                                | done (#92) | SRV list ordQty, value, material and rate follow FIX-2's `(po, po_item_no)` linking. |
+| FIX-1 | Docs: ARCHITECTURE §7.1, §7.3, §8.2, A2-3, A2-10; SPEC-06, SPEC-08; INV-50, INV-111..112    | done (#92) | EC-60 resolved.                                                                      |
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
