@@ -12,6 +12,7 @@ import { jobsService } from "./jobs.ts";
 import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
 import { poService } from "./po.ts";
+import { poManualQtyService } from "./po-manual-qty.ts";
 import { createSecretsService } from "./secrets.ts";
 import { createSettingsService } from "./settings.ts";
 import { srvIngestService } from "./srv-ingest.ts";
@@ -42,6 +43,7 @@ export function createServices(deps: ServiceDeps) {
     jobs: jobsService(deps),
     folderImport: folderImportService(deps),
     po: poService(withSupplier),
+    poManualQty: poManualQtyService(deps),
     poIngest: poIngestService(deps),
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),

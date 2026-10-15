@@ -1810,3 +1810,27 @@ None.
 - Alternatives: Delete the SRVs too.
 - Why: SPEC-10 §9 open issue and A2-9.
 - Reversible: yes.
+
+### D-0220 — Setting the manual quantity bumps the PO version
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 3 (#49) · Status: decided
+- Decision: The manual dispatched quantity batch starts with `updateWithVersion(po, poId, versionRead, {})`, where the version is read before the recompute snapshot.
+- Alternatives: Leave the version alone, as recompute does (D-0142). Add a `version` to the request body.
+- Why: It is a user edit of the PO. An ingest or edit that loaded its snapshot earlier fails instead of writing `dsp_qty` from stale rows, and this batch fails the same way if another versioned write landed after its read. The route table fixes the body shape, so the version comes from the read.
+- Reversible: yes.
+
+### D-0221 — An omitted note clears the stored manual note
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 3 (#49) · Status: decided
+- Decision: `{ qty }` without `note` stores `manual_note = NULL`. The quantity and note are set together.
+- Alternatives: Keep the previous note when `note` is omitted.
+- Why: This is the conservative reading of `{ qty >= 0, note? }`: the note describes the current quantity, so a stale note never stays attached to a new quantity.
+- Reversible: yes.
+
+### D-0222 — `manual_set_at` is set on every change
+
+- Date: 2026-10-15 · Spec/PR: SPEC-10 PR 3 (#49) · Status: decided
+- Decision: Every successful set stamps `manual_set_at = now`, including a change back to 0.
+- Alternatives: Stamp only when `qty > 0`.
+- Why: SPEC-10 §2 says the endpoint "sets `manual_set_at`" with no condition. INV-57 already ignores it while the quantity is 0.
+- Reversible: yes.
