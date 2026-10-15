@@ -1,6 +1,6 @@
 // The global search dialog's frame (SPEC-14 shell; SPEC-15 PR 5 adds the results, preview, filters and saved
 // searches). The panes keep one size whatever they hold, so results never move the frame (C8).
-import { Content, Description, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
+import { Dialog } from "radix-ui";
 import { useState } from "react";
 
 import { cn } from "../../lib/cn.ts";
@@ -22,14 +22,14 @@ export function GlobalSearchDialog({ open, onOpenChange, query, onQueryChange }:
   const [showSaved, setShowSaved] = useState(false);
 
   return (
-    <Root open={open} onOpenChange={onOpenChange}>
-      <Portal>
-        <Overlay className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
-        <Content className="fixed top-[5%] left-1/2 z-50 flex max-h-[90vh] w-full max-w-4xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-2xl outline-none">
-          <Title className="sr-only">Quick Search</Title>
-          <Description className="sr-only">
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" />
+        <Dialog.Content className="fixed top-[5%] left-1/2 z-50 flex max-h-[90vh] w-full max-w-4xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-2xl outline-none">
+          <Dialog.Title className="sr-only">Quick Search</Dialog.Title>
+          <Dialog.Description className="sr-only">
             Search across purchase orders, delivery challans, invoices, and SRVs with filters
-          </Description>
+          </Dialog.Description>
 
           <div className="flex items-center border-b border-border px-4 py-3">
             <Search className="mr-3 size-4 shrink-0 text-tertiary" />
@@ -86,8 +86,8 @@ export function GlobalSearchDialog({ open, onOpenChange, query, onQueryChange }:
             </div>
             <span>SenstoSearch</span>
           </div>
-        </Content>
-      </Portal>
-    </Root>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

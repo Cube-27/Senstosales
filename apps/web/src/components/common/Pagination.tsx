@@ -15,7 +15,27 @@ export interface PaginationProps {
   readonly className?: string;
 }
 
-const NAV = "size-6 text-tertiary hover:text-foreground";
+interface NavProps {
+  readonly label: string;
+  readonly icon: typeof ChevronFirst;
+  readonly disabled: boolean;
+  onClick(): void;
+}
+
+function Nav({ label, icon: Icon, disabled, onClick }: NavProps) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="size-6 text-tertiary hover:text-foreground"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon aria-hidden />
+    </Button>
+  );
+}
 
 /**
  * The legacy pager: the row range, the page-size select and first/previous/next/last around "page / pages". The
@@ -51,51 +71,15 @@ export function Pagination({ page, pageSize, total, onPage, onPageSize, classNam
           </SelectContent>
         </Select>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={NAV}
-            aria-label="First page"
-            disabled={page <= 1}
-            onClick={() => onPage(1)}
-          >
-            <ChevronFirst aria-hidden />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={NAV}
-            aria-label="Previous page"
-            disabled={page <= 1}
-            onClick={() => onPage(page - 1)}
-          >
-            <ChevronLeft aria-hidden />
-          </Button>
+          <Nav label="First page" icon={ChevronFirst} disabled={page <= 1} onClick={() => onPage(1)} />
+          <Nav label="Previous page" icon={ChevronLeft} disabled={page <= 1} onClick={() => onPage(page - 1)} />
           <p className="w-20 text-center role-pagination-text tabular-nums">
             <span className="role-pagination-number">{page}</span>
             <span className="mx-1">/</span>
             <span className="role-pagination-number">{pages}</span>
           </p>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={NAV}
-            aria-label="Next page"
-            disabled={page >= pages}
-            onClick={() => onPage(page + 1)}
-          >
-            <ChevronRight aria-hidden />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={NAV}
-            aria-label="Last page"
-            disabled={page >= pages}
-            onClick={() => onPage(pages)}
-          >
-            <ChevronLast aria-hidden />
-          </Button>
+          <Nav label="Next page" icon={ChevronRight} disabled={page >= pages} onClick={() => onPage(page + 1)} />
+          <Nav label="Last page" icon={ChevronLast} disabled={page >= pages} onClick={() => onPage(pages)} />
         </div>
       </div>
     </nav>

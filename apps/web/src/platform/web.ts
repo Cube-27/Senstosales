@@ -17,7 +17,7 @@ export function downloadFile({ name, data }: SaveFile): void {
 }
 
 /** Opens a hidden file input and resolves with what the user picked, or null on cancel. */
-export function pickWithInput(setUp: (input: HTMLInputElement) => void): Promise<File[] | null> {
+function pickWithInput(setUp: (input: HTMLInputElement) => void): Promise<File[] | null> {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";

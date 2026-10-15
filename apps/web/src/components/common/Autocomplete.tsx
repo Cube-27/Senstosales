@@ -49,7 +49,7 @@ export function Autocomplete({
   const [query, setQuery] = useState(chosen?.label ?? "");
   const [active, setActive] = useState(-1);
   // Outside a search the field shows the chosen option's label.
-  const text = open ? query : (chosen?.label ?? (value === "" ? "" : value));
+  const text = open ? query : (chosen?.label ?? value);
 
   const pick = (option: AutocompleteOption): void => {
     onChange(option.value, option);

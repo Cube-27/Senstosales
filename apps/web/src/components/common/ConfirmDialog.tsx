@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { AlertTriangle, Loading } from "../../lib/icons.ts";
+import { AlertTriangle } from "../../lib/icons.ts";
 import { cn } from "../../lib/cn.ts";
 import { Button } from "../ui/button.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog.tsx";
@@ -59,15 +59,8 @@ export function ConfirmDialog({
           <Button variant="outline" size="sm" className="flex-1" onClick={onClose} disabled={loading}>
             {cancelLabel}
           </Button>
-          <Button variant={tone.button} size="sm" className="flex-1" onClick={onConfirm} disabled={loading}>
-            {loading ? (
-              <>
-                <Loading className="animate-spin" aria-hidden />
-                Wait...
-              </>
-            ) : (
-              confirmLabel
-            )}
+          <Button variant={tone.button} size="sm" className="flex-1" onClick={onConfirm} loading={loading}>
+            {loading ? "Wait..." : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

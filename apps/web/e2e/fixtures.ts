@@ -31,13 +31,15 @@ function startApi(dataDir: string): Promise<Server> {
     let out = "";
     let err = "";
     const timer = setTimeout(() => fail(new Error(`the API did not start in time: ${err}`)), START_TIMEOUT_MS);
-    child.stdout?.on("data", (chunk: Buffer) => {
+    const onOut = (chunk: Buffer): void => {
       out += chunk.toString("utf8");
       const port = /SENSTO_PORT=(\d+)/.exec(out)?.[1];
       if (!port) return;
       clearTimeout(timer);
+      child.stdout?.off("data", onOut).resume();
       done({ url: `http://127.0.0.1:${port}`, child, dataDir });
-    });
+    };
+    child.stdout?.on("data", onOut);
     child.stderr?.on("data", (chunk: Buffer) => {
       err += chunk.toString("utf8");
     });

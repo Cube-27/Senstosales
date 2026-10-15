@@ -12,9 +12,6 @@ export type ListFilters<S extends ListSearch> = Omit<S, keyof ListSearch>;
 
 export interface ListSearchApi<S extends ListSearch> {
   readonly search: S;
-  setPage(page: number): void;
-  setPageSize(pageSize: number): void;
-  toggleSort(key: string): void;
   /** Merges filters into the URL and goes back to page 1. */
   setFilters(filters: Partial<ListFilters<S>>): void;
   /** The paging and sort props of the list's DataTable. */
@@ -59,9 +56,6 @@ export function useListSearch<S extends ListSearch>(): ListSearchApi<S> {
   const toggleSort = (key: string): void => update({ ...nextSort(search, key), page: 1 });
   return {
     search,
-    setPage,
-    setPageSize,
-    toggleSort,
     setFilters: (filters) => update({ page: 1 }, filters),
     table: {
       page: search.page,

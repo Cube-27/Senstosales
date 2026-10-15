@@ -43,7 +43,7 @@ const FEATURES = tableFeatures({});
 function plainValue(row: unknown, key: string): string {
   const value: unknown = typeof row === "object" && row !== null ? Reflect.get(row, key) : undefined;
   if (value === null || value === undefined || value === "") return "—";
-  return typeof value === "string" ? value : String(value);
+  return String(value);
 }
 
 type Sort = DataTableProps<unknown>["sort"];

@@ -57,10 +57,10 @@ export function DatePicker({
   };
 
   const pick = (date: Date | undefined): void => {
-    const picked = date ? fromDate(date) : null;
+    const picked = (date && fromDate(date)) ?? "";
     setOpen(false);
-    setText(shown(picked ?? ""));
-    if ((picked ?? "") !== value) onChange(picked ?? "");
+    setText(shown(picked));
+    if (picked !== value) onChange(picked);
   };
 
   return (

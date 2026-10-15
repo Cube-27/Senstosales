@@ -74,14 +74,15 @@ export function FileUploadModal({ open, onClose, files, onUpload, title = "Uploa
   }, [open, files]);
 
   const uploading = phase === "uploading";
-  const count = (status: UploadOutcome["status"]): number => results.filter((r) => r.status === status).length;
+  const count = { accepted: 0, skipped: 0, failed: 0 };
+  for (const r of results) count[r.status] += 1;
   const percent = files.length === 0 ? 0 : Math.round((results.length / files.length) * 100);
   const status = STATUS_TEXT[phase];
   const notAccepted = results.filter((r) => r.status !== "accepted");
   const stats = [
-    { label: "Success", value: count("accepted"), className: "text-success" },
-    { label: "Skipped", value: count("skipped"), className: count("skipped") > 0 ? "text-warning" : "text-tertiary" },
-    { label: "Failed", value: count("failed"), className: count("failed") > 0 ? "text-error" : "text-tertiary" },
+    { label: "Success", value: count.accepted, className: "text-success" },
+    { label: "Skipped", value: count.skipped, className: count.skipped > 0 ? "text-warning" : "text-tertiary" },
+    { label: "Failed", value: count.failed, className: count.failed > 0 ? "text-error" : "text-tertiary" },
   ];
 
   return (
