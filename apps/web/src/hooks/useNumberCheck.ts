@@ -1,8 +1,7 @@
 import type { IsoDate } from "@senstosales/domain";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 
-import { apiQuery } from "../lib/api.ts";
+import { api } from "../lib/api.ts";
 
 /** The legacy create forms checked the typed number 500 ms after the last keystroke. */
 export const NUMBER_CHECK_DELAY_MS = 500;
@@ -14,9 +13,21 @@ export interface NumberCheck {
   readonly taken: boolean;
 }
 
+/** Resolves after `ms`, or rejects once `signal` aborts. */
+function pause(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    });
+  });
+}
+
 /**
- * A create form's live duplicate check of its typed number (INV-22, INV-27): asked once typing pauses, for numbers of
- * at least `minLength` characters (the legacy invoice form checked from 3).
+ * A create form's live duplicate check of its typed number (INV-22, INV-27), for numbers of at least `minLength`
+ * characters (the legacy invoice form checked from 3). Each keystroke is a new query that first waits out the
+ * typing pause on its abort signal, so the query client cancels a superseded check before it reaches the API.
  */
 export function useNumberCheck(
   route: "dc.numberCheck" | "invoice.numberCheck",
@@ -25,22 +36,15 @@ export function useNumberCheck(
   minLength = 1,
 ): NumberCheck {
   const number = typed.trim();
-  const [asked, setAsked] = useState({ number, date });
-  useEffect(() => {
-    const timer = setTimeout(() => setAsked({ number, date }), NUMBER_CHECK_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [number, date]);
-  const wanted = number.length >= minLength && date !== "";
-  const enabled = wanted && asked.number.length >= minLength && asked.date !== "";
   const query = useQuery({
-    ...apiQuery(route, { query: asked.date === "" ? { number: asked.number } : { ...asked, date: asked.date } }),
-    enabled,
+    queryKey: [route, { number, date }] as const,
+    queryFn: async ({ signal }) => {
+      await pause(NUMBER_CHECK_DELAY_MS, signal);
+      return api.request(route, { query: date === "" ? { number } : { number, date } });
+    },
+    enabled: number.length >= minLength && date !== "",
     // A previous number's answer must never show for this one.
     placeholderData: () => undefined,
   });
-  const current = asked.number === number && asked.date === date;
-  return {
-    checking: wanted && (!current || query.isFetching),
-    taken: wanted && current && query.data?.taken === true,
-  };
+  return { checking: query.isFetching, taken: query.data?.taken === true };
 }

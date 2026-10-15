@@ -1,9 +1,10 @@
 import type { FormEvent, ReactNode } from "react";
 
-import { AlertCircle, Save } from "../../lib/icons.ts";
+import { Save } from "../../lib/icons.ts";
 import { cn } from "../../lib/cn.ts";
 import { Button } from "../ui/button.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog.tsx";
+import { FormAlert } from "./FormAlert.tsx";
 
 export interface FormDialogProps {
   readonly open: boolean;
@@ -44,16 +45,7 @@ export function FormDialog({
         </DialogHeader>
         <form onSubmit={submit} className="flex flex-col gap-3">
           {children}
-          <div
-            role="alert"
-            className={cn(
-              "flex min-h-9 items-center gap-2 rounded-md border border-error/20 bg-error/10 px-3 role-body-text text-error",
-              !error && "invisible",
-            )}
-          >
-            <AlertCircle className="size-4" aria-hidden />
-            <span>{error}</span>
-          </div>
+          <FormAlert message={error} />
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={saving}>
               Cancel
