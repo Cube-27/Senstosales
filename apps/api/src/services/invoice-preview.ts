@@ -1,6 +1,6 @@
 // What the invoice create form starts from (SPEC-11 §2): the PO, the DC if any, header defaults, the settings' GST
 // rates and the lines. Each line shows its item's uninvoiced quantity as information, never as a cap (INV-05, C6).
-// The defaults are the legacy previews' where v1 stores the field; the rest start blank (EC-36, EC-39).
+// The defaults are the legacy previews' where v1 stores the field; the rest start blank (EC-36, EC-46).
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 

@@ -81,7 +81,7 @@ The §14.1 API flows with synthetic data:
 - DC-sourced invoice with another qty or rate → 400, nothing written; a second invoice on the DC → 409.
 - Manual dispatched qty, then a real DC → `MANUAL_ADJUSTMENT_OVERLAP`; a PO-direct invoice instead → no overlap
   flag (EC-10).
-- DC 10 + PO-direct 10 on ord 10 → `dsp 20`, `OVER_DISPATCH` and `OVER_INVOICE` (EC-13).
+- DC 10 + PO-direct 10 on ord 10 → dsp 20, `OVER_DISPATCH`; `OVER_INVOICE` only once the DC is invoiced too (invoiced 20 > ord 10, INV-55) (EC-13).
 - DC on a cancelled item → `DOC_ON_CANCELLED_ITEM`.
 - Delete blocked by an invoice / by an SRV link → 409 with reason.
 - DC 100 in FY 2024-25 and 2025-26 both save; a second DC 100 in 2025-26 → 409; DC 344 and invoice 344 in one FY
