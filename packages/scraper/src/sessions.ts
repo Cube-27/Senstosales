@@ -32,14 +32,15 @@ export function createSessions(clock: InstantClock): Sessions {
     await entry.session.close();
   }
 
-  /** Wraps `inner` so each call marks it used and its own `close` also leaves the map. */
+  /** Wraps `inner` so each call marks it used, when it starts and when it settles, and its own `close` also leaves
+   * the map. */
   function tracked(id: string, inner: ScraperSession): ScraperSession {
     const entry: Entry = { session: inner, lastUsedMs: nowMs() };
     const use =
       <A extends unknown[], R>(call: (...args: A) => Promise<R>) =>
       (...args: A): Promise<R> => {
         entry.lastUsedMs = nowMs();
-        return call(...args);
+        return call(...args).finally(() => (entry.lastUsedMs = nowMs()));
       };
     const session: ScraperSession = {
       prepareLogin: use(() => inner.prepareLogin()),
@@ -75,7 +76,9 @@ export function createSessions(clock: InstantClock): Sessions {
     },
     async closeIdle() {
       const idle = [...entries].filter(([, entry]) => isIdle(entry)).map(([id]) => id);
-      await Promise.all(idle.map(close));
+      // From a timer: a close that rejects (a browser already gone) must not become an unhandled rejection; the
+      // entry has left the map either way.
+      await Promise.allSettled(idle.map(close));
     },
   };
 }

@@ -131,7 +131,7 @@ describe("sessions: idle close", () => {
     expect(closed()).toBe(0);
   });
 
-  it("get on an idle-expired session closes it and returns none, before any sweep", async () => {
+  it("get returns none for an idle-expired session before any sweep, and the sweep closes it", async () => {
     const clock = manualClock();
     const { scraper, closed } = countingScraper();
     const sessions = createSessions(clock);
@@ -140,6 +140,22 @@ describe("sessions: idle close", () => {
     expect(sessions.get("job-1")).toBeUndefined();
     await sessions.closeIdle();
     expect(closed()).toBe(1);
+  });
+
+  it("a session whose close rejects still leaves the map, and the sweep resolves", async () => {
+    const clock = manualClock();
+    const { scraper } = countingScraper();
+    const failing: Scraper = {
+      async openSession() {
+        const session = await scraper.openSession();
+        return { ...session, close: () => Promise.reject(new Error("browser already gone")) };
+      },
+    };
+    const sessions = createSessions(clock);
+    await sessions.open("job-1", failing);
+    clock.advance(15 * MINUTE);
+    await expect(sessions.closeIdle()).resolves.toBeUndefined();
+    expect(sessions.get("job-1")).toBeUndefined();
   });
 
   it("only the idle sessions close", async () => {
