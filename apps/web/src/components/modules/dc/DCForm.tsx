@@ -111,7 +111,12 @@ function ChallanFields({ duplicate }: Readonly<{ duplicate: boolean }>) {
           )}
         />
         <FormField label="GC Number">
-          <Input value={gcNumber ?? number} onChange={(e) => setValue("gcNumber", e.target.value)} autoComplete="off" />
+          <Input
+            value={gcNumber ?? number}
+            placeholder={number}
+            onChange={(e) => setValue("gcNumber", e.target.value)}
+            autoComplete="off"
+          />
         </FormField>
         <FormField label="GC Date">
           <DatePicker value={gcDate ?? dcDate} onChange={(d) => setValue("gcDate", d)} />
@@ -192,13 +197,14 @@ function DcNotes({ total }: { readonly total: string }) {
   const { control, register, watch } = useFormContext<DcFormValues>();
   const notes = useFieldArray({ control, name: "notes" });
   const [number, dcDate, gcNumber, gcDate] = watch(["number", "dcDate", "gcNumber", "gcDate"]);
-  const gcOn = gcDate ?? dcDate;
+  // A cleared GC field is saved as the DC's (INV-26), so the note shows the DC's too.
+  const gcOn = gcDate || dcDate;
   return (
     <section aria-label="Notes / Remarks" className="rounded-md border border-border bg-surface p-4">
       <h2 className="mb-3 role-section-title">Notes / Remarks</h2>
       <div className="flex flex-col gap-2">
         <AutoNote tag="GC">
-          {`Guarantee Certificate No. ${(gcNumber ?? number) || "—"} Dt. ${gcOn === "" ? "—" : fmtDate(gcOn)}`}
+          {`Guarantee Certificate No. ${gcNumber || number || "—"} Dt. ${gcOn === "" ? "—" : fmtDate(gcOn)}`}
         </AutoNote>
         <AutoNote tag="VAL">{`Consignment value of BHEL PO: ${total}`}</AutoNote>
         {notes.fields.map((note, i) => (

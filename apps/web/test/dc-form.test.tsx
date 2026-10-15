@@ -164,6 +164,15 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
     expect(saveDc().disabled).toBe(false);
   });
 
+  it("a cleared GC number follows the DC number again, as it is saved (INV-26)", async () => {
+    api();
+    renderApp(`/dc/create?po=${PO_ID}`);
+    await fill("17");
+    fireEvent.change(screen.getByLabelText("GC Number"), { target: { value: "" } });
+    expect((screen.getByLabelText("GC Number") as HTMLInputElement).placeholder).toBe("17");
+    expect(screen.getByText("Guarantee Certificate No. 17 Dt. 02/05/2025")).toBeTruthy();
+  });
+
   it("asks for a quantity before saving", async () => {
     const calls = api();
     renderApp(`/dc/create?po=${PO_ID}`);

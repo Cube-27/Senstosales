@@ -28,7 +28,8 @@ export function useDownload() {
     } catch (error) {
       toast("Download Failed", error instanceof Error ? error.message : "Unknown error", "error");
     } finally {
-      setBusy(null);
+      // A download started meanwhile keeps its spinner.
+      setBusy((now) => (now === key ? null : now));
     }
   }
   return { busy, run };
