@@ -1,101 +1,18 @@
 // SPEC-11 PR 1: the DC create form's dispatchable items and DC create, over HTTP on the full app. No quantity blocks a
 // save (C6, INV-32, INV-51); each create is one batch with recompute, flags, SRV link re-resolution and an audit row
 // (C4). Expected values are worked by hand from ARCHITECTURE §6.2, §6.6, §6.9 and §6.10. Synthetic values only (C1).
-import type { Db, Instant } from "@senstosales/db";
-import { dc, dcItem, poItem, reconciliationIssue, srvItem } from "@senstosales/db";
-import type { NodeDb } from "@senstosales/db/node";
+import type { Instant } from "@senstosales/db";
+import { srvItem } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
 import { afterEach, describe, expect, test } from "vite-plus/test";
 
-import type { AppOverrides } from "./api-app.ts";
-import { closeApiApps, onboardedApp } from "./api-app.ts";
+import { closeApiApps } from "./api-app.ts";
+import { heldBatches, HEADER, line, PO, ready } from "./dc-fixtures.ts";
 import { json } from "./helpers.ts";
 import { NOW } from "./service-deps.ts";
 import { srvPage } from "./srv-pages.ts";
 
 afterEach(closeApiApps);
-
-type App = Awaited<ReturnType<typeof onboardedApp>>;
-type Json = Record<string, unknown>;
-
-/** The JSON fields these tests read; each test asserts the values. */
-interface Wire extends Json {
-  id: string;
-  code: string;
-  version: number;
-  items: (Json & { id: string })[];
-}
-
-const line = (poItemNo: number, ordQty: string) => ({
-  poItemNo,
-  materialCode: `M-${poItemNo}`,
-  description: "Example part",
-  drawingNo: null,
-  unit: "NOS",
-  ordQty,
-  rateSource: "100",
-  lots: [{ lotNo: 1, delyQty: ordQty, delyDate: "2025-05-15", destCode: "D1" }],
-});
-
-/** PO 4500001: item 10 of ord 10 and item 20 of ord 5. */
-const PO = {
-  poNumber: "4500001",
-  poDate: "2025-03-10",
-  enquiry: null,
-  quotation: null,
-  orderType: "SUPPLY",
-  gemcNumber: null,
-  remarks: null,
-  rawHeader: {},
-  items: [line(10, "10"), line(20, "5")],
-};
-
-/** Every DC header field, blank; the supplier snapshot is what onboarding stored. */
-const HEADER = {
-  ourRef: null,
-  departmentNo: null,
-  consigneeName: null,
-  consigneeGstin: null,
-  consigneeAddress: null,
-  inspectionCompany: null,
-  ewayBillNo: null,
-  vehicleNo: null,
-  lrNo: null,
-  transporter: null,
-  modeOfTransport: null,
-  remarks: null,
-  supplierName: "Example Supplier",
-  supplierAddress: "1 Example Road",
-  supplierGstin: "TESTGSTIN0001",
-  supplierContact: "Example Contact",
-};
-
-function setup(app: App) {
-  const send = async (path: string, init?: RequestInit) => {
-    const res = await app.send(path, init);
-    return { status: res.status, body: (await res.json()) as Wire };
-  };
-  /** The stored PO's id and its item ids by item number. */
-  async function storedPo(po: Json = PO) {
-    const created = await send("/api/po", json("POST", po));
-    const { body } = await send(`/api/po/${created.body.id}`);
-    const itemId = (no: number) => body.items.find((i) => i["poItemNo"] === no)!.id;
-    return { poId: created.body.id, item10: itemId(10), item20: itemId(20) };
-  }
-
-  const createDc = (body: Json) => send("/api/dc", json("POST", { gcNumber: null, gcDate: null, ...HEADER, ...body }));
-  const items = () => app.db.query(app.db.build.select().from(poItem).orderBy(poItem.poItemNo));
-  const dcs = () => app.db.query(app.db.build.select().from(dc).orderBy(dc.id));
-  const dcLines = () => app.db.query(app.db.build.select().from(dcItem).orderBy(dcItem.id));
-  const flags = () => app.db.query(app.db.build.select().from(reconciliationIssue).orderBy(reconciliationIssue.id));
-  const dcAudit = async () => (await app.audit()).filter((row) => row.action === "dc.create");
-  return { send, storedPo, createDc, items, dcs, dcLines, flags, dcAudit };
-}
-
-async function ready(overrides?: AppOverrides) {
-  const app = await onboardedApp(overrides);
-  return { app, ...setup(app) };
-}
 
 describe("GET /api/dc/dispatchable/:poId", () => {
   test("the PO, header defaults from the supplier, and each item with its balance", async () => {
@@ -393,29 +310,6 @@ describe("POST /api/dc", () => {
 });
 
 type Ids = { item10: string; other: string };
-
-/** A `Db` whose next `count` batches wait until all of them are built, then run in turn; later batches run at once. */
-function heldBatches() {
-  let count = 0;
-  const waiting: (() => void)[] = [];
-  const wrap = (db: NodeDb): Db => ({
-    build: db.build,
-    query: (statement) => db.query(statement),
-    batch: async (statements) => {
-      if (count > 0) {
-        await new Promise<void>((release) => {
-          waiting.push(release);
-          if (waiting.length === count) {
-            count = 0;
-            for (const r of waiting.splice(0)) r();
-          }
-        });
-      }
-      return db.batch(statements);
-    },
-  });
-  return { wrap, hold: (n: number) => void (count = n) };
-}
 
 describe("two creates built from the same read before either commits", () => {
   test("the same number: one saves, the other is a 409 and writes nothing", async () => {
