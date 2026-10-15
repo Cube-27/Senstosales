@@ -1890,3 +1890,19 @@ None.
 - Alternatives: `acknowledge-flag`; entity type `flag`.
 - Why: Matches the `<entity>.<verb>` actions of the newer services and the table name as entity type.
 - Reversible: yes.
+
+### D-0230 — The concurrent-batch rule is a skill rule, not a tools/checks scan
+
+- Date: 2026-10-15 · Spec/PR: process (#52) · Status: decided
+- Decision: The concurrent batch race (#37, #40, #50) is prevented by a skill rule (`/review-pr` §2.2, `/implement-pr` §4) and the regression test it requires, not by a `tools/checks` scan.
+- Alternatives: A text scan that pairs status-guarded UPDATEs with audit inserts.
+- Why: The guard (repositories) and the audit insert (shared service helper) are in different modules and joined at runtime; status filters also appear in reads and bulk updates; and a scan cannot see whether a guard fails the batch. It would be noisy and incomplete.
+- Reversible: yes.
+
+### D-0231 — The concurrent-batch rule sits in review-pr §2.2 Correctness
+
+- Date: 2026-10-15 · Spec/PR: process (#52) · Status: decided
+- Decision: The rule is part of `/review-pr` §2.2 (Correctness), not only reached through §2.6 (Recurring findings).
+- Alternatives: Rely on the RECURRING.md row alone.
+- Why: Reviewers then apply it to every write use case.
+- Reversible: yes.
