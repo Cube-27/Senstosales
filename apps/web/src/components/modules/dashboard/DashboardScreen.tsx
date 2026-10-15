@@ -26,11 +26,13 @@ import { ButtonGroup, PageHeader, StatCard, StatCardRow, useToast } from "../../
 import { DOC } from "../documents.ts";
 import { sharePct } from "./funnel.ts";
 
-type Range = "month" | "30d" | "all";
+type Range = "fy" | "month" | "30d" | "all";
 type Summary = RouteOutput<"dashboard.summary">;
 type Activity = RouteOutput<"dashboard.activity">[number];
 
+// The current FY first and by default, so the screen is never empty for want of this month's POs (owner, 2026-10-15).
 const RANGES = [
+  { id: "fy", label: "This FY" },
   { id: "month", label: "Month" },
   { id: "30d", label: "30 Days" },
   { id: "all", label: "All" },
@@ -55,7 +57,7 @@ const ROW =
 const TILE = "flex size-9 items-center justify-center rounded-sm";
 
 export function DashboardScreen() {
-  const [range, setRange] = useState<Range>("month");
+  const [range, setRange] = useState<Range>("fy");
   const { error: showError } = useToast();
   const summary = useQuery({
     ...apiQuery("dashboard.summary", { query: { range } }),
@@ -65,7 +67,7 @@ export function DashboardScreen() {
 
   const s = summary.data ?? EMPTY;
   const refreshing = summary.isFetching;
-  const label = RANGES.find((r) => r.id === range)?.label ?? "Month";
+  const label = RANGES.find((r) => r.id === range)?.label ?? "This FY";
 
   return (
     <div className="flex flex-col gap-4">

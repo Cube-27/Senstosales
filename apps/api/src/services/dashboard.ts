@@ -57,7 +57,7 @@ export function dashboardService({ db, clock, tracker }: { db: Db; clock: Clock;
           dspQty: pos.dspQty,
           invoicedQty: invoicedQty.qty,
           rcdQty: sumQty(srvLines.map((line) => srvLineShown(line).rcdQty)),
-          pendingQty: pendingDispatchQty(pos),
+          pendingQty: pendingDispatchQty(balances),
         },
       };
     },

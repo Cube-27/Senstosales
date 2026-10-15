@@ -61,6 +61,10 @@ async function seed() {
     r.srvItem({ id: id("RX"), srvId: id("RA"), poItemId: id("A1"), rcdQty: 3_000 }),
     r.srv({ id: id("RB"), poNumber: "4500002", poId: PB, srvNumber: "SRV-2", srvDate: "2025-05-30" }),
     r.srvItem({ id: id("RY"), srvId: id("RB"), poItemId: id("B1"), rcdQty: 1_000 }),
+    // Received counts only lines on a PO item: not an SRV of a PO not in the system, nor a row on no item.
+    r.srv({ id: id("RC"), poNumber: "4500099", poId: null, srvNumber: "SRV-3", srvDate: "2025-05-31" }),
+    r.srvItem({ id: id("RZ"), srvId: id("RC"), poItemId: null, rcdQty: 7_000 }),
+    r.srvItem({ id: id("RW"), srvId: id("RB"), poItemId: null, srvItemNo: 2, rcdQty: 5_000 }),
     r.flag({ id: id("FA"), poId: PA, scopeType: "po_item", scopeId: id("A1"), status: "open" }),
     r.flag({ id: id("FB"), poId: PB, scopeType: "po_item", scopeId: id("B1"), status: "acknowledged" }),
     // When each PO entered the system: its first ingest or manual create, not a later re-ingest or edit.
@@ -75,13 +79,23 @@ async function seed() {
 
 const get = async (path: string, signedIn = true) => readApp(db, signedIn)(path);
 
-/** As of today, whatever the range. */
-const today = { overdueCount: 1, uninvoicedDcCount: 1, openFlagCount: 1 };
+/** As of today, whatever the range; the second open flag is the row on no item (SRV_UNKNOWN_PO_ITEM). */
+const today = { overdueCount: 1, uninvoicedDcCount: 1, openFlagCount: 2 };
 
 describe("GET /api/dashboard/summary", () => {
   beforeEach(seed);
 
   test.each([
+    [
+      "fy",
+      {
+        poValue: "1500",
+        invoicedValue: "572",
+        avgLeadTimeDays: 16,
+        pendingDispatchValue: "850",
+        funnel: { ordQty: "15", dspQty: "6", invoicedQty: "5", rcdQty: "4", pendingQty: "9" },
+      },
+    ],
     [
       "all",
       {
@@ -118,9 +132,10 @@ describe("GET /api/dashboard/summary", () => {
     expect(body).toEqual({ ...expected, ...today });
   });
 
-  test("the range defaults to this month", async () => {
+  test("the range defaults to the current FY, from 2025-04-01", async () => {
+    await db.batch([rows(db).po({ id: id("PZ"), poNumber: "4500000", poDate: "2025-03-31", poValue: 9_00000 })]);
     const { body } = await get("/api/dashboard/summary");
-    expect(body).toMatchObject({ poValue: "200", avgLeadTimeDays: null });
+    expect(body).toMatchObject({ poValue: "1500", avgLeadTimeDays: 16 });
   });
 
   test("no data -> zeros and no lead time", async () => {

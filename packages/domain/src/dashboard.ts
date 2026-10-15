@@ -1,12 +1,18 @@
 // The dashboard's period and lead time (SPEC-10 §2), as the legacy dashboard shows them (A-22).
 import type { IsoDate } from "./dates.ts";
 import { addDays, daysBetween } from "./dates.ts";
+import { fyStartOf } from "./fy.ts";
 import type { Qty } from "./units.ts";
+import { sumQty } from "./units.ts";
 
-export type DashboardRange = "month" | "30d" | "all";
+export type DashboardRange = "fy" | "month" | "30d" | "all";
 
-/** The first date the range covers, or `null` for all time: `month` is the 1st of today's month, `30d` 30 days back. */
+/**
+ * The first document date the range covers, or `null` for all time: `fy` is the start of today's FY (the default,
+ * owner 2026-10-15), `month` the 1st of today's month, `30d` 30 days back.
+ */
 export function rangeStart(range: DashboardRange, today: IsoDate): IsoDate | null {
+  if (range === "fy") return fyStartOf(today);
   if (range === "month") return `${today.slice(0, 8)}01` as IsoDate;
   if (range === "30d") return addDays(today, -30);
   return null;
@@ -23,8 +29,11 @@ export function averageLeadTimeDays(pos: readonly { poDate: IsoDate; firstSrvDat
   return Math.floor((2 * total + days.length) / (2 * days.length));
 }
 
-/** The funnel's Pending Dispatch: ordered minus dispatched, never below 0, as the legacy dashboard shows it (A-22). */
-export function pendingDispatchQty({ ordQty, dspQty }: { ordQty: Qty; dspQty: Qty }): Qty {
+/**
+ * The funnel's Pending Dispatch (A-22): ordered minus dispatched, never below 0 on each item, as the pending value is
+ * clamped (owner, 2026-10-15); cancelled items have nothing pending (INV-07).
+ */
+export function pendingDispatchQty(items: readonly { ordQty: Qty; dspQty: Qty; cancelled: boolean }[]): Qty {
   // A difference of two milli-unit integers is a milli-unit integer; the brand cannot follow arithmetic.
-  return Math.max(0, ordQty - dspQty) as Qty;
+  return sumQty(items.filter((i) => !i.cancelled).map((i) => Math.max(0, i.ordQty - i.dspQty) as Qty));
 }

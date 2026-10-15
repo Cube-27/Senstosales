@@ -51,21 +51,30 @@ export const invoicedQty = (db: Db, start: IsoDate | null) =>
     ),
   );
 
-/** The lines of the SRVs dated in the period. */
+/**
+ * The lines on a PO item of the SRVs dated in the period: an SRV of a PO not in the system and a row on no item of
+ * its PO count in no received total (INV-40, owner 2026-10-15).
+ */
 export const srvLinesFrom = (db: Db, start: IsoDate | null) =>
   db.query(
     db.build
       .select({ rcdQty: srvItem.rcdQty, acceptedQty: srvItem.acceptedQty, rejQty: srvItem.rejQty })
       .from(srvItem)
       .innerJoin(srv, eq(srv.id, srvItem.srvId))
-      .where(from(srv.srvDate, start)),
+      .where(and(isNotNull(srvItem.poItemId), from(srv.srvDate, start))),
   );
 
-/** The balance and rate of every item of the POs dated in the period. */
+/** The quantities and rate of every item of the POs dated in the period. */
 export const itemBalances = (db: Db, start: IsoDate | null) =>
   db.query(
     db.build
-      .select({ balanceQty: poItem.balanceQty, rate: poItem.rate })
+      .select({
+        ordQty: poItem.ordQty,
+        dspQty: poItem.dspQty,
+        cancelled: isNotNull(poItem.cancelledAt).mapWith(Boolean),
+        balanceQty: poItem.balanceQty,
+        rate: poItem.rate,
+      })
       .from(poItem)
       .innerJoin(po, eq(po.id, poItem.poId))
       .where(from(po.poDate, start)),

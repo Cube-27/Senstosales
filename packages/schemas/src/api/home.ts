@@ -7,7 +7,7 @@ import { zPoStatus } from "../enums.ts";
 import { zCount, zFy, zId, zInstant, zIsoDate, zMoney, zQty } from "../primitives.ts";
 import { zDocRef, zLinkedDocs, zRangeFilters, zRepeated } from "./common.ts";
 
-export const zDashboardQuery = z.object({ range: z.enum(["month", "30d", "all"]).default("month") });
+export const zDashboardQuery = z.object({ range: z.enum(["fy", "month", "30d", "all"]).default("fy") });
 
 export const zDashboardSummary = z.object({
   poValue: zMoney,
