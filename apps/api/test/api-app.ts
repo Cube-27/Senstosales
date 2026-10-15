@@ -55,11 +55,12 @@ export async function onboardedApp(overrides: AppOverrides = {}) {
 }
 
 function build(db: NodeDb, overrides: AppOverrides) {
+  const storage = memoryStorage();
   const services = createServices({
     db: overrides.db?.(db) ?? db,
     clock: overrides.clock ?? fixedClock,
     jobs: { enqueue: () => {}, holds: () => false },
-    storage: memoryStorage(),
+    storage,
   });
   const t = testApp(apiRoutes(services), () => Promise.resolve(true), services.onboarding.done);
   const bodies: string[] = [];
@@ -69,5 +70,5 @@ function build(db: NodeDb, overrides: AppOverrides) {
     return res;
   };
   const audit = () => db.query(db.build.select().from(auditLog).orderBy(auditLog.id));
-  return { db, services, send, client: createClient(send), bodies, logger: t.logger, audit };
+  return { db, services, storage, send, client: createClient(send), bodies, logger: t.logger, audit };
 }

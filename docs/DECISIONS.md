@@ -2878,3 +2878,19 @@ None.
 - Alternatives: An empty workbook.
 - Why: The file name needs the PO or DC number.
 - Reversible: yes.
+
+### D-0355 — Downloads are typed by their file extension
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 6 (#76) · Status: decided
+- Decision: `sendFile` sets `Content-Type` from the download name: Hono's media types plus xlsx, else `application/octet-stream`. OpenAPI keeps the generic `application/octet-stream` (D-0117).
+- Alternatives: `application/octet-stream` for every file; a content type in each handler's result.
+- Why: SPEC-12 PR 6 asks for the right content type, and the name already names the format.
+- Reversible: yes, one function.
+
+### D-0356 — The Excel document reads are their own queries
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 6 (#76) · Status: decided
+- Decision: `dcForDocument`/`invoiceForDocument` (`repositories/documents.ts`) join the PO's number, date and GEMC flag, a DC's invoice number and an invoice's source DC; `findDcWithPo`/`findInvoiceWithPo` are unchanged.
+- Alternatives: Add `poDate` to those finders.
+- Why: They carry the PO version for write guards and feed the detail API; the documents need different columns.
+- Reversible: yes.

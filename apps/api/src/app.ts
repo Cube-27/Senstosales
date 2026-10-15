@@ -6,6 +6,7 @@ import type { Download, RouteDef, RouteName, RouteOutput } from "@senstosales/sc
 import { contentDisposition, routes } from "@senstosales/schemas";
 import type { Context } from "hono";
 import { Hono } from "hono";
+import { getMimeType, mimes } from "hono/utils/mime";
 import { z } from "zod";
 
 import { AppError, onboardingRequired, staleVersion, ValidationError } from "./errors.ts";
@@ -156,10 +157,13 @@ function body(chunks: AsyncIterable<Uint8Array | string>): ReadableStream<Uint8A
   );
 }
 
-/** A download named by `Content-Disposition` (D-0105). */
+/** Hono's media types plus the workbook's, which it lacks. */
+const MEDIA_TYPES = { ...mimes, xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+
+/** A download named by `Content-Disposition` (D-0105), typed by its extension. */
 function sendFile(c: Context, file: Download | StreamedFile): Response {
   const headers = {
-    "content-type": "application/octet-stream",
+    "content-type": getMimeType(file.fileName, MEDIA_TYPES) ?? "application/octet-stream",
     "content-disposition": contentDisposition(file.fileName),
   };
   if ("chunks" in file) return c.body(body(file.chunks), 200, headers);

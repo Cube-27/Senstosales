@@ -172,7 +172,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 3   | DC workbook                            | done (#64) |                                                                              |
 | 4   | Invoice workbook                       | done (#68) |                                                                              |
 | 5   | GC workbook                            | done (#73) | goldens from legacy code (H5 confirms in PR 2)                               |
-| 6   | Download routes                        | todo       |                                                                              |
+| 6   | Download routes                        | done (#76) |                                                                              |
 
 ## [SPEC-13 — Reports and exports](../specs/SPEC-13-reports-exports.md)
 
