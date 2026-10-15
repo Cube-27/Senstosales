@@ -6,6 +6,7 @@ import { authRoutes } from "./auth.ts";
 import { buyersRoutes } from "./buyers.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { deliveryTrackerRoutes } from "./delivery-tracker.ts";
+import { dcRoutes } from "./dc.ts";
 import { flagsRoutes } from "./flags.ts";
 import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
@@ -31,6 +32,7 @@ export function apiRoutes(services: Services): Handlers {
     ...poUploadRoutes(services.poIngest),
     ...srvUploadRoutes(services.srvIngest),
     ...srvRoutes(services.srv),
+    ...dcRoutes(services.dc),
     ...flagsRoutes(services.flags),
     ...auditRoutes(services.audit),
     ...deliveryTrackerRoutes(services.deliveryTracker),
