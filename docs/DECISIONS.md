@@ -2734,3 +2734,67 @@ None.
 - Alternatives: Fill from the `buyer` table in SPEC-12 PR 6.
 - Why: The most conservative reading; no new data source.
 - Reversible: yes.
+
+### D-0335 — Export writers load on the first export
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: Services import only `@senstosales/documents/catalog` (a new subpath; type-only exceljs imports). The writers come in through a dynamic `import("@senstosales/documents")` when an export starts.
+- Alternatives: A static import of the package index.
+- Why: exceljs and the embedded templates added about 0.8 s to every API start (measured with services import timing) for a feature used on demand.
+- Reversible: yes.
+
+### D-0336 — Streamed downloads are a pull-based ReadableStream, not `hono/streaming`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: A file handler may return `StreamedFile { fileName, chunks }`, served as a pull-based `ReadableStream` (highWaterMark 0): a source error fails the body and a client cancel closes the source.
+- Alternatives: `hono/streaming`'s `stream()`, as ARCHITECTURE §11.2 names it.
+- Why: That helper closes the body normally when the source throws, so a failed export arrives as a short file that looks complete, and it keeps draining the source after the client disconnects. SPEC-13 §4.3 wants a failed download. The plain stream is what the helper wraps, with no read-ahead.
+- Reversible: yes, one function.
+
+### D-0337 — The keyset tie-break is a typed primary key
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: `Keyset<Row> = { parts, id }`, with `id.by` a column branded `isPrimaryKey: true` (#58 review). One row per table row is still the caller's job; this is documented on `Keyset`.
+- Alternatives: Only a test across a page boundary.
+- Why: The compiler rejects a non-unique tie-break for every caller.
+- Reversible: yes.
+
+### D-0338 — List CSVs stream in the default order; a chosen sort holds the rows to sort them
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: Pages are read in the list's default order (date desc, number as a number desc, id desc). When the query names a sort, the filtered rows are collected and stable-sorted with the list's own comparators, so ties keep the default order.
+- Alternatives: Computing totals in SQL so they can be keyset sort keys (would compute quantities outside the domain, C2).
+- Why: Ordered/dispatched/received/value are domain totals. The screen already sorts the same rows in memory (D-0246, D-0268), and the default-order export is the INV-99 path.
+- Reversible: yes.
+
+### D-0339 — Register orders and filters
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: Each register is newest first by its date (PO date with no date last), then number as a number desc, then id desc, filtered on that date. PO register `items_count` counts every item row of the PO, `total_qty` is the stored PO ordered total, and `total_tax` is CGST + SGST + IGST. A DC register row with no lines shows 0 and 0; the DC list CSV leaves such a DC out, as the list does.
+- Alternatives: Date only (an unstable order between equal dates).
+- Why: The catalog records date newest first; the tie-breaks make pages total and match the lists.
+- Reversible: yes.
+
+### D-0340 — EC-39/EC-40 tolerance
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: The DC list Status uses the 0.001 tolerance EC-39 states (`gte` with `TOL`). The invoice list Status compares Delivered Qty ≥ invoice quantity exactly, because EC-40 states no tolerance.
+- Alternatives: Tolerance on both.
+- Why: C18, the EC text as written.
+- Reversible: yes.
+
+### D-0341 — The report dataset is a `@senstosales/documents` test subpath export
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: `"./test/reports/dataset"` in `packages/documents/package.json`, so API tests seed the same dataset the goldens were worked from.
+- Alternatives: A fixtures workspace package; a copy in the API tests.
+- Why: One dataset, no copy, no new package. The goldens are read from disk by path.
+- Reversible: yes.
+
+### D-0342 — Export number cells come from shared formatters
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 3 (#69) · Status: decided
+- Decision: `qtyNumber(q)` and `moneyNumber(m)` in `packages/schemas/src/formatters.ts`, 2 dp half up in integer arithmetic (as `roundDiv`).
+- Alternatives: Rounding in the writer per column.
+- Why: D-0260 says services scale through the shared formatters, so screen and export agree.
+- Reversible: yes.
