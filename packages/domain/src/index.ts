@@ -44,7 +44,6 @@ export {
 } from "./guards.ts";
 export type { DesiredFlag, FlagDetails, FlagScope, FlagType, PoFlagSnapshot } from "./flags.ts";
 export { FLAG_SCOPES, FLAG_TYPES, detectFlags, diffFlags, fingerprint } from "./flags.ts";
-export type { DeliveryDue } from "./tracker.ts";
-export { DUE_SOON_DAYS, deliveryDue } from "./tracker.ts";
+export { deliveryDue, pendingValueOfItems } from "./tracker.ts";
 export type { DashboardRange } from "./dashboard.ts";
 export { averageLeadTimeDays, rangeStart } from "./dashboard.ts";

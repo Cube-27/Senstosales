@@ -3,9 +3,11 @@
 import type { IsoDate } from "./dates.ts";
 import { daysBetween } from "./dates.ts";
 import type { ItemStatus } from "./status.ts";
+import type { Money, Qty } from "./units.ts";
+import { qtyValue, sumMoney } from "./units.ts";
 
 /** "Due soon" runs from today to this many days ahead, both ends included. */
-export const DUE_SOON_DAYS = 7;
+const DUE_SOON_DAYS = 7;
 
 export type DeliveryDue = {
   /** Days from today to the delivery date, negative when it has passed. */
@@ -32,4 +34,13 @@ export function deliveryDue(delyDate: IsoDate, today: IsoDate, status: ItemStatu
     dueSoon: pending && daysToDue >= 0 && daysToDue <= DUE_SOON_DAYS,
     dueThisMonth: open && delyDate.slice(0, 7) === today.slice(0, 7),
   };
+}
+
+/**
+ * The pending value of the items behind some lots: each item's balance × rate once, however many of its lots are
+ * listed, since nothing is allocated to a lot (INV-06, INV-04). `[A 6 @ 100 (lot 1), A (lot 2), B 3 @ 50] -> 750`.
+ */
+export function pendingValueOfItems(lots: readonly { poItemId: string; balanceQty: Qty; rate: Money }[]): Money {
+  const items = new Map(lots.map((lot) => [lot.poItemId, qtyValue(lot.balanceQty, lot.rate)]));
+  return sumMoney([...items.values()]);
 }

@@ -155,35 +155,47 @@ export function openFlagsOfPo(db: Db, poId: string) {
   );
 }
 
+/** DC references as links and popovers show them, with their FY (INV-24), oldest first. */
+export const dcRefs = (db: Db, where: SQL | undefined) =>
+  db.query(
+    db.build
+      .select({ id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear })
+      .from(dc)
+      .where(where)
+      .orderBy(dc.dcDate, dc.id),
+  );
+
+/** Invoice references as links and popovers show them, with their FY (INV-24), oldest first. */
+export const invoiceRefs = (db: Db, where: SQL | undefined) =>
+  db.query(
+    db.build
+      .select({
+        id: invoice.id,
+        number: invoice.number,
+        date: invoice.invoiceDate,
+        financialYear: invoice.financialYear,
+      })
+      .from(invoice)
+      .where(where)
+      .orderBy(invoice.invoiceDate, invoice.id),
+  );
+
+/** SRV references as links and popovers show them, oldest first. */
+export const srvRefs = (db: Db, where: SQL | undefined) =>
+  db.query(
+    db.build
+      .select({ id: srv.id, number: srv.srvNumber, date: srv.srvDate })
+      .from(srv)
+      .where(where)
+      .orderBy(srv.srvDate, srv.id),
+  );
+
 /** Every DC, invoice and SRV of the PO, unpaged, oldest first (INV-73). */
 export async function linkedDocsOfPo(db: Db, poId: string) {
   const [dcs, invoices, srvs] = await Promise.all([
-    db.query(
-      db.build
-        .select({ id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear })
-        .from(dc)
-        .where(eq(dc.poId, poId))
-        .orderBy(dc.dcDate, dc.id),
-    ),
-    db.query(
-      db.build
-        .select({
-          id: invoice.id,
-          number: invoice.number,
-          date: invoice.invoiceDate,
-          financialYear: invoice.financialYear,
-        })
-        .from(invoice)
-        .where(eq(invoice.poId, poId))
-        .orderBy(invoice.invoiceDate, invoice.id),
-    ),
-    db.query(
-      db.build
-        .select({ id: srv.id, number: srv.srvNumber, date: srv.srvDate })
-        .from(srv)
-        .where(eq(srv.poId, poId))
-        .orderBy(srv.srvDate, srv.id),
-    ),
+    dcRefs(db, eq(dc.poId, poId)),
+    invoiceRefs(db, eq(invoice.poId, poId)),
+    srvRefs(db, eq(srv.poId, poId)),
   ]);
   return { dcs, invoices, srvs };
 }

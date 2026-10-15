@@ -8,6 +8,7 @@ import type { z } from "zod";
 import type { Clock } from "../ports/clock.ts";
 import * as repo from "../repositories/dashboard.ts";
 import type { DeliveryTrackerService } from "./delivery-tracker.ts";
+import { byText, desc, on } from "./paging.ts";
 
 type Query = z.output<(typeof routes)["dashboard.summary"]["query"]>;
 
@@ -60,7 +61,7 @@ export function dashboardService({ db, clock, tracker }: { db: Db; clock: Clock;
         ...dcs.map((r) => ({ type: "dc" as const, ...r })),
         ...invoices.map((r) => ({ type: "invoice" as const, ...r })),
       ]
-        .sort((a, b) => Number(a.createdAt < b.createdAt) - Number(a.createdAt > b.createdAt))
+        .sort(on((r) => r.createdAt, desc(byText)))
         .slice(0, ACTIVITY_LIMIT);
     },
   };

@@ -2,6 +2,7 @@
 // and party names, as the legacy search finds them; FY on DC and invoice hits (INV-24). At most five hits of each
 // type, the exact number first. Quantities and values come from the domain or stored columns (C2).
 import type { Db } from "@senstosales/db";
+import type { IsoDate, Money } from "@senstosales/domain";
 import { qtyValue, srvTotals, sumMoney, sumQty } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
@@ -22,7 +23,7 @@ function terms(text: string): Terms {
   const trimmed = text.trim();
   const q = trimmed === "*" ? "" : trimmed;
   const numeric = /^\d+$/.test(q);
-  return { q, numeric, party: !numeric, items: !numeric || q.length >= 2 };
+  return { q, numeric, items: !numeric || q.length >= 2 };
 }
 
 const hasFilter = (f: SearchQuery) =>
@@ -30,20 +31,21 @@ const hasFilter = (f: SearchQuery) =>
 
 const startsWithText = (text: string, q: string) => text.toLowerCase().startsWith(q.toLowerCase());
 
-/** What matched, for the result row: the number, else the item field, else the party. */
-const matchOf = (t: Terms, row: { number: string; itemMatch: string | null }, party: string | null = null) =>
-  startsWithText(row.number, t.q) ? row.number : (row.itemMatch ?? party ?? row.number);
+/** What matched, for the result row: the number, else the item field, else the other matched text. */
+const matchOf = (t: Terms, number: string, itemMatch: string | null, other: string | null = null) =>
+  startsWithText(number, t.q) ? number : (itemMatch ?? other ?? number);
 
 /** The rank the hits are merged by: exact number, number prefix, anything else. */
 const rankOf = (t: Terms, hit: Hit) => (hit.number === t.q ? 0 : startsWithText(hit.number, t.q) ? 1 : 2);
 
-export function searchService({ db }: { db: Db }) {
-  const poLink = async (poId: string | null) => {
-    const ref = poId === null ? undefined : await repo.poRef(db, poId);
-    // A PO reference carries a date; a PO without one (never from a BHEL page) is shown without the link.
-    return ref?.date ? { id: ref.id, number: ref.number, date: ref.date } : null;
-  };
+/** A PO link carries a date; a PO without one (never from a BHEL page) is shown without the link. */
+const poLink = (ref: { id: string; number: string; date: IsoDate | null } | null) =>
+  ref?.date ? { id: ref.id, number: ref.number, date: ref.date } : null;
 
+const inRange = (value: Money, f: SearchQuery) =>
+  (f.valueMin === undefined || value >= f.valueMin) && (f.valueMax === undefined || value <= f.valueMax);
+
+export function searchService({ db }: { db: Db }) {
   async function pos(t: Terms, f: SearchQuery): Promise<Hit[]> {
     const rows = await repo.searchPos(db, t, f, PER_TYPE);
     return Promise.all(
@@ -52,7 +54,7 @@ export function searchService({ db }: { db: Db }) {
         type: "po" as const,
         financialYear: null,
         party: null,
-        match: matchOf(t, { ...row, itemMatch }),
+        match: matchOf(t, row.number, itemMatch),
         links: { ...(await linkedDocsOfPo(db, row.id)), po: null },
       })),
     );
@@ -61,16 +63,16 @@ export function searchService({ db }: { db: Db }) {
   async function dcs(t: Terms, f: SearchQuery): Promise<Hit[]> {
     const rows = await repo.searchDcs(db, t, f, PER_TYPE);
     return Promise.all(
-      rows.map(async ({ itemMatch, poId, ...row }) => {
-        const [[lines, invoices, srvs], po] = await Promise.all([repo.dcExtras(db, row.id), poLink(poId)]);
+      rows.map(async ({ itemMatch, po, ...row }) => {
+        const [lines, invoices, srvs] = await repo.dcExtras(db, row.id);
         return {
           ...row,
           type: "dc" as const,
-          match: matchOf(t, { ...row, itemMatch }, row.party),
+          match: matchOf(t, row.number, itemMatch, row.party),
           status: null,
           qty: sumQty(lines.map((l) => l.qty)),
           value: sumMoney(lines.map((l) => qtyValue(l.qty, l.rate))),
-          links: { dcs: [], invoices, srvs, po },
+          links: { dcs: [], invoices, srvs, po: poLink(po) },
         };
       }),
     );
@@ -79,48 +81,45 @@ export function searchService({ db }: { db: Db }) {
   async function invoices(t: Terms, f: SearchQuery): Promise<Hit[]> {
     const rows = await repo.searchInvoices(db, t, f, PER_TYPE);
     return Promise.all(
-      rows.map(async ({ itemMatch, poId, dcId, ...row }) => {
-        const [[lines, dcRefs, srvs], po] = await Promise.all([repo.invoiceExtras(db, row.id, dcId), poLink(poId)]);
+      rows.map(async ({ itemMatch, po, dcId, ...row }) => {
+        const [lines, dcs, srvs] = await repo.invoiceExtras(db, row.id, dcId);
         return {
           ...row,
           type: "invoice" as const,
-          match: matchOf(t, { ...row, itemMatch }, row.party),
+          match: matchOf(t, row.number, itemMatch, row.party),
           status: null,
           qty: sumQty(lines.map((l) => l.qty)),
-          links: { dcs: dcRefs, invoices: [], srvs, po },
+          links: { dcs, invoices: [], srvs, po: poLink(po) },
         };
       }),
     );
   }
 
-  /** The value range applies to the SRV's accepted value, so it is checked here, before the first five are kept. */
+  /** The value range applies to the SRV's accepted value, so it is checked before the first five are kept. */
   async function srvs(t: Terms, f: SearchQuery): Promise<Hit[]> {
     const ranged = f.valueMin !== undefined || f.valueMax !== undefined;
     const rows = await repo.searchSrvs(db, t, f, ranged ? undefined : PER_TYPE);
-    const hits = await Promise.all(
-      rows.map(async ({ itemMatch, poId, poNumber, ...row }) => {
-        const [[lines, dcRefs, invoiceRefs], po] = await Promise.all([repo.srvExtras(db, row.id), poLink(poId)]);
-        const totals = srvTotals(lines);
+    const totalled = await Promise.all(
+      rows.map(async (row) => ({ row, totals: srvTotals(await repo.srvLines(db, row.id)) })),
+    );
+    const kept = totalled.filter(({ totals }) => inRange(totals.value, f)).slice(0, PER_TYPE);
+    return Promise.all(
+      kept.map(async ({ row: { itemMatch, po, poNumber, ...row }, totals }) => {
+        const [dcs, invoices] = await repo.srvLinks(db, row.id);
         return {
           ...row,
           type: "srv" as const,
           financialYear: null,
           party: null,
           // Not the number or an item: the PO number matched.
-          match: matchOf(t, { ...row, itemMatch }, poNumber),
+          match: matchOf(t, row.number, itemMatch, poNumber),
           status: null,
           qty: totals.acceptedQty,
           value: totals.value,
-          links: { dcs: dcRefs, invoices: invoiceRefs, srvs: [], po },
+          links: { dcs, invoices, srvs: [], po: poLink(po) },
         };
       }),
     );
-    return hits
-      .filter(
-        (h) =>
-          (f.valueMin === undefined || h.value >= f.valueMin) && (f.valueMax === undefined || h.value <= f.valueMax),
-      )
-      .slice(0, PER_TYPE);
   }
 
   const byType = { po: pos, dc: dcs, invoice: invoices, srv: srvs };

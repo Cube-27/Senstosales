@@ -4,11 +4,12 @@
 import type { Db } from "@senstosales/db";
 import { dc, dcItem, invoice, invoiceItem, po, poItem, reconciliationIssue, srv, srvItem } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
-import type { AnyColumn, SQL } from "drizzle-orm";
-import { and, desc, eq, gte, lte, or, sql } from "drizzle-orm";
+import type { AnyColumn, SQL, SQLWrapper } from "drizzle-orm";
+import { and, desc, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
-import { contains, qualified, startsWith } from "./sql.ts";
+import { dcRefs, invoiceRefs, srvRefs } from "./po-list.ts";
+import { contains, startsWith } from "./sql.ts";
 
 export type SearchQuery = z.output<(typeof routes)["search.query"]["query"]>;
 
@@ -16,42 +17,36 @@ export type SearchQuery = z.output<(typeof routes)["search.query"]["query"]>;
 export interface Terms {
   readonly q: string;
   readonly items: boolean;
-  readonly party: boolean;
   readonly numeric: boolean;
 }
 
-/** A document's PO items, as a FROM clause that joins `po_item` and a condition tying it to the document row. */
-interface ItemSet {
-  readonly from: SQL;
-  readonly where: SQL;
-}
+/** A document's PO items, selecting `field` where `match` holds. */
+type ItemSet = (field: SQL, match: SQL | undefined) => SQLWrapper & { limit(n: number): SQLWrapper };
 
 const itemFieldMatches = (q: string) =>
   or(startsWith(poItem.materialCode, q), contains(poItem.description, q), startsWith(poItem.drawingNo, q));
 
 const anyItemMatches = (t: Terms, items: ItemSet) =>
-  t.items ? sql`EXISTS (SELECT 1 FROM ${items.from} WHERE ${items.where} AND ${itemFieldMatches(t.q)})` : undefined;
+  t.items ? exists(items(sql`1`, itemFieldMatches(t.q))) : undefined;
 
 /** The first matching item field, to show what matched: code, then drawing number, then description. */
-const matchedItemText = (t: Terms, items: ItemSet) =>
-  t.items
-    ? sql<
-        string | null
-      >`(SELECT CASE WHEN ${startsWith(poItem.materialCode, t.q)} THEN ${qualified(poItem.materialCode)}
-        WHEN ${startsWith(poItem.drawingNo, t.q)} THEN ${qualified(poItem.drawingNo)} ELSE ${qualified(poItem.description)} END
-        FROM ${items.from} WHERE ${items.where} AND ${itemFieldMatches(t.q)} LIMIT 1)`
-    : sql<string | null>`NULL`;
+const matchedItemText = (t: Terms, items: ItemSet) => {
+  const text = sql`CASE WHEN ${startsWith(poItem.materialCode, t.q)} THEN ${poItem.materialCode}
+    WHEN ${startsWith(poItem.drawingNo, t.q)} THEN ${poItem.drawingNo} ELSE ${poItem.description} END`;
+  return t.items ? sql<string | null>`${items(text, itemFieldMatches(t.q)).limit(1)}` : sql<string | null>`NULL`;
+};
 
-const hasOpenFlag = (where: SQL) =>
-  sql`EXISTS (SELECT 1 FROM ${reconciliationIssue} WHERE ${qualified(reconciliationIssue.status)} = 'open' AND ${where})`.mapWith(
-    (v) => v === 1,
-  );
+/** An open flag on one of the document's lines (`lineIds`). */
+const lineFlag = (db: Db, scope: "dc_item" | "invoice_item" | "srv_item", lineIds: SQLWrapper) =>
+  hasOpenFlag(db, and(eq(reconciliationIssue.scopeType, scope), inArray(reconciliationIssue.scopeId, lineIds)));
 
-/** An open flag on one of the document's lines. */
-const lineFlag = (scope: "dc_item" | "invoice_item" | "srv_item", lineIds: SQL) =>
-  hasOpenFlag(
-    sql`${qualified(reconciliationIssue.scopeType)} = ${scope} AND ${qualified(reconciliationIssue.scopeId)} IN (${lineIds})`,
-  );
+function hasOpenFlag(db: Db, where: SQL | undefined) {
+  const flags = db.build
+    .select({ one: sql`1` })
+    .from(reconciliationIssue)
+    .where(and(eq(reconciliationIssue.status, "open"), where));
+  return sql`${exists(flags)}`.mapWith((v) => v === 1);
+}
 
 /** Exact number first, then numbers that start with the text, then other matches; higher numbers first within each. */
 const ranked = (t: Terms, number: AnyColumn) => [
@@ -69,8 +64,15 @@ const valued = (column: AnyColumn, f: SearchQuery) =>
     f.valueMax === undefined ? undefined : sql`COALESCE(${column}, 0) <= ${f.valueMax}`,
   );
 
+/** The PO a DC, invoice or SRV belongs to, as its link shows it. */
+const poRef = { id: po.id, number: po.poNumber, date: po.poDate };
+
 export function searchPos(db: Db, t: Terms, f: SearchQuery, limit: number) {
-  const items = { from: sql`${poItem}`, where: sql`${poItem.poId} = ${po.id}` };
+  const items: ItemSet = (field, match) =>
+    db.build
+      .select({ field })
+      .from(poItem)
+      .where(and(eq(poItem.poId, po.id), match));
   return db.query(
     db.build
       .select({
@@ -81,7 +83,7 @@ export function searchPos(db: Db, t: Terms, f: SearchQuery, limit: number) {
         qty: po.ordQty,
         value: po.poValue,
         itemMatch: matchedItemText(t, items),
-        hasFlags: hasOpenFlag(sql`${qualified(reconciliationIssue.poId)} = ${qualified(po.id)}`),
+        hasFlags: hasOpenFlag(db, eq(reconciliationIssue.poId, po.id)),
       })
       .from(po)
       .where(
@@ -94,10 +96,13 @@ export function searchPos(db: Db, t: Terms, f: SearchQuery, limit: number) {
 
 /** DCs match on the consignee too; the legacy search applies no value range to them. */
 export function searchDcs(db: Db, t: Terms, f: SearchQuery, limit: number) {
-  const items = {
-    from: sql`${dcItem} INNER JOIN ${poItem} ON ${poItem.id} = ${dcItem.poItemId}`,
-    where: sql`${dcItem.dcId} = ${dc.id}`,
-  };
+  const items: ItemSet = (field, match) =>
+    db.build
+      .select({ field })
+      .from(dcItem)
+      .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
+      .where(and(eq(dcItem.dcId, dc.id), match));
+  const lineIds = db.build.select({ id: dcItem.id }).from(dcItem).where(eq(dcItem.dcId, dc.id));
   return db.query(
     db.build
       .select({
@@ -106,20 +111,18 @@ export function searchDcs(db: Db, t: Terms, f: SearchQuery, limit: number) {
         date: dc.dcDate,
         financialYear: dc.financialYear,
         party: dc.consigneeName,
-        poId: dc.poId,
+        po: poRef,
         itemMatch: matchedItemText(t, items),
-        hasFlags: lineFlag(
-          "dc_item",
-          sql`SELECT ${qualified(dcItem.id)} FROM ${dcItem} WHERE ${qualified(dcItem.dcId)} = ${qualified(dc.id)}`,
-        ),
+        hasFlags: lineFlag(db, "dc_item", lineIds),
       })
       .from(dc)
+      .innerJoin(po, eq(po.id, dc.poId))
       .where(
         and(
           or(
             startsWith(dc.number, t.q),
             anyItemMatches(t, items),
-            t.party ? contains(dc.consigneeName, t.q) : undefined,
+            t.numeric ? undefined : contains(dc.consigneeName, t.q),
           ),
           dated(dc.dcDate, f),
         ),
@@ -130,10 +133,16 @@ export function searchDcs(db: Db, t: Terms, f: SearchQuery, limit: number) {
 }
 
 export function searchInvoices(db: Db, t: Terms, f: SearchQuery, limit: number) {
-  const items = {
-    from: sql`${invoiceItem} INNER JOIN ${poItem} ON ${poItem.id} = ${invoiceItem.poItemId}`,
-    where: sql`${invoiceItem.invoiceId} = ${invoice.id}`,
-  };
+  const items: ItemSet = (field, match) =>
+    db.build
+      .select({ field })
+      .from(invoiceItem)
+      .innerJoin(poItem, eq(poItem.id, invoiceItem.poItemId))
+      .where(and(eq(invoiceItem.invoiceId, invoice.id), match));
+  const lineIds = db.build
+    .select({ id: invoiceItem.id })
+    .from(invoiceItem)
+    .where(eq(invoiceItem.invoiceId, invoice.id));
   return db.query(
     db.build
       .select({
@@ -142,22 +151,20 @@ export function searchInvoices(db: Db, t: Terms, f: SearchQuery, limit: number) 
         date: invoice.invoiceDate,
         financialYear: invoice.financialYear,
         party: invoice.buyerName,
-        poId: invoice.poId,
+        po: poRef,
         dcId: invoice.dcId,
         value: invoice.total,
         itemMatch: matchedItemText(t, items),
-        hasFlags: lineFlag(
-          "invoice_item",
-          sql`SELECT ${qualified(invoiceItem.id)} FROM ${invoiceItem} WHERE ${qualified(invoiceItem.invoiceId)} = ${qualified(invoice.id)}`,
-        ),
+        hasFlags: lineFlag(db, "invoice_item", lineIds),
       })
       .from(invoice)
+      .innerJoin(po, eq(po.id, invoice.poId))
       .where(
         and(
           or(
             startsWith(invoice.number, t.q),
             anyItemMatches(t, items),
-            t.party ? contains(invoice.buyerName, t.q) : undefined,
+            t.numeric ? undefined : contains(invoice.buyerName, t.q),
           ),
           dated(invoice.invoiceDate, f),
           valued(invoice.total, f),
@@ -170,24 +177,26 @@ export function searchInvoices(db: Db, t: Terms, f: SearchQuery, limit: number) 
 
 /** SRVs match on their PO number too; their value range is applied by the service to the domain totals. */
 export function searchSrvs(db: Db, t: Terms, f: SearchQuery, limit: number | undefined) {
-  const items = {
-    from: sql`${srvItem} INNER JOIN ${poItem} ON ${poItem.id} = ${srvItem.poItemId}`,
-    where: sql`${srvItem.srvId} = ${srv.id}`,
-  };
+  const items: ItemSet = (field, match) =>
+    db.build
+      .select({ field })
+      .from(srvItem)
+      .innerJoin(poItem, eq(poItem.id, srvItem.poItemId))
+      .where(and(eq(srvItem.srvId, srv.id), match));
+  const lineIds = db.build.select({ id: srvItem.id }).from(srvItem).where(eq(srvItem.srvId, srv.id));
   const query = db.build
     .select({
       id: srv.id,
       number: srv.srvNumber,
       date: srv.srvDate,
-      poId: srv.poId,
       poNumber: srv.poNumber,
+      // Null for an SRV of a PO not in the system (INV-40).
+      po: poRef,
       itemMatch: matchedItemText(t, items),
-      hasFlags: lineFlag(
-        "srv_item",
-        sql`SELECT ${qualified(srvItem.id)} FROM ${srvItem} WHERE ${qualified(srvItem.srvId)} = ${qualified(srv.id)}`,
-      ),
+      hasFlags: lineFlag(db, "srv_item", lineIds),
     })
     .from(srv)
+    .leftJoin(po, eq(po.id, srv.poId))
     .where(
       and(
         or(
@@ -202,46 +211,9 @@ export function searchSrvs(db: Db, t: Terms, f: SearchQuery, limit: number | und
   return db.query(limit === undefined ? query : query.limit(limit));
 }
 
-export const poRef = async (db: Db, poId: string) =>
-  (
-    await db.query(db.build.select({ id: po.id, number: po.poNumber, date: po.poDate }).from(po).where(eq(po.id, poId)))
-  )[0];
-
-const dcRefs = (db: Db, where: SQL | undefined) =>
-  db.query(
-    db.build
-      .select({ id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear })
-      .from(dc)
-      .where(where)
-      .orderBy(dc.dcDate, dc.id),
-  );
-
-const invoiceRefs = (db: Db, where: SQL | undefined) =>
-  db.query(
-    db.build
-      .select({
-        id: invoice.id,
-        number: invoice.number,
-        date: invoice.invoiceDate,
-        financialYear: invoice.financialYear,
-      })
-      .from(invoice)
-      .where(where)
-      .orderBy(invoice.invoiceDate, invoice.id),
-  );
-
-const srvRefs = (db: Db, where: SQL | undefined) =>
-  db.query(
-    db.build
-      .select({ id: srv.id, number: srv.srvNumber, date: srv.srvDate })
-      .from(srv)
-      .where(where)
-      .orderBy(srv.srvDate, srv.id),
-  );
-
 /** The SRVs with a line resolved to `column = id` (INV-37). */
-const srvsResolvedTo = (column: AnyColumn, id: string) =>
-  sql`${srv.id} IN (SELECT ${srvItem.srvId} FROM ${srvItem} WHERE ${column} = ${id})`;
+const srvsResolvedTo = (db: Db, column: AnyColumn, id: string) =>
+  inArray(srv.id, db.build.select({ id: srvItem.srvId }).from(srvItem).where(eq(column, id)));
 
 /** A DC's lines with their PO item rate, its invoice and the SRVs resolved to it. */
 export const dcExtras = (db: Db, dcId: string) =>
@@ -254,7 +226,7 @@ export const dcExtras = (db: Db, dcId: string) =>
         .where(eq(dcItem.dcId, dcId)),
     ),
     invoiceRefs(db, eq(invoice.dcId, dcId)),
-    srvRefs(db, srvsResolvedTo(srvItem.resolvedDcId, dcId)),
+    srvRefs(db, srvsResolvedTo(db, srvItem.resolvedDcId, dcId)),
   ]);
 
 /** An invoice's line quantities, its DC and the SRVs resolved to it. */
@@ -262,27 +234,30 @@ export const invoiceExtras = (db: Db, invoiceId: string, dcId: string | null) =>
   Promise.all([
     db.query(db.build.select({ qty: invoiceItem.qty }).from(invoiceItem).where(eq(invoiceItem.invoiceId, invoiceId))),
     dcId === null ? Promise.resolve([]) : dcRefs(db, eq(dc.id, dcId)),
-    srvRefs(db, srvsResolvedTo(srvItem.resolvedInvoiceId, invoiceId)),
+    srvRefs(db, srvsResolvedTo(db, srvItem.resolvedInvoiceId, invoiceId)),
   ]);
 
-/** An SRV's lines with their matched PO item, and the DCs and invoices its lines resolved to. */
-export const srvExtras = (db: Db, srvId: string) => {
-  const resolvedTo = (target: AnyColumn, column: AnyColumn) =>
-    sql`${target} IN (SELECT ${column} FROM ${srvItem} WHERE ${srvItem.srvId} = ${srvId})`;
+/** An SRV's lines with their matched PO item, for the domain totals. */
+export const srvLines = (db: Db, srvId: string) =>
+  db.query(
+    db.build
+      .select({
+        rcdQty: srvItem.rcdQty,
+        acceptedQty: srvItem.acceptedQty,
+        rejQty: srvItem.rejQty,
+        poItem: { id: poItem.id, ordQty: poItem.ordQty, rate: poItem.rate },
+      })
+      .from(srvItem)
+      .leftJoin(poItem, eq(poItem.id, srvItem.poItemId))
+      .where(eq(srvItem.srvId, srvId)),
+  );
+
+/** The DCs and invoices an SRV's lines resolved to (INV-37). */
+export const srvLinks = (db: Db, srvId: string) => {
+  const resolved = (column: typeof srvItem.resolvedDcId | typeof srvItem.resolvedInvoiceId) =>
+    db.build.select({ id: column }).from(srvItem).where(eq(srvItem.srvId, srvId));
   return Promise.all([
-    db.query(
-      db.build
-        .select({
-          rcdQty: srvItem.rcdQty,
-          acceptedQty: srvItem.acceptedQty,
-          rejQty: srvItem.rejQty,
-          poItem: { id: poItem.id, ordQty: poItem.ordQty, rate: poItem.rate },
-        })
-        .from(srvItem)
-        .leftJoin(poItem, eq(poItem.id, srvItem.poItemId))
-        .where(eq(srvItem.srvId, srvId)),
-    ),
-    dcRefs(db, resolvedTo(dc.id, srvItem.resolvedDcId)),
-    invoiceRefs(db, resolvedTo(invoice.id, srvItem.resolvedInvoiceId)),
+    dcRefs(db, inArray(dc.id, resolved(srvItem.resolvedDcId))),
+    invoiceRefs(db, inArray(invoice.id, resolved(srvItem.resolvedInvoiceId))),
   ]);
 };

@@ -1,8 +1,8 @@
 // Delivery tracker list and stats (SPEC-10 §2; export in SPEC-13). A row is one scheduled lot with its item's
 // stored quantities (INV-06); the due buckets, days to due and values come from the domain (C2, D-0101).
 import type { Db } from "@senstosales/db";
-import type { IsoDate, Money } from "@senstosales/domain";
-import { compareIsoDate, deliveryDue, qtyValue, sumMoney } from "@senstosales/domain";
+import type { IsoDate } from "@senstosales/domain";
+import { compareIsoDate, deliveryDue, pendingValueOfItems, qtyValue } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
@@ -58,10 +58,6 @@ function toRow({ delyQty, status, delyDate, ...lot }: Lot & { delyDate: IsoDate 
   };
 }
 
-/** The pending value of the rows' items, each item once however many of its lots are listed (INV-06). */
-const itemsPendingValue = (rows: readonly Row[]): Money =>
-  sumMoney([...new Map(rows.map((r) => [r.poItemId, r.pendingValue])).values()]);
-
 export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) {
   /** The open lots the filters other than status keep. */
   async function rows(filters: Partial<TrackerFilters>): Promise<Row[]> {
@@ -94,7 +90,7 @@ export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) 
         overdueCount: count("overdue"),
         dueSoonCount: count("dueSoon"),
         dueThisMonthCount: count("dueThisMonth"),
-        pendingValue: itemsPendingValue(withStatus(all, filters.status)),
+        pendingValue: pendingValueOfItems(withStatus(all, filters.status)),
       };
     },
 
