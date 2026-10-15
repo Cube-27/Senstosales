@@ -8,7 +8,8 @@ export type AuthRedirect = "/auth/login" | "/onboarding";
 /** Where an error sends the user, or null when the screen shows it in place. */
 function redirectFor(error: unknown): AuthRedirect | null {
   if (!(error instanceof ApiError)) return null;
-  if (error.status === 401) return "/auth/login";
+  // A wrong login password is a 401 too, but the user is on the login already.
+  if (error.status === 401 && error.body.code === "signed-out") return "/auth/login";
   return error.body.code === "onboarding-required" ? "/onboarding" : null;
 }
 

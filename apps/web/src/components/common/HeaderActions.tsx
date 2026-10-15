@@ -1,7 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { api } from "../../lib/api.ts";
 import { LogOut, Monitor, Package } from "../../lib/icons.ts";
+import { LOGIN } from "../../lib/session.ts";
 import { useToast } from "./Toast.tsx";
 
 const ACTION = "relative rounded-lg p-2 text-muted transition-colors hover:bg-surface-sunken hover:text-foreground";
@@ -10,6 +12,7 @@ const ACTION = "relative rounded-lg p-2 text-muted transition-colors hover:bg-su
 export function HeaderActions() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const logout = async (): Promise<void> => {
     try {
@@ -17,8 +20,10 @@ export function HeaderActions() {
     } catch {
       // A stale session must not keep the user from the login screen.
     }
+    // The next user starts from the login with nothing of this session's data cached.
+    queryClient.clear();
     toast("Signed Out", "Authentication session ended.", "success");
-    await navigate({ to: "/auth/login" });
+    await navigate({ to: LOGIN });
   };
 
   return (

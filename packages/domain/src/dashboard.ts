@@ -1,6 +1,7 @@
 // The dashboard's period and lead time (SPEC-10 §2), as the legacy dashboard shows them (A-22).
 import type { IsoDate } from "./dates.ts";
 import { addDays, daysBetween } from "./dates.ts";
+import type { Qty } from "./units.ts";
 
 export type DashboardRange = "month" | "30d" | "all";
 
@@ -20,4 +21,10 @@ export function averageLeadTimeDays(pos: readonly { poDate: IsoDate; firstSrvDat
   if (days.length === 0) return null;
   const total = days.reduce((sum, d) => sum + d, 0);
   return Math.floor((2 * total + days.length) / (2 * days.length));
+}
+
+/** The funnel's Pending Dispatch: ordered minus dispatched, never below 0, as the legacy dashboard shows it (A-22). */
+export function pendingDispatchQty({ ordQty, dspQty }: { ordQty: Qty; dspQty: Qty }): Qty {
+  // A difference of two milli-unit integers is a milli-unit integer; the brand cannot follow arithmetic.
+  return Math.max(0, ordQty - dspQty) as Qty;
 }

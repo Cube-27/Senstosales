@@ -89,7 +89,7 @@ describe("GET /api/dashboard/summary", () => {
         invoicedValue: "572",
         avgLeadTimeDays: 16,
         pendingDispatchValue: "850",
-        funnel: { ordQty: "15", dspQty: "6", invoicedQty: "5", rcdQty: "4" },
+        funnel: { ordQty: "15", dspQty: "6", invoicedQty: "5", rcdQty: "4", pendingQty: "9" },
       },
     ],
     [
@@ -99,7 +99,7 @@ describe("GET /api/dashboard/summary", () => {
         invoicedValue: "100",
         avgLeadTimeDays: 10,
         pendingDispatchValue: "250",
-        funnel: { ordQty: "5", dspQty: "2", invoicedQty: "1", rcdQty: "1" },
+        funnel: { ordQty: "5", dspQty: "2", invoicedQty: "1", rcdQty: "1", pendingQty: "3" },
       },
     ],
     [
@@ -109,7 +109,7 @@ describe("GET /api/dashboard/summary", () => {
         invoicedValue: "100",
         avgLeadTimeDays: null,
         pendingDispatchValue: "50",
-        funnel: { ordQty: "2", dspQty: "1", invoicedQty: "1", rcdQty: "0" },
+        funnel: { ordQty: "2", dspQty: "1", invoicedQty: "1", rcdQty: "0", pendingQty: "1" },
       },
     ],
   ])("range=%s", async (range, expected) => {
@@ -135,7 +135,7 @@ describe("GET /api/dashboard/summary", () => {
       uninvoicedDcCount: 0,
       openFlagCount: 0,
       pendingDispatchValue: "0",
-      funnel: { ordQty: "0", dspQty: "0", invoicedQty: "0", rcdQty: "0" },
+      funnel: { ordQty: "0", dspQty: "0", invoicedQty: "0", rcdQty: "0", pendingQty: "0" },
     });
   });
 
