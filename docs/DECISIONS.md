@@ -2499,3 +2499,62 @@ None.
 - Alternatives: Rename the files to `*.snapshot.json`.
 - Why: They are not `xlsx-snapshot` dumps (D-0299); the name should not suggest one. PR 4 and PR 5 follow it.
 - Reversible: yes.
+
+### D-0306 — Invoice edit and delete guard the PO version
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision: Invoice edit and delete batches include `updateWithVersion(po, poId, versionRead, {})`, with the version read in the same statement as the invoice (`findInvoiceWithPo`). An edit also guards every other PO it recomputes. A stale PO is retried (3 attempts); a stale invoice on edit is a 409.
+- Alternatives: Guard only the invoice version, which lets an edit racing a delete write an audit row for a deleted invoice.
+- Why: The same rule as D-0264 for DCs.
+- Reversible: yes.
+
+### D-0307 — Invoice delete fails its batch if an SRV link appears before commit
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision: The delete batch starts with `invoiceStillUnlinked` (`version = CASE WHEN <linked SRV item> THEN NULL ELSE version END`). The delete retries on a stale `invoice`, and the retry answers 409 `delete-blocked` with `details.reason: "invoice-linked-srv"`.
+- Alternatives: No guard (there is no foreign key on `srv_item.resolved_invoice_id`).
+- Why: INV-35 must hold when an SRV ingest commits between the read and the commit (D-0124, D-0265).
+- Reversible: yes.
+
+### D-0308 — Invoice edit re-links only when the number or FY moves, and recomputes every PO whose links change
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision: As D-0266 and D-0267 for DCs: no re-resolution when the trimmed number and the FY are unchanged; otherwise every PO owning an SRV item whose link changes is recomputed in the same batch.
+- Alternatives: Re-resolve on every edit, or recompute only the invoice's PO.
+- Why: Links resolve by `(number, FY)` (INV-24), and EC-14 flags the SRV item on its own PO.
+- Reversible: yes.
+
+### D-0309 — Invoice list columns, filters and order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision:
+  - Row values: `itemCount` = the invoice's line count, `qty` = `sumQty` of the line quantities (legacy `total_items`, `total_ord_qty`); `taxable` and `total` are the stored header amounts.
+  - Filters: `q` matches the invoice number, PO number, DC number or buyer name, as the legacy `_build_where_filters` does. The date range applies to `invoice_date`, and the value range to the stored `total` (inclusive, in SQL).
+  - Order: newest first by date desc, number desc (numeric), id desc. Sorting is done in memory with `paging.ts`.
+- Alternatives: The legacy default `created_at DESC`.
+- Why: C7 and C18 freeze the legacy columns and filters; the default order matches the DC list (D-0268) so both lists open the same way.
+- Reversible: yes.
+
+### D-0310 — Invoice KPI cards
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision: `stats` uses the list filters and gives count, Σ total, Σ taxable and Σ(CGST + SGST + IGST) over the stored amounts, summed with the domain's `sumMoney`. No tax is recomputed.
+- Alternatives: Unfiltered totals (legacy `get_stats`).
+- Why: The legacy list page shows the filtered stats (`get_filtered_stats`); the amounts were computed once by the domain at creation (INV-41).
+- Reversible: yes.
+
+### D-0311 — Invoice detail flags and SRVs
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision: `flags` are the open flags on the invoice's lines (`invoice_item`); `srvs` are the SRVs with an item whose `resolved_invoice_id` is the invoice (INV-37).
+- Alternatives: Match `invoice_no` text without the FY.
+- Why: The same as D-0269 for DCs: links are FY-qualified and stored resolved.
+- Reversible: yes.
+
+### D-0312 — DC and invoice writes share `services/doc-writes.ts`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 5 (#65) · Status: decided
+- Decision: `relink`, `guardedRecompute`, `otherPos`, `loadPo` and `commit` move out of `dc.ts` into one module keyed by the citation kind; invoice create, edit and delete use them.
+- Alternatives: Copy them into `invoice.ts`.
+- Why: The D-0220 guard and the link remap live in one place (invoice create previously had its own copy).
+- Reversible: yes.

@@ -68,7 +68,12 @@ export function linesError(issues: readonly Issue[], bodyPath = (path: string) =
   return new ValidationError(issues[0]!.code, issues[0]!.message, { fields });
 }
 
+export const poNotFound = (): NotFoundError => new NotFoundError("po-not-found", "This PO was not found.");
+
 export const dcNotFound = (): NotFoundError => new NotFoundError("dc-not-found", "This DC was not found.");
+
+export const invoiceNotFound = (): NotFoundError =>
+  new NotFoundError("invoice-not-found", "This invoice was not found.");
 
 /** INV-28: a DC has one invoice. */
 export const dcHasInvoice = (dcNumber: string): ConflictError =>
