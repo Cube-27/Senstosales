@@ -5,7 +5,7 @@ import type { ItemStatus } from "./status.ts";
 import type { Qty } from "./units.ts";
 import { gtTol, qtyToString } from "./units.ts";
 
-/** INV-58: the v1 flag types, exactly these six (A-24). */
+/** INV-58: the v1 flag types, exactly these nine (A-24, revised 2026-10-15). */
 export const FLAG_TYPES = [
   "QTY_MISMATCH",
   "DOC_NUMBER_CONFLICT",
@@ -13,6 +13,9 @@ export const FLAG_TYPES = [
   "OVER_INVOICE",
   "DOC_ON_CANCELLED_ITEM",
   "MANUAL_ADJUSTMENT_OVERLAP",
+  "SRV_PO_ITEM_ZERO",
+  "SRV_DUPLICATE_ITEM",
+  "SRV_UNKNOWN_PO_ITEM",
 ] as const;
 
 export type FlagType = (typeof FLAG_TYPES)[number];
@@ -38,6 +41,10 @@ export type PoFlagSnapshot = {
   }[];
   srvLines: readonly {
     id: string;
+    srvId: string;
+    /** PO ITM and SRV ITM as BHEL printed them; they key the row within its SRV. */
+    poItemNo: number;
+    srvItemNo: number;
     poItemId: string | null;
     ordQty: Qty;
     srvDate: IsoDate;
@@ -102,36 +109,67 @@ function itemFlags(item: SnapshotItem, add: AddFlag): void {
   }
 }
 
-/** INV-52, INV-53: flags on one SRV line. */
-function srvLineFlags(line: SnapshotSrvLine, items: ReadonlyMap<string, SnapshotItem>, add: AddFlag): void {
-  // An unmatched line (EC-12) has no PO quantity to compare with; an SRV ord_qty of 0 is one the page lacked, and
-  // legacy compares only a positive one (EC-31).
+/** The ids of the DCs and invoices on the PO's items: an SRV citing one of them cites a document of its own PO. */
+function docsOfPo(items: readonly SnapshotItem[]) {
+  return {
+    dc: new Set(items.flatMap((item) => item.dcLines.map((line) => line.dcId))),
+    invoice: new Set(items.flatMap((item) => item.invoiceLines.map((line) => line.invoiceId))),
+  };
+}
+
+type PoDocs = ReturnType<typeof docsOfPo>;
+
+/** INV-52, INV-53, INV-58: flags on one SRV line; `duplicate` when another row of its SRV has the same key. */
+function srvLineFlags(
+  line: SnapshotSrvLine,
+  { items, docs, duplicate }: { items: ReadonlyMap<string, SnapshotItem>; docs: PoDocs; duplicate: boolean },
+  add: AddFlag,
+): void {
+  const flag = (type: FlagType, field: string, actual: string, docIds: readonly string[] = []) =>
+    add(type, "srv_item", line.id, { field, expected: null, actual, docIds });
+  // BHEL's row is stored as printed; its oddities are flagged, never fixed (A-24 revised).
+  if (line.poItemNo === 0) flag("SRV_PO_ITEM_ZERO", "po_item_no", "0");
+  else if (line.poItemId === null) flag("SRV_UNKNOWN_PO_ITEM", "po_item_no", String(line.poItemNo));
+  if (duplicate) flag("SRV_DUPLICATE_ITEM", "srv_item_no", `${line.poItemNo}/${line.srvItemNo}`);
+  // An SRV ord_qty of 0 is one the page lacked, and legacy compares only a positive one (EC-31).
   const item = line.poItemId === null ? undefined : items.get(line.poItemId);
   if (item && line.ordQty > 0 && (gtTol(line.ordQty, item.ordQty) || gtTol(item.ordQty, line.ordQty))) {
     const [expected, actual] = [qtyToString(item.ordQty), qtyToString(line.ordQty)];
     add("QTY_MISMATCH", "srv_item", line.id, { field: "ord_qty", expected, actual, docIds: [] });
   }
-  // The link was resolved in the SRV date's FY (INV-37); a cited number left unresolved conflicts (A-10, EC-03).
+  // The link was resolved in the SRV date's FY (INV-37). Only a document that exists and belongs to another PO
+  // conflicts; a number with no document in the app does not (A-10 revised).
   const references = [
-    ["challan_no", line.challanNo, line.resolvedDcId],
-    ["invoice_no", line.invoiceNo, line.resolvedInvoiceId],
+    ["challan_no", line.challanNo, line.resolvedDcId, docs.dc],
+    ["invoice_no", line.invoiceNo, line.resolvedInvoiceId, docs.invoice],
   ] as const;
-  for (const [field, raw, resolvedId] of references) {
+  for (const [field, raw, resolvedId, own] of references) {
     const cited = raw?.trim();
-    if (cited && resolvedId === null) {
-      add("DOC_NUMBER_CONFLICT", "srv_item", line.id, { field, expected: null, actual: cited, docIds: [] });
+    if (cited && resolvedId !== null && !own.has(resolvedId)) {
+      flag("DOC_NUMBER_CONFLICT", field, cited, [resolvedId]);
     }
   }
 }
 
-/** INV-52..INV-57: the flags the snapshot calls for, item by item, then SRV line by SRV line. */
+/** The ids of the SRV lines whose (SRV, PO ITM, SRV ITM) key another line also has. */
+function duplicateLines(lines: readonly SnapshotSrvLine[]): Set<string> {
+  const byKey = new Map<string, string[]>();
+  for (const line of lines) {
+    const key = JSON.stringify([line.srvId, line.poItemNo, line.srvItemNo]);
+    byKey.set(key, [...(byKey.get(key) ?? []), line.id]);
+  }
+  return new Set([...byKey.values()].filter((ids) => ids.length > 1).flat());
+}
+
+/** INV-52..INV-58: the flags the snapshot calls for, item by item, then SRV line by SRV line. */
 export function detectFlags(snapshot: PoFlagSnapshot): DesiredFlag[] {
   const flags: DesiredFlag[] = [];
   const add: AddFlag = (type, scopeType, scopeId, details) =>
     flags.push({ type, scopeType, scopeId, poId: snapshot.poId, details });
   for (const item of snapshot.items) itemFlags(item, add);
-  const items = new Map(snapshot.items.map((item) => [item.id, item]));
-  for (const line of snapshot.srvLines) srvLineFlags(line, items, add);
+  const context = { items: new Map(snapshot.items.map((item) => [item.id, item])), docs: docsOfPo(snapshot.items) };
+  const duplicates = duplicateLines(snapshot.srvLines);
+  for (const line of snapshot.srvLines) srvLineFlags(line, { ...context, duplicate: duplicates.has(line.id) }, add);
   return flags;
 }
 

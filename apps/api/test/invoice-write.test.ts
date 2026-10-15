@@ -105,7 +105,7 @@ describe("PUT /api/invoice/:id", () => {
     expect([res.status, res.body.code]).toEqual([400, "number-blank"]);
   });
 
-  test("re-dating invoice 31 into FY 2024-25 drops the SRV link and raises DOC_NUMBER_CONFLICT (INV-25, EC-14)", async () => {
+  test("re-dating invoice 31 into FY 2024-25 drops the SRV link and raises no flag (INV-25, EC-14, INV-53)", async () => {
     const r = await withInvoice31();
     await srvCiting(r, "4500001", "25/04/2025", "31");
     expect(await links(r)).toEqual([{ invoiceNo: "31", resolvedInvoiceId: r.inv31.id }]);
@@ -114,10 +114,8 @@ describe("PUT /api/invoice/:id", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ invoiceDate: "2025-03-30", financialYear: "2024-25" });
     expect(await links(r)).toEqual([{ invoiceNo: "31", resolvedInvoiceId: null }]);
-    const conflicts = (await r.flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT");
-    expect(conflicts.map((f) => [f.scopeType, f.status, f.details])).toEqual([
-      ["srv_item", "open", { field: "invoice_no", expected: null, actual: "31", docIds: [] }],
-    ]);
+    // A number with no invoice in the SRV's FY is not a conflict (A-10 revised).
+    expect((await r.flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT")).toEqual([]);
   });
 
   test("an SRV of another PO that loses its link is flagged on that PO", async () => {

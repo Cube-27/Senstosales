@@ -9,6 +9,8 @@ const lineColumns = {
   id: srvItem.id,
   srvId: srvItem.srvId,
   poItemId: srvItem.poItemId,
+  poItemNo: srvItem.poItemNo,
+  srvItemNo: srvItem.srvItemNo,
   srvDate: srv.srvDate,
   ordQty: srvItem.ordQty,
   rcdQty: srvItem.rcdQty,
@@ -39,7 +41,7 @@ export const srvLinesOfPo = (db: Db, poId: string) =>
 export const unmatchedSrvLines = (db: Db, supplierId: string, poNumber: string) =>
   db.query(
     db.build
-      .select({ ...lineColumns, poItemNo: srvItem.poItemNo })
+      .select(lineColumns)
       .from(srvItem)
       .innerJoin(srv, eq(srv.id, srvItem.srvId))
       .where(and(eq(srv.supplierId, supplierId), eq(srv.poNumber, poNumber), isNull(srvItem.poItemId)))

@@ -7,7 +7,9 @@ import type { Db, Instant } from "@senstosales/db";
 import {
   auditLog,
   dc,
+  dcItem,
   invoice,
+  invoiceItem,
   po,
   poItem,
   reconciliationIssue,
@@ -17,7 +19,7 @@ import {
   supplier,
 } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
-import type { Fy, GstPct, IsoDate, Money } from "@senstosales/domain";
+import type { Fy, GstPct, IsoDate, Money, Qty } from "@senstosales/domain";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 
@@ -143,11 +145,19 @@ describe("an SRV of a stored PO", () => {
     expect((await lines())[0]?.poItemId).toBe(item30);
   });
 
-  test("EC-12: a PO item number on no item of the PO is stored unmatched and changes no item", async () => {
+  test("EC-12: a PO item number on no item of the PO is stored unmatched, changes no item and is flagged", async () => {
     await uploadOne([{ ...S1, item: 50 }]);
 
-    expect((await lines())[0]?.poItemId).toBeNull();
+    const [line] = await lines();
+    expect(line?.poItemId).toBeNull();
     expect((await itemQty()).map((i) => i.rcd)).toEqual([0, 0]);
+    expect(await flags()).toEqual([
+      {
+        type: "SRV_UNKNOWN_PO_ITEM",
+        scopeId: line?.id,
+        details: { field: "po_item_no", expected: null, actual: "50", docIds: [] },
+      },
+    ]);
   });
 
   test("INV-52: an SRV ord qty differing from the PO item's raises QTY_MISMATCH", async () => {
@@ -185,45 +195,74 @@ describe("an SRV of a stored PO", () => {
 describe("references (INV-37, INV-38, INV-53)", () => {
   const at = (s: string) => s as Instant;
   const d = (s: string) => s as IsoDate;
+  const zero = 0 as Money;
 
-  /** DC 12 dated 2025-03-28 (FY 2024-25), DC 7 dated 2025-04-20 and invoice 9 dated 2025-04-21 (FY 2025-26). */
+  /**
+   * On this PO: DC 12 dated 2025-03-28 (FY 2024-25), DC 7 dated 2025-04-20 and invoice 9 dated 2025-04-21 (FY
+   * 2025-26). On PO 4500002: DC 8 dated 2025-04-22 and invoice 10 dated 2025-04-23.
+   */
   beforeEach(async () => {
     await uploadPo(APRIL);
-    const id = await poId();
-    if (id === undefined) throw new Error("PO not stored");
-    const dcRow = (dcId: string, number: string, date: string, fy: string) =>
-      db.build.insert(dc).values({
-        id: dcId,
-        supplierId: SUPPLIER,
-        poId: id,
-        number,
-        dcDate: d(date),
-        financialYear: fy as Fy,
-        gcNumber: number,
-        gcDate: d(date),
-        createdAt: at(`${date}T00:00:00.000Z`),
-      });
+    await uploadPo({ number: "4500002", date: "10/04/2025", items: [{ no: 10 }] });
+    const pos = await db.query(db.build.select({ id: po.id, no: po.poNumber }).from(po));
+    const items = await db.query(db.build.select({ id: poItem.id, poId: poItem.poId }).from(poItem));
+    const poOf = (no: string) => pos.find((p) => p.no === no)?.id ?? "";
+    const itemOf = (poId: string) => items.find((i) => i.poId === poId)?.id ?? "";
+    const created = (date: string) => at(`${date}T00:00:00.000Z`);
+    const dcRows = (dcId: string, poNumber: string, number: string, date: string, fy: string) => {
+      const id = poOf(poNumber);
+      return [
+        db.build.insert(dc).values({
+          id: dcId,
+          supplierId: SUPPLIER,
+          poId: id,
+          number,
+          dcDate: d(date),
+          financialYear: fy as Fy,
+          gcNumber: number,
+          gcDate: d(date),
+          createdAt: created(date),
+        }),
+        db.build
+          .insert(dcItem)
+          .values({ id: `${dcId}-1`, supplierId: SUPPLIER, dcId, poItemId: itemOf(id), dspQty: 0 as Qty, createdAt: created(date) }),
+      ];
+    };
+    const invoiceRows = (invoiceId: string, poNumber: string, dcId: string, number: string, date: string) => {
+      const id = poOf(poNumber);
+      const amounts = { taxable: zero, cgst: zero, sgst: zero, igst: zero, total: zero };
+      return [
+        db.build.insert(invoice).values({
+          id: invoiceId,
+          supplierId: SUPPLIER,
+          poId: id,
+          dcId,
+          kind: "dc",
+          number,
+          invoiceDate: d(date),
+          financialYear: "2025-26" as Fy,
+          cgstPct: 900000 as GstPct,
+          sgstPct: 900000 as GstPct,
+          ...amounts,
+          createdAt: created(date),
+        }),
+        db.build.insert(invoiceItem).values({
+          id: `${invoiceId}-1`,
+          supplierId: SUPPLIER,
+          invoiceId,
+          poItemId: itemOf(id),
+          qty: 0 as Qty,
+          rate: zero,
+          ...amounts,
+        }),
+      ];
+    };
     await db.batch([
-      dcRow("D12", "12", "2025-03-28", "2024-25"),
-      dcRow("D7", "7", "2025-04-20", "2025-26"),
-      db.build.insert(invoice).values({
-        id: "N9",
-        supplierId: SUPPLIER,
-        poId: id,
-        dcId: "D7",
-        kind: "dc",
-        number: "9",
-        invoiceDate: d("2025-04-21"),
-        financialYear: "2025-26" as Fy,
-        cgstPct: 900000 as GstPct,
-        sgstPct: 900000 as GstPct,
-        taxable: 0 as Money,
-        cgst: 0 as Money,
-        sgst: 0 as Money,
-        igst: 0 as Money,
-        total: 0 as Money,
-        createdAt: at("2025-04-21T00:00:00.000Z"),
-      }),
+      ...dcRows("D12", PO, "12", "2025-03-28", "2024-25"),
+      ...dcRows("D7", PO, "7", "2025-04-20", "2025-26"),
+      ...dcRows("D8", "4500002", "8", "2025-04-22", "2025-26"),
+      ...invoiceRows("N9", PO, "D7", "9", "2025-04-21"),
+      ...invoiceRows("N10", "4500002", "D8", "10", "2025-04-23"),
     ]);
   });
 
@@ -236,18 +275,34 @@ describe("references (INV-37, INV-38, INV-53)", () => {
     expect(await flags()).toEqual([]);
   });
 
-  test("EC-03: a March DC cited by an April SRV is not linked and raises DOC_NUMBER_CONFLICT", async () => {
+  test("EC-03: a March DC cited by an April SRV is not linked, and a number with no document raises no flag", async () => {
     await uploadOne([{ ...S1, date: "03/04/2025", challan: "12", invoice: "99" }]);
 
     const [line] = await lines();
     expect(line).toMatchObject({ challanNo: "12", invoiceNo: "99", resolvedDcId: null, resolvedInvoiceId: null });
-    expect(await flags()).toEqual([
-      { type: "DOC_NUMBER_CONFLICT", scopeId: line?.id, details: expect.objectContaining({ field: "challan_no" }) },
-      { type: "DOC_NUMBER_CONFLICT", scopeId: line?.id, details: expect.objectContaining({ field: "invoice_no" }) },
-    ]);
+    expect(await flags()).toEqual([]);
     // An SRV never creates a DC or an invoice.
-    expect(await db.query(db.build.select({ id: dc.id }).from(dc))).toHaveLength(2);
-    expect(await db.query(db.build.select({ id: invoice.id }).from(invoice))).toHaveLength(1);
+    expect(await db.query(db.build.select({ id: dc.id }).from(dc))).toHaveLength(3);
+    expect(await db.query(db.build.select({ id: invoice.id }).from(invoice))).toHaveLength(2);
+  });
+
+  test("INV-53: numbers resolved to another PO's DC and invoice raise DOC_NUMBER_CONFLICT, citing them", async () => {
+    await uploadOne([{ ...S1, challan: "8", invoice: "10" }]);
+
+    const [line] = await lines();
+    expect(line).toMatchObject({ resolvedDcId: "D8", resolvedInvoiceId: "N10" });
+    expect(await flags()).toEqual([
+      {
+        type: "DOC_NUMBER_CONFLICT",
+        scopeId: line?.id,
+        details: { field: "challan_no", expected: null, actual: "8", docIds: ["D8"] },
+      },
+      {
+        type: "DOC_NUMBER_CONFLICT",
+        scopeId: line?.id,
+        details: { field: "invoice_no", expected: null, actual: "10", docIds: ["N10"] },
+      },
+    ]);
   });
 });
 
