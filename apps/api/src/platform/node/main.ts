@@ -1,7 +1,7 @@
 // The node entry (SPEC-07 §4.2, ADR 0001): data directory, database, one app for the API and the SPA, bound to
 // 127.0.0.1 on a random free port (C10). The shell reads the one `SENSTO_PORT=<n>` line on stdout, printed only once
 // the server listens; a failed start prints a plain message on stderr instead. The process exits when stdin closes,
-// so it never outlives a shell that crashed.
+// so it never outlives a shell that crashed, or on SIGINT/SIGTERM.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { join } from "node:path";
@@ -103,9 +103,20 @@ async function serve(web: WebFiles, scraper: Scraper | undefined): Promise<void>
     version: pkg.version,
     ...(scraper && { scraper }),
   });
+  // Ctrl+C in a terminal (`pnpm start`) takes the same clean path as the shell closing stdin. The handlers exist
+  // before the port is announced (a reader may signal the moment it sees the line), and the close waits until the
+  // backup job has started, so an early stop still waits for it.
+  let backup = Promise.resolve();
+  let closing: Promise<void> | undefined;
+  const stop = (): void => {
+    process.stdin.destroy();
+    closing ??= backup.then(() => server.close());
+  };
+  process.stdin.on("end", stop);
+  process.on("SIGINT", stop);
+  process.on("SIGTERM", stop);
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
-  await server.startDailyBackup();
-  process.stdin.on("end", () => void server.close());
+  backup = server.startDailyBackup();
   process.stdin.resume();
 }
 

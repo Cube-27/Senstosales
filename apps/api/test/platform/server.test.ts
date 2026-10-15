@@ -185,22 +185,31 @@ describe("resolveDataDir", () => {
   });
 });
 
+/** Starts the node entry on a migrated `dataDir` and waits for its port line. */
+async function spawnMain(dataDir: string) {
+  await migrate(dataDir);
+  const child = spawn(process.execPath, [MAIN], {
+    env: { ...process.env, SENSTO_DATA_DIR: dataDir },
+    stdio: ["pipe", "pipe", "inherit"],
+  });
+  const exited = new Promise<number | null>((resolve) => child.on("exit", resolve));
+  onTestFinished(() => {
+    child.kill();
+  });
+  const first = await new Promise<string>((resolve) => {
+    createInterface({ input: child.stdout }).once("line", resolve);
+  });
+  return { child, exited, first };
+}
+
+async function dailyBackups(dataDir: string): Promise<string[]> {
+  return (await readdir(join(dataDir, "backups"))).filter((name) => name.startsWith("daily-"));
+}
+
 describe("main", () => {
   it("prints the port line once listening, starts the day's backup, and exits when stdin closes", async () => {
     const dataDir = join(tmp, "data");
-    await migrate(dataDir);
-    const child = spawn(process.execPath, [MAIN], {
-      env: { ...process.env, SENSTO_DATA_DIR: dataDir },
-      stdio: ["pipe", "pipe", "inherit"],
-    });
-    const exited = new Promise<number | null>((resolve) => child.on("exit", resolve));
-    onTestFinished(() => {
-      child.kill();
-    });
-
-    const first = await new Promise<string>((resolve) => {
-      createInterface({ input: child.stdout }).once("line", resolve);
-    });
+    const { child, exited, first } = await spawnMain(dataDir);
     expect(first).toMatch(/^SENSTO_PORT=\d+$/);
     const port = Number(first.slice("SENSTO_PORT=".length));
     expect((await get(port, "/api/health")).status).toBe(200);
@@ -208,8 +217,16 @@ describe("main", () => {
     child.stdin.end();
     expect(await exited).toBe(0);
     // The exit waits for the backup job, so today's copy is complete (SPEC-21, INV-103).
-    expect((await readdir(join(dataDir, "backups"))).filter((name) => name.startsWith("daily-"))).toEqual([
-      expect.stringMatching(/^daily-\d{4}-\d{2}-\d{2}\.db$/),
-    ]);
+    expect(await dailyBackups(dataDir)).toEqual([expect.stringMatching(/^daily-\d{4}-\d{2}-\d{2}\.db$/)]);
+  });
+
+  // Ctrl+C under `pnpm start`. Windows cannot deliver SIGINT to a child (`kill` terminates it), so this runs on Linux CI.
+  it.skipIf(process.platform === "win32")("shuts down the same clean way on SIGINT", async () => {
+    const dataDir = join(tmp, "data");
+    const { child, exited } = await spawnMain(dataDir);
+
+    child.kill("SIGINT");
+    expect(await exited).toBe(0);
+    expect(await dailyBackups(dataDir)).toEqual([expect.stringMatching(/^daily-\d{4}-\d{2}-\d{2}\.db$/)]);
   });
 });

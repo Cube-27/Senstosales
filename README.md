@@ -44,6 +44,7 @@ You need: Node 26+ and pnpm 11.
 pnpm install
 pnpm hooks     # once per clone
 pnpm verify
+pnpm start     # build the web UI and run the app at http://127.0.0.1:<port>; Ctrl+C stops it
 ```
 
 Every other command, including the checks CI runs, is in [CLAUDE.md §7](CLAUDE.md#7-commands).
