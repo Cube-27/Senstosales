@@ -3,7 +3,8 @@ import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { AppChrome, SidebarNav } from "../src/components/common/index.ts";
+import { AppChrome } from "../src/components/common/index.ts";
+import { SidebarNav } from "../src/components/common/SidebarNav.tsx";
 import { renderAt } from "./render.tsx";
 
 afterEach(() => {

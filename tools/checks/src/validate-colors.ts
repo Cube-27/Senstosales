@@ -2,19 +2,16 @@
 // validate-colors rules (palette utilities, hex and rgb/hsl literals), plus the C7 bans the legacy check did not
 // cover: `dark:` colour fixes, important utilities, and colour utilities or `var(--…)` values naming no token.
 // Usage: node tools/checks/src/validate-colors.ts (from the repo root)
-import { readFileSync } from "node:fs";
-
 import {
   type ClassToken,
   classStrings,
   classTokens,
   designTokens,
   type Finding,
-  GLOBALS_CSS,
   lineAt,
-  report,
+  readGlobalsCss,
+  runCheck,
   type Source,
-  webSources,
 } from "./design.ts";
 
 type Tokens = ReturnType<typeof designTokens>;
@@ -68,14 +65,7 @@ export function checkColors(source: Source, tokens: Tokens): Finding[] {
   return findings;
 }
 
-function main(): number {
-  const tokens = designTokens(readFileSync(GLOBALS_CSS, "utf8"));
-  const sources = webSources();
-  return report(
-    "validate-colors",
-    sources.flatMap((source) => checkColors(source, tokens)),
-    sources.length,
-  );
+if (import.meta.main) {
+  const tokens = designTokens(readGlobalsCss());
+  process.exit(runCheck("validate-colors", (source) => checkColors(source, tokens)));
 }
-
-if (import.meta.main) process.exit(main());

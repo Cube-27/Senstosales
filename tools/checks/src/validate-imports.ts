@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { posix } from "node:path";
 
-import { type Finding, lineAt, report, type Source, WEB_SRC, webSources } from "./design.ts";
+import { type Finding, lineAt, runCheck, type Source, WEB_SRC } from "./design.ts";
 
 const COMMON = `${WEB_SRC}/components/common`;
 const UI = `${WEB_SRC}/components/ui`;
@@ -15,7 +15,7 @@ const IMPORT = /\bfrom\s*["']([^"']+)["']|\bimport\s*\(?\s*["']([^"']+)["']/g;
 
 const inside = (path: string, dir: string): boolean => path.startsWith(`${dir}/`);
 
-/** The names the registry exports (`export { A, B as C } from …`, `export function A`, `export const A`). */
+/** The names the registry re-exports (`export { A, type B, C as D } from …`). */
 export function registryNames(registry: string): Set<string> {
   const names = new Set<string>();
   for (const [, list] of registry.matchAll(/export\s+(?:type\s+)?\{([^}]*)\}/g)) {
@@ -28,7 +28,6 @@ export function registryNames(registry: string): Set<string> {
       if (name) names.add(name);
     }
   }
-  for (const [, name] of registry.matchAll(/export\s+(?:function|const|class)\s+(\w+)/g)) names.add(name ?? "");
   return names;
 }
 
@@ -53,14 +52,7 @@ export function checkImports(source: Source, registry: Set<string>): Finding[] {
   return findings;
 }
 
-function main(): number {
+if (import.meta.main) {
   const registry = registryNames(readFileSync(REGISTRY, "utf8"));
-  const sources = webSources();
-  return report(
-    "validate-imports",
-    sources.flatMap((source) => checkImports(source, registry)),
-    sources.length,
-  );
+  process.exit(runCheck("validate-imports", (source) => checkImports(source, registry)));
 }
-
-if (import.meta.main) process.exit(main());

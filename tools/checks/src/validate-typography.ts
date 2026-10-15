@@ -3,17 +3,22 @@
 // weight, line-height, letter-spacing, case or non-state colour; no role class with `/opacity`. Also: a role class
 // names one that `globals.css` defines.
 // Usage: node tools/checks/src/validate-typography.ts (from the repo root)
-import { readFileSync } from "node:fs";
-
-import { classStrings, classTokens, type Finding, GLOBALS_CSS, report, type Source, webSources } from "./design.ts";
+import {
+  classStrings,
+  classTokens,
+  designTokens,
+  type Finding,
+  readGlobalsCss,
+  runCheck,
+  type Source,
+} from "./design.ts";
 
 const DEPRECATED = /^(text-display|text-heading(-[a-z0-9-]+)?|text-body|text-ui|text-mono)$/;
 const STATE_COLOUR = /^text-(success|warning|error|info)(\/\d{1,3})?$/;
 const ROLE_OVERRIDES: ReadonlyArray<[RegExp, string]> = [
   [/^typo-[a-z0-9-]+$/, "role-with-typo"],
   [/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/, "role-with-weight"],
-  // `text-[color:…]` is a colour by its type hint, not a size.
-  [/^text-(xs|sm|base|md|lg|\d?xl|\[(?!color:)[^\]]+\])$/, "role-with-size"],
+  [/^text-(xs|sm|base|md|lg|\d?xl|\[[^\]]+\])$/, "role-with-size"],
   [/^tracking-/, "role-with-letter-spacing"],
   [/^leading-/, "role-with-line-height"],
   [/^(uppercase|lowercase|capitalize|normal-case)$/, "role-with-case"],
@@ -25,7 +30,7 @@ const ROLE_OVERRIDES: ReadonlyArray<[RegExp, string]> = [
 
 /** The `role-*` classes `globals.css` defines. */
 export const definedRoles = (css: string): Set<string> =>
-  new Set(Array.from(css.matchAll(/^\s*\.(role-[a-z0-9-]+)\b/gm), (m) => m[1] ?? ""));
+  new Set([...designTokens(css).classes].filter((name) => name.startsWith("role-")));
 
 function stringRules(classString: string, roles: Set<string>): Array<[string, string]> {
   const tokens = classTokens(classString);
@@ -50,14 +55,7 @@ export function checkTypography(source: Source, roles: Set<string>): Finding[] {
   );
 }
 
-function main(): number {
-  const roles = definedRoles(readFileSync(GLOBALS_CSS, "utf8"));
-  const sources = webSources();
-  return report(
-    "validate-typography",
-    sources.flatMap((source) => checkTypography(source, roles)),
-    sources.length,
-  );
+if (import.meta.main) {
+  const roles = definedRoles(readGlobalsCss());
+  process.exit(runCheck("validate-typography", (source) => checkTypography(source, roles)));
 }
-
-if (import.meta.main) process.exit(main());

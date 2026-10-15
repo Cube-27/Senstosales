@@ -9,11 +9,10 @@ import {
   PageHeader,
   StatCard,
   StatCardRow,
-  ThemeToggle,
-  TOAST_MS,
-  ToastProvider,
   useToast,
 } from "../src/components/common/index.ts";
+import { ThemeToggle } from "../src/components/common/ThemeToggle.tsx";
+import { ToastProvider } from "../src/components/common/Toast.tsx";
 import { renderAt } from "./render.tsx";
 
 afterEach(() => {
@@ -140,7 +139,7 @@ describe("Toast", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "raise" }));
     expect(screen.getByRole("status").textContent).toBe("Save failedNumber already used in this FY.");
-    act(() => vi.advanceTimersByTime(TOAST_MS - 1));
+    act(() => vi.advanceTimersByTime(3999));
     expect(screen.queryByRole("status")).not.toBeNull();
     act(() => vi.advanceTimersByTime(1));
     expect(screen.queryByRole("status")).toBeNull();

@@ -11,6 +11,7 @@ const CSS = `@theme {
   --color-surface: var(--surface);
   --color-error: var(--error);
   --color-subtle: var(--text-tertiary);
+  --color-placeholder: var(--text-placeholder);
 }
 
 :root {
@@ -52,7 +53,7 @@ describe("class strings", () => {
   });
 
   it("reads the tokens and theme colours of globals.css", () => {
-    expect([...tokens.colours]).toEqual(["surface", "error", "subtle"]);
+    expect([...tokens.colours]).toEqual(["surface", "error", "subtle", "placeholder"]);
     expect(tokens.properties.has("--text-placeholder")).toBe(true);
     expect([...roles]).toEqual(["role-page-title", "role-table-cell"]);
   });
@@ -62,7 +63,7 @@ describe("validate-colors", () => {
   it("fails palette, literal, dark:, important and undefined colours", () => {
     const text = [
       `<p className="text-red-600 bg-[#fafafa] dark:bg-surface border-destructive bg-surface!" />`,
-      `<p className="text-[var(--nope)] placeholder:text-[color:var(--text-placeholder)]" />`,
+      `<p className="text-[var(--nope)] placeholder:text-placeholder" />`,
       `const style = { color: "#0057b3", background: "rgb(0 0 0)" };`,
     ].join("\n");
     expect(rules(checkColors(at("apps/web/src/x.tsx", text), tokens))).toEqual([
@@ -109,11 +110,11 @@ describe("validate-typography", () => {
 
 describe("validate-imports", () => {
   const registry = registryNames(
-    `export { Button, type ButtonProps } from "./Button.tsx";\nexport { Toast as Toaster } from "./Toast.tsx";\nexport function useTheme() {}\n`,
+    `export { Button, type ButtonProps } from "./Button.tsx";\nexport { Toast as Toaster } from "./Toast.tsx";\n`,
   );
 
   it("reads the registry's export names", () => {
-    expect([...registry]).toEqual(["Button", "ButtonProps", "Toaster", "useTheme"]);
+    expect([...registry]).toEqual(["Button", "ButtonProps", "Toaster"]);
   });
 
   it("fails deep imports, primitives outside the registry and local copies", () => {

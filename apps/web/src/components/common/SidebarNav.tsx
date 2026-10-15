@@ -26,7 +26,7 @@ function SidebarBrand() {
 
 /** The left navigation: brand, grouped links (the current one marked), and the status footer. */
 export function SidebarNav() {
-  const { pathname } = useLocation();
+  const pathname = useLocation({ select: (location) => location.pathname });
 
   return (
     <aside

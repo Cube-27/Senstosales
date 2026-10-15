@@ -58,8 +58,11 @@ Contrast is the WCAG 2.2 ratio. Each new colour is the legacy colour mixed towar
    Every token stays, and so do all `role-*` classes (the typography system) and the `fade-in`, `fade-out` and
    `scale-in` keyframes, which legacy components use.
 
+7. **Placeholder colour utility.** `@theme` gains `--color-placeholder: var(--text-placeholder)`, so inputs write
+   `placeholder:text-placeholder`. Legacy inputs used that class name with no token behind it (no colour).
+
 Not changed: every other token and rule. Legacy components also use utility colour names that no `--color-*` token
-defines, so they rendered with no colour; the new components use the defined token instead, and add no alias:
+defines, so they rendered with no colour; the new components use the defined token instead, and add no alias beyond item 7:
 
 | Legacy class name                                  | Use instead                                                           |
 | -------------------------------------------------- | --------------------------------------------------------------------- |
@@ -67,7 +70,7 @@ defines, so they rendered with no colour; the new components use the defined tok
 | `*-app-surface`, `*-app-surface-hover`             | `*-surface`, `*-surface-sunken`                                       |
 | `*-app-border`, `border-hairline`                  | `border-border`, `border-border-subtle`                               |
 | `text-action-primary`, `ring-ring`, `outline-ring` | `text-primary`; focus comes from `--focus-ring`                       |
-| `text-placeholder`                                 | `placeholder:text-[color:var(--text-placeholder)]`                    |
+| `text-placeholder`                                 | `placeholder:text-placeholder` (`--color-placeholder`, item 7)        |
 | `text-tertiary/50`, `bg-text-tertiary`             | `text-subtle/50`, `bg-subtle` (`--color-subtle` is `--text-tertiary`) |
 | `text-*-foreground`                                | `text-*-contrast`                                                     |
 | `text-accent-hover`                                | `hover:text-accent-hover` (as defined)                                |

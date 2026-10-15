@@ -19,7 +19,7 @@ export interface ToastApi {
 }
 
 /** How long a toast stays before it closes itself (legacy). */
-export const TOAST_MS = 4000;
+const TOAST_MS = 4000;
 
 const STYLE: Record<ToastType, { icon: Icon; iconClass: string; rail: string }> = {
   success: { icon: CheckCircle, iconClass: "text-success", rail: "border-l-success" },

@@ -84,6 +84,7 @@
 
   --color-muted: var(--text-secondary);
   --color-subtle: var(--text-tertiary);
+  --color-placeholder: var(--text-placeholder);
   --color-disabled: var(--text-disabled);
   --color-inverse: var(--text-inverse);
 

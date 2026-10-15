@@ -2,9 +2,9 @@
 // uses. Rebuilt from the legacy validate-icons rule (every icon imported from the icon module is exported by it);
 // TypeScript now checks that, so the rule kept is the one it cannot check: no other file imports `lucide-react`.
 // Usage: node tools/checks/src/validate-icons.ts (from the repo root)
-import { type Finding, lineAt, report, type Source, WEB_SRC, webSources } from "./design.ts";
+import { type Finding, lineAt, runCheck, type Source, WEB_SRC } from "./design.ts";
 
-export const ICONS = `${WEB_SRC}/lib/icons.ts`;
+const ICONS = `${WEB_SRC}/lib/icons.ts`;
 const LUCIDE = /\b(?:from|import)\s*\(?\s*["']lucide-react(?:\/[^"']*)?["']/g;
 
 export function checkIcons(source: Source): Finding[] {
@@ -17,9 +17,4 @@ export function checkIcons(source: Source): Finding[] {
   }));
 }
 
-function main(): number {
-  const sources = webSources();
-  return report("validate-icons", sources.flatMap(checkIcons), sources.length);
-}
-
-if (import.meta.main) process.exit(main());
+if (import.meta.main) process.exit(runCheck("validate-icons", checkIcons));

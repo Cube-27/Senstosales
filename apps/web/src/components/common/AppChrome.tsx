@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { GlobalSearch } from "./GlobalSearchDialog.tsx";
+import { GlobalSearch } from "./GlobalSearch.tsx";
 import { HeaderActions } from "./HeaderActions.tsx";
 import { SidebarNav } from "./SidebarNav.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";

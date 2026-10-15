@@ -25,7 +25,7 @@ export function ListToolbar({ search, children }: ListToolbarProps) {
             onChange={(e) => search.onChange(e.target.value)}
             placeholder={search.placeholder ?? "Search..."}
             aria-label={search.placeholder ?? "Search"}
-            className="h-8 w-full rounded-md border border-border bg-surface-sunken px-3 role-body-text placeholder:text-[color:var(--text-placeholder)] hover:border-border-strong focus:border-primary"
+            className="h-8 w-full rounded-md border border-border bg-surface-sunken px-3 role-body-text placeholder:text-placeholder hover:border-border-strong focus:border-primary"
           />
         </div>
       )}

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vite-plus/test";
 
-import { blockTokens, colourTokens } from "../src/css-tokens.ts";
+import { blockTokens, colourTokens } from "../src/design.ts";
 
 const css = readFileSync("apps/web/src/styles/globals.css", "utf8");
 
