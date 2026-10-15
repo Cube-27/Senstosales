@@ -6,6 +6,7 @@
   "scripts": {
     "gen:migrations": "node tools/gen/src/migrations.ts",
     "gen:openapi": "node tools/gen/src/openapi.ts",
+    "import:corpus": "node tools/corpus/src/import.ts",
     "hooks": "vp config --hooks --no-agent",
     "format": "vp fmt --write",
     "check:code": "vp check && node tools/checks/src/language.ts && node tools/checks/src/status-source.ts && node tools/checks/src/migration-sql-lint.ts && node tools/checks/src/d1-dialect.ts && tsc -b && vp test run",

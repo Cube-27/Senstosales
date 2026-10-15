@@ -1,0 +1,11 @@
+{
+  "name": "@senstosales/corpus",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "dependencies": {
+    "@senstosales/api": "workspace:*",
+    "@senstosales/db": "workspace:*",
+    "@senstosales/schemas": "workspace:*"
+  }
+}
