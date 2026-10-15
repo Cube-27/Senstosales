@@ -12,7 +12,11 @@
   },
   "bundle": {
     "active": true,
+    "targets": ["nsis"],
     "externalBin": ["binaries/sensto-sidecar"],
-    "icon": ["icons/icon.ico"]
+    "icon": ["icons/icon.ico"],
+    "windows": {
+      "nsis": { "installMode": "currentUser", "installerHooks": "installer-hooks.nsh" }
+    }
   }
 }
