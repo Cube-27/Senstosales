@@ -21,8 +21,8 @@ async function redirectsAfter(error: Error): Promise<AuthRedirect[]> {
 }
 
 describe("query client (SPEC-14 §4.3)", () => {
-  it("a 401 sends the user to /auth/login", async () => {
-    expect(await redirectsAfter(apiError(401, "unauthenticated"))).toEqual(["/auth/login", "/auth/login"]);
+  it("a signed-out 401 sends the user to /auth/login", async () => {
+    expect(await redirectsAfter(apiError(401, "signed-out"))).toEqual(["/auth/login", "/auth/login"]);
   });
 
   it("onboarding-required sends the user to /onboarding", async () => {
@@ -31,6 +31,7 @@ describe("query client (SPEC-14 §4.3)", () => {
 
   it.each([
     ["another API error", apiError(409, "number-taken")],
+    ["a wrong login password", apiError(401, "wrong-password")],
     ["a network failure", new TypeError("Failed to fetch")],
   ])("%s stays on the screen", async (_, error) => {
     expect(await redirectsAfter(error)).toEqual([]);

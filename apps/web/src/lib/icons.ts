@@ -24,6 +24,7 @@ export {
   Package,
   Search,
   Settings,
+  ShieldCheck,
   Sun,
   Upload,
   X,
