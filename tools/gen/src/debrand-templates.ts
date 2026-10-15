@@ -110,10 +110,12 @@ if (import.meta.main) {
     process.stderr.write("Set SENSTO_LEGACY_TEMPLATES_DIR to the folder holding the legacy templates.\n");
     process.exit(1);
   }
-  for (const [output, { source, plan }] of Object.entries(PLANS)) {
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.readFile(join(legacyDir, source));
-    debrand(wb, plan);
-    await wb.xlsx.writeFile(join(TEMPLATES_DIR, output));
-  }
+  await Promise.all(
+    Object.entries(PLANS).map(async ([output, { source, plan }]) => {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.readFile(join(legacyDir, source));
+      debrand(wb, plan);
+      await wb.xlsx.writeFile(join(TEMPLATES_DIR, output));
+    }),
+  );
 }

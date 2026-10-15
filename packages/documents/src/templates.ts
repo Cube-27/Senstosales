@@ -6,5 +6,5 @@ export type TemplateName = keyof typeof TEMPLATES_BASE64;
 
 /** A fresh copy of the template's xlsx bytes. */
 export function templateBytes(name: TemplateName): Uint8Array {
-  return Uint8Array.from(atob(TEMPLATES_BASE64[name]), (char) => char.charCodeAt(0));
+  return Uint8Array.from(atob(TEMPLATES_BASE64[name]), (char) => char.codePointAt(0) ?? 0);
 }

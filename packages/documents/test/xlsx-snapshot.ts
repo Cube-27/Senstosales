@@ -133,8 +133,8 @@ function pageBreaks(bytes: Uint8Array): Map<string, SheetSnapshot["pageBreaks"]>
     ]),
   );
   const breaks = (xml: string, tag: string): number[] =>
-    [...(xml.match(new RegExp(`<${tag}\\b[\\s\\S]*?</${tag}>`))?.[0] ?? "").matchAll(/<brk\b[^>]*>/g)].map(([brk]) =>
-      Number(attribute(brk, "id")),
+    [...(new RegExp(String.raw`<${tag}\b[\s\S]*?</${tag}>`).exec(xml)?.[0] ?? "").matchAll(/<brk\b[^>]*>/g)].map(
+      ([brk]) => Number(attribute(brk, "id")),
     );
   const out = new Map<string, SheetSnapshot["pageBreaks"]>();
   for (const [tag] of text("xl/workbook.xml").matchAll(/<sheet\b[^>]*>/g)) {
@@ -144,7 +144,8 @@ function pageBreaks(bytes: Uint8Array): Map<string, SheetSnapshot["pageBreaks"]>
   return out;
 }
 
-const attribute = (tag: string, name: string): string => tag.match(new RegExp(`\\b${name}="([^"]*)"`))?.[1] ?? "";
+const attribute = (tag: string, name: string): string =>
+  new RegExp(String.raw`\b${name}="([^"]*)"`).exec(tag)?.[1] ?? "";
 
 const unescapeXml = (value: string): string =>
   value.replace(
@@ -167,7 +168,7 @@ export async function xlsxSnapshot(bytes: Uint8Array): Promise<SheetSnapshot[]> 
     name: ws.name,
     state: ws.state,
     cells: cells(ws),
-    merges: [...(ws.model.merges ?? [])].toSorted(),
+    merges: [...(ws.model.merges ?? [])].toSorted((a, b) => a.localeCompare(b)),
     columns: columns(ws),
     rows: rows(ws),
     pageBreaks: breaks.get(ws.name) ?? { rows: [], columns: [] },
