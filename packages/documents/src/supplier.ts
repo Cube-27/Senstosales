@@ -1,5 +1,5 @@
 // The supplier identity a document prints, filled into the templates' `{supplier.<field>}` placeholders (SPEC-12
-// §1, D-0279). The description and jurisdiction have no supplier column; they are `invoiceDefaults` keys.
+// §1, D-0298). The description and jurisdiction have no supplier column; they are `invoiceDefaults` keys.
 import type ExcelJS from "exceljs";
 
 export interface DocumentSupplier {

@@ -2427,3 +2427,75 @@ None.
 - Alternatives: Leave the text and test only the invoiced case.
 - Why: The old text contradicted INV-55.
 - Reversible: yes.
+
+### D-0297 — SPEC-12 PR 3 re-scoped: goldens from the legacy code
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: The DC goldens are derived from the legacy DC writer's visible output, read from its code (C16). SPEC-12 PR 2 (H5) confirms them against real legacy output and fixes any difference.
+- Alternatives: Keep PR 3 blocked on H5.
+- Why: H5 is unavailable; same approach as SPEC-13 PR 1. Unblocks PR 4 to PR 6.
+- Reversible: yes.
+
+### D-0298 — Supplier description and jurisdiction come from `invoiceDefaults`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: The DC/GC letterhead description is `supplier.invoiceDefaults.description`, the invoice jurisdiction `supplier.invoiceDefaults.jurisdiction`; a missing key leaves the text empty. A document's own supplier name, address, GSTIN and contact win over the profile's when set and not blank (`documentSupplier`).
+- Alternatives: A new `supplier` column; a `settings` row as legacy had.
+- Why: The most conservative reading named in D-0279: no schema or API change, and `settings` holds GST percentages and preferences, not identity.
+- Reversible: yes.
+
+### D-0299 — DC golden format
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: Each golden is compact JSON: file name, page setup, every non-empty value, sorted merges, row heights and hidden rows, and `styleRows` segments naming the template row each output row takes its cell styles from. Tests project `xlsx-snapshot` output onto it; column widths and the empty sheets are checked against the template.
+- Alternatives: A full `xlsx-snapshot` dump per golden.
+- Why: A full dump repeats every template style per row and can't be reviewed; these goldens are hand-derived.
+- Reversible: yes.
+
+### D-0300 — The legacy DC row-height layout is reproduced
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: Rows inserted for items past the eighth shift the cells and merges below but not the row heights, as legacy's openpyxl `insert_rows` did. Past eight items the template's hidden spacer row shows, and rows below the template's last row print at the default height.
+- Alternatives: Move heights with their rows.
+- Why: The output is frozen (A-2, INV-69); H5 compares against legacy output.
+- Reversible: yes.
+
+### D-0301 — Legacy DC text not described by the spec
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: Reproduced exactly (SPEC-12 §9): `GST Bill No. <invoice> Dt.`, `Guarantee Certificate No. <gc>   Dt. <date>` (three spaces; INV-36 paraphrases it with one), `Dimension Report <our ref>`, `TC No  dt.  Of`, `Lot No.`, `Consignment Value of BHEL PO <value>`, `<invoice>  Dt.`, `Date: <dd/mm/yyyy>`, `Consignee` when there is none, `<qty>  <UNIT>` (upper-cased, `NO` when missing); an item row grows 18 points per 95 description characters.
+- Alternatives: None that keeps the format frozen.
+- Why: The format is frozen; these are the strings legacy wrote.
+- Reversible: yes.
+
+### D-0302 — DC department number prints as a number when it is all digits
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: A digits-only `departmentNo` that is a safe integer is written as a number cell (`0456` -> 456); other text stays text.
+- Alternatives: Always text.
+- Why: Legacy's column was INTEGER, so SQLite stored digit-only values as numbers.
+- Reversible: yes.
+
+### D-0303 — DC consignment value is exact, rounded per line
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: `sumMoney(items.map(qtyValue))`, as the API's DC list computes it, printed with `fmtFixed` (2 dp, 5 dp on GEMC). Legacy summed floats; the two differ only on exact half-cent ties, where D-0021 rounds half away from zero.
+- Alternatives: Re-implement float summing.
+- Why: C3; the same value the DC list shows.
+- Reversible: yes.
+
+### D-0304 — Empty text cells; `autoPageBreaks` not written
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: Where legacy wrote `""` the cell is left empty, and filled placeholder text is right-trimmed (legacy stripped `Tel. No. `). Legacy's `autoPageBreaks=False` flag is not written: exceljs has no setting for it, it only changes on-screen break display, and the snapshot doesn't record it.
+- Alternatives: Write empty strings; post-process the sheet XML.
+- Why: No visible difference; SPEC-12 PR 2 (H5) shows whether the snapshot needs them.
+- Reversible: yes.
+
+### D-0305 — SPEC-12 §4.1 golden file names clarified
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 3 (#64) · Status: decided
+- Decision: SPEC-12 §4.1 and the PR 2 row now name the goldens `test/golden/<document>-<n>.json` (for example `dc-20.json`) in the D-0299 format, replacing `*.snapshot.json`.
+- Alternatives: Rename the files to `*.snapshot.json`.
+- Why: They are not `xlsx-snapshot` dumps (D-0299); the name should not suggest one. PR 4 and PR 5 follow it.
+- Reversible: yes.
