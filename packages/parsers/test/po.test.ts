@@ -180,10 +180,12 @@ describe("parsePo items", () => {
     ],
     ["an empty material code", page([item("10", { "MATERIAL CODE": "" })]), "missing-field", "item 10, MATERIAL CODE"],
     ["item number 0", page([item("0")]), "bad-number", "item 0, PO ITM"],
+    ["an item number past 2^53", page([item("9007199254740993")]), "bad-number", "item 9007199254740993, PO ITM"],
     ["an empty ordered quantity", page([item("10", { "ORD QTY": "" })]), "bad-quantity", "item 10, ORD QTY"],
     ["four decimals", page([item("10", { "RCD QTY": "1.0005" })]), "bad-quantity", "item 10, RCD QTY"],
     ["a rate that is not a number", page([item("10", { "PO RATE": "N/A" })]), "bad-number", "item 10, PO RATE"],
     ["a lot number that is not whole", page([item("10"), lot("2a", "1")]), "bad-number", "item 10, LOT NO"],
+    ["a lot number past 2^53", page([item("10"), lot("9007199254740993", "1")]), "bad-number", "item 10, LOT NO"],
     ["an empty lot quantity", page([item("10", { "DELY QTY": "" })]), "bad-quantity", "item 10 lot 1, DELY QTY"],
     ["a bad delivery date", page([item("10", { "DELY DATE": "31/02/2023" })]), "bad-date", "item 10 lot 1, DELY DATE"],
   ])("fails on %s", (_, html, code, location) => {
