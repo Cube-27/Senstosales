@@ -270,7 +270,8 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
           </colgroup>
           <thead className="bg-surface-sunken">
             <tr className="border-b border-border">
-              {selection && <SelectAll selection={selection} rows={data} />}
+              {/* Only the rows on screen: an error hides the cached ones. */}
+              {selection && <SelectAll selection={selection} rows={showRows ? data : []} />}
               {columns.map((column) => (
                 <Header key={column.key} column={column} sort={props.sort} onSort={props.onSort} />
               ))}
@@ -284,7 +285,14 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
                     key={row.id}
                     style={{ height: ROW_HEIGHT }}
                     data-highlighted={rowHighlight?.(row.original) || undefined}
-                    onClick={rowClick && (() => rowClick(row.original))}
+                    onClick={
+                      rowClick &&
+                      ((e) => {
+                        // A link in the row opens its document (a modifier-click a new tab) without the row's click.
+                        if (e.target instanceof Element && e.target.closest("a")) return;
+                        rowClick(row.original);
+                      })
+                    }
                     className={cn(
                       "border-b border-border/50 hover:bg-surface-sunken/65 data-[highlighted]:bg-warning/[0.04] data-[highlighted]:shadow-[inset_2px_0_0_var(--warning)]",
                       rowClick && "cursor-pointer",

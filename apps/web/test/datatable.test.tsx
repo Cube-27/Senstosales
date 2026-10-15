@@ -232,6 +232,28 @@ describe("Pagination", () => {
       expect(onChange).toHaveBeenLastCalledWith(new Set());
     });
 
+    it("leaves a row as it is when the click is on a link in it", () => {
+      const onChange = vi.fn();
+      table({
+        columns: [
+          ...COLUMNS,
+          { key: "open", header: "Open", width: "80px", render: (r) => <a href={`/po/${r.id}`}>Open</a> },
+        ],
+        selection: { rowKey: (r) => r.id, selected: new Set(), onChange },
+      });
+      fireEvent.click(within(bodyRows()[0] as HTMLElement).getByRole("link", { name: "Open" }));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("selects nothing from the header while an error hides the rows", () => {
+      const onChange = vi.fn();
+      table({ state: "error", error: "Down", selection: { rowKey: (r) => r.id, selected: new Set(), onChange } });
+      const all = screen.getByRole("checkbox", { name: "Select all rows on this page" });
+      expect(all.hasAttribute("disabled")).toBe(true);
+      fireEvent.click(all);
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
     it("selects every row of the page from the header, and clears them when all are selected", () => {
       const onChange = vi.fn();
       selectable(["9"], onChange);
