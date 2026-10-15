@@ -165,6 +165,23 @@ describe("system access (SPEC-15 PR 1 and 3, INV-80, INV-81)", () => {
     });
   });
 
+  it("a reset with unsaved profile edits goes to the login without the unsaved-changes prompt", async () => {
+    let authenticated = true;
+    stubApi(
+      settingsApi({
+        "GET /api/auth/session": () => ({ authenticated, isDefaultPassword: false }),
+        "POST /api/auth/reset-defaults": () => ((authenticated = false), { ok: true }),
+      }),
+    );
+    const { router } = renderApp("/settings");
+    await userEvent.type(await screen.findByLabelText("Primary Email"), "a@example.com");
+    await userEvent.click(screen.getByRole("button", { name: "System Defaults" }));
+    await userEvent.type(screen.getByLabelText("Confirmation Phrase"), "RESET TO DEFAULTS");
+    await userEvent.click(screen.getByRole("button", { name: "Reset to Defaults" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/auth/login"));
+    expect(screen.queryByText("Unsaved changes")).toBeNull();
+  });
+
   it("the BHEL password shows only as saved; Change sends it once and it never stays in the page", async () => {
     let saved = false;
     const calls = stubApi(

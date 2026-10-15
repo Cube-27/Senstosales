@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { type FieldErrors, FormProvider, useForm } from "react-hook-form";
 
 import { serverErrors, showServerErrors } from "../../../lib/form-errors.ts";
+import { LOGIN } from "../../../lib/session.ts";
 import { Button, ButtonGroup, ConfirmDialog, PageHeader, useToast } from "../../common/index.ts";
 import { BuyersSection } from "./BuyersSection.tsx";
 import {
@@ -70,7 +71,12 @@ export function SettingsScreen() {
   const save = useSaveSettings();
   const { toast } = useToast();
 
-  const blocker = useBlocker({ shouldBlockFn: () => isDirty, enableBeforeUnload: () => isDirty, withResolver: true });
+  // A password change or reset ends the session: unsaved edits cannot be saved, so the way to the login is not held.
+  const blocker = useBlocker({
+    shouldBlockFn: ({ next }) => isDirty && next.pathname !== LOGIN,
+    enableBeforeUnload: () => isDirty,
+    withResolver: true,
+  });
 
   const submit = form.handleSubmit(async (values) => {
     if (!supplier.data || !settings.data) return;
