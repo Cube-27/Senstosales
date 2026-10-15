@@ -6,8 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/app.ts",
-    "./node": "./src/platform/node/runtime.ts",
-    "./package.json": "./package.json"
+    "./node": "./src/platform/node/runtime.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

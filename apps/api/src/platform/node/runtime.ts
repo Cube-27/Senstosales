@@ -3,6 +3,7 @@
 // services directly, so both run the same wiring.
 import { openNodeDb, type NodeDb } from "@senstosales/db/node";
 
+import pkg from "../../../package.json" with { type: "json" };
 import type { Logger } from "../../ports/logger.ts";
 import { folderImportHandlers } from "../../services/folder-import.ts";
 import { createServices, type Services } from "../../services/index.ts";
@@ -16,8 +17,8 @@ import { createFsStorage } from "./storage-fs.ts";
 
 export interface RuntimeOptions {
   readonly dataDir: string;
-  /** Stamped into `schema_migration` by an upgrade. */
-  readonly version: string;
+  /** Stamped into `schema_migration` by an upgrade; this package's version unless given. */
+  readonly version?: string;
   readonly logger: Logger;
 }
 
@@ -29,7 +30,7 @@ export interface Runtime {
 
 /** Opens the database in `dataDir`, upgrading it first if it is older (C9), and builds the services. The caller
  * closes `db`. */
-export async function openRuntime({ dataDir, version, logger }: RuntimeOptions): Promise<Runtime> {
+export async function openRuntime({ dataDir, version = pkg.version, logger }: RuntimeOptions): Promise<Runtime> {
   const paths = await prepareDataDir(dataDir);
   const clock = createClock();
   const db = openNodeDb(paths.db);

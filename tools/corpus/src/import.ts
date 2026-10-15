@@ -8,7 +8,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { openRuntime } from "@senstosales/api/node";
-import pkg from "@senstosales/api/package.json" with { type: "json" };
 import { GST_DEFAULTS } from "@senstosales/db";
 import { splitUpload } from "@senstosales/schemas";
 
@@ -45,15 +44,14 @@ export interface CorpusImport {
   readonly passed: boolean;
 }
 
-/** The pages under `<corpusDir>/<kind>/`, in path order, named by their path inside that folder. */
-async function readPages(corpusDir: string, kind: Kind): Promise<{ name: string; html: string }[]> {
-  const folder = join(corpusDir, kind);
-  const names = (await readdir(folder, { recursive: true }))
+/** The page files under `<corpusDir>/<kind>/`, in path order, as paths inside that folder. */
+async function listPages(corpusDir: string, kind: Kind): Promise<string[]> {
+  const names = (await readdir(join(corpusDir, kind), { recursive: true }))
     .filter((name) => /\.html?$/i.test(name))
     .map((name) => name.replaceAll("\\", "/"))
     .sort();
   if (names.length === 0) throw new Error(`The corpus has no .html pages in its ${kind}/ folder.`);
-  return Promise.all(names.map(async (name) => ({ name, html: await readFile(join(folder, name), "utf8") })));
+  return names;
 }
 
 /**
@@ -67,24 +65,27 @@ export async function importCorpus({
   corpusDir: string;
   dataDir: string;
 }): Promise<CorpusImport> {
-  // Both folders are read first, so a corpus missing either fails before anything is made.
-  const pages = { po: await readPages(corpusDir, "po"), srv: await readPages(corpusDir, "srv") };
+  // Both folders are listed first, so a corpus missing either fails before anything is made.
+  const names = { po: await listPages(corpusDir, "po"), srv: await listPages(corpusDir, "srv") };
   const logged: string[] = [];
   const log = (_fields: unknown, message: string) => void logged.push(message);
   const { db, services, jobs } = await openRuntime({
     dataDir,
-    version: pkg.version,
     logger: { debug: () => {}, info: () => {}, warn: log, error: log },
   });
-  /** Stages the pages of `kind` as the web client does and runs its folder-import job to the end. */
-  async function importKind(kind: Kind, type: `${Kind}.import-folder`): Promise<KindImport> {
-    const { requests, tooLarge } = splitUpload(pages[kind]);
+
+  /** Stages the pages of `kind` as the web client does and runs its folder-import job to the end. The pages are read
+   * one kind at a time, so only one folder is held in memory. */
+  async function importKind(kind: Kind): Promise<KindImport> {
+    const pages: { name: string; html: string }[] = [];
+    for (const name of names[kind]) pages.push({ name, html: await readFile(join(corpusDir, kind, name), "utf8") });
+    const { requests, tooLarge } = splitUpload(pages);
     let stagingId: string | undefined;
     for (const files of requests) {
       ({ stagingId } = await services.folderImport.stage({ kind, files, ...(stagingId && { stagingId }) }));
     }
     if (stagingId === undefined) throw new Error(`Every page in the corpus's ${kind}/ folder is too large to send.`);
-    const { id } = await services.jobs.start({ type, stagingId });
+    const { id } = await services.jobs.start({ type: `${kind}.import-folder`, stagingId });
     await jobs.idle();
     const { status, error, summary } = (await services.jobs.detail(id)).job;
     return { job: { status, error, summary }, tooLarge: tooLarge.map((file) => file.name) };
@@ -93,8 +94,8 @@ export async function importCorpus({
   try {
     if (!(await services.onboarding.done())) await services.onboarding.complete(PROFILE);
     // POs first, so the SRVs find them (ARCHITECTURE §7.4).
-    const po = await importKind("po", "po.import-folder");
-    const srv = await importKind("srv", "srv.import-folder");
+    const po = await importKind("po");
+    const srv = await importKind("srv");
     return { po, srv, logged, passed: po.job.status === "done" && srv.job.status === "done" && logged.length === 0 };
   } finally {
     db.close();
