@@ -56,11 +56,18 @@ function flaggedIs(flagged: boolean): SQL {
   return flagged ? hasOpenFlags : sql`NOT ${hasOpenFlags}`;
 }
 
-/** The legacy filter panel: text in the PO or GEMC number, PO date range, value range (no value = 0). */
+/** Text anywhere in one of the PO's item descriptions (owner, 2026-10-15). */
+const describedAs = (q: string) =>
+  sql`EXISTS (SELECT 1 FROM ${poItem} WHERE ${poItem.poId} = ${po.id} AND ${contains(poItem.description, q)})`;
+
+/**
+ * The legacy filter panel: text in the PO or GEMC number or an item description, PO date range, value range (no
+ * value = 0).
+ */
 function where(f: PoFilters): SQL | undefined {
   const value = sql`COALESCE(${po.poValue}, 0)`;
   return and(
-    f.q ? or(contains(po.poNumber, f.q), contains(po.gemcNumber, f.q)) : undefined,
+    f.q ? or(contains(po.poNumber, f.q), contains(po.gemcNumber, f.q), describedAs(f.q)) : undefined,
     f.from === undefined ? undefined : gte(po.poDate, f.from),
     f.to === undefined ? undefined : lte(po.poDate, f.to),
     f.valueMin === undefined ? undefined : sql`${value} >= ${f.valueMin}`,

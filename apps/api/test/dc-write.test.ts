@@ -112,7 +112,7 @@ describe("PUT /api/dc/:id", () => {
     expect([res.status, res.body.code]).toEqual([400, "number-blank"]);
   });
 
-  test("re-dating DC 7 into FY 2024-25 drops the SRV link and raises DOC_NUMBER_CONFLICT (INV-25, EC-14)", async () => {
+  test("re-dating DC 7 into FY 2024-25 drops the SRV link and raises no flag (INV-25, EC-14, INV-53)", async () => {
     const r = await withDc7();
     await srvCiting(r, "4500001", "25/04/2025", "7");
     expect(await links(r)).toEqual([{ challanNo: "7", resolvedDcId: r.dc7.id }]);
@@ -121,22 +121,22 @@ describe("PUT /api/dc/:id", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ dcDate: "2025-03-30", financialYear: "2024-25", gcDate: "2025-03-30" });
     expect(await links(r)).toEqual([{ challanNo: "7", resolvedDcId: null }]);
-    const conflicts = (await r.flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT");
-    expect(conflicts.map((f) => [f.scopeType, f.status, f.details])).toEqual([
-      ["srv_item", "open", { field: "challan_no", expected: null, actual: "7", docIds: [] }],
-    ]);
+    // A number with no DC in the SRV's FY is not a conflict (A-10 revised).
+    expect((await r.flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT")).toEqual([]);
   });
 
-  test("an SRV of another PO that loses its link is flagged on that PO", async () => {
+  test("an SRV of another PO citing the DC is flagged on that PO, and the flag waits after the link drops (INV-53, INV-59)", async () => {
     const r = await withDc7();
     const other = await r.storedPo({ ...PO, poNumber: "4500002" });
     await srvCiting(r, "4500002", "25/04/2025", "7");
     expect(await links(r)).toEqual([{ challanNo: "7", resolvedDcId: r.dc7.id }]);
+    const conflicts = async () =>
+      (await r.flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT").map((f) => [f.poId, f.details.docIds]);
+    expect(await conflicts()).toEqual([[other.poId, [r.dc7.id]]]);
 
     expect((await put(r, r.dc7.id, edit({ number: "8", gcNumber: null }))).status).toBe(200);
     expect(await links(r)).toEqual([{ challanNo: "7", resolvedDcId: null }]);
-    const conflicts = (await r.flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT");
-    expect(conflicts.map((f) => f.poId)).toEqual([other.poId]);
+    expect(await conflicts()).toEqual([[other.poId, [r.dc7.id]]]);
   });
 
   test("renumbering links the SRV items citing the new number in the DC's FY (INV-37)", async () => {

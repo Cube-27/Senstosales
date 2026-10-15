@@ -18,6 +18,14 @@ export function extractGemcNumber(remarks: string): string | null {
 }
 
 /**
+ * A2-3: a PO's GEMC number: the one entered, else the one its remarks name, as a BHEL page's are read; `null` for a
+ * non-GEMC PO. `(" ", "GEMC- 5116") -> "5116"`.
+ */
+export function gemcNumberOf(entered: string | null, remarks: string | null): string | null {
+  return entered?.trim() || (remarks === null ? null : extractGemcNumber(remarks));
+}
+
+/**
  * INV-16: `round5(source / 1.18)` = `source × 50 / 59` on 1e-5 units: `848.75 -> 719.27966`, `118 -> 100`.
  * Split as `source = 59q + r` so the product stays a safe integer; 59 is odd, so there is never an exact tie.
  */

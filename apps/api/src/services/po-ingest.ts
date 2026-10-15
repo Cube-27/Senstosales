@@ -177,7 +177,7 @@ export async function storePoStatements(
   const plan = planItems(values, before?.items ?? [], now);
   const matched = (await unmatchedSrvLines(db, supplierId, values.poNumber)).map((line) => ({
     ...line,
-    poItemId: matchSrvItem(line, plan.items),
+    poItemId: matchSrvItem(line.poItemNo, plan.items),
   }));
   const rematched = new Set(matched.map((line) => line.id));
   const snapshot: PoSnapshot = {

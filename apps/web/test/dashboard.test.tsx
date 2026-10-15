@@ -55,18 +55,21 @@ const cards = (): Array<[string, string]> =>
   });
 
 describe("dashboard (SPEC-15 PR 4)", () => {
-  it("shows the legacy stat cards for the month", async () => {
+  it("shows the legacy stat cards for the current FY", async () => {
     dashboardApi();
     renderApp("/");
-    await waitFor(() =>
-      expect(cards()).toEqual([
-        ["PO Value", "₹ rupees 15.00L"],
-        ["Invoiced", "₹ rupees 84,001"],
-        ["Lead Time", "12d"],
-        ["Overdue", "3"],
-      ]),
+    // The file's first render loads the whole app (about 1.2 s cold), past waitFor's 1 s default (#89 follow-up).
+    await waitFor(
+      () =>
+        expect(cards()).toEqual([
+          ["PO Value", "₹ rupees 15.00L"],
+          ["Invoiced", "₹ rupees 84,001"],
+          ["Lead Time", "12d"],
+          ["Overdue", "3"],
+        ]),
+      { timeout: 5000 },
     );
-    expect(screen.getByText("Supply chain overview - Month")).toBeTruthy();
+    expect(screen.getByText("Supply chain overview - This FY")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Overdue/ }).getAttribute("href")).toBe("/delivery-tracker");
   });
 
@@ -129,7 +132,7 @@ describe("dashboard (SPEC-15 PR 4)", () => {
     await userEvent.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByText("Supply chain overview - All")).toBeTruthy();
     await waitFor(() => expect(cards()[3]).toEqual(["Overdue", "9"]));
-    expect(ranges).toEqual(["month", "all"]);
+    expect(ranges).toEqual(["fy", "all"]);
   });
 
   it("recent activity keeps four row slots whether loading, short or empty (C8)", async () => {

@@ -175,7 +175,9 @@ async function seed(): Promise<void> {
         rcdQty: q(1_500),
         acceptedQty: q(1_500),
         rejQty: zero,
+        // Resolved to an invoice of another PO: a conflict (INV-53).
         invoiceNo: "INV-9",
+        resolvedInvoiceId: "N-OTHER",
       },
     ]),
   ]);
@@ -248,7 +250,7 @@ const EXPECTED_FLAGS = [
     type: "DOC_NUMBER_CONFLICT",
     scopeType: "srv_item",
     scopeId: "RL2",
-    details: { field: "invoice_no", expected: null, actual: "INV-9", docIds: [] },
+    details: { field: "invoice_no", expected: null, actual: "INV-9", docIds: ["N-OTHER"] },
   },
   {
     type: "DOC_ON_CANCELLED_ITEM",

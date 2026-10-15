@@ -75,7 +75,7 @@ const itemIdsOf = (db: Db, srvId: string) =>
 /** The ids of the SRV's items. */
 export const itemIdsOfSrv = (db: Db, srvId: string) => db.query(itemIdsOf(db, srvId));
 
-/** The open flags raised on the SRV's items (QTY_MISMATCH, DOC_NUMBER_CONFLICT). */
+/** The open flags raised on the SRV's items. */
 export function openFlagsOfSrv(db: Db, srvId: string) {
   return db.query(
     db.build

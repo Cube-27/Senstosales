@@ -7,7 +7,7 @@ import type { DeleteBlockReason } from "@senstosales/domain";
 import { deleteBlock, poUninvoicedQty } from "@senstosales/domain";
 
 import { ConflictError, fieldError, NotFoundError } from "../errors.ts";
-import { deletePoStatements, isDuplicatePoNumber } from "../repositories/po.ts";
+import { deletePoStatements, hasPoPage, isDuplicatePoNumber } from "../repositories/po.ts";
 import type { PoFilters } from "../repositories/po-list.ts";
 import {
   findPoRow,
@@ -113,13 +113,19 @@ export function poService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 
     /** The form sends the version it read; a stale one changes nothing (INV-95). */
     async update(id: string, { version, ...form }: PoForm & { version: number }) {
-      const [row, items, lots] = await Promise.all([load(id), itemsOfPo(db, id), lotsOfPo(db, id)]);
+      // The PO number cannot change (checked below), so the form's names the stored page.
+      const [row, items, lots, fromPage] = await Promise.all([
+        load(id),
+        itemsOfPo(db, id),
+        lotsOfPo(db, id),
+        supplierId.require().then((supplier) => hasPoPage(db, supplier, form.poNumber)),
+      ]);
       // As legacy: the PO number is the PO's identity; a different one is a different PO.
       if (form.poNumber !== row.poNumber) {
         throw fieldError("po-number-changed", "poNumber", "The PO number cannot be changed.");
       }
       const stored = { id, poDate: row.poDate, amendNo: row.amendNo, version };
-      return save(form, { header: row, items, lots }, stored, () => ({
+      return save(form, { header: { ...row, fromPage }, items, lots }, stored, () => ({
         action: "po.update",
         entityId: id,
         before: { ...formAudit({ ...row, items }), version },

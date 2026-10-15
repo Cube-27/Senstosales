@@ -84,7 +84,8 @@ before conversion, so rounding never happens silently).
   SRV wins: `rcd = sum(rcd if non-zero else accepted else 0)`, `rej = sum(rej)` cumulative over all lines (INV-11,
   INV-12): `SRV1 (rcd 0, accepted 5) + SRV2 (rcd 3) -> 8`. PO wins: `rcd = poRcdQty`, `rej = poRejQty ?? 0`
   (INV-12, INV-13), including after the last SRV is deleted. Input order never matters (INV-15, property test).
-- Accepted column = `rcd` (A2-8, INV-09): no separate accepted value is computed.
+- Accepted column = `rcd` for a PO item (A2-8, INV-09): no separate accepted value is computed. An SRV line's Accepted
+  is its own ACCEPTED QTY (revised 2026-10-15, owner; ARCHITECTURE rev 1.11).
 - Item status (spec §6, INV-62): cancelled → Cancelled (INV-63); else `gte(rcd, ord)` → Closed; else `gte(dsp, ord)`
   → Delivered; else Pending. `(10,0,0) Pending; (10,4,0) Pending; (10,9.999,0) Delivered; (10,10,10) Closed;
   (10,0,10) Closed`.

@@ -30,7 +30,7 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0033 — matchSrvItem / resolveDocLink signatures
 
-- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: decided
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: superseded (D-0565)
 - Decision: `resolveDocLink(raw, srvDate, candidates)` takes candidates `{ id, number, date }` of one document kind and returns the linked id or `null`; a missing or whitespace-only number links nothing. `matchSrvItem({ materialCode, poItemNo }, poItems)` takes `poItemNo: number` and returns the matched PO item id or `null`.
 - Alternatives: Return the matched object; a string PO item number; a precomputed `DocKey` index for candidates.
 - Why: SPEC-03 §4.1 fixes names and arguments but not element types. `po_item_no` is part of `UNIQUE(po_id, po_item_no)` (ARCHITECTURE §8.2). Ids are what `resolved_dc_id` / `po_item_id` store. Callers can pre-filter candidates by number.
@@ -38,7 +38,7 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0034 — Ambiguous material code is unmatched (EC-19)
 
-- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: decided
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: superseded (D-0565)
 - Decision: When a material code is on several PO items and the SRV row's PO item number is none of them, the SRV line is stored unmatched (EC-19), as for EC-12.
 - Alternatives: Pick the first item with the code.
 - Why: A2-7 lets the PO item number decide among the items with that code; picking one would invent a rule (C18). To confirm against legacy ingestion goldens in SPEC-08.
@@ -46,7 +46,7 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0035 — Material codes compared exactly
 
-- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: decided
+- Date: 2026-10-14 · Spec/PR: SPEC-03 PR 4 (#16) · Status: superseded (D-0565)
 - Decision: `matchSrvItem` compares material codes exactly: no trimming or case folding.
 - Alternatives: Trim or upper-case before comparing.
 - Why: Spec §3 matches by material code and states no normalisation; the parsers (SPEC-06) produce the stored values.
@@ -147,3 +147,27 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Flag on a missing set time; exempt cancelled items.
 - Why: The most literal reading of SPEC-03 §4.2 and ARCHITECTURE §6.9; the spec states no exemption (C2, C18).
 - Reversible: yes.
+
+### D-0565 — SRV rows match PO items by PO item number alone
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: `matchSrvItem(poItemNo, poItems)` returns the PO item of the SRV's PO with that item number; material code and lot play no part (A2-7 revised, INV-39). Supersedes D-0033, D-0034 and D-0035.
+- Alternatives: Keep the material-code match with the item number as a tie-break.
+- Why: Owner-approved 2026-10-15 (E2E real-data test): real SRV rows carry the PO item number and often no material code or lot; legacy matched by item number.
+- Reversible: yes — domain function and its two callers.
+
+### D-0567 — DOC_NUMBER_CONFLICT means "another PO's document"
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: The flag is raised only when a cited challan or invoice number resolves, in the SRV date's FY, to a DC or invoice that is not one of the PO's own; its details carry `docIds: [resolvedId]` (A-24 revised, INV-53). A number with no document is no flag.
+- Alternatives: Compare dates or quantities of the PO's own document; flag unresolved numbers as before.
+- Why: The owner's rule is "a document with that number exists in the same FY and its details differ"; the PO is the detail an SRV can contradict without inventing a comparison (C18). Re-dating one's own DC raised false conflicts in the E2E test.
+- Reversible: yes — one branch in `detectFlags`.
+
+### D-0568 — Three SRV row flags and their details
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: `SRV_PO_ITEM_ZERO` (PO ITM 0), `SRV_DUPLICATE_ITEM` (the same SRV, PO item and SRV item more than once; details `poItemNo/srvItemNo`) and `SRV_UNKNOWN_PO_ITEM` (any other row matching no PO item). One flag per row through one helper; nine v1 types (INV-58).
+- Alternatives: One generic SRV_ROW_ODD type with a reason field.
+- Why: Separate types keep the flag filters and stats readable for low-tech users and match the owner's three cases.
+- Reversible: costly — flag types are stored as text in `reconciliation_issue`.

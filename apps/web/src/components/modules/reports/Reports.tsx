@@ -1,4 +1,5 @@
 import type { IsoDate } from "@senstosales/domain";
+import { defaultReportRange } from "@senstosales/domain";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -28,7 +29,7 @@ import {
   RECONCILIATION_COLUMNS,
   type ReconciliationRow,
 } from "./columns.tsx";
-import { defaultRange, dispatchSort, pendingSort, reconciliationSort, type ReportsSearch } from "./search.ts";
+import { dispatchSort, pendingSort, reconciliationSort, type ReportsSearch } from "./search.ts";
 
 type Row = PendingRow | ReconciliationRow;
 type Tab = "pending" | "reconciliation" | "dispatch";
@@ -154,7 +155,7 @@ export function Reports() {
   const { search, setFilters } = list;
   const navigate = useNavigate();
   const tab: Tab = search.tab ?? "pending";
-  const defaults = defaultRange(todayIst());
+  const defaults = defaultReportRange(todayIst());
   const range = { from: search.from ?? defaults.from, to: search.to ?? defaults.to };
   const { pending, reconciliation, dispatch, active, selectable } = useReportRows(search, tab, range);
   const picked = useRowSelection(selectable);

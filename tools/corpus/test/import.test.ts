@@ -68,7 +68,8 @@ describe("importCorpus", () => {
             failed: 0,
             skippedDocuments: [],
             failedDocuments: [],
-            flags: { DOC_NUMBER_CONFLICT: 110, QTY_MISMATCH: 1 },
+            // No DC or invoice in the corpus, so no cited number conflicts (INV-53); the fixtures' odd rows are flagged (INV-58).
+            flags: { QTY_MISMATCH: 1, SRV_DUPLICATE_ITEM: 2, SRV_PO_ITEM_ZERO: 1, SRV_UNKNOWN_PO_ITEM: 3 },
           },
         },
         tooLarge: [],
@@ -77,13 +78,17 @@ describe("importCorpus", () => {
       totals: {
         flagsByType: {
           QTY_MISMATCH: 1,
-          DOC_NUMBER_CONFLICT: 110,
+          DOC_NUMBER_CONFLICT: 0,
           OVER_DISPATCH: 0,
           OVER_INVOICE: 0,
           DOC_ON_CANCELLED_ITEM: 0,
           MANUAL_ADJUSTMENT_OVERLAP: 0,
+          SRV_PO_ITEM_ZERO: 1,
+          SRV_DUPLICATE_ITEM: 2,
+          SRV_UNKNOWN_PO_ITEM: 3,
         },
-        posByStatus: { Pending: 26, Delivered: 0, Closed: 17 },
+        // SRV rows link by PO item number (INV-39), so one more PO is received in full.
+        posByStatus: { Pending: 25, Delivered: 0, Closed: 18 },
         srvsPoNotFound: 0,
       },
       passed: true,

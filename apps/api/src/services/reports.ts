@@ -6,7 +6,7 @@ import type { Db } from "@senstosales/db";
 import { dc, po, poItem } from "@senstosales/db";
 import { EXPORTS } from "@senstosales/documents/catalog";
 import type { IsoDate, Qty } from "@senstosales/domain";
-import { addDays, qtyToString, sumQty, TOL } from "@senstosales/domain";
+import { defaultReportRange, qtyToString, sumQty, TOL } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import { fmtDateDashed, foldRepeatedLines, qtyNumber } from "@senstosales/schemas";
 import type { SQL } from "drizzle-orm";
@@ -44,9 +44,6 @@ type ExportSelectedBody = z.output<(typeof routes)["reports.exportSelected"]["bo
 type DcIdQuery = z.output<(typeof routes)["reports.guaranteeCertificateExport"]["query"]>;
 type Paged = { page: number; pageSize: number };
 
-/** Legacy's reconciliation tab without a full date range: the 30 days to today. */
-const DEFAULT_RANGE_DAYS = 30;
-
 const dated = (from: IsoDate | undefined, to: IsoDate | undefined): SQL | undefined =>
   and(from === undefined ? undefined : gte(po.poDate, from), to === undefined ? undefined : lte(po.poDate, to));
 
@@ -65,10 +62,13 @@ function reconciliationWhere(q: ReconciliationQuery, today: IsoDate) {
   return and(reconciliationScope(q, today), searched(q.q));
 }
 
-/** One PO (EC-42), the range, or without both range ends the 30 days to today, as the legacy tab. */
+/** One PO (EC-42), the range, or without both range ends the default report range (INV-113). */
 function reconciliationScope(q: ReconciliationQuery, today: IsoDate) {
   if (q.poId !== undefined) return eq(po.id, q.poId);
-  if (q.from === undefined || q.to === undefined) return dated(addDays(today, -DEFAULT_RANGE_DAYS), today);
+  if (q.from === undefined || q.to === undefined) {
+    const { from, to } = defaultReportRange(today);
+    return dated(from, to);
+  }
   return dated(q.from, q.to);
 }
 

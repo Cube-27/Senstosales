@@ -264,6 +264,9 @@ describe("GET /api/flags/stats", () => {
           OVER_INVOICE: 0,
           DOC_ON_CANCELLED_ITEM: 0,
           MANUAL_ADJUSTMENT_OVERLAP: 0,
+          SRV_PO_ITEM_ZERO: 0,
+          SRV_DUPLICATE_ITEM: 0,
+          SRV_UNKNOWN_PO_ITEM: 0,
         },
       },
     });

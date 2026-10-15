@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DashboardRange } from "../src/index.ts";
-import { averageLeadTimeDays, pendingDispatchQty, rangeStart } from "../src/index.ts";
+import { averageLeadTimeDays, defaultReportRange, fyStartOf, pendingDispatchQty, rangeStart } from "../src/index.ts";
 import { date, qty } from "./unwrap.ts";
 
-// SPEC-10 §2: the legacy dashboard's period and lead time.
+// SPEC-10 §2: the legacy dashboard's period and lead time; the current FY is the default (owner, 2026-10-15).
 describe("rangeStart", () => {
   it.each<[DashboardRange, string, string | null]>([
+    ["fy", "2025-06-17", "2025-04-01"],
+    ["fy", "2025-04-01", "2025-04-01"],
+    ["fy", "2026-03-31", "2025-04-01"],
     ["month", "2025-06-17", "2025-06-01"],
     ["month", "2025-06-01", "2025-06-01"],
     ["30d", "2025-06-17", "2025-05-18"],
@@ -37,15 +40,47 @@ describe("averageLeadTimeDays", () => {
   });
 });
 
-// A-22: the funnel's Pending Dispatch, in milli-units.
-describe("pendingDispatchQty", () => {
+// INV-113: a report without a chosen period covers the current FY to today.
+describe("defaultReportRange", () => {
   it.each([
-    ["10", "4", 6000],
-    ["4", "10", 0],
-    ["10", "10", 0],
-    ["0", "0", 0],
-    ["2.5", "0.75", 1750],
-  ])("ordered %s, dispatched %s -> %i", (ordQty, dspQty, expected) => {
-    expect(pendingDispatchQty({ ordQty: qty(ordQty), dspQty: qty(dspQty) })).toBe(expected);
+    ["2025-06-01", { from: "2025-04-01", to: "2025-06-01" }],
+    ["2026-03-31", { from: "2025-04-01", to: "2026-03-31" }],
+    ["2026-04-01", { from: "2026-04-01", to: "2026-04-01" }],
+  ])("%s -> %j", (today, expected) => {
+    expect(defaultReportRange(date(today))).toEqual(expected);
+  });
+});
+
+// INV-21: the first day of the date's FY.
+describe("fyStartOf", () => {
+  it.each([
+    ["2025-03-31", "2024-04-01"],
+    ["2025-04-01", "2025-04-01"],
+    ["2025-12-31", "2025-04-01"],
+  ])("%s -> %s", (day, expected) => {
+    expect(fyStartOf(date(day))).toBe(expected);
+  });
+});
+
+// A-22: the funnel's Pending Dispatch, in milli-units: ordered minus dispatched, clamped per item as the pending
+// value is (owner, 2026-10-15); a cancelled item has nothing pending (INV-07).
+describe("pendingDispatchQty (INV-114)", () => {
+  const item = (ordQty: string, dspQty: string, cancelled = false) => ({
+    ordQty: qty(ordQty),
+    dspQty: qty(dspQty),
+    cancelled,
+  });
+
+  it.each([
+    ["one item", [item("10", "4")], 6000],
+    ["over-dispatched", [item("4", "10")], 0],
+    ["dispatched in full", [item("10", "10")], 0],
+    ["nothing", [], 0],
+    ["fractions", [item("2.5", "0.75")], 1750],
+    // Over-dispatch on one item does not cancel another item's pending quantity: 6 + 0, not 14 - 12.
+    ["clamped per item", [item("10", "4"), item("4", "8")], 6000],
+    ["a cancelled item", [item("10", "4", true), item("3", "1")], 2000],
+  ])("%s -> %i", (_, items, expected) => {
+    expect(pendingDispatchQty(items)).toBe(expected);
   });
 });

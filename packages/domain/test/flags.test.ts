@@ -24,10 +24,13 @@ function item(over: Partial<ItemInput> = {}): ItemInput {
   };
 }
 
-/** An SRV line matched to `item-1` with the same ordered quantity and no document numbers. */
+/** Row 1 of SRV `srv-1`, on PO item 10 = `item-1`, with the same ordered quantity and no document numbers. */
 function srvLine(over: Partial<SrvLineInput> = {}): SrvLineInput {
   return {
     id: "srv-line-1",
+    srvId: "srv-1",
+    poItemNo: 10,
+    srvItemNo: 1,
     poItemId: "item-1",
     ordQty: qty("10"),
     srvDate: date("2025-07-15"),
@@ -39,13 +42,17 @@ function srvLine(over: Partial<SrvLineInput> = {}): SrvLineInput {
   };
 }
 
+/** A line of DC `dcId` on the item. */
+const lineOf = (dcId: string) => ({ id: `${dcId}-line`, dcId, createdAt: "2025-06-01T09:00:00.000Z" });
+
 const detect = (items: ItemInput[], srvLines: SrvLineInput[] = []) => detectFlags({ poId: "po-1", items, srvLines });
 
 const stored = (flag: DesiredFlag) => ({ fingerprint: fingerprint(flag) });
 
-// INV-58: the v1 flag set is exactly these six (A-24); candidates such as RECEIVED_EXCEEDS_DISPATCHED are not in it.
+// INV-58: the v1 flag set is exactly these nine (A-24, revised 2026-10-15); candidates such as
+// RECEIVED_EXCEEDS_DISPATCHED are not in it.
 describe("INV-58: FLAG_TYPES", () => {
-  it("has exactly the six v1 types", () => {
+  it("has exactly the nine v1 types", () => {
     expect(FLAG_TYPES).toEqual([
       "QTY_MISMATCH",
       "DOC_NUMBER_CONFLICT",
@@ -53,6 +60,9 @@ describe("INV-58: FLAG_TYPES", () => {
       "OVER_INVOICE",
       "DOC_ON_CANCELLED_ITEM",
       "MANUAL_ADJUSTMENT_OVERLAP",
+      "SRV_PO_ITEM_ZERO",
+      "SRV_DUPLICATE_ITEM",
+      "SRV_UNKNOWN_PO_ITEM",
     ]);
   });
 
@@ -90,9 +100,10 @@ describe("INV-52: QTY_MISMATCH", () => {
     expect(flags.map((f) => f.type)).toEqual(flagged ? ["QTY_MISMATCH"] : []);
   });
 
-  // EC-12: an unmatched SRV line has no PO item to compare with.
+  // EC-12: an unmatched SRV line has no PO item to compare with (it is flagged as an unknown item instead).
   it("does not flag an unmatched SRV line", () => {
-    expect(detect([item()], [srvLine({ poItemId: null, ordQty: qty("95") })])).toEqual([]);
+    const flags = detect([item()], [srvLine({ poItemId: null, ordQty: qty("95") })]);
+    expect(flags.map((f) => f.type)).toEqual(["SRV_UNKNOWN_PO_ITEM"]);
   });
 
   // EC-31: a page without an ORD QTY column stores 0, and legacy compares only a positive SRV ord_qty.
@@ -101,43 +112,87 @@ describe("INV-52: QTY_MISMATCH", () => {
   });
 });
 
-// INV-53: a cited challan/invoice number with no document of that number in the SRV date's FY (A-10).
+// INV-53 (revised 2026-10-15, owner): a cited number that resolved, in the SRV date's FY, to a DC (or invoice) of
+// another PO. A number with no document in the app is never a conflict.
 describe("INV-53: DOC_NUMBER_CONFLICT", () => {
-  // EC-03: DC 12 is dated 2025-03-28; an SRV dated 2025-04-03 cites it, so it resolved to no DC.
-  it("flags an unresolved challan number (EC-03)", () => {
-    const line = srvLine({ srvDate: date("2025-04-03"), challanNo: "12" });
-    expect(detect([item()], [line])).toEqual([
+  const onPo = item({ dcLines: [lineOf("dc-1")], invoiceLines: [{ id: "inv-line-1", invoiceId: "inv-1" }] });
+
+  it("flags a challan number resolved to a DC of another PO, citing that DC", () => {
+    const line = srvLine({ challanNo: " 12 ", resolvedDcId: "dc-other" });
+    expect(detect([onPo], [line])).toEqual([
       {
         type: "DOC_NUMBER_CONFLICT",
         scopeType: "srv_item",
         scopeId: "srv-line-1",
         poId: "po-1",
-        details: { field: "challan_no", expected: null, actual: "12", docIds: [] },
+        details: { field: "challan_no", expected: null, actual: "12", docIds: ["dc-other"] },
       },
     ]);
   });
 
-  it("flags each unresolved number on the line, trimmed", () => {
-    const flags = detect([item()], [srvLine({ challanNo: "12", invoiceNo: " INV-7 " })]);
+  it("flags an invoice number resolved to an invoice of another PO", () => {
+    const flags = detect([onPo], [srvLine({ invoiceNo: "INV-7", resolvedInvoiceId: "inv-other" })]);
     expect(flags.map((f) => [f.type, f.details])).toEqual([
-      ["DOC_NUMBER_CONFLICT", { field: "challan_no", expected: null, actual: "12", docIds: [] }],
-      ["DOC_NUMBER_CONFLICT", { field: "invoice_no", expected: null, actual: "INV-7", docIds: [] }],
+      ["DOC_NUMBER_CONFLICT", { field: "invoice_no", expected: null, actual: "INV-7", docIds: ["inv-other"] }],
     ]);
   });
 
   it.each([
-    ["resolved challan", { challanNo: "12", resolvedDcId: "dc-12" }],
-    ["resolved invoice", { invoiceNo: "34", resolvedInvoiceId: "inv-34" }],
+    // EC-03: a March DC cited by an April SRV resolved to nothing: no document to differ from.
+    ["an unresolved challan", { srvDate: date("2025-04-03"), challanNo: "12" }],
+    ["an unresolved invoice", { invoiceNo: "INV-7" }],
+    ["a challan resolved to this PO's DC", { challanNo: "12", resolvedDcId: "dc-1" }],
+    ["an invoice resolved to this PO's invoice", { invoiceNo: "34", resolvedInvoiceId: "inv-1" }],
     ["no numbers", { challanNo: null, invoiceNo: null }],
     ["blank numbers", { challanNo: "  ", invoiceNo: "" }],
   ])("does not flag %s", (_, over) => {
-    expect(detect([item()], [srvLine(over)])).toEqual([]);
+    expect(detect([onPo], [srvLine(over)])).toEqual([]);
   });
 
-  // EC-12: a line that matched no PO item still cites a document number.
-  it("flags an unmatched SRV line's unresolved number", () => {
-    const flags = detect([item()], [srvLine({ poItemId: null, challanNo: "12" })]);
-    expect(flags.map((f) => f.type)).toEqual(["DOC_NUMBER_CONFLICT"]);
+  it("finds this PO's DCs on every item, cancelled or not", () => {
+    const items = [item(), item({ id: "item-2", dcLines: [lineOf("dc-2")] })];
+    expect(detect(items, [srvLine({ challanNo: "5", resolvedDcId: "dc-2" })])).toEqual([]);
+  });
+});
+
+// INV-58 (A-24 revised 2026-10-15): BHEL's own oddities on an SRV row are stored verbatim and flagged, never fixed.
+describe("INV-58: SRV row flags", () => {
+  it("flags PO ITM 0 once, not also as an unknown item", () => {
+    expect(detect([item()], [srvLine({ poItemNo: 0, poItemId: null })])).toEqual([
+      {
+        type: "SRV_PO_ITEM_ZERO",
+        scopeType: "srv_item",
+        scopeId: "srv-line-1",
+        poId: "po-1",
+        details: { field: "po_item_no", expected: null, actual: "0", docIds: [] },
+      },
+    ]);
+  });
+
+  it("flags a PO item number that is on no item of the PO", () => {
+    expect(detect([item()], [srvLine({ poItemNo: 50, poItemId: null })])).toEqual([
+      {
+        type: "SRV_UNKNOWN_PO_ITEM",
+        scopeType: "srv_item",
+        scopeId: "srv-line-1",
+        poId: "po-1",
+        details: { field: "po_item_no", expected: null, actual: "50", docIds: [] },
+      },
+    ]);
+  });
+
+  it("flags every row of one SRV that shares its PO item and SRV item number", () => {
+    const lines = [
+      srvLine({ id: "a" }),
+      srvLine({ id: "b", srvItemNo: 2 }),
+      srvLine({ id: "c" }),
+      // Another SRV may reuse the key.
+      srvLine({ id: "d", srvId: "srv-2" }),
+    ];
+    expect(detect([item()], lines).map((f) => [f.type, f.scopeId, f.details.actual])).toEqual([
+      ["SRV_DUPLICATE_ITEM", "a", "10/1"],
+      ["SRV_DUPLICATE_ITEM", "c", "10/1"],
+    ]);
   });
 });
 
@@ -294,8 +349,8 @@ describe("detectFlags", () => {
       item({ id: "item-2", ordQty: qty("5"), dspQty: qty("7") }),
     ];
     const srvLines = [
-      srvLine({ id: "srv-line-1", poItemId: "item-2", ordQty: qty("4"), challanNo: "9" }),
-      srvLine({ id: "srv-line-2", poItemId: "item-1", ordQty: qty("5") }),
+      srvLine({ id: "srv-line-1", poItemId: "item-2", ordQty: qty("4"), challanNo: "9", resolvedDcId: "dc-9" }),
+      srvLine({ id: "srv-line-2", srvItemNo: 2, poItemId: "item-1", ordQty: qty("5") }),
     ];
     expect(detect(items, srvLines).map((f) => [f.type, f.scopeId])).toEqual([
       ["OVER_DISPATCH", "item-1"],
@@ -403,6 +458,9 @@ describe("properties", () => {
     srvLines: fc.array(
       fc.record({
         id,
+        srvId: id,
+        poItemNo: fc.constantFrom(0, 10, 20),
+        srvItemNo: fc.constantFrom(1, 2),
         poItemId: fc.option(id),
         ordQty: milli,
         srvDate: fc.constant(date("2025-07-15")),

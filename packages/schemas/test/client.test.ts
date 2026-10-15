@@ -43,6 +43,9 @@ describe("createClient: requests built from the route table", () => {
       OVER_INVOICE: 0,
       DOC_ON_CANCELLED_ITEM: 0,
       MANUAL_ADJUSTMENT_OVERLAP: 0,
+      SRV_PO_ITEM_ZERO: 0,
+      SRV_DUPLICATE_ITEM: 0,
+      SRV_UNKNOWN_PO_ITEM: 0,
     };
     const { client, calls } = fakeFetch(200, { open: 3, openByType: counts });
     const stats = await client.request("flags.stats");

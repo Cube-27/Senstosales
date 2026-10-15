@@ -347,4 +347,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Decision: DC date, then the order DCs were made (legacy `created_at`), then DC, then PO item number; DC date is the only sort column.
 - Alternatives: DC number.
 - Why: Legacy order.
+
+### D-0570 — Reports default to the current FY to today
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: Without both range ends the reconciliation tab and Operations Insights show the FY start to today, from one domain function `defaultReportRange` used by the API and the web (INV-113). The Daily Dispatch tab (#94) shares the tabs' range, so it opens on the same FY range; this replaces the "yesterday to today" default in D-0591.
+- Alternatives: Keep the 30-day API default and yesterday-to-today in the web.
+- Why: Owner-approved 2026-10-15; one function keeps the screen and its downloads on the same range.
 - Reversible: yes.

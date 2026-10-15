@@ -213,7 +213,9 @@ function srvItemRow(
   const line = {
     id: id ?? newId(),
     srvId,
-    poItemId: refs.items ? matchSrvItem(item, refs.items) : null,
+    poItemNo: item.poItemNo,
+    srvItemNo: item.srvItemNo,
+    poItemId: refs.items ? matchSrvItem(item.poItemNo, refs.items) : null,
     srvDate,
     // A page without ORD QTY stores 0, as legacy (EC-31).
     ordQty: item.ordQty ?? ZERO,

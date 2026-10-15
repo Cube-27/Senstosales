@@ -15,6 +15,9 @@ export function fyOf(date: IsoDate): Fy {
   return `${start}-${String((start + 1) % 100).padStart(2, "0")}` as Fy;
 }
 
+/** INV-21: the first day of the date's FY, `2025-03-31 -> 2024-04-01`. */
+export const fyStartOf = (date: IsoDate): IsoDate => `${fyOf(date).slice(0, 4)}-04-01` as IsoDate;
+
 const FY_LABEL = /^(\d{4})-(\d{2})$/;
 
 /** Accepts only a label `fyOf` can write: `"2024-25"` yes, `"2024-26"` no. */

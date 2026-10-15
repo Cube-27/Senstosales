@@ -2,6 +2,7 @@
 // the form through PO ingest, and so does this (`storePoStatements`); the form's rate is GST-inclusive on a GEMC PO
 // and ingest derives the net from it (INV-17, INV-20).
 import type { IsoDate, Qty } from "@senstosales/domain";
+import { gemcNumberOf, manualPoValue } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
@@ -13,14 +14,18 @@ export type PoForm = z.output<(typeof routes)["po.create"]["body"]>;
 
 /** What an edit keeps from the stored PO because the form has no field for it. */
 export interface Kept {
-  readonly header: Pick<PoValues, "amendNo" | "poValue" | "netPoValue"> & { readonly bhelStatusCode: string | null };
+  /** `fromPage`: the PO was read from a BHEL page, so its PO-VALUE is the page's, never the form's lines. */
+  readonly header: Pick<PoValues, "amendNo" | "poValue" | "netPoValue"> & {
+    readonly bhelStatusCode: string | null;
+    readonly fromPage: boolean;
+  };
   readonly items: Awaited<ReturnType<typeof itemsOfPo>>;
   readonly lots: Awaited<ReturnType<typeof lotsOfPo>>;
 }
 
 /** A new PO keeps nothing. */
 export const NOTHING_KEPT: Kept = {
-  header: { amendNo: 0, poValue: null, netPoValue: null, bhelStatusCode: null },
+  header: { amendNo: 0, poValue: null, netPoValue: null, bhelStatusCode: null, fromPage: false },
   items: [],
   lots: [],
 };
@@ -61,12 +66,14 @@ export function formValues(form: PoForm, poDate: IsoDate, kept: Kept): PoValues 
     quotation: form.quotation,
     orderType: form.orderType,
     remarks: form.remarks,
-    // A blank GEMC number field is not a GEMC PO.
-    gemcNumber: form.gemcNumber?.trim() || null,
+    gemcNumber: gemcNumberOf(form.gemcNumber, form.remarks),
     rawHeader: form.rawHeader,
     poStatusCode: kept.header.bhelStatusCode,
     amendNo: kept.header.amendNo,
-    poValue: kept.header.poValue,
+    // A manual PO's value is the sum of its lines (owner, 2026-10-15).
+    poValue: kept.header.fromPage
+      ? kept.header.poValue
+      : manualPoValue(form.items.map((item) => ({ ordQty: item.ordQty, rate: item.rateSource }))),
     netPoValue: kept.header.netPoValue,
     items: form.items.map((item) => {
       const stored = storedItem.get(item.poItemNo);

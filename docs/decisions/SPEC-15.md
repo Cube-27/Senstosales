@@ -129,4 +129,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Decision: State and State Code use the supplier's columns; Jurisdiction (City), Default Place of Supply and Default HSN are `invoiceDefaults` keys (no migration); a blank one is removed. The supplier's place of supply is labelled "Default Place of Supply", apart from the buyer's.
 - Alternatives: New columns.
 - Why: No migration in this batch; D-0298 keys the description this way.
+
+### D-0575 — Dashboard web test waits 5 s for the first answer
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: The first `waitFor` in `dashboard.test.tsx` allows 5 s for the cold start (the #89 follow-up).
+- Alternatives: Warm the module graph in a setup file.
+- Why: The 1 s wait timed out only under load; the assertion is unchanged.
 - Reversible: yes.

@@ -22,17 +22,23 @@ export {
   sumQty,
 } from "./units.ts";
 export type { ItemQuantities, ItemQuantityInput, PoTotals, PoTotalsItem } from "./quantities.ts";
-export { computeItemQuantities, computePoTotals, poUninvoicedQty, supplyProgressPct } from "./quantities.ts";
+export {
+  computeItemQuantities,
+  computePoTotals,
+  manualPoValue,
+  poUninvoicedQty,
+  supplyProgressPct,
+} from "./quantities.ts";
 export type { ItemStatus, ItemStatusInput, PoStatus } from "./status.ts";
 export { itemStatus, poStatus } from "./status.ts";
 export type { DocKey, Fy } from "./fy.ts";
-export { docKey, fyOf, parseFy } from "./fy.ts";
+export { docKey, fyOf, fyStartOf, parseFy } from "./fy.ts";
 export { defaultGc } from "./gc.ts";
 export { matchSrvItem, resolveDocLink } from "./links.ts";
 export type { LineTax, LineTaxInput } from "./tax.ts";
 export { invoiceLineTax, invoiceTotals } from "./tax.ts";
 export type { GemcSourceRate } from "./gemc.ts";
-export { extractGemcNumber, gemcNetRate, gemcSourceRate } from "./gemc.ts";
+export { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate } from "./gemc.ts";
 export type { DeleteBlockReason, DeleteLinks, Issue, IssueCode } from "./guards.ts";
 export {
   acceptIncoming,
@@ -48,4 +54,4 @@ export { deliveryDue, pendingValueOfItems } from "./tracker.ts";
 export type { ListProgress } from "./list-exports.ts";
 export { dcListProgress, dcListTotals, invoiceListProgress } from "./list-exports.ts";
 export type { DashboardRange } from "./dashboard.ts";
-export { averageLeadTimeDays, pendingDispatchQty, rangeStart } from "./dashboard.ts";
+export { averageLeadTimeDays, defaultReportRange, pendingDispatchQty, rangeStart } from "./dashboard.ts";

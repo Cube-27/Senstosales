@@ -137,10 +137,11 @@ describe("GET /api/reports/reconciliation", () => {
   });
 
   it.each(["", "from=2025-03-01", "to=2025-05-31"])(
-    "without both range ends, lists the POs of the 30 days to today, as legacy: %s",
+    "without both range ends, lists the POs of the current FY to today (owner, 2026-10-15): %s",
     async (query) => {
-      // 2025-05-02 to 2025-06-01 holds no PO date in the dataset.
-      expect(await list(`/api/reports/reconciliation?${query}`)).toEqual({ items: [], total: 0 });
+      // 2025-04-01 to 2025-06-01 holds POs 4500101 and 4500102, not 4500103 of 2025-03-15.
+      const { items } = await list<ReconciliationRow>(`/api/reports/reconciliation?${query}`);
+      expect(items.map((r) => `${r.poNumber}/${r.poItemNo}`)).toEqual(["4500102/10", "4500101/10", "4500101/20"]);
     },
   );
 

@@ -121,4 +121,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Decision: A third `/reports` tab sharing the tabs' range (default yesterday to today; one day as both ends gives that day), with no row selection; the download is `Daily_Dispatch_<date>.xlsx` or `Daily_Dispatch_<from>_to_<to>.xlsx`, the heading's date the range.
 - Alternatives: A single date picker, which would shift the header controls (C8).
 - Why: Legacy had the endpoint but no screen; the owner wants the report back.
+
+### D-0572 — Tracker overdue needs no received-qty change
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: Overdue stays "status Pending and delivery date past"; an item received in full is Closed (INV-63) and leaves the list.
+- Alternatives: Subtract received qty in the tracker query.
+- Why: The E2E count was high because no SRV rows linked (fixed by D-0565), not because of the rule.
+- Reversible: yes.
+
+### D-0573 — Status sort keeps the legacy group order
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: Sorting by status groups rows Pending, Delivered, Closed as legacy did; no change.
+- Alternatives: Sort alphabetically.
+- Why: The E2E check compared statuses alphabetically and so read grouped rows as ungrouped; the order is frozen UI (C7).
 - Reversible: yes.

@@ -62,8 +62,8 @@ Out of scope:
   totals are sums of lines. `qty 3 × 719.27966, 9% + 9%, GEMC -> taxable 2157.83898, cgst 194.20551`.
 - **Links** (spec §8, A-10, A-26, INV-37): a raw challan/invoice number links to the candidate with the same number
   in `fyOf(srvDate)`, else `null`. `DC 12 dated 2025-03-28`, SRV `2025-04-03` citing 12 → `null` (EC-03).
-- **Item matching** (spec §3, A2-7, INV-39): match by material code; if the code is on several items, the SRV row's
-  PO item number decides; no match → unmatched (EC-12).
+- **Item matching** (spec §3, A2-7, INV-39): match by the SRV row's PO item number; material code and lot play no
+  part (revised 2026-10-15, owner; ARCHITECTURE rev 1.11); no match → unmatched and flagged (EC-12).
 - **Ingestion guard** (spec §4, INV-42, INV-43): accept when nothing stored or `incoming >= stored`; else skip.
 - **Delete guard** (A-14, INV-35): DC blocked by an invoice or a linked SRV item; invoice by a linked SRV item; PO by
   any DC or invoice; SRV never. Returns a reason code that the API maps to a 409 and the UI to a plain sentence.
@@ -71,16 +71,19 @@ Out of scope:
   exactly the DC's lines with `qty = DC qty` and `rate = PO item rate`, else invalid (A-8, INV-29); PO-direct: at
   least one line, each `qty > 0`, no cap (spec §5, A-7, INV-31). `changedImmutableFields` lists qty/rate changes so
   the service rejects them (A-14, INV-33).
-- **Flags** (spec §8, A-7, A-13, A-15, A-24): exactly six types (INV-58).
+- **Flags** (spec §8, A-7, A-13, A-15, A-24): exactly nine types (INV-58) (revised 2026-10-15, owner; ARCHITECTURE rev 1.11).
 
-| Type                        | Detected when (tol 0.001)                                                                      | INV    |
-| --------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| `QTY_MISMATCH`              | SRV line `ord_qty` differs from its PO item's `ord_qty`                                        | INV-52 |
-| `DOC_NUMBER_CONFLICT`       | SRV line cites a challan/invoice number with no DC/invoice of that number in the SRV date's FY | INV-53 |
-| `OVER_DISPATCH`             | `gtTol(dsp, ord)`: `10.002` vs `10` flags, `10.001` not                                        | INV-54 |
-| `OVER_INVOICE`              | `gtTol(sum(all invoice qty), ord)`                                                             | INV-55 |
-| `DOC_ON_CANCELLED_ITEM`     | a DC or invoice line exists on a cancelled item                                                | INV-56 |
-| `MANUAL_ADJUSTMENT_OVERLAP` | `manual > 0` and a DC line on the item was created after `manual_set_at`                       | INV-57 |
+| Type                        | Detected when (tol 0.001)                                                                                                              | INV    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `QTY_MISMATCH`              | SRV line `ord_qty` differs from its PO item's `ord_qty`                                                                                | INV-52 |
+| `DOC_NUMBER_CONFLICT`       | SRV line cites a challan/invoice number that resolved, in the SRV date's FY, to a DC/invoice of another PO; no document is no conflict | INV-53 |
+| `OVER_DISPATCH`             | `gtTol(dsp, ord)`: `10.002` vs `10` flags, `10.001` not                                                                                | INV-54 |
+| `OVER_INVOICE`              | `gtTol(sum(all invoice qty), ord)`                                                                                                     | INV-55 |
+| `DOC_ON_CANCELLED_ITEM`     | a DC or invoice line exists on a cancelled item                                                                                        | INV-56 |
+| `MANUAL_ADJUSTMENT_OVERLAP` | `manual > 0` and a DC line on the item was created after `manual_set_at`                                                               | INV-57 |
+| `SRV_PO_ITEM_ZERO`          | SRV row's PO ITM is 0                                                                                                                  | INV-58 |
+| `SRV_DUPLICATE_ITEM`        | another row of the same SRV has the same (PO ITM, SRV ITM)                                                                             | INV-58 |
+| `SRV_UNKNOWN_PO_ITEM`       | SRV row's PO ITM (not 0) is on no item of its PO                                                                                       | INV-58 |
 
 `fingerprint` = type + scope + quantities + document ids (§6.9). `diffFlags(desired, stored)` returns only flags
 to insert: a stored fingerprint is never duplicated, and a stored open flag whose condition disappeared is kept
@@ -135,7 +138,7 @@ is constant within April–March; `gemcNetRate` never reads its own output (type
 ## 7. Acceptance criteria
 
 - [ ] Every example in ARCHITECTURE §6.4–§6.7, §6.9, §6.10 and the related INV rows is a passing literal test.
-- [ ] `FlagType` has exactly the six members (INV-58).
+- [ ] `FlagType` has exactly the nine members (INV-58).
 - [ ] `pnpm verify` and every CI job green.
 
 ## 8. PR plan

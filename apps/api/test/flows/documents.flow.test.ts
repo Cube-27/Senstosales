@@ -146,9 +146,6 @@ function flows(client: Client) {
   return { createDc, invoiceDc, invoicePo, editDc, uploadSrv, itemsOf, flagsOf, everything };
 }
 
-/** An SRV citing challan 7 with no DC 7 in its FY (INV-53). */
-const CHALLAN_7_UNMATCHED = { field: "challan_no", expected: null, actual: "7", docIds: [] };
-
 /** A refused call's status, code and details. */
 async function refused(call: Promise<unknown>) {
   const err = await call.catch((e: unknown) => e);
@@ -264,7 +261,8 @@ describe("DC flows", () => {
   test("a DC whose (number, FY) an earlier SRV cited links that SRV item (INV-37)", async () => {
     const d = await dataset();
     const srvId = await d.uploadSrv("S-1", "25/04/2025", { challan: "7" });
-    expect((await d.flagsOf(d.po.id)).map((f) => [f[0], f[3]])).toEqual([["DOC_NUMBER_CONFLICT", CHALLAN_7_UNMATCHED]]);
+    // No DC 7 in the app yet: not a conflict (INV-53).
+    expect(await d.flagsOf(d.po.id)).toEqual([]);
 
     const dc = await d.createDc(d.po.id, "7", "2025-04-02", [[d.po.item(10), "4"]]);
     const srv = await d.client.request("srv.detail", { params: { id: srvId } });
@@ -286,9 +284,7 @@ describe("DC flows", () => {
     const moved = await d.editDc(dc7.id, { dcDate: day("2025-03-30"), gcDate: null });
     expect(moved).toMatchObject({ dcDate: "2025-03-30", financialYear: "2024-25", gcDate: "2025-03-30", version: 2 });
     expect(await links()).toEqual([null]);
-    expect((await d.flagsOf(d.po.id)).map((f) => [f[0], f[1], f[3]])).toEqual([
-      ["DOC_NUMBER_CONFLICT", "srv_item", CHALLAN_7_UNMATCHED],
-    ]);
+    expect(await d.flagsOf(d.po.id)).toEqual([]);
 
     // A new DC 7 in 2025-26 takes the free key, and the SRV links to it.
     const again = await d.createDc(d.po.id, "7", "2025-04-05", [[item10, "1"]]);

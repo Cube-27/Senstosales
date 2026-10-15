@@ -91,3 +91,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Export the status values from `status.ts` and build the pattern from them.
 - Why: It keeps the row out of the domain's public API; the domain union changes only through an owner decision, and then the check's pattern needs the same edit.
 - Reversible: yes.
+
+### D-0566 — Accepted is the source value on SRV lines only
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-2 (#93) · Status: decided
+- Decision: SRV lines and SRV totals show the SRV row's own ACCEPTED QTY (A2-8 revised). The PO-item accepted figure stays `rcd_qty` until the owner settles EC-11.
+- Alternatives: Sum accepted over linked SRV rows for the PO item too.
+- Why: The owner's answer covers the SRV; the PO-item figure feeds status and frozen exports, so changing it is a new rule (C18).
+- Reversible: yes — one field in `srvLineShown`.

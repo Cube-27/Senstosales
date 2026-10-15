@@ -15,11 +15,13 @@ the frozen screens show (A-2); quantity columns lead and status is a badge and f
 
 Core:
 
-- PO: list (filters: status, flag presence, text; sorts on the visible columns), stats, detail (header, items with
+- PO: list (filters: status, flag presence, text in the PO or GEMC number or an item description; sorts on the visible columns), stats, detail (header, items with
   `ord/dsp/rcd/rej/balance/uninvoiced`, Accepted = `rcd` (INV-09), status, cancelled marker, lots with entry-allow
   note, open flags per item, linked DC/invoice/SRV counts and popover lists bypassing pagination; INV-73).
 - PO manual create and edit (legacy `/po/create` flow): GEMC items take the GST-inclusive rate and store the derived
-  net (INV-20); `version` check (INV-95); recompute; audit.
+  net (INV-20); a blank GEMC field falls back to the GEMC number in the remarks (A2-3); the PO value is the sum of
+  the lines, while a PO read from a BHEL page keeps its PO-VALUE (INV-115); `version` check (INV-95); recompute; audit
+  (revised 2026-10-15, owner; ARCHITECTURE rev 1.11).
 - PO delete: blocked while any DC or invoice exists (INV-35); otherwise removes the PO, its items, lots and flags in
   one batch (SRVs of the PO become "PO not found"; Open issues).
 - Manual dispatched quantity: `PUT /api/po/:id/items/:itemId/manual-dispatched` `{ qty >= 0, note? }`; sets
@@ -30,7 +32,8 @@ Core:
   data changes).
 - Audit: list read-only with filters (entity, action, date); no delete (INV-83).
 - Dashboard: summary KPIs and recent activity as the legacy dashboard shows, plus the open-flag count (INV-60);
-  insights/forecast dropped (INV-87).
+  insights/forecast dropped (INV-87). Periods by document date, `fy` (the current FY) by default (INV-113); Pending
+  Dispatch clamped per item (INV-114); received counts only SRV lines on a PO item (INV-40) (revised 2026-10-15, owner; ARCHITECTURE rev 1.11).
 - Search: global search across PO, DC, invoice and SRV numbers and material codes as legacy; FY shown for DC and
   invoice hits (INV-24).
 - Delivery tracker: paged list and stats for the screen (export in SPEC-13).

@@ -8693,7 +8693,10 @@
                         "OVER_DISPATCH",
                         "OVER_INVOICE",
                         "DOC_ON_CANCELLED_ITEM",
-                        "MANUAL_ADJUSTMENT_OVERLAP"
+                        "MANUAL_ADJUSTMENT_OVERLAP",
+                        "SRV_PO_ITEM_ZERO",
+                        "SRV_DUPLICATE_ITEM",
+                        "SRV_UNKNOWN_PO_ITEM"
                       ]
                     }
                   },
@@ -9929,9 +9932,10 @@
             "name": "range",
             "in": "query",
             "schema": {
-              "default": "month",
+              "default": "fy",
               "type": "string",
               "enum": [
+                "fy",
                 "month",
                 "30d",
                 "all"
@@ -10597,7 +10601,10 @@
           "OVER_DISPATCH",
           "OVER_INVOICE",
           "DOC_ON_CANCELLED_ITEM",
-          "MANUAL_ADJUSTMENT_OVERLAP"
+          "MANUAL_ADJUSTMENT_OVERLAP",
+          "SRV_PO_ITEM_ZERO",
+          "SRV_DUPLICATE_ITEM",
+          "SRV_UNKNOWN_PO_ITEM"
         ]
       },
       "Fy": {

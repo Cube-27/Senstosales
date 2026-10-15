@@ -147,7 +147,7 @@ async function seed() {
     insertItem(PA, id("1A"), 10, 10_000),
     insertItem(PA, id("1B"), 20, 5_000, { cancelledAt: at("2025-04-15T00:00:00.000Z") }),
     insertItem(PA, id("1C"), 30, 2_000),
-    insertItem(PB, id("2A"), 10, 3_000),
+    insertItem(PB, id("2A"), 10, 3_000, { description: "STATOR WINDING" }),
     insertItem(PC, id("3A"), 10, 1_000, { poRcdQty: q(1_000) }),
     insertItem(PD, id("4A"), 10, 2_000, { manualDispatchedQty: q(2_000) }),
     b.insert(poLot).values([
@@ -303,6 +303,9 @@ describe("GET /api/po", () => {
     ["gemc=false", ["4500001", "990", "4500003"]],
     ["q=4500", ["4500002", "4500001", "4500003"]],
     ["q=gemc-7", ["4500002"]],
+    // An item description, anywhere in it (owner, 2026-10-15).
+    ["q=stator", ["4500002"]],
+    ["q=winding", ["4500002"]],
     ["q=%25", []],
     ["from=2025-04-10&to=2025-04-10", ["4500001", "990"]],
     ["valueMin=0&valueMax=500", ["4500002", "990", "4500003"]],
