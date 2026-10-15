@@ -31,7 +31,8 @@ Core:
   DB untouched and exits with a plain message for the shell; `>` → refuse to start with a plain message.
 - Auth (A-17, A-26, INV-80): fixed user `admin`, password hashed PBKDF2-SHA256 via WebCrypto; login with "remember
   me" as legacy (A2-11); logout; session; change password; reset-to-defaults with the legacy confirmation phrase
-  and legacy rule (asks for the current password once it was changed; EC-08); both end other sessions. Cookie
+  alone, also from the login screen, so a forgotten password is recovered there (owner answer 19, 2026-10-15; EC-08);
+  data is untouched; both end other sessions. Cookie
   `HttpOnly`, `SameSite=Strict`. Initial password: the legacy default (Open issues). No forced change, backoff,
   complexity rules or CLI recovery (C11).
 - Onboarding (INV-78): when no supplier row exists, only onboarding and public routes answer; onboarding creates
@@ -98,7 +99,7 @@ INV-78, INV-79, INV-80, INV-81, INV-82, INV-83, INV-86 (buyers), INV-87, INV-96 
 `app.request()` against in-memory node:sqlite (§14.1); per endpoint: happy path, 400, 401, 404, 409.
 Specific cases: non-loopback `Host` → 400; a `text/plain` POST → 415/400; an 11 MB body → 413; with no supplier,
 `GET /api/po` → redirect-signal (409 `onboarding-required`) and onboarding works; login, remember-me cookie,
-logout, change password ends other sessions; reset needs the phrase (and the current password once changed);
+logout, change password ends other sessions; reset needs the phrase alone, also once the password was changed;
 BHEL password set → status "saved", never in any response, log line or audit row (log capture asserts absence);
 startup: up-to-date DB has zero writes (file hash and schema version unchanged), older DB gets a backup file before
 the first migration statement, newer DB refuses; storage keys `../x` and absolute paths are rejected.

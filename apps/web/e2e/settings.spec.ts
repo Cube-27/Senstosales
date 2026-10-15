@@ -97,7 +97,7 @@ test("changing the password ends the other sessions", async ({ page, browser, se
   await other.close();
   // Put the default back for the specs that sign in with it.
   const reset = await page.request.post("/api/auth/reset-defaults", {
-    data: { confirmation: "RESET TO DEFAULTS", currentPassword: "changed" },
+    data: { confirmation: "RESET TO DEFAULTS" },
   });
   expect(reset.ok()).toBe(true);
 });

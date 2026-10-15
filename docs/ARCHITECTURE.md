@@ -519,7 +519,8 @@ Simplicity beats security for UX (A-17); every guard below is invisible to the u
   (INV-79) Mutating requests must be JSON; `SameSite=Strict`, `HttpOnly` cookie.
 - Simple login (A-17, A-26): fixed username `admin`, password only, hashed with PBKDF2-SHA256 via WebCrypto. Session
   and "remember me" behave as legacy. Settings: change password and the existing reset-to-defaults (confirmation
-  phrase); both end other sessions. No forced change, backoff, complexity rules or CLI recovery. (INV-80)
+  phrase only, also on the login screen, so a forgotten password is recovered there; data is untouched); both end
+  other sessions. No forced change, backoff, complexity rules or CLI recovery. (INV-80)
 - Public routes: login, reset-defaults, session, health.
 
 ### 10.2 BHEL password

@@ -1,6 +1,8 @@
 // The simple login (ARCHITECTURE §10.1, INV-80, A-17): one user `admin`, password only. No user row means the legacy
-// default password `admin` (D-0004): the first login creates the row, and reset-to-defaults removes it. Change
-// password and reset end every session, as legacy. No backoff, no complexity rule, no forced change (C11).
+// default password `admin` (D-0004): the first login creates the row, and reset-to-defaults removes it. The reset
+// needs only the confirmation phrase, so a forgotten password is recovered from the login screen (owner answer 19,
+// 2026-10-15). Change password and reset end every session, as legacy. No backoff, no complexity rule, no forced
+// change (C11).
 import { WriteBatch, type Instant, type Statement } from "@senstosales/db";
 import type { SQL } from "drizzle-orm";
 
@@ -111,24 +113,12 @@ export function createAuthService({ db, clock }: ServiceDeps) {
         .commit();
     },
 
-    /** The legacy reset: the phrase, plus the current password once it was changed (EC-08). */
-    async resetDefaults({
-      confirmation,
-      currentPassword,
-    }: {
-      confirmation: string;
-      currentPassword?: string | undefined;
-    }) {
+    /** The legacy reset to `admin/admin`: the confirmation phrase only. Data is untouched. */
+    async resetDefaults({ confirmation }: { confirmation: string }) {
       if (confirmation.trim() !== RESET_PHRASE) {
         throw fieldError("wrong-phrase", "confirmation", `Type "${RESET_PHRASE}" to continue.`);
       }
       const user = await repo.findUser(db, USERNAME);
-      if (currentPassword === undefined && !isDefault(user)) {
-        throw fieldError("current-password-required", "currentPassword", "Enter the current password.");
-      }
-      if (currentPassword !== undefined && !(await passwordMatches(user, currentPassword))) {
-        throw wrongCurrentPassword();
-      }
       // With no user row the defaults are already in place.
       if (user === null) return;
       await new WriteBatch(db)

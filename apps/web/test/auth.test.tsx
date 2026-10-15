@@ -119,7 +119,7 @@ describe("login (SPEC-15 PR 1)", () => {
     expect(router.state.location.href).toBe("/auth/login?redirect=%2Fdc");
   });
 
-  it("reset to defaults sends the phrase and says the defaults are back", async () => {
+  it("reset to defaults sends the phrase alone and says the defaults are back", async () => {
     const calls = stubApi({ ...signedIn(false), "POST /api/auth/reset-defaults": { ok: true } });
     renderApp("/auth/login");
     await userEvent.click(await screen.findByRole("button", { name: "Forgot the password? Reset local credentials" }));

@@ -18,7 +18,7 @@ export const zChangePasswordBody = z
   });
 
 /** The legacy reset asks for the confirmation phrase, and the current password once it was changed (EC-08). */
-export const zResetDefaultsBody = z.object({ confirmation: z.string(), currentPassword: z.string().optional() });
+export const zResetDefaultsBody = z.object({ confirmation: z.string() });
 
 export const zOnboardingStatus = z.object({ required: z.boolean() });
 

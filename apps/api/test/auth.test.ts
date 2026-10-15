@@ -270,7 +270,7 @@ describe("change password (INV-80)", () => {
   });
 });
 
-describe("reset to defaults (INV-80, EC-08)", () => {
+describe("reset to defaults (INV-80, owner answer 19)", () => {
   const PHRASE = "RESET TO DEFAULTS";
   const WRONG_PHRASE = {
     code: "wrong-phrase",
@@ -305,24 +305,19 @@ describe("reset to defaults (INV-80, EC-08)", () => {
     expect(await res.json()).toEqual({ ok: true });
   });
 
-  it("asks for the current password once it was changed", async () => {
-    const { post, buyers, cookie } = await changed();
+  it("restores `admin` from the login screen with the phrase alone once the password was changed and forgotten", async () => {
+    const { post, buyers, login, session, cookie } = await changed();
     const res = await post("/api/auth/reset-defaults", { confirmation: PHRASE });
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
-      code: "current-password-required",
-      message: "Enter the current password.",
-      details: { fields: [{ path: "body.currentPassword", message: "Enter the current password." }] },
-    });
-    const wrong = await post("/api/auth/reset-defaults", { confirmation: PHRASE, currentPassword: "admin" });
-    expect(wrong.status).toBe(400);
-    expect(((await wrong.json()) as { code: string }).code).toBe("wrong-password");
-    expect(await buyers(cookie)).toBe(200);
+    expect(res.status).toBe(200);
+    expect(await buyers(cookie)).toBe(401);
+    expect(await session()).toEqual({ authenticated: false, isDefaultPassword: true });
+    expect((await login("changed")).status).toBe(401);
+    expect(await (await login("admin")).json()).toEqual({ authenticated: true, isDefaultPassword: true });
   });
 
   it("restores `admin`, ends every session and clears the cookie", async () => {
     const { post, buyers, login, session, cookie } = await changed();
-    const res = await post("/api/auth/reset-defaults", { confirmation: PHRASE, currentPassword: "changed" }, cookie);
+    const res = await post("/api/auth/reset-defaults", { confirmation: PHRASE }, cookie);
     expect(res.status).toBe(200);
     expect(res.headers.get("set-cookie")).toBe(CLEARED_COOKIE);
     expect(await buyers(cookie)).toBe(401);
@@ -343,7 +338,7 @@ describe("stored state", () => {
     );
     const again = await signIn("s3cret-pw");
     await post("/api/auth/logout", {}, again);
-    await post("/api/auth/reset-defaults", { confirmation: "RESET TO DEFAULTS", currentPassword: "s3cret-pw" });
+    await post("/api/auth/reset-defaults", { confirmation: "RESET TO DEFAULTS" });
     expect(await auditActions()).toEqual([
       "app_user.login",
       "app_user.change_password",
