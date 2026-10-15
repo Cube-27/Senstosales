@@ -5,7 +5,7 @@ import { downloadFileName } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
-import { routesOver, rows } from "../seed-rows.ts";
+import { id, routesOver, rows } from "../seed-rows.ts";
 import { supplierDb } from "../service-deps.ts";
 import { reportDb } from "./dataset-db.ts";
 import { goldenText, workbookGolden, workbookGoldenFile } from "./golden.ts";
@@ -134,5 +134,79 @@ describe("streaming 10,000 POs", () => {
     } finally {
       db.query = query;
     }
+  });
+});
+
+// C4: D1 binds at most 100 parameters to a statement, so no export statement may bind more, however many documents
+// a page holds (#69 review).
+describe("150 DCs and invoices", () => {
+  let db: NodeDb;
+  let send: ReturnType<typeof routesOver>;
+  beforeAll(async () => {
+    db = await supplierDb();
+    send = routesOver(db);
+    const r = rows(db);
+    const tag = (n: number) => String(n).padStart(4, "0");
+    await db.batch([
+      r.po({ id: id("P1"), poNumber: "4600001", poDate: "2025-04-01" }),
+      r.item({ id: id("I1"), poId: id("P1"), poItemNo: 10, ordQty: 1_000_000 }),
+    ]);
+    const docs = Array.from({ length: 150 }, (_, i) => {
+      const dcId = `01J9Z8Q4S5T6V7W8X9Y0D0${tag(i)}`;
+      const invoiceId = `01J9Z8Q4S5T6V7W8X9Y0F0${tag(i)}`;
+      const dcItemId = `01J9Z8Q4S5T6V7W8X9Y0E0${tag(i)}`;
+      return [
+        r.dc({
+          id: dcId,
+          poId: id("P1"),
+          number: String(1000 + i),
+          dcDate: "2025-05-01",
+          createdAt: "2025-05-01T00:00:00.000Z",
+        }),
+        r.dcItem({ id: dcItemId, dcId, poItemId: id("I1"), dspQty: 1_000 }),
+        r.invoice({
+          id: invoiceId,
+          poId: id("P1"),
+          dcId,
+          number: String(2000 + i),
+          invoiceDate: "2025-05-02",
+          total: 100_00000,
+          createdAt: "2025-05-02T00:00:00.000Z",
+        }),
+        r.invoiceItem({ id: `01J9Z8Q4S5T6V7W8X9Y0G0${tag(i)}`, invoiceId, poItemId: id("I1"), dcItemId, qty: 1_000 }),
+      ];
+    });
+    await db.batch(docs.flat());
+  });
+  afterAll(() => db.close());
+
+  it.each([
+    "/api/reports/po-register/export",
+    "/api/reports/dc-register/export",
+    "/api/reports/invoice-register/export",
+    "/api/dc/export",
+    "/api/invoice/export",
+  ])("%s binds at most 100 parameters per statement and exports every document", async (path) => {
+    let most = 0;
+    const query = db.query.bind(db);
+    db.query = ((statement: Parameters<typeof query>[0]) => {
+      // Every statement the repositories send is a drizzle query builder.
+      const { params } = (statement as unknown as { toSQL(): { params: unknown[] } }).toSQL();
+      most = Math.max(most, params.length);
+      return query(statement);
+    }) as typeof db.query;
+    try {
+      const { bytes } = await download(send, path);
+      expect(bytes.length).toBeGreaterThan(0);
+    } finally {
+      db.query = query;
+    }
+    expect(most).toBeGreaterThan(0);
+    expect(most).toBeLessThanOrEqual(100);
+  });
+
+  it("lists all 150 DCs in the CSV", async () => {
+    const text = csvText((await download(send, "/api/dc/export")).bytes);
+    expect(text.split("\r\n").length).toBe(152);
   });
 });

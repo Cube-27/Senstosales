@@ -61,11 +61,18 @@ async function write<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<
   const first = await source.next();
   const worksheet = first.done && sheet.bareWhenEmpty ? workbook.addWorksheet(sheet.name) : addSheet(workbook, sheet);
   const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
-  // The rows again, the peeked first one included, so `for await` closes the source when the loop stops early.
+  // The rows again, the peeked first one included, so the source is closed when the loop stops early: by `yield*`
+  // once it delegates, by the `finally` while the loop still holds the first row.
   async function* all() {
     if (first.done) return;
-    yield first.value;
-    yield* { [Symbol.asyncIterator]: () => source };
+    let delegated = false;
+    try {
+      yield first.value;
+      delegated = true;
+      yield* { [Symbol.asyncIterator]: () => source };
+    } finally {
+      if (!delegated) await source.return?.();
+    }
   }
   let written = 0;
   for await (const row of all()) {

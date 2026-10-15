@@ -4,7 +4,7 @@ import type { Db } from "@senstosales/db";
 import { dc, dcItem, invoice, invoiceItem, po, poItem, srvItem } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { SQL, SQLWrapper } from "drizzle-orm";
-import { and, count, eq, inArray, or } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 
 import type { DcFilters } from "./dc.ts";
@@ -13,6 +13,15 @@ import type { InvoiceFilters } from "./invoice.ts";
 import { invoiceListWhere } from "./invoice.ts";
 import type { Keyset, KeysetPage, PrimaryKey } from "./keyset.ts";
 import { asNumber, inRange, orEmpty } from "./sql.ts";
+
+/** D1 binds at most 100 parameters to a statement, so the reads by id take the ids 100 at a time. */
+const ID_BATCH = 100;
+
+async function inBatches<T>(ids: readonly string[], read: (batch: string[]) => Promise<T[]>): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += ID_BATCH) out.push(...(await read(ids.slice(i, i + ID_BATCH))));
+  return out;
+}
 
 /** A register's date range. */
 export type Range = z.output<(typeof routes)["reports.poRegisterExport"]["query"]>;
@@ -63,12 +72,14 @@ export const PO_REGISTER_KEY = newestFirst<Awaited<ReturnType<typeof poRegisterP
 
 /** How many items each of these POs has, by PO; a PO without items is absent. */
 export async function itemCountsOfPos(db: Db, poIds: readonly string[]) {
-  const rows = await db.query(
-    db.build
-      .select({ poId: poItem.poId, count: count() })
-      .from(poItem)
-      .where(inArray(poItem.poId, [...poIds]))
-      .groupBy(poItem.poId),
+  const rows = await inBatches(poIds, (ids) =>
+    db.query(
+      db.build
+        .select({ poId: poItem.poId, count: count() })
+        .from(poItem)
+        .where(inArray(poItem.poId, ids))
+        .groupBy(poItem.poId),
+    ),
   );
   return new Map(rows.map((row) => [row.poId, row.count]));
 }
@@ -105,37 +116,40 @@ export const DC_KEY = newestFirst<Awaited<ReturnType<typeof dcPage>>[number]>(
 
 /** The lines of these DCs with their PO item's ordered and received quantities and rate. */
 export const linesOfDcs = (db: Db, dcIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({
-        dcId: dcItem.dcId,
-        poItemId: dcItem.poItemId,
-        dspQty: dcItem.dspQty,
-        ordQty: poItem.ordQty,
-        rcdQty: poItem.rcdQty,
-        rate: poItem.rate,
-      })
-      .from(dcItem)
-      .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
-      .where(inArray(dcItem.dcId, [...dcIds])),
+  inBatches(dcIds, (ids) =>
+    db.query(
+      db.build
+        .select({
+          dcId: dcItem.dcId,
+          poItemId: dcItem.poItemId,
+          dspQty: dcItem.dspQty,
+          ordQty: poItem.ordQty,
+          rcdQty: poItem.rcdQty,
+          rate: poItem.rate,
+        })
+        .from(dcItem)
+        .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
+        .where(inArray(dcItem.dcId, ids)),
+    ),
   );
 
 /** The dispatched quantity of each line of these DCs. */
 export const dspOfDcs = (db: Db, dcIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({ dcId: dcItem.dcId, dspQty: dcItem.dspQty })
-      .from(dcItem)
-      .where(inArray(dcItem.dcId, [...dcIds])),
+  inBatches(dcIds, (ids) =>
+    db.query(
+      db.build.select({ dcId: dcItem.dcId, dspQty: dcItem.dspQty }).from(dcItem).where(inArray(dcItem.dcId, ids)),
+    ),
   );
 
 /** Every DC line on these PO items, on any DC. */
 export const dcLinesOfItems = (db: Db, poItemIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({ poItemId: dcItem.poItemId, dspQty: dcItem.dspQty })
-      .from(dcItem)
-      .where(inArray(dcItem.poItemId, [...poItemIds])),
+  inBatches(poItemIds, (ids) =>
+    db.query(
+      db.build
+        .select({ poItemId: dcItem.poItemId, dspQty: dcItem.dspQty })
+        .from(dcItem)
+        .where(inArray(dcItem.poItemId, ids)),
+    ),
   );
 
 const invoicePage = (db: Db, where: SQL | undefined, page: KeysetPage) =>
@@ -179,24 +193,35 @@ export const INVOICE_KEY = newestFirst<Awaited<ReturnType<typeof invoicePage>>[n
 
 /** The lines of these invoices. */
 export const linesOfInvoices = (db: Db, invoiceIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({ invoiceId: invoiceItem.invoiceId, qty: invoiceItem.qty })
-      .from(invoiceItem)
-      .where(inArray(invoiceItem.invoiceId, [...invoiceIds])),
+  inBatches(invoiceIds, (ids) =>
+    db.query(
+      db.build
+        .select({ invoiceId: invoiceItem.invoiceId, qty: invoiceItem.qty })
+        .from(invoiceItem)
+        .where(inArray(invoiceItem.invoiceId, ids)),
+    ),
   );
 
-/** The SRV lines resolved to one of these DCs or invoices (INV-37). */
-export const srvLinesResolvedTo = (db: Db, dcIds: readonly string[], invoiceIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({
-        resolvedDcId: srvItem.resolvedDcId,
-        resolvedInvoiceId: srvItem.resolvedInvoiceId,
-        rcdQty: srvItem.rcdQty,
-        acceptedQty: srvItem.acceptedQty,
-        rejQty: srvItem.rejQty,
-      })
-      .from(srvItem)
-      .where(or(inArray(srvItem.resolvedDcId, [...dcIds]), inArray(srvItem.resolvedInvoiceId, [...invoiceIds]))),
+const srvLineColumns = { rcdQty: srvItem.rcdQty, acceptedQty: srvItem.acceptedQty, rejQty: srvItem.rejQty };
+
+/** The SRV lines resolved to one of these DCs (INV-37). */
+export const srvLinesOfDcs = (db: Db, dcIds: readonly string[]) =>
+  inBatches(dcIds, (ids) =>
+    db.query(
+      db.build
+        .select({ resolvedDcId: srvItem.resolvedDcId, ...srvLineColumns })
+        .from(srvItem)
+        .where(inArray(srvItem.resolvedDcId, ids)),
+    ),
+  );
+
+/** The SRV lines resolved to one of these invoices (INV-37). */
+export const srvLinesOfInvoices = (db: Db, invoiceIds: readonly string[]) =>
+  inBatches(invoiceIds, (ids) =>
+    db.query(
+      db.build
+        .select({ resolvedInvoiceId: srvItem.resolvedInvoiceId, ...srvLineColumns })
+        .from(srvItem)
+        .where(inArray(srvItem.resolvedInvoiceId, ids)),
+    ),
   );

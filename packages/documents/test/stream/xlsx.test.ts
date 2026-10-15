@@ -3,7 +3,7 @@ import { Readable } from "node:stream";
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { Sheet } from "../../src/index.ts";
+import type { Row, Sheet } from "../../src/index.ts";
 import { xlsxChunks } from "../../src/index.ts";
 import type { Key } from "./rows.ts";
 import { collect, COLUMNS, of, settle, source } from "./rows.ts";
@@ -101,6 +101,26 @@ describe("xlsxChunks", () => {
   it("writes the header row with no rows otherwise", async () => {
     const sheet = await read(xlsxChunks(SHEET, of()));
     expect(sheet.getSheetValues()).toEqual([undefined, [undefined, "Doc No", "Note", "Qty"]]);
+  });
+
+  it("closes the source when writing the first row fails", async () => {
+    let closed = false;
+    async function* rows(): AsyncGenerator<Row<Key>> {
+      try {
+        yield {
+          get number(): string {
+            throw new Error("bad row");
+          },
+          note: null,
+          qty: 1,
+        };
+        yield { number: "N", note: null, qty: 2 };
+      } finally {
+        closed = true;
+      }
+    }
+    await expect(collect(xlsxChunks(SHEET, rows()))).rejects.toThrow("bad row");
+    expect(closed).toBe(true);
   });
 
   it("closes the source when the reader stops early", async () => {

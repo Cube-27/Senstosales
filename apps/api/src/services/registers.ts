@@ -1,7 +1,7 @@
 // The PO, DC and invoice registers and the DC and invoice list CSVs (SPEC-13 §2), each with its catalog layout and
 // file name. Documents come a keyset page at a time with their lines (INV-99), are totalled with the domain (C2) and
 // written as they stand: no flag column, nothing clamped (INV-60, INV-61). Numbers go out to 2 dp (D-0260).
-import type { ListProgress, Money, Qty } from "@senstosales/domain";
+import type { ListProgress, Money, Qty, SrvLineQty } from "@senstosales/domain";
 import { dcListProgress, dcListTotals, invoiceListProgress, srvLineShown, sumMoney, sumQty } from "@senstosales/domain";
 import type { Column, Row, Sheet } from "@senstosales/documents";
 import { EXPORTS } from "@senstosales/documents/catalog";
@@ -25,7 +25,8 @@ import {
   linesOfInvoices,
   PO_REGISTER_KEY,
   poRegisterPage,
-  srvLinesResolvedTo,
+  srvLinesOfDcs,
+  srvLinesOfInvoices,
 } from "../repositories/registers.ts";
 import { findSupplier } from "../repositories/supplier.ts";
 import { DC_LIST_SORTS } from "./dc.ts";
@@ -122,13 +123,14 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
   async function withInvoiceTotals(rows: readonly InvoicePageRow[]): Promise<InvoiceListRow[]> {
     const dcIds = rows.flatMap((row) => (row.dcId === null ? [] : [row.dcId]));
     const directIds = rows.flatMap((row) => (row.dcId === null ? [row.id] : []));
-    const [invoiceLines, dcLines, srvLines] = await Promise.all([
+    const [invoiceLines, dcLines, srvOfDcs, srvOfInvoices] = await Promise.all([
       linesOfInvoices(
         db,
         rows.map((row) => row.id),
       ),
       dspOfDcs(db, dcIds),
-      srvLinesResolvedTo(db, dcIds, directIds),
+      srvLinesOfDcs(db, dcIds),
+      srvLinesOfInvoices(db, directIds),
     ]);
     const lines = Map.groupBy(invoiceLines, (line) => line.invoiceId);
     const dcDsp = sumsBy(
@@ -136,9 +138,9 @@ export function registersService({ db }: Pick<ServiceDeps, "db">) {
       (line) => line.dcId,
       (line) => line.dspQty,
     );
-    const received = (line: (typeof srvLines)[number]) => srvLineShown(line).rcdQty;
-    const rcdByDc = sumsBy(srvLines, (line) => line.resolvedDcId, received);
-    const rcdByInvoice = sumsBy(srvLines, (line) => line.resolvedInvoiceId, received);
+    const received = (line: SrvLineQty) => srvLineShown(line).rcdQty;
+    const rcdByDc = sumsBy(srvOfDcs, (line) => line.resolvedDcId, received);
+    const rcdByInvoice = sumsBy(srvOfInvoices, (line) => line.resolvedInvoiceId, received);
     return rows.map((row) => {
       const qtys = (lines.get(row.id) ?? []).map((line) => line.qty);
       const invoiceQty = sumQty(qtys);

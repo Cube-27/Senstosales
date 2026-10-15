@@ -1,6 +1,5 @@
 // Item and PO status (ARCHITECTURE §6.11), and the DC and invoice list rows' status (EC-39, EC-40). The one place
-// status is derived (INV-64); the UI leads with quantities and
-// shows status as a badge (INV-65).
+// status is derived (INV-64); the UI leads with quantities and shows status as a badge (INV-65).
 import { gte, type Qty } from "./units.ts";
 
 export type ItemStatus = "Pending" | "Delivered" | "Closed" | "Cancelled";
