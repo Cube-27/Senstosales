@@ -98,3 +98,75 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: An env flag in `main.ts` (SPEC-19 §9).
 - Why: No flag exists for production to read: the sidecar entry never imports the fake.
 - Reversible: yes.
+
+### D-0530 — Portal flow and selectors from the legacy scraper until the spike
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: The origin, paths, form field names, notices (each ticked and closed in order when visible after load), captcha table (innermost `table:has(img[src*='captcha.asp'])`) and PO-link selector follow the legacy scraper's visible behaviour; only the main frame is read.
+- Alternatives: Wait for the SPEC-01 PR 2 spike (H3).
+- Why: SPEC-19 §9 puts portal changes in `selectors.ts` and its fixtures; the spike corrects them there.
+- Reversible: yes.
+
+### D-0531 — How the login reads where the portal is
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: After each submit the adapter waits for the page `load` event, then `classifyPage` reads it as the supplier PO page (URL or headings), the OTP step (an OTP field) or other. After the captcha, other is `wrong-captcha`; after the OTP, the OTP form again is `wrong-otp`, otherwise it opens the PO page and failing that is `portal-unreachable`. A rejected password returns the login page, so it surfaces as `wrong-captcha` until the SPEC-01 spike shows how the portal reports it (EC-55).
+- Alternatives: Keyword search of the page text (legacy fallback).
+- Why: A field or heading is a stronger signal than words a login page may also contain.
+- Reversible: yes.
+
+### D-0532 — One step guard for every Scraper
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: `packages/scraper/src/session-guard.ts` owns the step order (D-0376), runs one login step at a time (a concurrent second call is `out-of-order`), restarts at a fresh captcha after any failure but a wrong OTP, maps a driver's non-`ScraperError` failure to `portal-unreachable`, and checks PO ids (INV-97). The fake and the Edge adapter are drivers under it.
+- Alternatives: A step machine in each Scraper.
+- Why: The two copies already disagreed, so API tests against the fake did not test the real rules.
+- Reversible: yes.
+
+### D-0533 — Edge closes after the login
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: The cookies the portal sends to its `/mm/` pages go to the HTTP session and Edge closes at once.
+- Alternatives: Keep Edge open until the session closes.
+- Why: Listing and fetching never use the browser (ARCHITECTURE §7.5); fewer Edge processes for up to 15 minutes.
+- Reversible: yes.
+
+### D-0534 — An SRV fetch opens its PO page first
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: `fetchSrvHtml` POSTs the PO page, then the SRV list with the PO page as referer.
+- Alternatives: The SRV list alone.
+- Why: The legacy scraper's observed portal behaviour: the SRV list is served only after its PO's page in the same session.
+- Reversible: yes.
+
+### D-0535 — The HTTP session refuses redirects
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: `redirect: "error"`, a 90 s timeout; a network error, timeout, redirect or non-2xx is the fixed `fetch-failed`.
+- Alternatives: Follow same-origin redirects.
+- Why: C17 (no URL from the portal is followed); an expired session redirects, which is a fetch failure.
+- Reversible: yes.
+
+### D-0536 — Scraped pages are decoded as UTF-8
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: `response.text()`, the decoding `packages/parsers` applies to stored pages.
+- Alternatives: Decode with the response charset.
+- Why: One decoding for scraped and imported pages; no non-UTF-8 page observed.
+- Reversible: yes.
+
+### D-0537 — The node entry does not pass the adapter yet
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: `run()` keeps no scraper until playwright-core ships beside the sidecar (ACTIVE.md follow-up). Refines D-0380's "SPEC-19 PR 2 passes the adapter".
+- Alternatives: Pass it now.
+- Why: playwright-core reads its own `package.json`, `browsers.json` and `lib/` from disk at run time, so inside the SEA bundle the packaged app would say Edge is missing when it is not, the untrue message D-0380 avoids.
+- Reversible: yes.
+
+### D-0538 — Adapter tests run headless Edge offline
+
+- Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 2-3 (#90) · Status: decided
+- Decision: The adapter test drives the real headless `msedge`; Playwright routes answer every request from synthetic fixtures and never with a redirect (Playwright does not route the request a redirect leads to); the test browser's proxy is a closed local port, and a test proves an unrouted request fails on the machine.
+- Alternatives: A fake `Page`.
+- Why: The selectors and the flow run in the real browser without reaching the network; an early run that followed a stub redirect reached the portal unauthenticated.
+- Reversible: yes.
