@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getRequestListener } from "@hono/node-server";
+import type { Scraper } from "@senstosales/scraper";
 
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
@@ -26,6 +27,8 @@ export interface ServerOptions {
   /** The built SPA (`apps/web/dist`, or embedded in the sidecar). */
   readonly web: WebFiles;
   readonly version: string;
+  /** The BHEL portal adapter; without one, BHEL sync is not offered (D-0380). */
+  readonly scraper?: Scraper;
 }
 
 export interface RunningServer {
@@ -93,8 +96,13 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   };
 }
 
-async function serve(web: WebFiles): Promise<void> {
-  const server = await startServer({ dataDir: resolveDataDir(process.env), web, version: pkg.version });
+async function serve(web: WebFiles, scraper: Scraper | undefined): Promise<void> {
+  const server = await startServer({
+    dataDir: resolveDataDir(process.env),
+    web,
+    version: pkg.version,
+    ...(scraper && { scraper }),
+  });
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
   await server.startDailyBackup();
   process.stdin.on("end", () => void server.close());
@@ -102,9 +110,10 @@ async function serve(web: WebFiles): Promise<void> {
 }
 
 /** Runs the process: serves `web` until stdin closes, or reports a failed start on stderr. The sidecar's entry
- * (`tools/release`) calls it with the SPA embedded in the bundle. No top-level await: a SEA runs CommonJS. */
-export function run(web: WebFiles): void {
-  serve(web).catch((err: unknown) => {
+ * (`tools/release`) calls it with the SPA embedded in the bundle; the e2e entry (`apps/api/test/e2e-server.ts`) adds
+ * the fake scraper. No top-level await: a SEA runs CommonJS. */
+export function run(web: WebFiles, scraper?: Scraper): void {
+  serve(web, scraper).catch((err: unknown) => {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     process.exitCode = 1;
   });
