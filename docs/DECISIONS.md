@@ -2274,3 +2274,44 @@ None.
 - Alternatives: Default blanks from the PO's buyer.
 - Why: C18 says not to invent defaults; the preview is where defaults come from.
 - Reversible: yes.
+
+### D-0278 — De-branded templates rebuilt by a committed tool
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 1 (#61) · Status: decided
+- Decision: `tools/gen/src/debrand-templates.ts` rebuilds each legacy template through exceljs from a per-file plan. Labels are kept, identity cells become placeholders, and every other value is cleared. Document properties are blanked (exceljs writes `Unknown` for an empty author), created and modified dates are fixed, and headers and footers are dropped. The tool reads the legacy folder from `SENSTO_LEGACY_TEMPLATES_DIR`; legacy files never enter the repo.
+- Alternatives: Commit edited copies of the legacy files; generate the templates entirely from code.
+- Why: Anything the plan doesn't name is cleared, so the rebuild drops hidden legacy content (merged-cell leftovers, metadata, shared strings) while the visible layout stays frozen (C1, C7, C16). The tool is reproducible for reviewers and later fixes.
+- Reversible: yes.
+
+### D-0279 — What stays in a template
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 1 (#61) · Status: decided
+- Decision: Constant text stays as it appears in the legacy template, even where legacy code rewrites the same text on every document. Values filled per document are cleared, keeping their styles and number formats. Identity cells get `{supplier.name}`, `{supplier.address}`, `{supplier.gstin}`, `{supplier.contact}`, `{supplier.state}` and `{supplier.stateCode}` (`zSupplier` fields), plus `{supplier.description}` (DC/GC letterhead line 2) and `{supplier.jurisdiction}` (invoice "SUBJECT TO … JURISDICTION").
+- Alternatives: Clear every cell legacy code writes; keep the jurisdiction city as a fixed label.
+- Why: The templates show the frozen document as legacy did. The jurisdiction line names the supplier's city, so it is identity.
+- Reversible: yes.
+- Follow-up: `zSupplier` has no `description` or `jurisdiction` field (legacy read the description from a `supplier_description` setting). SPEC-12 PR 3 and PR 4 source both; the most conservative reading is `invoiceDefaults` keys.
+
+### D-0280 — Invoice template sheet named `Sheet1`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 1 (#61) · Status: decided
+- Decision: The invoice template's sheet is `Sheet1`.
+- Alternatives: Keep the legacy sheet name.
+- Why: The legacy sheet was named after a real invoice number (C1). Legacy code never renames the sheet, so goldens made with this template (H5) carry `Sheet1`.
+- Reversible: yes.
+
+### D-0281 — Templates embedded as a generated base64 module
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 1 (#61) · Status: decided
+- Decision: `pnpm gen:templates` writes `packages/documents/src/templates.generated.ts`, checked by a freshness test. `templateBytes()` decodes with `atob`.
+- Alternatives: Bundler `?inline` imports; read the files at runtime.
+- Why: SPEC-12 §4.1 and C12 require bytes embedded at build and no `node:fs`, without tying the core package to a bundler. This follows the migrations generator.
+- Reversible: yes.
+
+### D-0282 — xlsx snapshot format
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 1 (#61) · Status: decided
+- Decision: One entry per sheet: name, state, cells, sorted merges, columns, rows, page breaks and page setup. Cells are keyed by address with type, value and style; an empty border and a `none` fill are dropped, and rich text is recorded as its text. Columns and rows are `{ size?, hidden? }`. Page breaks come from the sheet XML. Page setup records all 12 keys, with Excel's default where the file omits one.
+- Alternatives: Wait for the SPEC-01 PR 4 ADR (blocked on H5); compare bytes.
+- Why: SPEC-12 PR 1 needs a format now. A writer that omits a default and one that writes it should compare equal. ADR 0003 can revise the format before SPEC-12 PR 2's goldens are committed.
+- Reversible: yes; goldens are regenerated with the tool.
