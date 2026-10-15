@@ -49,7 +49,7 @@ export const dc = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-const itemInfo = (no: number, rate: string) => ({
+export const itemInfo = (no: number, rate: string) => ({
   poItemNo: no,
   materialCode: `SYN1000${no}`,
   description: `Synthetic part ${no}`,
@@ -97,7 +97,7 @@ export const dcRow = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-const INVOICE_HEADER = {
+export const INVOICE_HEADER = {
   buyerName: "Example Buyer Unit",
   buyerGstin: "TESTGSTIN0002",
   buyerAddress: "3 Example Avenue",
