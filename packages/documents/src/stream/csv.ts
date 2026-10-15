@@ -16,7 +16,7 @@ const line = (fields: readonly string[]) => `${fields.join(",")}\r\n`;
 
 /** The header line, then one CRLF-terminated line per row in column order. */
 export async function* csvChunks<K extends string>(
-  columns: readonly Column<K>[],
+  columns: readonly Pick<Column<K>, "key" | "header">[],
   rows: AsyncIterable<Row<K>>,
 ): AsyncGenerator<string> {
   yield line(columns.map((c) => quoted(c.header)));

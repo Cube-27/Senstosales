@@ -3,8 +3,8 @@
 // units (C3), as the tables store them; the derived item columns are worked by hand from ARCHITECTURE §6.2, §6.3
 // and §6.11 so the goldens can be checked against them. SPEC-13 PR 3–5 seed this data and compare their exports.
 
-export const TODAY = "2025-06-01";
 export const NOW_IST = { date: "2025-06-01", time: "11:00" };
+export const TODAY = NOW_IST.date;
 export const RANGE = { from: "2025-03-01", to: "2025-05-31" };
 
 export const SUPPLIER = {
