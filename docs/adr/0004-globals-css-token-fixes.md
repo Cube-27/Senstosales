@@ -78,7 +78,7 @@ defines, so they rendered with no colour; the new components use the defined tok
 ## Consequences
 
 - `globals.css` changes only through a new ADR (C7, INV-66). The token-parity test
-  (`apps/web/test/tokens.test.ts`) fails when a `:root` colour token has no `.dark` value; the design validators
+  (`tools/checks/test/token-parity.test.ts`) fails when a `:root` colour token has no `.dark` value; the design validators
   (SPEC-14 PR 3) reject utility colours with no token.
 - Placeholder and tertiary text are darker in light mode and lighter in dark mode than legacy, and keyboard focus
   shows a solid blue outline instead of a pale glow. Both are visible differences allowed as consistency and
