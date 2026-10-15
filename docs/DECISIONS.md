@@ -2074,3 +2074,35 @@ None.
 - Alternatives: Legacy's consignee name from a setting, the address from a default buyer, and department no and our ref from PO columns; none of these exist in v1.
 - Why: C18: don't invent inputs.
 - Reversible: yes.
+
+### D-0253 — Corpus report totals are read inside `importCorpus`; `buildReport` is pure
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 2 (#56) · Status: decided
+- Decision: `importCorpus` reads `readTotals(db)` before it closes the database and returns them as `totals`; `buildReport(run)` takes that result, with no database argument.
+- Alternatives: `buildReport(jobSummaries, db)` as SPEC-09 §4.1 lists it.
+- Why: The runner owns and closes the database; a pure builder is tested on the real import's output.
+- Reversible: yes.
+
+### D-0254 — Corpus report flags by type count every flag in the database
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 2 (#56) · Status: decided
+- Decision: The "In the database" column counts flags of any status, beside the flags each job opened, from the job summaries.
+- Alternatives: Open flags only.
+- Why: A fresh import has no acknowledged flags, so the two are equal there; on a second import into the same data folder, the per-job columns show what the import added.
+- Reversible: yes.
+
+### D-0255 — A `SENSTO_REPORT_DIR` inside the repo is refused before the import
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 2 (#56) · Status: decided
+- Decision: The runner exits 1 with a plain message and makes no data folder.
+- Alternatives: Ignore the setting and fall back to the temp folder.
+- Why: SPEC-09 §2 says the report is never written inside the repo, and failing at once costs no import time.
+- Reversible: yes.
+
+### D-0256 — Pages too large to send are a separate list in the corpus report
+
+- Date: 2026-10-15 · Spec/PR: SPEC-09 PR 2 (#56) · Status: decided
+- Decision: They get their own markdown section, table column and `tooLarge` JSON field, and are counted in `pages`, never folded into failed.
+- Alternatives: Report them as failed pages.
+- Why: The job never saw them, so the job's failed count stays the job's own; listing them separately still accounts for every page (#54 review).
+- Reversible: yes.

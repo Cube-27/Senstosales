@@ -2,7 +2,7 @@
 // services and folder-import jobs into a throwaway data folder. `SENSTO_CORPUS_DIR` holds a `po/` and an `srv/`
 // folder of BHEL pages; it is read only here, at run time, and never in tests or CI (INV-76). The data folder is made
 // in the OS temp folder, never in the repo. The console says pass or fail and where the data is, nothing from the
-// pages (C1).
+// pages (C1); the report goes to `SENSTO_REPORT_DIR`, the OS temp folder by default.
 import { mkdtemp, readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,6 +10,8 @@ import { join } from "node:path";
 import { openRuntime } from "@senstosales/api/node";
 import { GST_DEFAULTS } from "@senstosales/db";
 import { splitUpload } from "@senstosales/schemas";
+
+import { assertOutsideRepo, buildReport, type CorpusTotals, readTotals, writeReport } from "./report.ts";
 
 /** A synthetic profile: the import needs a supplier (INV-78), and nothing real is typed in. */
 const PROFILE = {
@@ -40,6 +42,8 @@ export interface CorpusImport {
   readonly srv: KindImport;
   /** Warnings and errors the services logged, such as a job summary that could not be built. */
   readonly logged: readonly string[];
+  /** What the database holds after both jobs. */
+  readonly totals: CorpusTotals;
   /** Both jobs ended `done` and nothing was logged as an error. */
   readonly passed: boolean;
 }
@@ -96,7 +100,13 @@ export async function importCorpus({
     // POs first, so the SRVs find them (ARCHITECTURE §7.4).
     const po = await importKind("po");
     const srv = await importKind("srv");
-    return { po, srv, logged, passed: po.job.status === "done" && srv.job.status === "done" && logged.length === 0 };
+    return {
+      po,
+      srv,
+      logged,
+      totals: await readTotals(db),
+      passed: po.job.status === "done" && srv.job.status === "done" && logged.length === 0,
+    };
   } finally {
     db.close();
   }
@@ -108,9 +118,14 @@ async function main(env: Readonly<Record<string, string | undefined>>): Promise<
     process.stderr.write("Set SENSTO_CORPUS_DIR to the folder holding the po/ and srv/ page folders.\n");
     return 1;
   }
+  const reportDir = env["SENSTO_REPORT_DIR"] || tmpdir();
+  assertOutsideRepo(reportDir);
   const dataDir = await mkdtemp(join(tmpdir(), "senstosales-corpus-"));
   const result = await importCorpus({ corpusDir, dataDir });
-  process.stdout.write(`Corpus import ${result.passed ? "passed" : "failed"}. Data folder: ${dataDir}\n`);
+  const report = await writeReport(buildReport(result), reportDir);
+  process.stdout.write(
+    `Corpus import ${result.passed ? "passed" : "failed"}. Data folder: ${dataDir}\nReport: ${report}\n`,
+  );
   return result.passed ? 0 : 1;
 }
 

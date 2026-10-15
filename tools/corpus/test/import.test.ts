@@ -1,7 +1,7 @@
 // SPEC-09 PR 1: the corpus import runner over the anonymised parser fixtures copied to a temp folder (C1, INV-76),
 // imported through the folder-import jobs into a temp data folder. The owner's corpus is never read here.
 import { spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,9 +12,10 @@ import { importCorpus } from "../src/import.ts";
 
 const FIXTURES = fileURLToPath(new URL("../../../packages/parsers/fixtures", import.meta.url));
 const RUNNER = fileURLToPath(new URL("../src/import.ts", import.meta.url));
+const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 
 // A full import migrates a database and ingests about seventy pages.
-vi.setConfig({ testTimeout: 60_000 });
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 let tmp: string;
 let corpusDir: string;
@@ -73,6 +74,18 @@ describe("importCorpus", () => {
         tooLarge: [],
       },
       logged: [],
+      totals: {
+        flagsByType: {
+          QTY_MISMATCH: 1,
+          DOC_NUMBER_CONFLICT: 102,
+          OVER_DISPATCH: 0,
+          OVER_INVOICE: 0,
+          DOC_ON_CANCELLED_ITEM: 0,
+          MANUAL_ADJUSTMENT_OVERLAP: 0,
+        },
+        posByStatus: { Pending: 25, Delivered: 0, Closed: 17 },
+        srvsPoNotFound: 0,
+      },
       passed: true,
     });
 
@@ -100,7 +113,7 @@ describe("pnpm import:corpus", () => {
   const run = (env: Record<string, string>) =>
     spawnSync(process.execPath, [RUNNER], { env: { ...process.env, ...env, TMPDIR: tmp, TEMP: tmp, TMP: tmp } });
 
-  test("imports SENSTO_CORPUS_DIR into a new data folder in the OS temp folder and exits 0", async () => {
+  test("imports SENSTO_CORPUS_DIR into a new data folder and writes the report, both in the OS temp folder", async () => {
     // One page of each kind keeps the run short; the import itself is covered above.
     await rm(corpusDir, { recursive: true });
     await cp(join(FIXTURES, "po", "era2-single-item.html"), join(corpusDir, "po", "a.html"));
@@ -112,7 +125,23 @@ describe("pnpm import:corpus", () => {
     expect(child.status).toBe(0);
     const dataDirs = (await readdir(tmp)).filter((name) => name.startsWith("senstosales-corpus-"));
     expect(dataDirs).toHaveLength(1);
-    expect(child.stdout.toString()).toBe(`Corpus import passed. Data folder: ${join(tmp, dataDirs[0] ?? "")}\n`);
+    const report = join(tmp, "import-report.md");
+    expect(child.stdout.toString()).toBe(
+      `Corpus import passed. Data folder: ${join(tmp, dataDirs[0] ?? "")}\nReport: ${report}\n`,
+    );
+    expect(await readFile(report, "utf8")).toContain("| PO | 1 | 1 | 0 | 0 | 0 |\n| SRV | 1 | 1 | 0 | 0 | 0 |\n");
+    expect(JSON.parse(await readFile(join(tmp, "import-report.json"), "utf8"))).toMatchObject({ passed: true });
+  });
+
+  test("refuses a SENSTO_REPORT_DIR inside the repository before it imports anything", async () => {
+    const child = run({ SENSTO_CORPUS_DIR: corpusDir, SENSTO_REPORT_DIR: join(REPO, "tools", "corpus", "out") });
+
+    expect(child.status).toBe(1);
+    expect(child.stderr.toString()).toBe(
+      "Corpus import failed: SENSTO_REPORT_DIR is inside the repository. Choose a folder outside it.\n",
+    );
+    await expect(readdir(join(REPO, "tools", "corpus", "out"))).rejects.toThrow("ENOENT");
+    expect((await readdir(tmp)).filter((name) => name.startsWith("senstosales-corpus-"))).toEqual([]);
   });
 
   test("exits 1 with a plain message when SENSTO_CORPUS_DIR is unset", () => {
