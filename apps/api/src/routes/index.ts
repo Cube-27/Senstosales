@@ -3,6 +3,7 @@ import type { Handlers } from "../app.ts";
 import type { Services } from "../services/index.ts";
 import { authRoutes } from "./auth.ts";
 import { buyersRoutes } from "./buyers.ts";
+import { flagsRoutes } from "./flags.ts";
 import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
 import { poManualQtyRoutes, poRoutes } from "./po.ts";
@@ -26,5 +27,6 @@ export function apiRoutes(services: Services): Handlers {
     ...poUploadRoutes(services.poIngest),
     ...srvUploadRoutes(services.srvIngest),
     ...srvRoutes(services.srv),
+    ...flagsRoutes(services.flags, services.audit),
   };
 }
