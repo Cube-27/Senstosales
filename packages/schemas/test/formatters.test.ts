@@ -6,6 +6,7 @@ import {
   fmtAmountWords,
   fmtCount,
   fmtDate,
+  fmtDateDashed,
   fmtDateMonthName,
   fmtDaysToDue,
   fmtFixed,
@@ -15,7 +16,9 @@ import {
   fmtMoneyCompactSpaced,
   fmtQty,
   fmtRate,
+  foldRepeatedLines,
   moneyNumber,
+  qtyExactNumber,
   qtyNumber,
 } from "../src/index.ts";
 
@@ -261,5 +264,40 @@ describe("fmtAmountWords: legacy Indian rupee words", () => {
 
   it("fails from a thousand crore, as legacy did (EC-49)", () => {
     expect(() => fmtAmountWords(money("10000000000"))).toThrow("Amount too large to write in words");
+  });
+});
+
+describe("fmtDateDashed: the pending summary's export date", () => {
+  it.each([
+    ["2025-06-01", "01-06-2025"],
+    ["2026-12-31", "31-12-2026"],
+  ])("%s -> %s", (d, expected) => {
+    expect(fmtDateDashed(d as IsoDate)).toBe(expected);
+  });
+});
+
+describe("qtyExactNumber: a quantity as a number cell, unrounded, as the pending summary writes it", () => {
+  it.each([
+    ["10", 10],
+    ["1.25", 1.25],
+    ["2.125", 2.125],
+    ["0", 0],
+    ["-0.5", -0.5],
+  ])("%s -> %d", (s, expected) => {
+    expect(qtyExactNumber(qty(s))).toBe(expected);
+  });
+});
+
+describe("foldRepeatedLines: a description with each repeated line once (case and spacing ignored)", () => {
+  it.each([
+    ["Hex bolt M10", "Hex bolt M10"],
+    ["  Hex bolt M10  ", "Hex bolt M10"],
+    ["Gasket set\nGasket set\nSize 50", "Gasket set\nSize 50"],
+    ["Gasket  SET\n gasket set \nSize 50", "Gasket  SET\nSize 50"],
+    ["Line one\n\n  Line two  \r\nLine one", "Line one\nLine two"],
+    ["A\nB", "A\nB"],
+    ["", ""],
+  ])("%j -> %j", (text, expected) => {
+    expect(foldRepeatedLines(text)).toBe(expected);
   });
 });

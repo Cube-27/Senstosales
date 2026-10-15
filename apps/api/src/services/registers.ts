@@ -3,7 +3,7 @@
 // written as they stand: no flag column, nothing clamped (INV-60, INV-61). Numbers go out to 2 dp (D-0260).
 import type { ListProgress, Money, Qty, SrvLineQty } from "@senstosales/domain";
 import { dcListProgress, dcListTotals, invoiceListProgress, srvLineShown, sumMoney, sumQty } from "@senstosales/domain";
-import type { Column, Row, Sheet } from "@senstosales/documents";
+import type { Row } from "@senstosales/documents";
 import { EXPORTS } from "@senstosales/documents/catalog";
 import type { routes } from "@senstosales/schemas";
 import { moneyNumber, qtyNumber } from "@senstosales/schemas";
@@ -32,6 +32,7 @@ import { findSupplier } from "../repositories/supplier.ts";
 import { DC_LIST_SORTS } from "./dc.ts";
 import { INVOICE_LIST_SORTS } from "./invoice.ts";
 import type { ServiceDeps } from "./index.ts";
+import { csvFile, mapped, xlsxFile } from "./exports.ts";
 import { inValueRange, sortedBy } from "./paging.ts";
 
 type DcListQuery = z.output<(typeof routes)["dc.export"]["query"]>;
@@ -51,36 +52,6 @@ function sumsBy<T>(rows: readonly T[], key: (row: T) => string | null, value: (r
   );
   return new Map([...groups].map(([k, group]) => [k, sumQty(group.map(value))]));
 }
-
-/** Each row through `f`; an undefined result drops the row. */
-async function* mapped<T, U>(rows: AsyncIterable<T>, f: (row: T) => U | undefined): AsyncGenerator<U> {
-  for await (const row of rows) {
-    const out = f(row);
-    if (out !== undefined) yield out;
-  }
-}
-
-/** The writers, loaded on the first export: exceljs would add most of a second to every start of the app. */
-const writers = () => import("@senstosales/documents");
-
-/** A workbook export in its catalog layout and file name. */
-const xlsxFile = (entry: { sheet: Sheet<string>; fileName: () => string }, rows: AsyncIterable<Row<string>>) => ({
-  fileName: entry.fileName(),
-  chunks: (async function* () {
-    yield* (await writers()).xlsxChunks(entry.sheet, rows);
-  })(),
-});
-
-/** A CSV export with its catalog columns and file name. */
-const csvFile = (
-  entry: { columns: readonly Pick<Column<string>, "key" | "header">[]; fileName: () => string },
-  rows: AsyncIterable<Row<string>>,
-) => ({
-  fileName: entry.fileName(),
-  chunks: (async function* () {
-    yield* (await writers()).csvChunks(entry.columns, rows);
-  })(),
-});
 
 export function registersService({ db }: Pick<ServiceDeps, "db">) {
   /** Each DC with its line count and dispatched total. */

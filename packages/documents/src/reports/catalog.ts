@@ -126,8 +126,10 @@ const PENDING = {
     col("dcNumbers", "Challan\nNo.", 11),
     col("dspQty", "Dispatch\nDelivered", 11),
   ],
+  /** The one left-aligned column; every other cell is centred. */
+  leftColumn: "description",
   /** `TOTAL` merged over A:B; the summed quantity (with the unit when every row has the same one) and packets. */
-  total: { label: "TOTAL", merge: "A:B" },
+  total: { label: "TOTAL" },
   styles: {
     tel: { font: calibri },
     company: { font: { ...bold, size: 16 }, alignment: { horizontal: "center" } },

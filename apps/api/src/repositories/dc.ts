@@ -58,7 +58,7 @@ export async function findDcWithPo(db: Db, id: string) {
     db.build
       .select({
         dc: apiColumns(dc),
-        po: { id: po.id, poNumber: po.poNumber, isGemc: po.isGemc },
+        po: { id: po.id, poNumber: po.poNumber, poDate: po.poDate, isGemc: po.isGemc },
         poVersion: po.version,
       })
       .from(dc)

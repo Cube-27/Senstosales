@@ -2838,3 +2838,43 @@ None.
 - Alternatives: None that keeps the format frozen.
 - Why: The format is frozen (A-2, INV-69).
 - Reversible: yes.
+
+### D-0350 — Empty text cells in the pending summary are styled blanks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 4 (#75) · Status: decided
+- Decision: A `""` value is written as a blank cell with its style; `pending.json` records these cells as `"v": null`, and the golden projection allows `{ v: null, s }`.
+- Alternatives: Keep `""` in the golden.
+- Why: Legacy's xlsxwriter writes an empty string as a formatted blank, and exceljs reads an empty string cell back as null.
+- Reversible: yes.
+
+### D-0351 — Print options for streamed sheets
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 4 (#75) · Status: decided
+- Decision: `addStreamedSheet` writes `<printOptions>` from the page setup (centring, grid lines, headings) through exceljs's private `_writePageMargins`/`_write`; re-check when exceljs is bumped (#75 review).
+- Alternatives: Build the summary in memory with the non-streaming workbook (breaks INV-99).
+- Why: exceljs 4.4's `WorksheetWriter` never writes print options, and the summary is horizontally centred; the pending golden pins the output.
+- Reversible: yes.
+
+### D-0352 — Pending summary numbers and text as legacy
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 4 (#75) · Status: decided
+- Decision: The quantity text (`10 NOS`), Dispatch Delivered and the TOTAL are exact to 3 dp; a missing description falls back to the material code, then `No Description`; lists are joined with `,`.
+- Alternatives: The list workbooks' 2-dp rounding.
+- Why: The legacy summary wrote the raw values and `COALESCE(description, material_code, 'No Description')`.
+- Reversible: yes.
+
+### D-0353 — Export-selected selection handling
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 4 (#75) · Status: decided
+- Decision: A PO selected twice is written once and an unknown id is skipped; POs are ordered by number with the lists' numeric comparison, each PO's items read with the `BY_PO_NUMBER` keyset.
+- Alternatives: 404 on an unknown id.
+- Why: Legacy ignored ids it did not find; C6 allows rejecting unknown ids only at document creation.
+- Reversible: yes.
+
+### D-0354 — Not-found answers for the one-PO and GC exports
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 4 (#75) · Status: decided
+- Decision: An unknown `poId` on the reconciliation export answers 404 `po-not-found`, an unknown `dcId` on the GC report 404 `dc-not-found`; with no supplier yet the GC report answers `onboarding-required`.
+- Alternatives: An empty workbook.
+- Why: The file name needs the PO or DC number.
+- Reversible: yes.

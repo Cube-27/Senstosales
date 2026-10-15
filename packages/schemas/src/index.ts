@@ -4,6 +4,7 @@ export {
   fmtAmountWords,
   fmtCount,
   fmtDate,
+  fmtDateDashed,
   fmtDateMonthName,
   fmtDaysToDue,
   fmtFixed,
@@ -13,7 +14,9 @@ export {
   fmtMoneyCompactSpaced,
   fmtQty,
   fmtRate,
+  foldRepeatedLines,
   moneyNumber,
+  qtyExactNumber,
   qtyNumber,
 } from "./formatters.ts";
 export { type ErrorBody, zErrorBody, zListQuery, zOk, zPaged } from "./api/common.ts";

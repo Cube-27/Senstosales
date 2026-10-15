@@ -40,9 +40,40 @@ function writable(out: PassThrough): Promise<void> {
   });
 }
 
+/** A page setup's print-option flags and their sheet XML attributes. */
+const PRINT_OPTIONS = [
+  ["horizontalCentered", "horizontalCentered"],
+  ["verticalCentered", "verticalCentered"],
+  ["showGridLines", "gridLines"],
+  ["showRowColHeaders", "headings"],
+] as const;
+
+/**
+ * A worksheet of a streaming workbook. exceljs's streaming writer leaves out the page setup's print options
+ * (centring, grid lines, headings), so they are written here, just before the page margins, where the sheet XML
+ * expects them.
+ */
+export function addStreamedSheet(
+  workbook: ExcelJS.stream.xlsx.WorkbookWriter,
+  name: string,
+  options: Partial<ExcelJS.AddWorksheetOptions> = {},
+) {
+  const worksheet = workbook.addWorksheet(name, options);
+  const set = PRINT_OPTIONS.filter(([key]) => options.pageSetup?.[key] === true);
+  if (set.length > 0) {
+    const writer = worksheet as unknown as { _writePageMargins(): void; _write(xml: string): void };
+    const margins = writer._writePageMargins.bind(writer);
+    writer._writePageMargins = () => {
+      writer._write(`<printOptions ${set.map(([, attribute]) => `${attribute}="1"`).join(" ")}/>`);
+      margins();
+    };
+  }
+  return worksheet;
+}
+
 /** The worksheet with the sheet's widths, page setup, footer and header row. */
 function addSheet<K extends string>(workbook: ExcelJS.stream.xlsx.WorkbookWriter, sheet: Sheet<K>) {
-  const worksheet = workbook.addWorksheet(sheet.name, {
+  const worksheet = addStreamedSheet(workbook, sheet.name, {
     ...(sheet.pageSetup ? { pageSetup: sheet.pageSetup } : {}),
     ...(sheet.oddFooter === undefined ? {} : { headerFooter: { oddFooter: sheet.oddFooter } }),
   });
@@ -54,36 +85,22 @@ function addSheet<K extends string>(workbook: ExcelJS.stream.xlsx.WorkbookWriter
   return worksheet;
 }
 
-async function write<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<K>>, out: PassThrough) {
+/** Waits between rows: every {@link PACE} rows until `out` can take more. True once the reader has stopped. */
+export type Pace = () => Promise<boolean>;
+
+/** A streaming workbook's content: worksheets added and committed, or left as they are once `pace` says stop. */
+export type Fill = (workbook: ExcelJS.stream.xlsx.WorkbookWriter, pace: Pace) => Promise<void>;
+
+async function write(fill: Fill, out: PassThrough) {
   const closed = new Promise((resolve) => out.once("close", resolve));
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: out, useStyles: true });
-  const source = rows[Symbol.asyncIterator]();
-  const first = await source.next();
-  const worksheet = first.done && sheet.bareWhenEmpty ? workbook.addWorksheet(sheet.name) : addSheet(workbook, sheet);
-  const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
-  // The rows again, the peeked first one included, so the source is closed when the loop stops early: by `yield*`
-  // once it delegates, by the `finally` while the loop still holds the first row.
-  async function* all() {
-    if (first.done) return;
-    let delegated = false;
-    try {
-      yield first.value;
-      delegated = true;
-      yield* { [Symbol.asyncIterator]: () => source };
-    } finally {
-      if (!delegated) await source.return?.();
-    }
-  }
   let written = 0;
-  for await (const row of all()) {
-    const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
-    for (const { key, numFmt, i } of formatted) if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
-    added.commit();
+  await fill(workbook, async () => {
     written += 1;
     if (written % PACE === 0) await writable(out);
-    if (out.destroyed) return;
-  }
-  worksheet.commit();
+    return out.destroyed;
+  });
+  if (out.destroyed) return;
   const committed = workbook.commit();
   // A reader that stops during the commit destroys `out`, which then never finishes: stop waiting when it closes.
   // Its later failure, if any, has no reader left to receive it.
@@ -91,13 +108,10 @@ async function write<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<
   await Promise.race([committed, closed]);
 }
 
-/** The workbook as chunks: a header row, then one row per source row. Stopping early closes the source. */
-export async function* xlsxChunks<K extends string>(
-  sheet: Sheet<K>,
-  rows: AsyncIterable<Row<K>>,
-): AsyncGenerator<Uint8Array> {
+/** The workbook `fill` writes, as chunks, pulled only as fast as they are read (INV-99). */
+export async function* workbookChunks(fill: Fill): AsyncGenerator<Uint8Array> {
   const out = new PassThrough();
-  const writing = write(sheet, rows, out).catch((error: unknown) =>
+  const writing = write(fill, out).catch((error: unknown) =>
     out.destroy(error instanceof Error ? error : new Error(String(error))),
   );
   try {
@@ -106,4 +120,39 @@ export async function* xlsxChunks<K extends string>(
     out.destroy();
     await writing;
   }
+}
+
+/**
+ * The source's rows, the first one peeked already, so the source is closed when the reader stops early: by `yield*`
+ * once it delegates, by the `finally` while the loop still holds the first row.
+ */
+async function* rowsAfter<T>(first: IteratorResult<T>, source: AsyncIterator<T>): AsyncGenerator<T> {
+  if (first.done) return;
+  let delegated = false;
+  try {
+    yield first.value;
+    delegated = true;
+    yield* { [Symbol.asyncIterator]: () => source };
+  } finally {
+    if (!delegated) await source.return?.();
+  }
+}
+
+/** The workbook as chunks: a header row, then one row per source row. Stopping early closes the source. */
+export function xlsxChunks<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<K>>): AsyncGenerator<Uint8Array> {
+  return workbookChunks(async (workbook, pace) => {
+    const source = rows[Symbol.asyncIterator]();
+    const first = await source.next();
+    const worksheet =
+      first.done && sheet.bareWhenEmpty ? addStreamedSheet(workbook, sheet.name) : addSheet(workbook, sheet);
+    const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
+    for await (const row of rowsAfter(first, source)) {
+      const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
+      for (const { key, numFmt, i } of formatted)
+        if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
+      added.commit();
+      if (await pace()) return;
+    }
+    worksheet.commit();
+  });
 }
