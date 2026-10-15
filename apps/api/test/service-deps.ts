@@ -23,6 +23,15 @@ export async function supplierDb(path?: string): Promise<NodeDb> {
 
 export const fixedClock: Clock = { today: () => "2025-06-01" as IsoDate, now: () => NOW };
 
+/** A clock that starts at `NOW` and moves one second per read, so each write is after the one before it. */
+export function tickingClock(): Clock {
+  let seconds = 0;
+  return {
+    today: fixedClock.today,
+    now: () => new Date(Date.parse(NOW) + 1000 * seconds++).toISOString() as Instant,
+  };
+}
+
 /** A Storage over a Map, so a test can read what was stored. */
 export function memoryStorage(): Storage & { files: Map<string, Uint8Array> } {
   const files = new Map<string, Uint8Array>();

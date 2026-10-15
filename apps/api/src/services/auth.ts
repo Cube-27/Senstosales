@@ -23,7 +23,7 @@ export interface Session {
   isDefaultPassword: boolean;
 }
 
-type Action = "login" | "logout" | "change-password" | "reset-defaults";
+type Action = "app_user.login" | "app_user.logout" | "app_user.change_password" | "app_user.reset_defaults";
 
 const isDefault = (user: repo.User | null): boolean => user?.passwordChangedAt == null;
 
@@ -78,7 +78,7 @@ export function createAuthService({ db, clock }: ServiceDeps) {
         .add(
           repo.insertSession(db, { id: newId(), userId, tokenHash: await hashToken(token), createdAt: now, expiresAt }),
         )
-        .add(audit("login", userId, now));
+        .add(audit("app_user.login", userId, now));
       try {
         await batch.commit();
       } catch (err) {
@@ -94,7 +94,7 @@ export function createAuthService({ db, clock }: ServiceDeps) {
       if (user === null) return;
       await new WriteBatch(db)
         .add(repo.deleteSession(db, await hashToken(token)))
-        .add(audit("logout", user.id, clock.now()))
+        .add(audit("app_user.logout", user.id, clock.now()))
         .commit();
     },
 
@@ -107,7 +107,7 @@ export function createAuthService({ db, clock }: ServiceDeps) {
           repo.updatePassword(db, user.id, { passwordHash: await hashPassword(newPassword), passwordChangedAt: now }),
         )
         .add(repo.deleteAllSessions(db))
-        .add(audit("change-password", user.id, now))
+        .add(audit("app_user.change_password", user.id, now))
         .commit();
     },
 
@@ -134,7 +134,7 @@ export function createAuthService({ db, clock }: ServiceDeps) {
       await new WriteBatch(db)
         .add(repo.deleteAllSessions(db))
         .add(repo.deleteUser(db, user.id))
-        .add(audit("reset-defaults", user.id, clock.now()))
+        .add(audit("app_user.reset_defaults", user.id, clock.now()))
         .commit();
     },
   };

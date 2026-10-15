@@ -1,5 +1,5 @@
 // SQL pieces the list repositories share.
-import { po, reconciliationIssue } from "@senstosales/db";
+import { idRuns, po, reconciliationIssue } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
 import type { SQLWrapper, Table } from "drizzle-orm";
 import { and, getTableColumns, gte, lte, sql } from "drizzle-orm";
@@ -25,13 +25,13 @@ export const startsWith = (column: SQLWrapper, text: string) => like(column, `${
 const { fingerprint: _, ...flagApiColumns } = apiColumns(reconciliationIssue);
 export const flagColumns = flagApiColumns;
 
-/** D1 binds at most 100 parameters to a statement, so the reads by id take the ids 100 at a time. */
-const ID_BATCH = 100;
-
-/** `read` over `ids` in batches of at most 100, the rows in batch order. */
-export async function inBatches<T>(ids: readonly string[], read: (batch: string[]) => Promise<T[]>): Promise<T[]> {
+/**
+ * `read` over `ids` in batches, the rows in batch order. D1 binds at most 100 parameters to a statement, so a read
+ * that binds `others` parameters besides the ids takes that many fewer at a time.
+ */
+export async function inBatches<T>(ids: readonly string[], read: (batch: string[]) => Promise<T[]>, others = 0) {
   const out: T[] = [];
-  for (let i = 0; i < ids.length; i += ID_BATCH) out.push(...(await read(ids.slice(i, i + ID_BATCH))));
+  for (const batch of idRuns(ids, others)) out.push(...(await read(batch)));
   return out;
 }
 

@@ -7,6 +7,7 @@ export function dcRoutes(dc: DcService) {
   return {
     "dc.list": ({ query }) => dc.list(query),
     "dc.stats": ({ query }) => dc.stats(query),
+    "dc.numberCheck": ({ query }) => dc.numberCheck(query),
     "dc.dispatchable": ({ params }) => dc.dispatchable(params.poId),
     "dc.detail": ({ params }) => dc.detail(params.id),
     "dc.create": ({ body }) => dc.create(body),

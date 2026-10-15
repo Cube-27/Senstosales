@@ -3,6 +3,8 @@ import type { Db } from "@senstosales/db";
 import { srv, srvItem } from "@senstosales/db";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
+import { inBatches } from "./sql.ts";
+
 const lineColumns = {
   id: srvItem.id,
   srvId: srvItem.srvId,
@@ -55,17 +57,19 @@ export const srvsOfPoNumber = (db: Db, supplierId: string, poNumber: string) =>
 
 /** The item keys and ids of these SRVs, so a replaced SRV keeps the ids its flags cite (INV-59). */
 export const srvItemKeysOf = (db: Db, srvIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({
-        id: srvItem.id,
-        srvId: srvItem.srvId,
-        poItemNo: srvItem.poItemNo,
-        lotNo: srvItem.lotNo,
-        srvItemNo: srvItem.srvItemNo,
-      })
-      .from(srvItem)
-      .where(inArray(srvItem.srvId, [...srvIds])),
+  inBatches(srvIds, (ids) =>
+    db.query(
+      db.build
+        .select({
+          id: srvItem.id,
+          srvId: srvItem.srvId,
+          poItemNo: srvItem.poItemNo,
+          lotNo: srvItem.lotNo,
+          srvItemNo: srvItem.srvItemNo,
+        })
+        .from(srvItem)
+        .where(inArray(srvItem.srvId, ids)),
+    ),
   );
 
 /** The SRV fields that cite a DC or an invoice by number, and the resolved link kept beside each (INV-38). */

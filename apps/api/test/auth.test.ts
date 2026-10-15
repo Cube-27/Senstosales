@@ -183,7 +183,7 @@ describe("overlapping first logins", () => {
     const audits = await db.query(db.build.select({ entityId: auditLog.entityId }).from(auditLog));
     expect(sessions.map((s) => s.userId)).toEqual([users[0]?.id, users[0]?.id]);
     expect(audits.map((a) => a.entityId)).toEqual([users[0]?.id, users[0]?.id]);
-    expect(await auditActions()).toEqual(["login", "login"]);
+    expect(await auditActions()).toEqual(["app_user.login", "app_user.login"]);
   });
 });
 
@@ -344,7 +344,13 @@ describe("stored state", () => {
     const again = await signIn("s3cret-pw");
     await post("/api/auth/logout", {}, again);
     await post("/api/auth/reset-defaults", { confirmation: "RESET TO DEFAULTS", currentPassword: "s3cret-pw" });
-    expect(await auditActions()).toEqual(["login", "change-password", "login", "logout", "reset-defaults"]);
+    expect(await auditActions()).toEqual([
+      "app_user.login",
+      "app_user.change_password",
+      "app_user.login",
+      "app_user.logout",
+      "app_user.reset_defaults",
+    ]);
 
     const token = again.slice("session=".length);
     const tables = [appUser, session, auditLog].map((table) => db.query(db.build.select().from(table)));

@@ -1,7 +1,7 @@
 // SPEC-10 PR 4: SRV list, by-PO list, stats, detail and delete over seeded synthetic rows. Expected values worked by
 // hand from ARCHITECTURE §6.3 (INV-11..INV-13) and the legacy SRV list columns. Synthetic values only (C1).
 import type { Instant } from "@senstosales/db";
-import { po, poItem, reconciliationIssue, srv, srvItem, supplier } from "@senstosales/db";
+import { insertRows, po, poItem, reconciliationIssue, srv, srvItem, supplier } from "@senstosales/db";
 import type { Fy, IsoDate, Money, Qty } from "@senstosales/domain";
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vite-plus/test";
@@ -251,8 +251,16 @@ describe("GET /api/srv", () => {
       };
     });
     await db.batch([
-      db.build.insert(srv).values(extra.map((e) => e.srv)),
-      db.build.insert(srvItem).values(extra.map((e) => e.item)),
+      ...insertRows(
+        db,
+        srv,
+        extra.map((e) => e.srv),
+      ),
+      ...insertRows(
+        db,
+        srvItem,
+        extra.map((e) => e.item),
+      ),
     ]);
 
     const first = await get(app, "/api/srv?page=1&pageSize=10");
@@ -516,7 +524,7 @@ describe("DELETE /api/srv/:id", () => {
     await del(app, S1);
     const rows = await app.audit();
     expect(rows.at(-1)).toMatchObject({
-      action: "delete-srv",
+      action: "srv.delete",
       entityType: "srv",
       entityId: S1,
       before: { poNumber: "4500001", srvNumber: "9000001", srvDate: "2025-05-01", items: 2 },

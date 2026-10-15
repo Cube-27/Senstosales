@@ -55,7 +55,7 @@ apps/        api, web, desktop
 docs/        architecture, open questions, specs, decisions, tracker, invariants
 tools/       repo checks and the agent orchestrator scripts
 .github/     CI workflows and the pull request template
-.claude/     agent skills and the merge-guard hook
+.claude/     agent skills
 ```
 
 ## License

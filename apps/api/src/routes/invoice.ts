@@ -9,6 +9,7 @@ export function invoiceRoutes(invoice: InvoiceService, preview: InvoicePreviewSe
     "invoice.list": ({ query }) => invoice.list(query),
     "invoice.stats": ({ query }) => invoice.stats(query),
     "invoice.detail": ({ params }) => invoice.detail(params.id),
+    "invoice.numberCheck": ({ query }) => invoice.numberCheck(query),
     "invoice.previewDc": ({ params }) => preview.fromDc(params.dcId),
     "invoice.previewPo": ({ params }) => preview.fromPo(params.poId),
     "invoice.create": ({ body }) => invoice.create(body),

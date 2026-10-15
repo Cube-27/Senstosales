@@ -42,8 +42,8 @@ Core:
   `README.md`, `CONTRIBUTING.md`, `NOTICE` (with the pstack MIT block), `LICENSE` (exists, AGPL-3.0), PR template,
   `.gitignore`, `.gitattributes`; `docs/ENGINEERING.md`, `docs/DECISIONS.md`, `docs/plans/{ACTIVE,RECURRING}.md`.
 - Agent orchestration: `.claude/skills/{run-plan,implement-pr,review-pr,pickup}/SKILL.md`,
-  `tools/orchestrator/*`, the merge-guard PreToolUse hook in `.claude/settings.json`, and their tests in
-  `tools/orchestrator/test/`.
+  `tools/orchestrator/*` and their tests in `tools/orchestrator/test/`. (The merge-guard PreToolUse hook was later
+  removed by owner decision; `merge_pr.sh` stays the only merge path.)
 
 Out of scope:
 

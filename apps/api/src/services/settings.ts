@@ -49,18 +49,12 @@ export function createSettingsService({ db, clock, supplierId }: SupplierDeps) {
       const after: Settings = { cgstPct, sgstPct, preferences: Object.fromEntries(kept) };
       const batch = new WriteBatch(db).add(repo.deleteSettings(db, id));
       for (const statement of seedStatements(db, id, after)) batch.add(statement);
-      if (kept.length > 0) {
-        batch.add(
-          repo.insertSettings(
-            db,
-            kept.map(([key, value]) => ({ supplierId: id, key, value })),
-          ),
-        );
-      }
+      const rows = kept.map(([key, value]) => ({ supplierId: id, key, value }));
+      for (const statement of repo.insertSettings(db, rows)) batch.add(statement);
       await batch
         .add(
           audit(db, clock.now(), {
-            action: "update-settings",
+            action: "settings.update",
             entityType: "settings",
             entityId: id,
             before: { ...before, ...ratesForAudit(before) },

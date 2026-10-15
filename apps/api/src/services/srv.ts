@@ -149,7 +149,7 @@ export function srvService({ db, clock }: { db: Db; clock: Clock }) {
         .add(db.build.delete(srv).where(eq(srv.id, id)))
         .add(
           audit(db, clock.now(), {
-            action: "delete-srv",
+            action: "srv.delete",
             entityType: "srv",
             entityId: id,
             before: { poNumber: row.poNumber, srvNumber: row.srvNumber, srvDate: row.srvDate, items: gone.size },

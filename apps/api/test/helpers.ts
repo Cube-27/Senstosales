@@ -52,20 +52,27 @@ export const json = (method: string, body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-/** The most parameters one statement bound while `run` ran; D1 binds at most 100 (C4). */
+/** The most parameters one statement bound while `run` ran, read or written; D1 binds at most 100 (C4). */
 export async function mostBoundParams(db: NodeDb, run: () => Promise<unknown>): Promise<number> {
   let most = 0;
-  const query = db.query.bind(db);
+  // Every statement the repositories and services send is a drizzle query builder.
+  const bound = (statement: unknown) => {
+    most = Math.max(most, (statement as { toSQL(): { params: unknown[] } }).toSQL().params.length);
+  };
+  const { query, batch } = db;
   db.query = ((statement: Parameters<typeof query>[0]) => {
-    // Every statement the repositories send is a drizzle query builder.
-    const { params } = (statement as unknown as { toSQL(): { params: unknown[] } }).toSQL();
-    most = Math.max(most, params.length);
-    return query(statement);
+    bound(statement);
+    return query.call(db, statement);
   }) as typeof db.query;
+  db.batch = ((statements: Parameters<typeof batch>[0]) => {
+    for (const statement of statements) bound(statement);
+    return batch.call(db, statements);
+  }) as typeof db.batch;
   try {
     await run();
   } finally {
     db.query = query;
+    db.batch = batch;
   }
   return most;
 }

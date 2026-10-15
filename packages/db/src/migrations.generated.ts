@@ -40,4 +40,19 @@ export const MIGRATIONS: readonly [Migration, ...Migration[]] = [
       "CREATE TABLE `supplier` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`gstin` text,\n\t`address` text,\n\t`state` text,\n\t`state_code` text,\n\t`contact` text,\n\t`email` text,\n\t`bhel_supplier_code` text,\n\t`bank_details_json` text NOT NULL,\n\t`invoice_defaults_json` text NOT NULL\n);",
     ],
   },
+  {
+    version: 2,
+    name: "lookup_indexes",
+    statements: [
+      "CREATE INDEX `dc_po_id_idx` ON `dc` (`po_id`);",
+      "CREATE INDEX `dc_item_dc_id_idx` ON `dc_item` (`dc_id`);",
+      "CREATE INDEX `dc_item_po_item_id_idx` ON `dc_item` (`po_item_id`);",
+      "CREATE INDEX `invoice_po_id_idx` ON `invoice` (`po_id`);",
+      "CREATE INDEX `invoice_item_invoice_id_idx` ON `invoice_item` (`invoice_id`);",
+      "CREATE INDEX `reconciliation_issue_po_id_idx` ON `reconciliation_issue` (`po_id`);",
+      "CREATE INDEX `srv_po_id_idx` ON `srv` (`po_id`);",
+      "CREATE INDEX `srv_item_resolved_dc_id_idx` ON `srv_item` (`resolved_dc_id`);",
+      "CREATE INDEX `srv_item_resolved_invoice_id_idx` ON `srv_item` (`resolved_invoice_id`);",
+    ],
+  },
 ];

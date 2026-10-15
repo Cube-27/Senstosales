@@ -5,6 +5,7 @@ import type { SQLWrapper } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
+import { boundParams, MAX_BOUND_PARAMS } from "./limits.ts";
 import { staleTable } from "./version.ts";
 
 /** Drizzle's statement builders, without its transaction() or batch(). Build here; run through `Db`. */
@@ -100,13 +101,23 @@ async function mapErrors<T>(run: PromiseLike<T>): Promise<T> {
 /** Runs a non-empty batch all or nothing: the executor's native batch (sqlite-proxy, D1). */
 export type RunBatch = (statements: [Statement, ...Statement[]]) => Promise<unknown>;
 
+/** D1 refuses a statement binding more than 100 parameters; every executor refuses it too, before running anything. */
+function assertBindable(statements: readonly unknown[]): void {
+  const most = Math.max(0, ...statements.map(boundParams));
+  if (most > MAX_BOUND_PARAMS) throw new DbError(`A statement binds ${most} parameters; D1 binds at most 100.`);
+}
+
 /** The port over an executor's Drizzle database, so every executor has the same batch semantics and errors. */
 export function wrapDrizzle(drizzleDb: BaseSQLiteDatabase<"async", unknown>, runBatch: RunBatch): Db {
   return {
     build: drizzleDb,
-    query: mapErrors,
+    async query(statement) {
+      assertBindable([statement]);
+      return mapErrors(statement);
+    },
     async batch(statements) {
       if (statements.length === 0) return;
+      assertBindable(statements);
       // Drizzle types its batch as a non-empty tuple; the length check is that proof.
       await mapErrors(runBatch(statements as [Statement, ...Statement[]]));
     },

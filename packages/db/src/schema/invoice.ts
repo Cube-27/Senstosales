@@ -1,7 +1,7 @@
 // GST invoices and their lines (ARCHITECTURE §8.2). Tax amounts are computed by the domain at creation (INV-41) and
 // only stored here. No cancel column: an invoice is deleted, never cancelled (INV-34).
 import type { zInvoiceKind } from "@senstosales/schemas";
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 import { fy, instant, isoDate, moneyU5, pctU5, qtyM, ulid } from "../types.ts";
 import { dc, dcItem } from "./dc.ts";
@@ -63,22 +63,27 @@ export const invoice = sqliteTable(
     uniqueIndex("invoice_supplier_number_fy_uq").on(t.supplierId, t.number, t.financialYear),
     // INV-28: a DC has at most one invoice. Many PO-direct invoices may share a null dc_id.
     uniqueIndex("invoice_dc_id_uq").on(t.dcId),
+    index("invoice_po_id_idx").on(t.poId),
   ],
 );
 
 /** An invoice line; qty and rate never change after save (INV-33). */
-export const invoiceItem = sqliteTable("invoice_item", {
-  id: ulid("id").primaryKey(),
-  supplierId: supplierId(),
-  invoiceId: ulid("invoice_id")
-    .notNull()
-    .references(() => invoice.id),
-  poItemId: ulid("po_item_id")
-    .notNull()
-    .references(() => poItem.id),
-  /** Set on DC-sourced invoices only. */
-  dcItemId: ulid("dc_item_id").references(() => dcItem.id),
-  qty: qtyM("qty_m").notNull(),
-  rate: moneyU5("rate_u5").notNull(),
-  ...taxAmounts(),
-});
+export const invoiceItem = sqliteTable(
+  "invoice_item",
+  {
+    id: ulid("id").primaryKey(),
+    supplierId: supplierId(),
+    invoiceId: ulid("invoice_id")
+      .notNull()
+      .references(() => invoice.id),
+    poItemId: ulid("po_item_id")
+      .notNull()
+      .references(() => poItem.id),
+    /** Set on DC-sourced invoices only. */
+    dcItemId: ulid("dc_item_id").references(() => dcItem.id),
+    qty: qtyM("qty_m").notNull(),
+    rate: moneyU5("rate_u5").notNull(),
+    ...taxAmounts(),
+  },
+  (t) => [index("invoice_item_invoice_id_idx").on(t.invoiceId)],
+);

@@ -5,7 +5,7 @@
 // its number, the PO recompute with its flags, and the audit row (C4). An edit changes header fields only (INV-33) and
 // moves the invoice to its date's FY (INV-25); a delete is refused while an SRV item links the invoice (INV-35).
 import type { Statement } from "@senstosales/db";
-import { invoice, invoiceItem, updateWithVersion } from "@senstosales/db";
+import { insertRows, invoice, invoiceItem, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
@@ -105,7 +105,7 @@ const toRows = (lines: readonly ListLine[]): Row[] =>
   });
 
 export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
-  const { guardedRecompute, otherPos, relink } = docWrites({ db, clock }, "invoice");
+  const { guardedRecompute, otherPos, relink, numberCheck } = docWrites({ db, clock }, "invoice");
 
   /** INV-29: exactly the DC's lines at the DC qty and PO rate, else 400; checked before the PO is read. */
   async function dcSource(body: DcInvoiceCreate): Promise<Source> {
@@ -182,7 +182,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
 
     const statements: Statement[] = [
       db.build.insert(invoice).values(invoiceRow),
-      db.build.insert(invoiceItem).values(itemRows),
+      ...insertRows(db, invoiceItem, itemRows),
       ...links.statements,
       // An invoice changes the PO's quantities: an edit or create built from the PO before it fails (D-0220).
       ...guardedRecompute(
@@ -313,6 +313,8 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
   }
 
   return {
+    numberCheck: async (query: Parameters<typeof numberCheck>[1]) => numberCheck(await supplierId.require(), query),
+
     /**
      * INV-28 to INV-31, INV-41: stores the invoice in its date's FY, or answers 400, 404 or 409 and writes nothing.
      */

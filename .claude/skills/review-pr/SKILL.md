@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Review one complete PR (implemented and simplified by its implementor, CI green; the reviewer never runs /simplify) against its spec row, the CLAUDE.md contract and the engineering principles, and return a merge verdict. Use before merging any PR, or when asked to review a branch or PR.
+description: Review one complete PR (implemented and simplified by its implementor, CI green; the reviewer never runs /simplify) against its spec rows (a PR covers a batch of related rows), the CLAUDE.md contract and the engineering principles, and return a merge verdict. Use before merging any PR, or when asked to review a branch or PR.
 ---
 
 # Review a PR
@@ -16,10 +16,10 @@ tests yourself; CI did.
 
 ## 1. Scope and intent
 
-- `gh pr view <n>` and `gh pr diff <n>`. Read the spec row the PR claims, the spec's acceptance criteria and
+- `gh pr view <n>` and `gh pr diff <n>`. Read the spec rows the PR claims, the spec's acceptance criteria and
   invariants, and the ARCHITECTURE sections it cites.
 - Write the intent in one paragraph: what the PR must achieve and what it must not touch. A PR that doesn't match
-  its row is the first finding.
+  its rows is the first finding. One review per PR, regardless of size.
 
 ## 2. Check, in this order
 
@@ -39,7 +39,8 @@ tests yourself; CI did.
 
 3. **Proof.** Every acceptance criterion maps to a test or command that ran green. A test that would still pass if
    the function returned a wrong value proves nothing.
-4. **Scope and simplicity.** Code outside the row, speculative options, single-caller wrappers, compatibility shims.
+4. **Scope and simplicity.** Code outside the batch's rows, speculative options, single-caller wrappers, compatibility
+   shims.
 5. **Decisions.** Choices the spec didn't make are in the PR's `## Decisions`. Anything that should have been
    escalated (`CLAUDE.md` §4) is blocking.
 6. **Recurring findings.** Check the diff against `docs/plans/RECURRING.md`; a repeat is an Act-on item, and its fix must add a check or regression test that would have caught it. A red

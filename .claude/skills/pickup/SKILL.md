@@ -16,7 +16,7 @@ Adapted from pstack's session-pickup and pause-safely playbooks (MIT, see `NOTIC
      `git worktree list`, `git log origin/main..<branch>`.
    - `docs/plans/ACTIVE.md`: rows that are `todo` but have one of these branches.
    - A resume note at `C:/Projects/SenstoSales-worktrees/<name>/RESUME.md`, if the earlier agent paused.
-2. **Rebuild the state** of each in-flight row: what is committed, whether a PR is open and what CI says, what
+2. **Rebuild the state** of each in-flight branch (one PR, a batch of rows, `spec-NN/pr-A-B-<name>`): what is committed, whether a PR is open and what CI says, what
    review verdicts exist.
 3. **Diff done against pending** and name the resume point:
 
@@ -26,7 +26,7 @@ Adapted from pstack's session-pickup and pause-safely playbooks (MIT, see `NOTIC
    | Open PR whose latest `READY <sha7>` matches the head     | Merge it (`/run-plan` §1.3), or send `REBASE` if it is behind `main` or conflicts                                                     |
    | Open PR with a `MERGE AFTER FIX` verdict                 | Its implementor makes the fixes, gets CI green, comments `READY`; no second review                                                    |
    | Branch with commits, no PR                               | A worker continues `/implement-pr` from §3 Verify                                                                                     |
-   | Branch with no commits, or abandoned > 7 days with no PR | Remove the worktree and branch; the row is `todo` again                                                                               |
+   | Branch with no commits, or abandoned > 7 days with no PR | Remove the worktree and branch; its rows are `todo` again                                                                             |
 
    Don't re-run checks that already passed in CI on the same head SHA.
 

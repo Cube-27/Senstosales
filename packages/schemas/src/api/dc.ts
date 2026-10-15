@@ -61,6 +61,6 @@ export const zDcUpdateBody = zDc
   .extend({ ...zGc, ...zDcHeader.shape });
 
 /** The create forms' live duplicate check: is `(number, FY of date)` taken (INV-22)? */
-export const zNumberCheckQuery = z.object({ number: z.string().min(1), date: zIsoDate });
+export const zNumberCheckQuery = z.object({ number: z.string().trim().min(1), date: zIsoDate });
 
 export const zNumberCheck = z.object({ taken: z.boolean(), financialYear: zFy });

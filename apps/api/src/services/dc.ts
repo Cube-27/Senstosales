@@ -3,7 +3,7 @@
 // or DC (404), a DC or GC number taken in the FY, a stale version and a blocked delete (409). Each write is one
 // batch: the version guards, the DC rows, the SRV links to its numbers, the recompute of every PO whose rows or flags
 // change, and the audit row (C4).
-import { dc, dcItem, updateWithVersion } from "@senstosales/db";
+import { dc, dcItem, insertRows, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
@@ -117,7 +117,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     return row;
   }
 
-  const { guardedRecompute, otherPos, relink } = docWrites({ db, clock }, "dc");
+  const { guardedRecompute, otherPos, relink, numberCheck } = docWrites({ db, clock }, "dc");
 
   /** One create attempt: reads the PO, then builds and commits the batch. */
   async function createOnce(supplier: string, body: DcCreate, number: string) {
@@ -142,7 +142,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
 
     await commit(db, [
       db.build.insert(dc).values(dcRow),
-      db.build.insert(dcItem).values(itemRows),
+      ...insertRows(db, dcItem, itemRows),
       ...links.statements,
       // A DC is a user change to the PO's quantities: an edit or create built from the PO before it fails (D-0220).
       ...guardedRecompute({ ...snapshot, dcLines: [...snapshot.dcLines, ...itemRows] }, row.version, links.changes),
@@ -296,6 +296,8 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
       await retrying(["po", "dc"], () => deleteOnce(supplier, id));
       return { ok: true as const };
     },
+
+    numberCheck: async (query: Parameters<typeof numberCheck>[1]) => numberCheck(await supplierId.require(), query),
 
     list: async (query: ListQuery) => {
       const { items, total } = page(await rows(query), query, DC_LIST_SORTS, DEFAULT);

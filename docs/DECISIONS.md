@@ -3104,3 +3104,67 @@ None.
 - Alternatives: None at our level.
 - Why: With Node 26 on Windows a backup's completion did not wake an idle loop: 8-30 s per copy in the test worker without it, about 10 ms with it.
 - Reversible: yes, remove when Node fixes it.
+
+### D-0395 — Audit actions are `<entity>.<verb>`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: Every audit action is `<entity>.<verb>`, the entity as stored in `entity_type`: `srv.delete`, `buyer.create|update|delete`, `supplier.update`, `supplier.create` (onboarding), `settings.update`, `secret.set|clear`, `app_user.login|logout|change_password|reset_defaults`. Supersedes the names in D-0169 and D-0202.
+- Alternatives: Keep the hyphenated `verb-entity` names.
+- Why: One form with `po.create`, `dc.delete` and `po_item.manual_dispatched` (#67 review).
+- Reversible: yes; no release stored the old names.
+
+### D-0396 — D1's 100-parameter limit: chunk at the call site, refuse at the port
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: Lists of rows or ids are chunked with `insertRows`, `idRuns` and `inBatches` (`packages/db`); `wrapDrizzle` refuses any statement binding more than 100 parameters before it runs, on every executor.
+- Alternatives: Chunk automatically inside the port.
+- Why: Built SQL can't be split safely in general; refusing at the port makes node:sqlite fail where D1 would, so every test catches a missed chunk.
+- Reversible: yes.
+
+### D-0397 — Lookup indexes (migration 0002)
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: Plain indexes `<table>_<column>_idx` on `po_id` of dc, invoice, srv and reconciliation_issue; `dc_item(dc_id)`, `dc_item(po_item_id)`, `invoice_item(invoice_id)`, `srv_item(resolved_dc_id)`, `srv_item(resolved_invoice_id)`.
+- Alternatives: Composite indexes with `supplier_id`.
+- Why: The counts, deletes and link resolution the #44 and #69 reviews named look up by these columns alone.
+- Reversible: yes, a later migration can drop them.
+
+### D-0398 — DC and invoice number checks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: `taken` is true when a stored document of that kind has the trimmed number (D-0248) and its stored `financial_year` is the FY of `date`; a blank number is a 400.
+- Alternatives: Derive the FY from each stored date.
+- Why: It is the unique key behind the create's 409, so the live check and the save cannot disagree.
+- Reversible: yes.
+
+### D-0399 — One route composition
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: `allRoutes(services, { health, restore })` is what `main.ts` mounts and what the route conformance test checks; without a scraper only the BHEL wizard routes are missing (D-0380).
+- Alternatives: A test-only composition.
+- Why: The test checks the server's own wiring (INV-101).
+- Reversible: yes.
+
+### D-0400 — Remove the PreToolUse guards hook
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: The hook in `.claude/settings.json` and the guard code only it ran (`guards.ts`, `merge-guard.ts`, `path-guard.ts`) and their tests are removed. `merge_pr.sh` stays the only merge path and `new_worktree.sh` the only way to create a worktree; INV-89 is enforced by `merge_pr.sh`, rulesets and review. ARCHITECTURE revision 1.7.
+- Alternatives: Keep the hook.
+- Why: Owner decision.
+- Reversible: yes.
+
+### D-0401 — One PR per batch of related rows
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: One PR covers a batch of related ready rows, normally all ready rows of one spec or of adjacent specs touching the same code, 30-80 files or about 1500-4000 lines, on branch `spec-NN/pr-A-B-<name>`; one `/simplify` pass and one review per PR (CLAUDE.md §3, the skills).
+- Alternatives: One row per PR.
+- Why: Owner direction.
+- Reversible: yes.
+
+### D-0402 — At most two Vitest workers locally
+
+- Date: 2026-10-15 · Spec/PR: SPEC-07 PR 6 + SPEC-05 follow-ups (#80) · Status: decided
+- Decision: `vite.config.ts` sets `maxWorkers: 2` when `CI` is unset; CI keeps Vitest's default. Tests run through `pnpm test`, never `npx`.
+- Alternatives: Cap CI too.
+- Why: Several agents test at once on one machine (owner priority); CI time stays as it was.
+- Reversible: yes.
