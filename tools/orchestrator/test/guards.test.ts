@@ -82,6 +82,11 @@ const PATH_DENIED = [
   "git --git-dir=/c/Projects/app/.git log",
   "PATH=/usr/bin:/c/tools/bin node x.js",
   "git worktree add C:/c/Projects/app-worktrees/x",
+  "cd x&&/c/Projects/y",
+  "true;/c/x",
+  "(/c/bin/tool)",
+  "echo `/c/x`",
+  "ls x|/c/bin/tool",
 ];
 
 const PATH_ALLOWED = [

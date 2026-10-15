@@ -13,6 +13,7 @@ if [[ -z $name || $name == */* || $name == *\\* || $name == . || $name == .. ]];
 fi
 dir="$WORKTREE_ROOT/$name"
 lower=${dir,,}
+lower=${lower//\\//}
 if [[ $lower == /[a-z]/* || $lower == [a-z]:/"${lower:0:1}"/* ]]; then
   err "$dir is under an MSYS drive path; set WORKTREE_ROOT to a C:/... path"
 fi

@@ -64,7 +64,7 @@ describe("new_worktree.sh", SLOW, () => {
     expect(existsSync(join(dir, "roots", "spec-01-pr-1", ".git"))).toBe(true);
   });
 
-  it.each(["C:/c/Projects/app-worktrees", "D:/d/app-worktrees"])(
+  it.each(["C:/c/Projects/app-worktrees", "D:/d/app-worktrees", "C:\\c\\Projects\\app-worktrees"])(
     "refuses a WORKTREE_ROOT under a mangled drive path and creates nothing: %s",
     (root) => {
       const result = newWorktree(repo, ["spec-01-pr-1", "spec-01/pr-1-x"], { WORKTREE_ROOT: root });
