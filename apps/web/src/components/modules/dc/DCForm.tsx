@@ -1,6 +1,5 @@
 import { type IsoDate, qtyValue, type Qty, sumMoney, sumQty } from "@senstosales/domain";
 import type { RouteOutput } from "@senstosales/schemas";
-import { ApiError } from "@senstosales/schemas/errors";
 import { fmtCount, fmtDate, fmtMoney, fmtQty, fmtRate } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
@@ -92,7 +91,7 @@ function lineValues(items: readonly Item[], qty: readonly Qty[]) {
 }
 
 /** The header fields; the GC number and date show the DC's until typed (INV-26). */
-function ChallanFields({ duplicate, onNumberTyped }: Readonly<{ duplicate: boolean; onNumberTyped(): void }>) {
+function ChallanFields({ duplicate }: Readonly<{ duplicate: boolean }>) {
   const { register, control, watch, setValue } = useFormContext<DcFormValues>();
   const [number, dcDate, gcNumber, gcDate] = watch(["number", "dcDate", "gcNumber", "gcDate"]);
   return (
@@ -100,7 +99,7 @@ function ChallanFields({ duplicate, onNumberTyped }: Readonly<{ duplicate: boole
       <h2 className="mb-3 role-section-title">Challan Details</h2>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4">
         <FormField label="DC Number" required error={duplicate ? "Duplicate number" : undefined}>
-          <Input {...register("number", { onChange: onNumberTyped })} placeholder="DC-001" autoComplete="off" />
+          <Input {...register("number")} placeholder="DC-001" autoComplete="off" />
         </FormField>
         <Controller
           control={control}
@@ -252,12 +251,10 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
   const form = useForm<DcFormValues>({ defaultValues: defaultsOf(data) });
   const [number, dcDate, qty] = form.watch(["number", "dcDate", "qty"]);
   const [error, setError] = useState<string | null>(null);
-  const [refused, setRefused] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const check = useNumberCheck("dc.numberCheck", number, dcDate);
-  // The number the API refused stays marked until it is changed.
-  const duplicate = check.taken || (refused !== null && refused === number.trim());
+  const duplicate = check.taken;
   const total = fmtMoney(lineValues(data?.items ?? [], qty).total, { gemc: data?.po.isGemc ?? false });
 
   function submit() {
@@ -278,7 +275,7 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
       void invalidate("dc", "po");
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
-      if (e instanceof ApiError && e.status === 409) setRefused(body.number);
+      check.refused(e, { number: body.number, date: body.dcDate });
       setError(e instanceof Error ? e.message : "Failed to create Delivery Challan");
       setConfirming(false);
     } finally {
@@ -318,7 +315,7 @@ function DCFormView({ data }: { readonly data: Dispatchable | null }) {
           }
         />
         <FormAlert message={error} />
-        <ChallanFields duplicate={duplicate} onNumberTyped={() => setRefused(null)} />
+        <ChallanFields duplicate={duplicate} />
         <DispatchItems data={data} />
         <DcNotes total={total} />
         <ConfirmDialog

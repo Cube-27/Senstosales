@@ -149,6 +149,21 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("a taken GC number is refused in place without marking the DC number", async () => {
+    api({ "POST /api/dc": () => fail(409, "gc-number-taken", "GC 17 already exists in FY 2025-26.") });
+    renderApp(`/dc/create?po=${PO_ID}`);
+    await fill("17");
+    fireEvent.change(screen.getByLabelText("Dispatch qty of item 20"), { target: { value: "1" } });
+    const saveDc = () => screen.getByRole("button", { name: "Save DC" }) as HTMLButtonElement;
+    await waitFor(() => expect(saveDc().disabled).toBe(false));
+    save();
+    fireEvent.click(await screen.findByRole("button", { name: "Generate DC" }));
+    expect((await screen.findByText("GC 17 already exists in FY 2025-26.")).closest("[role=alert]")).toBeTruthy();
+    expect(screen.queryByText("Duplicate number")).toBeNull();
+    fireEvent.change(screen.getByLabelText("GC Number"), { target: { value: "17A" } });
+    expect(saveDc().disabled).toBe(false);
+  });
+
   it("asks for a quantity before saving", async () => {
     const calls = api();
     renderApp(`/dc/create?po=${PO_ID}`);

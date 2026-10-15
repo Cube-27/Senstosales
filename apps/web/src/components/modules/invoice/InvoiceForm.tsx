@@ -1,5 +1,4 @@
 import type { LineTax } from "@senstosales/domain";
-import { ApiError } from "@senstosales/schemas/errors";
 import { fmtAmountWords, fmtCount, fmtDate, fmtMoney, fmtQty, fmtRate } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
@@ -118,11 +117,9 @@ function DateField({
 function DocumentFields({
   preview,
   duplicate,
-  onNumberTyped,
 }: Readonly<{
   preview: Preview | null;
   duplicate: boolean;
-  onNumberTyped(): void;
 }>) {
   const { register } = useFormContext<InvoiceFormValues>();
   const dc = preview?.dc ?? null;
@@ -130,7 +127,7 @@ function DocumentFields({
   return (
     <div className="col-span-8 grid grid-cols-4 content-start gap-x-6 gap-y-3 p-4">
       <FormField label="Invoice No." required error={duplicate ? "Duplicate number" : undefined}>
-        <Input {...register("number", { onChange: onNumberTyped })} placeholder="INV-001" autoComplete="off" />
+        <Input {...register("number")} placeholder="INV-001" autoComplete="off" />
       </FormField>
       <DateField name="invoiceDate" label="Dated" required />
       <InfoField label={dc || !preview ? "Challan No" : "Source PO"} value={source ?? "—"} />
@@ -302,12 +299,10 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
   const form = useForm<InvoiceFormValues>({ defaultValues: formDefaults(preview, todayIst()) });
   const [number, invoiceDate, qty] = form.watch(["number", "invoiceDate", "qty"]);
   const [error, setError] = useState<string | null>(null);
-  const [refused, setRefused] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const check = useNumberCheck("invoice.numberCheck", number, invoiceDate, 3);
-  // The number the API refused stays marked until it is changed.
-  const duplicate = check.taken || (refused !== null && refused === number.trim());
+  const duplicate = check.taken;
   // Recomputed each render: react-hook-form keeps the same array while its entries change.
   const { lines: taxes, totals } = formTotals(preview, qty);
   const gemc = preview?.po.isGemc ?? false;
@@ -330,7 +325,7 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
       void invalidate("invoice", "dc", "po");
     } catch (e) {
       // A taken `(number, FY)` is a 409 that names both (INV-22).
-      if (e instanceof ApiError && e.status === 409) setRefused(body.number);
+      check.refused(e, { number: body.number, date: body.invoiceDate });
       setError(e instanceof Error ? e.message : "Failed to create invoice");
       setConfirming(false);
     } finally {
@@ -382,7 +377,7 @@ function InvoiceFormView({ preview }: { readonly preview: Preview | null }) {
               <SupplierBlock preview={preview} />
               <BuyerFields />
             </div>
-            <DocumentFields preview={preview} duplicate={duplicate} onNumberTyped={() => setRefused(null)} />
+            <DocumentFields preview={preview} duplicate={duplicate} />
           </div>
         </section>
         <LineItems preview={preview} taxes={taxes} />

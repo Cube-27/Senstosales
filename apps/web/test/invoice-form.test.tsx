@@ -208,6 +208,25 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
       expect(screen.getByRole("alert").textContent).toBe("Invoice INV-17 already exists in FY 2025-26."),
     );
     expect(screen.getByText("Duplicate number")).toBeTruthy();
+    expect(saveButton().disabled).toBe(true);
+    // The same number in another FY is free (INV-22).
+    const dated = screen.getByLabelText("Dated*");
+    fireEvent.change(dated, { target: { value: "03/05/2026" } });
+    fireEvent.blur(dated);
+    await waitFor(() => expect(saveButton().disabled).toBe(false));
+    expect(screen.queryByText("Duplicate number")).toBeNull();
+  });
+
+  it("an invoice the DC got meanwhile is refused in place without marking the number", async () => {
+    api({ "POST /api/invoice": () => fail(409, "dc-has-invoice", "This DC already has an invoice.") });
+    renderApp(`/invoice/create?dc=${DC_ID}`);
+    await fill("INV-17");
+    await waitFor(() => expect(saveButton().disabled).toBe(false));
+    fireEvent.click(saveButton());
+    fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("This DC already has an invoice."));
+    expect(screen.queryByText("Duplicate number")).toBeNull();
+    expect(saveButton().disabled).toBe(false);
   });
 
   it("without a source, offers the DC/PO search and an empty sheet in the same layout", async () => {
