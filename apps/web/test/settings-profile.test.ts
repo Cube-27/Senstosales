@@ -63,10 +63,10 @@ describe("settings form model (SPEC-15 PR 3)", () => {
 
   it("the supplier body keeps the fields the page does not show and stores blanks as no value", () => {
     const { id: _id, ...stored } = SUPPLIER;
-    const fields = { ...toForm(SUPPLIER, SETTINGS).supplier, contact: "  ", gstin: "27ABCDE1234F1Z5", description: "" };
+    const fields = { ...toForm(SUPPLIER, SETTINGS).supplier, contact: "  ", gstin: "TESTGSTIN0001", description: "" };
     expect(supplierBody(stored, fields)).toEqual({
       name: "Example Fabricators",
-      gstin: "27ABCDE1234F1Z5",
+      gstin: "TESTGSTIN0001",
       address: "1 Test Road, Example Town",
       state: "Maharashtra",
       stateCode: "27",

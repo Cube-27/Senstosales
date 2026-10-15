@@ -12,17 +12,19 @@ export function TextField({
   label,
   placeholder,
   className = "",
+  type = "text",
 }: {
   readonly name: Path;
   readonly label: string;
   readonly placeholder?: string;
   readonly className?: string;
+  readonly type?: "text" | "password";
 }) {
   const { register, formState } = useFormContext();
   const error: { message?: string } | undefined = get(formState.errors, name);
   return (
     <FormField label={label} error={error?.message} className={className}>
-      <Input placeholder={placeholder} {...register(name)} />
+      <Input type={type} placeholder={placeholder} {...register(name)} />
     </FormField>
   );
 }
@@ -45,7 +47,7 @@ export function SupplierProfileFields() {
       <TextField name="supplier.name" label="Registered Entity Name" placeholder="e.g. Acme Industries Ltd." />
       <TextField name="supplier.contact" label="Phone Number" placeholder="+91 98765 43210" />
       <TextField name="supplier.email" label="Primary Email" placeholder="billing@company.com" />
-      <TextField name="supplier.gstin" label="GSTIN (Tax ID)" placeholder="27ABCDE1234F1Z5" />
+      <TextField name="supplier.gstin" label="GSTIN (Tax ID)" placeholder="15-character GSTIN" />
       <TextField name="supplier.address" label="Registered Address" placeholder="Full registered address..." />
       <TextField
         name="supplier.description"
