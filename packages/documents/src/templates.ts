@@ -4,7 +4,14 @@ import { TEMPLATES_BASE64 } from "./templates.generated.ts";
 
 export type TemplateName = keyof typeof TEMPLATES_BASE64;
 
-/** A fresh copy of the template's xlsx bytes. */
-export function templateBytes(name: TemplateName): Uint8Array {
-  return Uint8Array.from(atob(TEMPLATES_BASE64[name]), (char) => char.codePointAt(0) ?? 0);
+const decoded = new Map<TemplateName, Uint8Array<ArrayBuffer>>();
+
+/** A fresh copy of the template's xlsx bytes, decoded once per template. */
+export function templateBytes(name: TemplateName): Uint8Array<ArrayBuffer> {
+  let bytes = decoded.get(name);
+  if (!bytes) {
+    bytes = Uint8Array.from(atob(TEMPLATES_BASE64[name]), (char) => char.codePointAt(0) ?? 0);
+    decoded.set(name, bytes);
+  }
+  return bytes.slice();
 }

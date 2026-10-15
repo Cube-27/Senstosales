@@ -46,6 +46,13 @@ export function fmtRate(m: Money, { gemc }: Precision): string {
   return sign + groupIndian(int.slice(sign.length)) + (frac === undefined ? "" : `.${frac}`);
 }
 
+/** An amount with every decimal place and no grouping, as the legacy DC prints one: `1234.5` -> `"1234.50"`. */
+export function fmtFixed(m: Money, { gemc }: Precision): string {
+  const dp = gemc ? 5 : 2;
+  const [int = "", frac = ""] = moneyToString(roundMoney(m, dp)).split(".");
+  return `${int}.${frac.padEnd(dp, "0")}`;
+}
+
 /** A full-precision amount: `-848.755` -> `"-₹848.76"`; GEMC `719.27966` -> `"₹719.27966"`. */
 export function fmtMoney(m: Money, precision: Precision): string {
   const rate = fmtRate(m, precision);

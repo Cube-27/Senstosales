@@ -50,7 +50,7 @@ Out of scope:
 | `src/dc.ts`, `src/invoice.ts`, `src/gc.ts`                  | builders                                                                                    |
 | `src/layout.ts`                                             | shared row/page-break helpers implementing the legacy pagination as observed in the goldens |
 | `test/xlsx-snapshot.ts`                                     | snapshot tool (test-only)                                                                   |
-| `test/inputs/*.json`, `test/golden/*.snapshot.json`         | synthetic inputs and legacy-derived snapshots                                               |
+| `test/inputs/*.json`, `test/golden/<document>-<n>.json`     | synthetic inputs and legacy-derived goldens (D-0299, D-0305)                                |
 | `apps/api/src/routes/documents.ts`, `services/documents.ts` | load data → build → Storage → download                                                      |
 
 ### 4.2 Golden procedure
@@ -88,7 +88,7 @@ from synthetic data).
 | #   | Title                                  | Scope / files                                                           | Checks                    | Done when                                                                                                             |
 | --- | -------------------------------------- | ----------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | 1   | De-branded templates and snapshot tool | `templates/*.xlsx`, `src/templates.ts`, `test/xlsx-snapshot.ts` + tests | `check`, `real-data-scan` | Snapshot tool round-trips a synthetic workbook; templates have placeholders only in identity cells and pass the scan. |
-| 2   | Golden inputs and legacy snapshots     | `test/inputs/*.json`, `test/golden/*.snapshot.json` (from H5)           | `real-data-scan`          | Snapshots exist for every document × count × variant; reviewer confirms no real data.                                 |
+| 2   | Golden inputs and legacy snapshots     | `test/inputs/*.json`, `test/golden/<document>-<n>.json` (H5)            | `real-data-scan`          | Snapshots exist for every document × count × variant; reviewer confirms no real data.                                 |
 | 3   | DC workbook                            | `src/{dc,layout}.ts`, tests                                             | `check`                   | DC 1/20/21/60 goldens pass, GC footer line present (INV-36).                                                          |
 | 4   | Invoice workbook                       | `src/invoice.ts`, tests                                                 | `check`                   | Invoice goldens pass for GEMC (5 dp) and non-GEMC (2 dp).                                                             |
 | 5   | GC workbook                            | `src/gc.ts`, tests                                                      | `check`                   | GC goldens pass.                                                                                                      |

@@ -1,0 +1,631 @@
+{
+  "fileName": "DC_60.xlsx",
+  "pageSetup": {
+    "printArea": "B1:J94",
+    "printTitlesRow": null,
+    "printTitlesColumn": null,
+    "orientation": "portrait",
+    "paperSize": 9,
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "scale": 100,
+    "horizontalCentered": true,
+    "verticalCentered": false,
+    "margins": {
+      "left": 0.3,
+      "right": 0.3,
+      "top": 0.35,
+      "bottom": 0.35,
+      "header": 0.2,
+      "footer": 0.2
+    }
+  },
+  "styleRows": [
+    [1, 28, 1, 28],
+    [29, 80, 28, 28],
+    [81, 94, 29, 42]
+  ],
+  "merges": [
+    "B10:G10",
+    "B11:G11",
+    "B9:G9",
+    "C20:H20",
+    "C21:H21",
+    "C22:H22",
+    "C23:H23",
+    "C24:H24",
+    "C25:H25",
+    "C26:H26",
+    "C27:H27",
+    "C28:H28",
+    "C29:H29",
+    "C30:H30",
+    "C31:H31",
+    "C32:H32",
+    "C33:H33",
+    "C34:H34",
+    "C35:H35",
+    "C36:H36",
+    "C37:H37",
+    "C38:H38",
+    "C39:H39",
+    "C40:H40",
+    "C41:H41",
+    "C42:H42",
+    "C43:H43",
+    "C44:H44",
+    "C45:H45",
+    "C46:H46",
+    "C47:H47",
+    "C48:H48",
+    "C49:H49",
+    "C50:H50",
+    "C51:H51",
+    "C52:H52",
+    "C53:H53",
+    "C54:H54",
+    "C55:H55",
+    "C56:H56",
+    "C57:H57",
+    "C58:H58",
+    "C59:H59",
+    "C60:H60",
+    "C61:H61",
+    "C62:H62",
+    "C63:H63",
+    "C64:H64",
+    "C65:H65",
+    "C66:H66",
+    "C67:H67",
+    "C68:H68",
+    "C69:H69",
+    "C70:H70",
+    "C71:H71",
+    "C72:H72",
+    "C73:H73",
+    "C74:H74",
+    "C75:H75",
+    "C76:H76",
+    "C77:H77",
+    "C78:H78",
+    "C79:H79",
+    "C80:H80",
+    "C81:H81",
+    "C82:J82",
+    "C83:J83",
+    "C84:J84",
+    "C85:J85",
+    "C86:J86",
+    "C89:J89",
+    "C90:J90",
+    "C91:J91",
+    "C92:J92",
+    "D14:E14",
+    "F14:G14",
+    "I10:J10",
+    "I11:J11",
+    "I14:J14",
+    "I17:J17",
+    "I20:J20",
+    "I21:J21",
+    "I22:J22",
+    "I23:J23",
+    "I24:J24",
+    "I25:J25",
+    "I26:J26",
+    "I27:J27",
+    "I28:J28",
+    "I29:J29",
+    "I30:J30",
+    "I31:J31",
+    "I32:J32",
+    "I33:J33",
+    "I34:J34",
+    "I35:J35",
+    "I36:J36",
+    "I37:J37",
+    "I38:J38",
+    "I39:J39",
+    "I40:J40",
+    "I41:J41",
+    "I42:J42",
+    "I43:J43",
+    "I44:J44",
+    "I45:J45",
+    "I46:J46",
+    "I47:J47",
+    "I48:J48",
+    "I49:J49",
+    "I50:J50",
+    "I51:J51",
+    "I52:J52",
+    "I53:J53",
+    "I54:J54",
+    "I55:J55",
+    "I56:J56",
+    "I57:J57",
+    "I58:J58",
+    "I59:J59",
+    "I60:J60",
+    "I61:J61",
+    "I62:J62",
+    "I63:J63",
+    "I64:J64",
+    "I65:J65",
+    "I66:J66",
+    "I67:J67",
+    "I68:J68",
+    "I69:J69",
+    "I70:J70",
+    "I71:J71",
+    "I72:J72",
+    "I73:J73",
+    "I74:J74",
+    "I75:J75",
+    "I76:J76",
+    "I77:J77",
+    "I78:J78",
+    "I79:J79",
+    "I80:J80",
+    "I81:J81",
+    "I9:J9"
+  ],
+  "rows": {
+    "1": {
+      "size": 14.25
+    },
+    "2": {
+      "size": 14.25
+    },
+    "3": {
+      "size": 21
+    },
+    "4": {
+      "size": 13.5
+    },
+    "5": {
+      "size": 13.5
+    },
+    "6": {
+      "size": 2.25
+    },
+    "7": {
+      "size": 21
+    },
+    "8": {
+      "size": 8.25
+    },
+    "9": {
+      "size": 14.25
+    },
+    "10": {
+      "size": 14.25
+    },
+    "11": {
+      "size": 14.25
+    },
+    "12": {
+      "size": 14.25
+    },
+    "13": {
+      "size": 6
+    },
+    "14": {
+      "size": 12.75
+    },
+    "15": {
+      "size": 14.25
+    },
+    "16": {
+      "size": 6
+    },
+    "17": {
+      "size": 14.25
+    },
+    "18": {
+      "size": 6.75
+    },
+    "19": {
+      "hidden": true
+    },
+    "20": {
+      "size": 36
+    },
+    "21": {
+      "size": 54.95
+    },
+    "22": {
+      "size": 54.95
+    },
+    "23": {
+      "size": 54.95
+    },
+    "24": {
+      "size": 54.95
+    },
+    "25": {
+      "size": 54.95
+    },
+    "26": {
+      "size": 54.95
+    },
+    "27": {
+      "size": 90
+    },
+    "28": {
+      "size": 54.95
+    },
+    "29": {
+      "size": 54.95
+    },
+    "30": {
+      "size": 54.95
+    },
+    "31": {
+      "size": 54.95
+    },
+    "32": {
+      "size": 54.95
+    },
+    "33": {
+      "size": 54.95
+    },
+    "34": {
+      "size": 54.95
+    },
+    "35": {
+      "size": 54.95
+    },
+    "36": {
+      "size": 54.95
+    },
+    "37": {
+      "size": 54.95
+    },
+    "38": {
+      "size": 54.95
+    },
+    "39": {
+      "size": 54.95
+    },
+    "40": {
+      "size": 90
+    },
+    "41": {
+      "size": 54.95
+    },
+    "42": {
+      "size": 54.95
+    },
+    "43": {
+      "size": 54.95
+    },
+    "44": {
+      "size": 54.95
+    },
+    "45": {
+      "size": 54.95
+    },
+    "46": {
+      "size": 54.95
+    },
+    "47": {
+      "size": 54.95
+    },
+    "48": {
+      "size": 54.95
+    },
+    "49": {
+      "size": 54.95
+    },
+    "50": {
+      "size": 54.95
+    },
+    "51": {
+      "size": 54.95
+    },
+    "52": {
+      "size": 54.95
+    },
+    "53": {
+      "size": 90
+    },
+    "54": {
+      "size": 54.95
+    },
+    "55": {
+      "size": 54.95
+    },
+    "56": {
+      "size": 54.95
+    },
+    "57": {
+      "size": 54.95
+    },
+    "58": {
+      "size": 54.95
+    },
+    "59": {
+      "size": 54.95
+    },
+    "60": {
+      "size": 54.95
+    },
+    "61": {
+      "size": 54.95
+    },
+    "62": {
+      "size": 54.95
+    },
+    "63": {
+      "size": 54.95
+    },
+    "64": {
+      "size": 54.95
+    },
+    "65": {
+      "size": 54.95
+    },
+    "66": {
+      "size": 90
+    },
+    "67": {
+      "size": 54.95
+    },
+    "68": {
+      "size": 54.95
+    },
+    "69": {
+      "size": 54.95
+    },
+    "70": {
+      "size": 54.95
+    },
+    "71": {
+      "size": 54.95
+    },
+    "72": {
+      "size": 54.95
+    },
+    "73": {
+      "size": 54.95
+    },
+    "74": {
+      "size": 54.95
+    },
+    "75": {
+      "size": 54.95
+    },
+    "76": {
+      "size": 54.95
+    },
+    "77": {
+      "size": 54.95
+    },
+    "78": {
+      "size": 54.95
+    },
+    "79": {
+      "size": 54.95
+    },
+    "80": {
+      "size": 54.95
+    }
+  },
+  "values": {
+    "B1": "Tel. No. 0000-000000",
+    "H1": "GSTIN: TESTGSTIN0000X1",
+    "F3": "EXAMPLE PRECISION WORKS",
+    "F4": "Manufacturers of Example Machined Components",
+    "F5": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "F7": "DELIVERY CHALLAN",
+    "B9": "The Example Manager (Stores)\nExample Unit\nExample City - 000000",
+    "H9": " Challan No. :",
+    "I9": "60",
+    "H10": " Date :",
+    "I10": "31/03/2026",
+    "H11": " Our Ref :",
+    "I11": "REF-0060",
+    "B14": "Your Order No.  :",
+    "D14": "4500000004",
+    "F14": "Date: 20/05/2025",
+    "H14": "Amd. Date:",
+    "B15": "Goods Dispatched Delivered to: ",
+    "F15": 456,
+    "H17": "GST Invoice No: ",
+    "I17": "INV-60  Dt.",
+    "B20": "P.O.Sl. No.",
+    "C20": "Description",
+    "I20": "Quantity",
+    "B21": 10,
+    "C21": "Bracket, mild steel, 10 x 5 mm, drawing EX-1000",
+    "I21": "1  NOS",
+    "B22": 20,
+    "C22": "Flange, brass, 11 x 6 mm, drawing EX-1001",
+    "I22": "2  NOS",
+    "B23": 30,
+    "C23": "Bush, stainless steel, 12 x 7 mm, drawing EX-1002",
+    "I23": "3  KG",
+    "B24": 40,
+    "C24": "Spacer, aluminium, 13 x 8 mm, drawing EX-1003",
+    "I24": "4.25  NO",
+    "B25": 50,
+    "C25": "Shaft, copper, 14 x 9 mm, drawing EX-1004; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I25": "5  SET",
+    "B26": 60,
+    "C26": "Plate, mild steel, 15 x 10 mm, drawing EX-1005",
+    "I26": "6  MTR",
+    "B27": 70,
+    "C27": "Gasket, brass, 16 x 11 mm, drawing EX-1006; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+    "I27": "7  NOS",
+    "B28": 80,
+    "C28": "Pin, stainless steel, 17 x 5 mm, drawing EX-1007",
+    "I28": "8  NOS",
+    "B29": 90,
+    "C29": "Bracket, aluminium, 18 x 6 mm, drawing EX-1008",
+    "I29": "9.25  KG",
+    "B30": 100,
+    "C30": "Flange, copper, 19 x 7 mm, drawing EX-1009",
+    "I30": "10  NO",
+    "B31": 110,
+    "I31": "11  SET",
+    "B32": 120,
+    "C32": "Spacer, brass, 21 x 9 mm, drawing EX-1011",
+    "I32": "12  MTR",
+    "B33": 130,
+    "C33": "Shaft, stainless steel, 22 x 10 mm, drawing EX-1012",
+    "I33": "13  NOS",
+    "B34": 140,
+    "C34": "Plate, aluminium, 23 x 11 mm, drawing EX-1013; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I34": "14.25  NOS",
+    "B35": 150,
+    "C35": "Gasket, copper, 24 x 5 mm, drawing EX-1014",
+    "I35": "15  KG",
+    "B36": 160,
+    "C36": "Pin, mild steel, 25 x 6 mm, drawing EX-1015",
+    "I36": "16  NO",
+    "B37": 170,
+    "C37": "Bracket, brass, 26 x 7 mm, drawing EX-1016",
+    "I37": "17  SET",
+    "B38": 180,
+    "C38": "Flange, stainless steel, 27 x 8 mm, drawing EX-1017",
+    "I38": "18  MTR",
+    "B39": 190,
+    "C39": "Bush, aluminium, 28 x 9 mm, drawing EX-1018",
+    "I39": "19.25  NOS",
+    "B40": 200,
+    "C40": "Spacer, copper, 29 x 10 mm, drawing EX-1019; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+    "I40": "20  NOS",
+    "B41": 210,
+    "C41": "Shaft, mild steel, 30 x 11 mm, drawing EX-1020",
+    "I41": "21  KG",
+    "B42": 220,
+    "I42": "22  NO",
+    "B43": 230,
+    "C43": "Gasket, stainless steel, 32 x 6 mm, drawing EX-1022; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I43": "23  SET",
+    "B44": 240,
+    "C44": "Pin, aluminium, 33 x 7 mm, drawing EX-1023",
+    "I44": "24.25  MTR",
+    "B45": 250,
+    "C45": "Bracket, copper, 34 x 8 mm, drawing EX-1024",
+    "I45": "25  NOS",
+    "B46": 260,
+    "C46": "Flange, mild steel, 35 x 9 mm, drawing EX-1025",
+    "I46": "26  NOS",
+    "B47": 270,
+    "C47": "Bush, brass, 36 x 10 mm, drawing EX-1026",
+    "I47": "27  KG",
+    "B48": 280,
+    "C48": "Spacer, stainless steel, 37 x 11 mm, drawing EX-1027",
+    "I48": "28  NO",
+    "B49": 290,
+    "C49": "Shaft, aluminium, 38 x 5 mm, drawing EX-1028",
+    "I49": "29.25  SET",
+    "B50": 300,
+    "C50": "Plate, copper, 39 x 6 mm, drawing EX-1029",
+    "I50": "30  MTR",
+    "B51": 310,
+    "C51": "Gasket, mild steel, 40 x 7 mm, drawing EX-1030",
+    "I51": "31  NOS",
+    "B52": 320,
+    "C52": "Pin, brass, 41 x 8 mm, drawing EX-1031; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I52": "32  NOS",
+    "B53": 330,
+    "C53": "Bracket, stainless steel, 42 x 9 mm, drawing EX-1032; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+    "I53": "33  KG",
+    "B54": 340,
+    "C54": "Flange, aluminium, 43 x 10 mm, drawing EX-1033",
+    "I54": "34.25  NO",
+    "B55": 350,
+    "C55": "Bush, copper, 44 x 11 mm, drawing EX-1034",
+    "I55": "35  SET",
+    "B56": 360,
+    "C56": "Spacer, mild steel, 45 x 5 mm, drawing EX-1035",
+    "I56": "36  MTR",
+    "B57": 370,
+    "C57": "Shaft, brass, 46 x 6 mm, drawing EX-1036",
+    "I57": "37  NOS",
+    "B58": 380,
+    "C58": "Plate, stainless steel, 47 x 7 mm, drawing EX-1037",
+    "I58": "38  NOS",
+    "B59": 390,
+    "C59": "Gasket, aluminium, 48 x 8 mm, drawing EX-1038",
+    "I59": "39.25  KG",
+    "B60": 400,
+    "C60": "Pin, copper, 49 x 9 mm, drawing EX-1039",
+    "I60": "40  NO",
+    "B61": 410,
+    "C61": "Bracket, mild steel, 50 x 10 mm, drawing EX-1040; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I61": "41  SET",
+    "B62": 420,
+    "C62": "Flange, brass, 51 x 11 mm, drawing EX-1041",
+    "I62": "42  MTR",
+    "B63": 430,
+    "C63": "Bush, stainless steel, 52 x 5 mm, drawing EX-1042",
+    "I63": "43  NOS",
+    "B64": 440,
+    "I64": "44.25  NOS",
+    "B65": 450,
+    "C65": "Shaft, copper, 54 x 7 mm, drawing EX-1044",
+    "I65": "45  KG",
+    "B66": 460,
+    "C66": "Plate, mild steel, 55 x 8 mm, drawing EX-1045; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+    "I66": "46  NO",
+    "B67": 470,
+    "C67": "Gasket, brass, 56 x 9 mm, drawing EX-1046",
+    "I67": "47  SET",
+    "B68": 480,
+    "C68": "Pin, stainless steel, 57 x 10 mm, drawing EX-1047",
+    "I68": "48  MTR",
+    "B69": 490,
+    "C69": "Bracket, aluminium, 58 x 11 mm, drawing EX-1048",
+    "I69": "49.25  NOS",
+    "B70": 500,
+    "C70": "Flange, copper, 59 x 5 mm, drawing EX-1049; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I70": "50  NOS",
+    "B71": 510,
+    "C71": "Bush, mild steel, 60 x 6 mm, drawing EX-1050",
+    "I71": "51  KG",
+    "B72": 520,
+    "C72": "Spacer, brass, 61 x 7 mm, drawing EX-1051",
+    "I72": "52  NO",
+    "B73": 530,
+    "C73": "Shaft, stainless steel, 62 x 8 mm, drawing EX-1052",
+    "I73": "53  SET",
+    "B74": 540,
+    "C74": "Plate, aluminium, 63 x 9 mm, drawing EX-1053",
+    "I74": "54.25  MTR",
+    "B75": 550,
+    "I75": "55  NOS",
+    "B76": 560,
+    "C76": "Pin, mild steel, 65 x 11 mm, drawing EX-1055",
+    "I76": "56  NOS",
+    "B77": 570,
+    "C77": "Bracket, brass, 66 x 5 mm, drawing EX-1056",
+    "I77": "57  KG",
+    "B78": 580,
+    "C78": "Flange, stainless steel, 67 x 6 mm, drawing EX-1057",
+    "I78": "58  NO",
+    "B79": 590,
+    "C79": "Bush, aluminium, 68 x 7 mm, drawing EX-1058; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "I79": "59.25  SET",
+    "B80": 600,
+    "C80": "Spacer, copper, 69 x 8 mm, drawing EX-1059",
+    "I80": "60  MTR",
+    "B83": 1,
+    "C83": "GST Bill No. INV-60 Dt.",
+    "B84": 2,
+    "C84": "Guarantee Certificate No. 60   Dt. 31/03/2026",
+    "B85": 3,
+    "C85": "Dimension Report REF-0060",
+    "B86": 4,
+    "C86": "TC No  dt.  Of",
+    "C89": "Lot No.",
+    "C90": "Consignment Value of BHEL PO 74253.18",
+    "C93": "Received the Goods in good condition",
+    "H93": "                 For EXAMPLE PRECISION WORKS",
+    "C94": "E. & O.E."
+  }
+}
