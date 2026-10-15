@@ -71,12 +71,16 @@ export const emptyForm = (today: IsoDate | ""): FormValues => ({
   items: [],
 });
 
-/** The next item number on the BHEL pattern (10, 20, …): ten past the largest. */
-export const nextItemNo = (items: readonly Pick<FormItem, "poItemNo">[]): number =>
-  Math.max(0, ...items.map((i) => i.poItemNo)) + 10;
+/**
+ * The next item number on the BHEL pattern (10, 20, …): ten past the largest in the form or ever stored on the PO,
+ * cancelled and removed items included. The API matches items by number, so a reused number would take over the old
+ * item's id and documents.
+ */
+export const nextItemNo = (items: readonly Pick<FormItem, "poItemNo">[], stored: readonly number[] = []): number =>
+  Math.max(0, ...stored, ...items.map((i) => i.poItemNo)) + 10;
 
-export const newItem = (items: readonly FormItem[]): FormItem => ({
-  poItemNo: nextItemNo(items),
+export const newItem = (items: readonly FormItem[], stored: readonly number[] = []): FormItem => ({
+  poItemNo: nextItemNo(items, stored),
   description: "",
   materialCode: "",
   unit: "",
@@ -86,7 +90,10 @@ export const newItem = (items: readonly FormItem[]): FormItem => ({
   drawingNo: null,
 });
 
-/** A stored PO as the form shows it for editing; rates are the GST-inclusive source rates (INV-17). */
+/**
+ * A stored PO as the form shows it for editing; rates are the GST-inclusive source rates (INV-17). Cancelled items
+ * stay out: an item sent back would be restored (INV-48), and an amended-out item stays cancelled (INV-63).
+ */
 export function formFromDetail({ po, items }: Detail): FormValues {
   return {
     poNumber: po.poNumber,
@@ -97,16 +104,18 @@ export function formFromDetail({ po, items }: Detail): FormValues {
     gemcDate: parseDateInput(rawValue(po.rawHeader, "gemcDate")) ?? "",
     remarks: po.remarks ?? "",
     raw: rawOf((field) => rawValue(po.rawHeader, field)),
-    items: items.map((item) => ({
-      poItemNo: item.poItemNo,
-      description: item.description ?? "",
-      materialCode: item.materialCode ?? "",
-      unit: item.unit ?? "",
-      ordQty: item.ordQty,
-      rate: moneyToString(item.rateSource),
-      lots: item.lots.map(({ lotNo, delyQty, delyDate, destCode }) => ({ lotNo, delyQty, delyDate, destCode })),
-      drawingNo: item.drawingNo,
-    })),
+    items: items
+      .filter((item) => item.cancelledAt === null)
+      .map((item) => ({
+        poItemNo: item.poItemNo,
+        description: item.description ?? "",
+        materialCode: item.materialCode ?? "",
+        unit: item.unit ?? "",
+        ordQty: item.ordQty,
+        rate: moneyToString(item.rateSource),
+        lots: item.lots.map(({ lotNo, delyQty, delyDate, destCode }) => ({ lotNo, delyQty, delyDate, destCode })),
+        drawingNo: item.drawingNo,
+      })),
   };
 }
 

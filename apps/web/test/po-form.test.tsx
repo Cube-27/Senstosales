@@ -1,11 +1,19 @@
 // @vitest-environment jsdom
 import type { IsoDate, Qty } from "@senstosales/domain";
+import { routes } from "@senstosales/schemas";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { emptyForm, formBody, formError, newItem, nextItemNo } from "../src/components/modules/po/po-form.ts";
+import {
+  emptyForm,
+  formBody,
+  formError,
+  formFromDetail,
+  newItem,
+  nextItemNo,
+} from "../src/components/modules/po/po-form.ts";
 import { renderApp, stubApi } from "./app.tsx";
-import { detail, item, po, PO_ID } from "./po-fixtures.ts";
+import { detail, item, ITEM_B, po, PO_ID } from "./po-fixtures.ts";
 
 afterEach(() => {
   cleanup();
@@ -39,6 +47,24 @@ describe("the manual PO form's checks (legacy)", () => {
 
   it("numbers new items on the BHEL pattern", () => {
     expect([nextItemNo([]), nextItemNo([{ poItemNo: 10 }, { poItemNo: 30 }])]).toEqual([10, 40]);
+  });
+
+  it("numbers a new item above every item the PO ever stored, removed or cancelled ones included", () => {
+    // Item 30 was removed from the form, item 40 is cancelled on the PO.
+    expect(nextItemNo([{ poItemNo: 10 }, { poItemNo: 20 }], [10, 20, 30, 40])).toBe(50);
+  });
+
+  it("leaves cancelled items out of an edit, so saving does not restore them (INV-48, INV-63)", () => {
+    const stored = routes["po.detail"].response.parse(
+      detail({
+        items: [
+          item(),
+          item({ id: ITEM_B, poItemNo: 20, cancelledAt: "2025-01-10T00:00:00.000Z", status: "Cancelled" }),
+        ],
+      }),
+    );
+    const values = formFromDetail(stored);
+    expect(formBody(values).items.map((i) => i.poItemNo)).toEqual([10]);
   });
 });
 

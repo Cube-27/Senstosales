@@ -79,6 +79,7 @@ function POFormView({ detail }: POFormProps) {
   const router = useRouter();
   const invalidate = useInvalidate();
   const editing = detail !== undefined;
+  const storedItemNos = detail?.items.map((i) => i.poItemNo) ?? [];
   const form = useForm<FormValues>({ defaultValues: detail ? formFromDetail(detail) : emptyForm(today()) });
   const { register, control, watch, getValues } = form;
   const items = useFieldArray({ control, name: "items" });
@@ -188,7 +189,7 @@ function POFormView({ detail }: POFormProps) {
       <section aria-label="Line Items" className="overflow-hidden rounded-md border border-border bg-surface">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="role-section-title">Line Items</h2>
-          <Button variant="outline" size="sm" onClick={() => items.append(newItem(getValues("items")))}>
+          <Button variant="outline" size="sm" onClick={() => items.append(newItem(getValues("items"), storedItemNos))}>
             <Plus aria-hidden />
             Add Item
           </Button>
