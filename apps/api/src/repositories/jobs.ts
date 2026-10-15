@@ -113,6 +113,12 @@ export function finishJob(
   return db.build.update(job).set(end).where(eq(job.id, id));
 }
 
+/** Ends a queued or running job that no process runs (EC-28) as cancelled. */
+export function cancelOrphan(db: Db, row: JobRow, finishedAt: Instant): Statement {
+  const progress = { ...row.progress, current: null };
+  return finishJob(db, row.id, { status: "cancelled", finishedAt, progress, error: null });
+}
+
 /** Sets the cancel flag of a queued or running job; a finished job is left as it is. */
 export function requestCancel(db: Db, id: string): Statement {
   return db.build

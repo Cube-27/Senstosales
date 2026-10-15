@@ -10,7 +10,7 @@ import { AppError, ConflictError, NotFoundError, OperationFailedError } from "..
 import type { BackupFiles } from "../ports/backups.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Logger } from "../ports/logger.ts";
-import { activeJobs, findActiveJob, finishJob } from "../repositories/jobs.ts";
+import { activeJobs, cancelOrphan, findActiveJob } from "../repositories/jobs.ts";
 import { parseBackupName, safetyBackupName } from "./backup.ts";
 
 type Backup = z.output<(typeof routes)["backups.list"]["response"]>[number];
@@ -35,12 +35,8 @@ export function restoreService({ db, clock, backups, logger }: RestoreDeps) {
   /** A job row the backup holds as queued or running has no process to run it (EC-28): it ends as cancelled. */
   async function endRestoredJobs(): Promise<void> {
     const finishedAt = clock.now();
-    const batch = new WriteBatch(db);
-    for (const row of await activeJobs(db)) {
-      const progress = { ...row.progress, current: null };
-      batch.add(finishJob(db, row.id, { status: "cancelled", finishedAt, progress, error: null }));
-    }
-    await batch.commit();
+    const rows = await activeJobs(db);
+    await rows.reduce((batch, row) => batch.add(cancelOrphan(db, row, finishedAt)), new WriteBatch(db)).commit();
   }
 
   /** Logs `err` and returns the error the user sees. */
@@ -53,7 +49,7 @@ export function restoreService({ db, clock, backups, logger }: RestoreDeps) {
     if ((await findActiveJob(db)) !== null) {
       throw new ConflictError("job-running", "A job is running. Wait for it to finish, then restore.");
     }
-    if (!(await list()).some((backup) => backup.name === name)) {
+    if (parseBackupName(name) === null || !(await backups.list()).includes(name)) {
       throw new NotFoundError("backup-not-found", "This backup was not found.");
     }
     const safety = safetyBackupName(clock.now());

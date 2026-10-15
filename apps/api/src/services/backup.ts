@@ -3,6 +3,8 @@
 // safety copy a restore takes first have their own names and are never rotated away.
 import type { Instant } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
+import type { routes } from "@senstosales/schemas";
+import type { z } from "zod";
 
 import type { BackupFiles } from "../ports/backups.ts";
 import type { Clock } from "../ports/clock.ts";
@@ -13,7 +15,7 @@ import type { JobsService } from "./jobs.ts";
 const KEEP_DAILY = 14;
 const KEEP_MONTHLY = 12;
 
-export type BackupKind = "daily" | "pre-upgrade" | "safety";
+export type BackupKind = z.output<(typeof routes)["backups.list"]["response"]>[number]["kind"];
 
 const NAMES: readonly [BackupKind, RegExp][] = [
   ["daily", /^daily-(\d{4}-\d{2}-\d{2})\.db$/],
@@ -40,14 +42,18 @@ export const safetyBackupName = (now: Instant): string => `safety-${fileStamp(no
 /** The daily backups rotation removes: all but the newest 14 and the newest of each of the 12 newest months that
  * have one (INV-103). Other files are never removed. */
 export function planRotation(files: readonly string[]): string[] {
-  const daily = files.filter((name) => parseBackupName(name)?.kind === "daily").toSorted((a, b) => (a < b ? 1 : -1));
+  const daily = files
+    .filter((name) => parseBackupName(name)?.kind === "daily")
+    .toSorted()
+    .toReversed();
   const keep = new Set(daily.slice(0, KEEP_DAILY));
   const months = new Set<string>();
   for (const name of daily) {
-    const month = name.slice("daily-".length, "daily-YYYY-MM".length);
-    if (months.size === KEEP_MONTHLY && !months.has(month)) break;
-    if (!months.has(month)) keep.add(name);
-    months.add(month);
+    const month = name.slice(0, "daily-YYYY-MM".length);
+    if (months.size < KEEP_MONTHLY && !months.has(month)) {
+      months.add(month);
+      keep.add(name);
+    }
   }
   return daily.filter((name) => !keep.has(name)).toSorted();
 }
@@ -76,7 +82,8 @@ export function backupHandlers({ clock, backups }: BackupDeps): JobHandlers {
 
 /**
  * Starts the `backup` job when today has no daily copy yet. Called once the server is up, so startup itself stays
- * read-only (C9). A job left queued or running by an earlier run (EC-28) blocks it; the next launch tries again.
+ * read-only (C9). A job left queued or running by an earlier run (EC-28) blocks it; that, or any failure here, is logged and the
+ * next launch tries again.
  */
 export async function startDailyBackup({
   clock,
@@ -84,8 +91,8 @@ export async function startDailyBackup({
   jobs,
   logger,
 }: BackupDeps & { jobs: JobsService; logger: Logger }) {
-  if ((await backups.list()).includes(dailyBackupName(clock.today()))) return;
   try {
+    if ((await backups.list()).includes(dailyBackupName(clock.today()))) return;
     await jobs.start({ type: "backup" });
   } catch (err) {
     logger.warn({ error: String(err) }, "daily backup not started");

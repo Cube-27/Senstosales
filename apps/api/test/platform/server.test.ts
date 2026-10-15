@@ -185,7 +185,7 @@ describe("resolveDataDir", () => {
 });
 
 describe("main", () => {
-  it("prints the port line once listening, and exits when stdin closes", async () => {
+  it("prints the port line once listening, starts the day's backup, and exits when stdin closes", async () => {
     const dataDir = join(tmp, "data");
     await migrate(dataDir);
     const child = spawn(process.execPath, [MAIN], {
@@ -206,5 +206,9 @@ describe("main", () => {
 
     child.stdin.end();
     expect(await exited).toBe(0);
+    // The exit waits for the backup job, so today's copy is complete (SPEC-21, INV-103).
+    expect((await readdir(join(dataDir, "backups"))).filter((name) => name.startsWith("daily-"))).toEqual([
+      expect.stringMatching(/^daily-\d{4}-\d{2}-\d{2}\.db$/),
+    ]);
   });
 });

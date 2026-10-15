@@ -81,20 +81,20 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     host: address.address,
     port: address.port,
     startDailyBackup,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        server.closeAllConnections();
-        server.close((err) => {
-          jobs
-            .idle()
-            .then(closeRuntime)
-            .finally(() => logger.close())
-            .then(
-              () => (err ? reject(err) : resolve()),
-              (closeErr: unknown) => reject(err ?? closeErr),
-            );
-        });
-      }),
+    async close() {
+      server.closeAllConnections();
+      const closed = new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+      try {
+        await closed;
+      } finally {
+        await jobs.idle();
+        try {
+          await closeRuntime();
+        } finally {
+          logger.close();
+        }
+      }
+    },
   };
 }
 
@@ -105,6 +105,7 @@ async function main(): Promise<void> {
     version: pkg.version,
   });
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
+  await server.startDailyBackup();
   process.stdin.on("end", () => void server.close());
   process.stdin.resume();
 }

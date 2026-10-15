@@ -4,6 +4,7 @@
 import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
+import { addDays, type IsoDate } from "@senstosales/domain";
 import { pino } from "pino";
 
 import type { Clock } from "../../ports/clock.ts";
@@ -11,18 +12,13 @@ import type { Logger } from "../../ports/logger.ts";
 
 const KEEP_DAYS = 14;
 const FILE = /^api-(\d{4}-\d{2}-\d{2})\.log$/;
-const DAY_MS = 86_400_000;
 
 const SECRET_KEYS = ["password", "cookie", "authorization", "captcha", "captchaPng", "otp", "html", "body"];
 const REDACT = SECRET_KEYS.flatMap((key) => [key, `*.${key}`]);
 
-/** The date `days` before `date`: `2025-06-01`, 13 → `2025-05-19`. */
-const daysBefore = (date: string, days: number): string =>
-  new Date(Date.parse(date) - days * DAY_MS).toISOString().slice(0, 10);
-
 /** Deletes the day files older than the newest 14 days up to `today`. Other files are left alone. */
-function prune(dir: string, today: string): void {
-  const oldest = daysBefore(today, KEEP_DAYS - 1);
+function prune(dir: string, today: IsoDate): void {
+  const oldest = addDays(today, -(KEEP_DAYS - 1));
   for (const name of readdirSync(dir)) {
     const day = FILE.exec(name)?.[1];
     if (day !== undefined && day < oldest) rmSync(join(dir, name), { force: true });

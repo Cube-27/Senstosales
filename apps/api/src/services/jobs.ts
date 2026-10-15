@@ -7,7 +7,15 @@ import { newId } from "../ids.ts";
 import type { Clock } from "../ports/clock.ts";
 import type { Jobs, JobStart } from "../ports/jobs.ts";
 import type { JobEventRow, JobRow } from "../repositories/jobs.ts";
-import { findJob, finishJob, isActive, jobEvents, listJobs, queueIfIdle, requestCancel } from "../repositories/jobs.ts";
+import {
+  cancelOrphan,
+  findJob,
+  isActive,
+  jobEvents,
+  listJobs,
+  queueIfIdle,
+  requestCancel,
+} from "../repositories/jobs.ts";
 
 export function jobsService({ db, clock, jobs }: { db: Db; clock: Clock; jobs: Jobs }) {
   async function load(id: string): Promise<JobRow> {
@@ -41,10 +49,7 @@ export function jobsService({ db, clock, jobs }: { db: Db; clock: Clock; jobs: J
     async cancel(id: string): Promise<JobRow> {
       const row = await load(id);
       const batch = new WriteBatch(db).add(requestCancel(db, id));
-      if (isActive(row) && !jobs.holds(id)) {
-        const progress = { ...row.progress, current: null };
-        batch.add(finishJob(db, id, { status: "cancelled", finishedAt: clock.now(), progress, error: null }));
-      }
+      if (isActive(row) && !jobs.holds(id)) batch.add(cancelOrphan(db, row, clock.now()));
       await batch.commit();
       return load(id);
     },
