@@ -1,10 +1,11 @@
-// Behaviour of tools/orchestrator/src/merge-guard.ts, the guard that keeps agents from merging PRs directly, run as
-// Claude Code runs the PreToolUse hook (src/guards.ts): hook JSON on stdin, exit 2 and a reason on stderr to deny.
+// Behaviour of the PreToolUse guards, run as Claude Code runs the hook (src/guards.ts): hook JSON on stdin, exit 2 and
+// a reason on stderr to deny. merge-guard.ts keeps agents from merging PRs directly; path-guard.ts denies MSYS drive
+// paths, which native Windows programs misread in a shell with path conversion off.
 import { describe, expect, it } from "vite-plus/test";
 
 import { hookInput, runGuards } from "./shell.ts";
 
-const DENIED = [
+const MERGE_DENIED = [
   "gh pr merge 100 --squash",
   "gh pr merge",
   "  gh   pr   merge 7",
@@ -46,7 +47,7 @@ const DENIED = [
   "gh api graphql -f query='mutation { enablePullRequestAutoMerge(input: {}) { clientMutationId } }'",
 ];
 
-const ALLOWED = [
+const MERGE_ALLOWED = [
   "tools/orchestrator/merge_pr.sh 7 abc1234",
   "bash tools/orchestrator/merge_pr.sh 7 abc1234",
   "tools/orchestrator/wait_ci.sh 7 abc1234",
@@ -68,34 +69,70 @@ const ALLOWED = [
   "",
 ];
 
-describe("merge guard", () => {
-  it.each(DENIED)("denies a direct merge with a reason: %j", (command) => {
+const PATH_DENIED = [
+  // The command that created a stray worktree under C:/c/Projects.
+  "git worktree add -q -b x /c/Projects/SenstoSales-worktrees/spec-12-pr-5 origin/main",
+  "/c/Program\\ Files/nodejs/node.exe --version",
+  "cd /c/Projects/app && pnpm install",
+  "node /d/tools/run.js",
+  "ls\t/C/Users",
+  "git -C '/c/Projects/app' status",
+  'vp test "/c/Projects/app/test"',
+  "WORKTREE_ROOT=/c/Projects/app-worktrees tools/orchestrator/new_worktree.sh a b",
+  "git --git-dir=/c/Projects/app/.git log",
+  "PATH=/usr/bin:/c/tools/bin node x.js",
+  "git worktree add C:/c/Projects/app-worktrees/x",
+];
+
+const PATH_ALLOWED = [
+  "git worktree add -q -b x C:/Projects/SenstoSales-worktrees/spec-12-pr-5 origin/main",
+  "cd C:/Projects/app && pnpm install",
+  "git -C 'C:\\Projects\\app' status",
+  "curl https://example.com/c/d",
+  "gh api repos/owner/repo/pulls/7",
+  "sed -e 's/c/d/' notes.md",
+  "sed s/a/b/g notes.md",
+  "ls src/c/x",
+  "ls ./c/x ../d/y",
+  "cat /usr/bin/x /etc/hosts",
+  "cmd /c dir",
+  "grep -c x notes.md",
+  "",
+];
+
+describe.each([
+  { guard: "merge guard", denied: MERGE_DENIED, allowed: MERGE_ALLOWED, reason: "tools/orchestrator/merge_pr.sh" },
+  { guard: "path guard", denied: PATH_DENIED, allowed: PATH_ALLOWED, reason: "write C:/Projects/... instead" },
+])("$guard", ({ denied, allowed, reason }) => {
+  it.each(denied)("denies with a reason: %j", (command) => {
     const result = runGuards(hookInput(command));
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain("tools/orchestrator/merge_pr.sh");
+    expect(result.stderr).toContain(reason);
   });
 
-  it.each(ALLOWED)("lets other commands pass: %j", (command) => {
+  it.each(allowed)("lets other commands pass: %j", (command) => {
     expect(runGuards(hookInput(command))).toMatchObject({ status: 0, stderr: "" });
   });
 
   it("checks PowerShell tool commands too", () => {
-    expect(runGuards(hookInput("gh pr merge 7", "PowerShell")).status).toBe(2);
+    expect(runGuards(hookInput(denied[0]!, "PowerShell")).status).toBe(2);
   });
+});
 
-  it("falls back to a text match for a command with unbalanced quotes", () => {
+describe("guards", () => {
+  it("fall back to a text match for a command with unbalanced quotes", () => {
     expect(runGuards(hookInput("gh pr merge 7 --body 'unterminated")).status).toBe(2);
     expect(runGuards(hookInput("echo 'unterminated")).status).toBe(0);
   });
 
-  it("lets input without a command pass", () => {
+  it("let input without a command pass", () => {
     const payload = JSON.stringify({ tool_name: "Read", tool_input: { file_path: "x" } });
 
     expect(runGuards(payload).status).toBe(0);
   });
 
-  it.each(["not json", "[1]"])("denies unreadable hook input: %j", (payload) => {
+  it.each(["not json", "[1]"])("deny unreadable hook input: %j", (payload) => {
     const result = runGuards(payload);
 
     expect(result.status).toBe(2);
