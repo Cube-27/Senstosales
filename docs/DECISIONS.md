@@ -2895,6 +2895,104 @@ None.
 - Why: They carry the PO version for write guards and feed the detail API; the documents need different columns.
 - Reversible: yes.
 
+### D-0360 — Vite+ core stands in for vite
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: `pnpm-workspace.yaml` overrides `vite` with `@voidzero-dev/vite-plus-core`, so the React, Tailwind and router plugins run on Vite+'s Vite.
+- Alternatives: A second Vite install beside Vite+.
+- Why: One Vite instance; the plugin types match.
+- Reversible: yes — drop the override.
+
+### D-0361 — The route tree is generated and checked in
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: `apps/web/src/routeTree.generated.ts` is committed; `pnpm gen:routes` rebuilds it and a test in `tools/gen` fails when it is stale.
+- Alternatives: Generate it only during the build, which leaves `tsc -b` blind on a clean checkout.
+- Why: Type checks and tests run without a build first.
+- Reversible: yes.
+
+### D-0362 — Query client defaults and redirects
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: An `ApiError` is never retried and a network error is retried up to three times. `keepPreviousData` holds the last page while the next loads (C8). Query keys are `[name, args ?? {}]`, and only `GET` routes can be queries (`ReadRouteName`). A 401 goes to `/auth/login` and `onboarding-required` goes to `/onboarding`, both from the cache `onError`.
+- Alternatives: Per-screen error handling.
+- Why: The API's answer does not change on a retry; one place for the redirects.
+- Reversible: yes.
+
+### D-0363 — `ApiError` on its own subpath
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: `@senstosales/schemas/errors` exports `ApiError` without zod; the web shell imports it from there.
+- Alternatives: The package barrel.
+- Why: The barrel pulled zod into the shell (+32 kB gzip, measured).
+- Reversible: yes.
+
+### D-0364 — What the bundle budget counts
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: The INV-104 budget counts the scripts and stylesheets the built `index.html` names (entry, modulepreloads, styles), gzipped. It does not count route chunks loaded on navigation or fonts. It reads only `apps/web/dist`.
+- Alternatives: All of `dist`.
+- Why: INV-104 names the shell, which is what the first load fetches.
+- Reversible: yes.
+
+### D-0365 — Self-hosted variable fonts
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: `@fontsource-variable` Public Sans, Bricolage Grotesque and JetBrains Mono (OFL-1.1, in `NOTICE`) replace `next/font`. `:root` defines the three font variables `@theme` reads.
+- Alternatives: Static weights.
+- Why: One file per family covers every weight the roles use.
+- Reversible: yes.
+
+### D-0366 — Reading of ADR 0004
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: "Referenced but undefined" means the `var(--…)` uses inside `globals.css`, which are the font variables. Legacy utility names with no token get a mapping table in the ADR, not aliases. The one exception is `--color-placeholder` (item 7), which inputs need.
+- Alternatives: Alias every legacy name to a token.
+- Why: Aliases would keep names that never rendered a colour and add tokens without a use.
+- Reversible: yes — a new ADR.
+
+### D-0367 — Validator scope and rules
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: The design validators scan git-tracked `.ts`/`.tsx` files under `apps/web/src`, excluding generated files. They use the real-data scan's file list.
+  - The legacy icon rules are reduced to one rule: import only through `src/lib/icons.ts`.
+  - New beyond legacy: C7's important-utility rule, `dark:` colours, undefined tokens and colours, and `role-*` overrides.
+- Alternatives: Walk the file system; port every legacy rule.
+- Why: Tracked files are what CI sees. The new rules enforce C7 as written.
+- Reversible: yes.
+
+### D-0368 — Token-parity test lives in tools/checks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: `tools/checks/test/token-parity.test.ts`, next to the `globals.css` reader it shares with the validators.
+- Alternatives: `apps/web/test`.
+- Why: One CSS reader.
+- Reversible: yes.
+
+### D-0369 — Shell components before the primitives
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: Row 4 builds on raw elements and Radix Dialog; row 5 adds the `components/ui` primitives. The theme is `lib/theme.ts` (localStorage `theme`, `.dark` on `<html>`), without next-themes. The registry exports only what screens use.
+- Alternatives: Build the primitives first.
+- Why: The spec orders the rows this way; the shell needs no form controls.
+- Reversible: yes.
+
+### D-0370 — The search dialog is a frame until SPEC-15
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: `GlobalSearchDialog` renders the frozen frame: input, filter and saved toggles, the "Type to search" pane and the footer. It loads on first open (Ctrl/⌘+K or click). SPEC-15 adds results, preview, filters and saved searches.
+- Alternatives: Slots for the SPEC-15 content now.
+- Why: No speculative options; the lazy chunk keeps Radix Dialog out of the shell.
+- Reversible: yes.
+
+### D-0371 — Badges and the active rail keep their slot
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PR 1-4 (#78) · Status: decided
+- Decision: A `DetailTabs` badge at 0 and the sidebar's inactive rail are `invisible`, not removed.
+- Alternatives: Render nothing.
+- Why: C8; tabs and nav items keep their size when counts or the route change.
+- Reversible: yes.
+
 ### D-0375 — Scraper errors are one class with codes
 
 - Date: 2026-10-15 · Spec/PR: SPEC-19 PRs 1+4 (#77) · Status: decided
