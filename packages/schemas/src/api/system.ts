@@ -36,9 +36,9 @@ export const zBhelPasswordBody = z.object({ password: z.string().min(1) });
 
 export const zBuyerBody = zBuyer.omit({ id: true });
 
-/** A database backup in Settings (SPEC-21): `daily` copies rotate; `pre-upgrade` and `safety` (taken before a
- * restore) are kept. */
-export const zBackup = z.object({ name: z.string(), kind: z.enum(["daily", "pre-upgrade", "safety"]) });
+/** A database backup in Settings (SPEC-21): `daily` copies rotate; `manual` (Backup now), `pre-upgrade` and
+ * `safety` (taken before a restore) are kept. */
+export const zBackup = z.object({ name: z.string(), kind: z.enum(["daily", "manual", "pre-upgrade", "safety"]) });
 
 /** Restore names one of the listed backups; the API never takes a path (C17). */
 export const zRestoreBody = z.object({ name: z.string().min(1) });

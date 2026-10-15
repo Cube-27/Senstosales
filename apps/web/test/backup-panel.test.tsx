@@ -65,7 +65,7 @@ describe("Settings backups (SPEC-21 PR 3)", () => {
     expect(kinds).toEqual(["Before restore", "Daily", "Before upgrade"]);
   });
 
-  it("Backup now starts the backup job, waits for it and lists the new copy", async () => {
+  it("Backup now starts a manual backup job, waits for it and lists the new copy", async () => {
     let listed = BACKUPS;
     const calls = stubApi(
       settingsApi({
@@ -80,7 +80,7 @@ describe("Settings backups (SPEC-21 PR 3)", () => {
     const panel = await openBackups();
     await userEvent.click(within(panel).getByRole("button", { name: "Backup now" }));
     await waitFor(() => expect(within(panel).getByRole("status").textContent).toBe("Backup saved."));
-    expect(calls.find((c) => c.route === "POST /api/jobs")?.body).toEqual({ type: "backup" });
+    expect(calls.find((c) => c.route === "POST /api/jobs")?.body).toEqual({ type: "backup", manual: true });
     await waitFor(() => expect(names(panel)[0]).toBe("daily-2026-10-15.db"));
   });
 

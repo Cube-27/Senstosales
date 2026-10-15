@@ -19,7 +19,8 @@ export const zJobStartBody = z.discriminatedUnion("type", [
   z.object({ type: z.literal(type["po.scrape"]), ...zScrape }),
   z.object({ type: z.literal(type["srv.scrape"]), ...zScrape }),
   z.object({ type: z.literal(type["recompute-all"]) }),
-  z.object({ type: z.literal(type.backup) }),
+  // Backup now is `manual`: its own copy, never today's daily one.
+  z.object({ type: z.literal(type.backup), manual: z.boolean().optional() }),
 ]);
 
 export const zJobListQuery = zListQuery(["createdAt"], {

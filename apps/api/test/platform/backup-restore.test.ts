@@ -72,11 +72,21 @@ const supplierName = async (on: NodeDb) =>
 
 const rename = (name: string) => db.batch([db.build.update(supplier).set({ name }).where(eq(supplier.id, SUPPLIER))]);
 
-const backupNow = async (send: ReturnType<typeof harness>["send"]) => {
+/** The `backup` job as the first launch of a day starts it. */
+const dailyJob = async (send: ReturnType<typeof harness>["send"]) => {
   const res = await send("/api/jobs", json("POST", { type: "backup" }));
   await runner.idle();
   return res;
 };
+
+/** Backup now in Settings. */
+const backupNow = async (send: ReturnType<typeof harness>["send"]) => {
+  const res = await send("/api/jobs", json("POST", { type: "backup", manual: true }));
+  await runner.idle();
+  return res;
+};
+
+const MANUAL = "manual-20250601T053000Z.db";
 
 const restore = (send: ReturnType<typeof harness>["send"], name: string) =>
   send("/api/backups/restore", json("POST", { name }));
@@ -123,14 +133,34 @@ describe("the backup job", () => {
     expect(logger.lines.map((line) => line.message)).toEqual(["daily backup not started"]);
   });
 
-  it("Backup now replaces today's copy with the current data", async () => {
-    const { send } = harness();
-    expect((await backupNow(send)).status).toBe(200);
+  it("Backup now writes its own manual copy and leaves today's daily copy as it was (UI-SET)", async () => {
+    const { send, daily } = harness();
+    await daily();
+    await runner.idle();
     await rename("Renamed Supplier");
-    await backupNow(send);
+    expect((await backupNow(send)).status).toBe(200);
 
-    expect(await readdir(backupsDir)).toEqual([TODAY]);
-    expect(await supplierName(openCopy(TODAY))).toBe("Renamed Supplier");
+    expect(await readdir(backupsDir)).toEqual([TODAY, MANUAL]);
+    expect(await supplierName(openCopy(TODAY))).toBe("Example Supplier");
+    expect(await supplierName(openCopy(MANUAL))).toBe("Renamed Supplier");
+  });
+
+  it("a manual copy is listed as manual, never rotated away, and can be restored", async () => {
+    for (const name of Array.from({ length: 16 }, (_, i) => `daily-2025-05-${String(i + 10)}.db`)) {
+      await writeFile(join(backupsDir, name), "");
+    }
+    const { send } = harness();
+    await backupNow(send);
+    await dailyJob(send);
+
+    expect(await readdir(backupsDir)).toContain(MANUAL);
+    expect(((await (await send("/api/backups")).json()) as unknown[]).slice(0, 2)).toEqual([
+      { name: MANUAL, kind: "manual" },
+      { name: TODAY, kind: "daily" },
+    ]);
+    await rename("Renamed Supplier");
+    expect(await (await restore(send, MANUAL)).json()).toEqual({ restored: MANUAL, safety: SAFETY });
+    expect(await supplierName(db)).toBe("Example Supplier");
   });
 
   it("rotates after the backup: 14 daily and the monthly copies stay, pre-upgrade copies survive", async () => {
@@ -141,7 +171,7 @@ describe("the backup job", () => {
     ];
     for (const name of old) await writeFile(join(backupsDir, name), "");
     const { send } = harness();
-    await backupNow(send);
+    await dailyJob(send);
 
     // Newest 14: 2025-05-12..24 and today; monthly: today (June), 2025-05-24 (May), 2025-04-30 (April).
     expect(await readdir(backupsDir)).toEqual([
@@ -170,7 +200,7 @@ describe("restore", () => {
 
   it("round-trips: write, back up, change, restore, read the original; the safety copy holds the change", async () => {
     const { send } = harness();
-    await backupNow(send);
+    await dailyJob(send);
     await rename("Changed Supplier");
 
     const res = await restore(send, TODAY);
@@ -182,17 +212,17 @@ describe("restore", () => {
 
   it("ends the backup job the restored copy still shows as running, so a new job can start (EC-28)", async () => {
     const { send } = harness();
-    await backupNow(send);
+    await dailyJob(send);
     await restore(send, TODAY);
 
     const rows = await db.query(db.build.select({ status: job.status, finishedAt: job.finishedAt }).from(job));
     expect(rows).toEqual([{ status: "cancelled", finishedAt: NOW }]);
-    expect((await backupNow(send)).status).toBe(200);
+    expect((await dailyJob(send)).status).toBe(200);
   });
 
   it("is refused while a job runs, and changes nothing", async () => {
     const { send } = harness();
-    await backupNow(send);
+    await dailyJob(send);
     const hold = gate();
     const slow = harness((files) => ({
       ...files,
@@ -237,7 +267,7 @@ describe("restore", () => {
 
   it("refuses a backup from a newer version, or a damaged one, without touching the data", async () => {
     const { send } = harness();
-    await backupNow(send);
+    await dailyJob(send);
     await copyFile(join(backupsDir, TODAY), join(backupsDir, "daily-2025-05-31.db"));
     const newer = openCopy("daily-2025-05-31.db");
     await newer.batch([newer.build.run(sql`UPDATE schema_migration SET version = version + 100`)]);
@@ -262,7 +292,7 @@ describe("restore", () => {
       ...files,
       restore: () => Promise.reject(new Error("disk full")),
     }));
-    await backupNow(send);
+    await dailyJob(send);
     const res = await restore(send, TODAY);
 
     expect(res.status).toBe(500);

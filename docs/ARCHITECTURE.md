@@ -653,7 +653,8 @@ works in a plain browser.
   failure the old DB is untouched and a plain dialog explains. If it is above the expected version the app refuses
   to start and says so. (INV-82)
 - **Backups**: online backup API, on the first launch each day and before every migration; rotation keeps 14 daily
-  and 12 monthly. Settings offers Backup now and Restore.
+  and 12 monthly. Settings offers Backup now and Restore; Backup now writes its own `manual-<ts>.db`, never rotated,
+  so it never replaces the day's daily copy.
 - **Versioning**: one `VERSION` file stamped into `tauri.conf.json`, the SEA, every `package.json` and `/api/health`.
 
 ---

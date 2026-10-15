@@ -15,7 +15,8 @@ job events, flags and stored HTML are kept (A-26, INV-83).
 Core:
 
 - `backup` job: online backup to `backups/daily-<date>.db` on the first launch of each day (enqueued after start;
-  not a startup write, C9) and on Backup now; pre-upgrade backups (SPEC-07) use their own names and are not
+  not a startup write, C9); Backup now writes `backups/manual-<ts>.db` instead, kept like the safety copies, so it
+  never replaces the daily one (owner-approved E2E fix, 2026-10-15); pre-upgrade backups (SPEC-07) use their own names and are not
   rotated away by daily rotation.
 - Rotation: keep the newest 14 daily and the newest backup of each of the last 12 months (INV-103).
 - Restore: Settings lists backups; restoring requires no running job, copies the chosen backup into the live DB via
