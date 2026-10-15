@@ -105,6 +105,7 @@ describe("upgradeGate", () => {
     expect(await readSchemaVersion(db)).toBe(LATEST_VERSION);
     expect(await db.query(db.build.select().from(schemaMigration))).toEqual([
       { version: 1, name: "init", appliedAt: NOW, appVersion: "1.2.3" },
+      { version: 2, name: "lookup_indexes", appliedAt: NOW, appVersion: "1.2.3" },
     ]);
     db.close();
 

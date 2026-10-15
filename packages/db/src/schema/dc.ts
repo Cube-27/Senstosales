@@ -1,5 +1,5 @@
 // Delivery challans and their lines (ARCHITECTURE §8.2). No cancel column: a DC is deleted, never cancelled (INV-34).
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 import { fy, instant, isoDate, qtyM, ulid } from "../types.ts";
 import { po, poItem } from "./po.ts";
@@ -38,19 +38,24 @@ export const dc = sqliteTable(
     // INV-22: DC numbers restart each FY. INV-26: so do GC numbers, independently of DC numbers.
     uniqueIndex("dc_supplier_number_fy_uq").on(t.supplierId, t.number, t.financialYear),
     uniqueIndex("dc_supplier_gc_number_fy_uq").on(t.supplierId, t.gcNumber, t.financialYear),
+    index("dc_po_id_idx").on(t.poId),
   ],
 );
 
 /** A DC line; its quantity never changes after save (INV-33). */
-export const dcItem = sqliteTable("dc_item", {
-  id: ulid("id").primaryKey(),
-  supplierId: supplierId(),
-  dcId: ulid("dc_id")
-    .notNull()
-    .references(() => dc.id),
-  poItemId: ulid("po_item_id")
-    .notNull()
-    .references(() => poItem.id),
-  dspQty: qtyM("dsp_qty_m").notNull(),
-  createdAt: instant("created_at").notNull(),
-});
+export const dcItem = sqliteTable(
+  "dc_item",
+  {
+    id: ulid("id").primaryKey(),
+    supplierId: supplierId(),
+    dcId: ulid("dc_id")
+      .notNull()
+      .references(() => dc.id),
+    poItemId: ulid("po_item_id")
+      .notNull()
+      .references(() => poItem.id),
+    dspQty: qtyM("dsp_qty_m").notNull(),
+    createdAt: instant("created_at").notNull(),
+  },
+  (t) => [index("dc_item_dc_id_idx").on(t.dcId), index("dc_item_po_item_id_idx").on(t.poItemId)],
+);

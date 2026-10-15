@@ -38,24 +38,31 @@ async function migrated(): Promise<NodeDb> {
 }
 
 describe("MIGRATIONS", () => {
-  test("0001 is the only migration and the latest version", () => {
-    expect(MIGRATIONS.map((m) => [m.version, m.name])).toEqual([[1, "init"]]);
-    expect(LATEST_VERSION).toBe(1);
+  test("0002 adds the lookup indexes and is the latest version", () => {
+    expect(MIGRATIONS.map((m) => [m.version, m.name])).toEqual([
+      [1, "init"],
+      [2, "lookup_indexes"],
+    ]);
+    expect(LATEST_VERSION).toBe(2);
   });
 });
 
 describe("planMigrations", () => {
   test("an empty DB plans every migration", () => {
-    expect(planMigrations(0).map((m) => m.version)).toEqual([1]);
+    expect(planMigrations(0).map((m) => m.version)).toEqual([1, 2]);
+  });
+
+  test("a version-1 DB plans only 0002", () => {
+    expect(planMigrations(1).map((m) => m.version)).toEqual([2]);
   });
 
   test("an up-to-date DB plans nothing", () => {
-    expect(planMigrations(1)).toEqual([]);
+    expect(planMigrations(2)).toEqual([]);
   });
 
   test("a DB newer than the app is refused in plain words", () => {
-    expect(() => planMigrations(2)).toThrow(NewerDatabaseError);
-    expect(() => planMigrations(2)).toThrow("This data was saved by a newer version of SenstoSales.");
+    expect(() => planMigrations(3)).toThrow(NewerDatabaseError);
+    expect(() => planMigrations(3)).toThrow("This data was saved by a newer version of SenstoSales.");
   });
 
   test("only migrations above the current version are planned", () => {
@@ -74,9 +81,45 @@ describe("applyMigrations", () => {
 
   test("an empty DB migrates to the latest version and records it", async () => {
     const db = await migrated();
-    expect(await readSchemaVersion(db)).toBe(1);
+    expect(await readSchemaVersion(db)).toBe(2);
     const rows = await db.query(db.build.select().from(schema.schemaMigration));
-    expect(rows).toEqual([{ version: 1, name: "init", appliedAt: AT, appVersion: "0.1.0" }]);
+    expect(rows).toEqual([
+      { version: 1, name: "init", appliedAt: AT, appVersion: "0.1.0" },
+      { version: 2, name: "lookup_indexes", appliedAt: AT, appVersion: "0.1.0" },
+    ]);
+  });
+
+  test("a version-1 DB upgrades to 2 and records only the new version", async () => {
+    const db = open();
+    await applyMigrations(db, planMigrations(0).slice(0, 1), { appVersion: "0.1.0", appliedAt: AT });
+    await applyMigrations(db, planMigrations(await readSchemaVersion(db)), { appVersion: "0.2.0", appliedAt: AT });
+    expect(await readSchemaVersion(db)).toBe(2);
+    const rows = await db.query(db.build.select().from(schema.schemaMigration));
+    expect(rows.map((r) => [r.version, r.appVersion])).toEqual([
+      [1, "0.1.0"],
+      [2, "0.2.0"],
+    ]);
+  });
+
+  // The lookups by PO, DC, invoice and PO item that counts, deletes and SRV link resolution run (#44, #69 reviews).
+  test.each([
+    ["dc", "po_id", "dc_po_id_idx"],
+    ["invoice", "po_id", "invoice_po_id_idx"],
+    ["srv", "po_id", "srv_po_id_idx"],
+    ["reconciliation_issue", "po_id", "reconciliation_issue_po_id_idx"],
+    ["dc_item", "dc_id", "dc_item_dc_id_idx"],
+    ["dc_item", "po_item_id", "dc_item_po_item_id_idx"],
+    ["invoice_item", "invoice_id", "invoice_item_invoice_id_idx"],
+    ["srv_item", "resolved_dc_id", "srv_item_resolved_dc_id_idx"],
+    ["srv_item", "resolved_invoice_id", "srv_item_resolved_invoice_id_idx"],
+  ])("a lookup on %s.%s uses %s", async (table, column, index) => {
+    const db = await migrated();
+    const plan = await db.query(
+      db.build.values<[number, number, number, string]>(
+        sql`EXPLAIN QUERY PLAN SELECT count(*) FROM ${sql.identifier(table)} WHERE ${sql.identifier(column)} = 'X'`,
+      ),
+    );
+    expect(plan.map((row) => row[3])).toEqual([`SEARCH ${table} USING COVERING INDEX ${index} (${column}=?)`]);
   });
 
   test("the migrated DB has every schema table with the schema's columns, and no trigger or view", async () => {
@@ -111,7 +154,7 @@ describe("applyMigrations", () => {
     expect(plan).toEqual([]);
     await applyMigrations(db, plan, { appVersion: "0.2.0", appliedAt: AT });
     expect(await totalChanges(db)).toBe(before);
-    expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(1);
+    expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(2);
   });
 
   test("an empty plan sends no batch, so it never takes the write lock", async () => {
@@ -128,9 +171,9 @@ describe("applyMigrations", () => {
 
   test("a DB carrying a newer version is refused", async () => {
     const db = await migrated();
-    await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (2, 'future', ${AT}, '9.0.0')`)]);
+    await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (3, 'future', ${AT}, '9.0.0')`)]);
     const version = await readSchemaVersion(db);
-    expect(version).toBe(2);
+    expect(version).toBe(3);
     expect(() => planMigrations(version)).toThrow(NewerDatabaseError);
   });
 

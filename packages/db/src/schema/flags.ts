@@ -1,7 +1,7 @@
 // Reconciliation issues (flags, ARCHITECTURE §6.9). Detection and the fingerprint belong to the domain (C2).
 import type { FlagDetails, FlagScope, FlagType } from "@senstosales/domain";
 import type { zFlagStatus } from "@senstosales/schemas";
-import { sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 import { instant, ulid } from "../types.ts";
 import { supplierId } from "./supplier.ts";
@@ -22,5 +22,8 @@ export const reconciliationIssue = sqliteTable(
     openedAt: instant("opened_at").notNull(),
     acknowledgedAt: instant("acknowledged_at"),
   },
-  (t) => [uniqueIndex("reconciliation_issue_fingerprint_uq").on(t.fingerprint)],
+  (t) => [
+    uniqueIndex("reconciliation_issue_fingerprint_uq").on(t.fingerprint),
+    index("reconciliation_issue_po_id_idx").on(t.poId),
+  ],
 );
