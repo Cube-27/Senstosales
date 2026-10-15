@@ -41,6 +41,11 @@ export async function findActiveJob(db: Db) {
   return row ?? null;
 }
 
+/** Every queued or running job. */
+export function activeJobs(db: Db): Promise<JobRow[]> {
+  return db.query(db.build.select().from(job).where(inArray(job.status, ACTIVE)));
+}
+
 export async function findJob(db: Db, id: string): Promise<JobRow | null> {
   const rows = await db.query(db.build.select().from(job).where(eq(job.id, id)).limit(1));
   return rows[0] ?? null;
@@ -106,6 +111,12 @@ export function finishJob(
   },
 ): Statement {
   return db.build.update(job).set(end).where(eq(job.id, id));
+}
+
+/** Ends a queued or running job that no process runs (EC-28) as cancelled. */
+export function cancelOrphan(db: Db, row: JobRow, finishedAt: Instant): Statement {
+  const progress = { ...row.progress, current: null };
+  return finishJob(db, row.id, { status: "cancelled", finishedAt, progress, error: null });
 }
 
 /** Sets the cancel flag of a queued or running job; a finished job is left as it is. */

@@ -6,15 +6,14 @@ import { join } from "node:path";
 import { applyMigrations, type Instant, planMigrations, readSchemaVersion } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
 
+import { fileStamp } from "../../services/backup.ts";
+
 export interface UpgradeOptions {
   readonly backupsDir: string;
   /** Stamped into `schema_migration`. */
   readonly appVersion: string;
   readonly now: Instant;
 }
-
-/** `2025-04-01T05:30:00.000Z` → `20250401T053000Z`: sortable and valid in a Windows file name. */
-const fileStamp = (now: Instant): string => now.replace(/[-:]|\.\d+/g, "");
 
 /** Brings the database to this build's schema version. Throws an `Error` with a plain message for the shell. */
 export async function upgradeGate(db: NodeDb, { backupsDir, appVersion, now }: UpgradeOptions): Promise<void> {

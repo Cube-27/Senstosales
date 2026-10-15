@@ -1,4 +1,4 @@
-// The handlers of every route backed by `createServices`; health takes its own deps.
+// The handlers of every route backed by `createServices`; health and restore (SPEC-21) take their own deps.
 import type { Handlers } from "../app.ts";
 import type { Services } from "../services/index.ts";
 import { auditRoutes } from "./audit.ts";

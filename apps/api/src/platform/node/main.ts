@@ -4,16 +4,19 @@
 // so it never outlives a shell that crashed.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getRequestListener } from "@hono/node-server";
 
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
-import type { Logger, LogFields } from "../../ports/logger.ts";
 import { healthRoutes } from "../../routes/health.ts";
 import { apiRoutes } from "../../routes/index.ts";
+import { restoreRoutes } from "../../routes/restore.ts";
+import { createClock } from "./clock.ts";
 import { resolveDataDir } from "./data-dir.ts";
+import { createFileLogger } from "./logger.ts";
 import { openRuntime } from "./runtime.ts";
 import { spa } from "./static.ts";
 
@@ -29,16 +32,11 @@ export interface ServerOptions {
 export interface RunningServer {
   readonly host: string;
   readonly port: number;
+  /** Starts today's backup unless it exists; `main` calls it once the port is announced (SPEC-21, C9). */
+  startDailyBackup(): Promise<void>;
+  /** Stops serving, waits for the running job, then closes the database. */
   close(): Promise<void>;
 }
-
-/** JSON lines on stderr; stdout carries only the port line. SPEC-21 replaces this with the pino adapter. */
-const line =
-  (level: keyof Logger) =>
-  (fields: LogFields, message: string): void => {
-    process.stderr.write(`${JSON.stringify({ level, message, ...fields })}\n`);
-  };
-const stderrLogger: Logger = { debug: line("debug"), info: line("info"), warn: line("warn"), error: line("error") };
 
 function listen(server: Server): Promise<AddressInfo> {
   return new Promise((resolve, reject) => {
@@ -48,17 +46,32 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const { db, services, close: closeRuntime } = await openRuntime({ ...options, logger: stderrLogger });
+  const logger = createFileLogger({ dir: join(options.dataDir, "logs"), clock: createClock() });
+  const {
+    db,
+    services,
+    jobs,
+    close: closeRuntime,
+    restore,
+    startDailyBackup,
+  } = await openRuntime({
+    ...options,
+    logger,
+  }).catch((err: unknown) => {
+    logger.close();
+    throw err;
+  });
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
   // port earlier.
   const server = createServer();
   const address = await listen(server);
   const app = createApp(
-    { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
+    { port: address.port, logger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
     {
       ...healthRoutes({ version: options.version, db }),
       ...apiRoutes(services),
+      ...restoreRoutes(restore),
     },
   );
   app.get("*", spa(options.webRoot));
@@ -67,16 +80,21 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   return {
     host: address.address,
     port: address.port,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        server.closeAllConnections();
-        server.close((err) => {
-          closeRuntime().then(
-            () => (err ? reject(err) : resolve()),
-            (closeErr: unknown) => reject(err ?? closeErr),
-          );
-        });
-      }),
+    startDailyBackup,
+    async close() {
+      server.closeAllConnections();
+      const closed = new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+      try {
+        await closed;
+      } finally {
+        await jobs.idle();
+        try {
+          await closeRuntime();
+        } finally {
+          logger.close();
+        }
+      }
+    },
   };
 }
 
@@ -87,6 +105,7 @@ async function main(): Promise<void> {
     version: pkg.version,
   });
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
+  await server.startDailyBackup();
   process.stdin.on("end", () => void server.close());
   process.stdin.resume();
 }

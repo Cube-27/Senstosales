@@ -260,13 +260,13 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 
 ## [SPEC-21 — Operations: backups, restore, logs and the operations guide](../specs/SPEC-21-operations-backup-logs.md)
 
-| PR  | Scope                   | Status | Notes |
-| --- | ----------------------- | ------ | ----- |
-| 1   | Backup job and rotation | todo   |       |
-| 2   | Restore                 | todo   |       |
-| 3   | Settings backup panel   | todo   |       |
-| 4   | Logs                    | todo   |       |
-| 5   | Operations guide        | todo   | H7    |
+| PR  | Scope                   | Status     | Notes                                      |
+| --- | ----------------------- | ---------- | ------------------------------------------ |
+| 1   | Backup job and rotation | done (#79) |                                            |
+| 2   | Restore                 | done (#79) | Shell reload after restore pending SPEC-20 |
+| 3   | Settings backup panel   | todo       |                                            |
+| 4   | Logs                    | done (#79) | Shell log plugin pending SPEC-20           |
+| 5   | Operations guide        | todo       | H7                                         |
 
 ## [SPEC-22 — Cutover](../specs/SPEC-22-cutover.md)
 

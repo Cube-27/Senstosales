@@ -817,6 +817,111 @@
         }
       }
     },
+    "/api/backups": {
+      "get": {
+        "operationId": "backups.list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "daily",
+                          "pre-upgrade",
+                          "safety"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "kind"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error: `{ code, message, details? }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/backups/restore": {
+      "post": {
+        "operationId": "backups.restore",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "restored": {
+                      "type": "string"
+                    },
+                    "safety": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "restored",
+                    "safety"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error: `{ code, message, details? }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/buyers": {
       "get": {
         "operationId": "buyers.list",

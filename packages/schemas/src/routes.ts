@@ -105,6 +105,9 @@ export const routes = withParams({
     path: "/api/settings/bhel-password",
     response: sys.zBhelPasswordStatus,
   },
+  // Backups and restore (SPEC-21); Backup now is `jobs.start` with the `backup` type.
+  "backups.list": { method: "GET", path: "/api/backups", response: z.array(sys.zBackup) },
+  "backups.restore": { method: "POST", path: "/api/backups/restore", body: sys.zRestoreBody, response: sys.zRestored },
   "buyers.list": { method: "GET", path: "/api/buyers", response: z.array(zBuyer) },
   "buyers.create": { method: "POST", path: "/api/buyers", body: sys.zBuyerBody, response: zBuyer },
   "buyers.update": { method: "PUT", path: "/api/buyers/:id", body: sys.zBuyerBody, response: zBuyer },
