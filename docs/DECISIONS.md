@@ -2106,3 +2106,11 @@ None.
 - Alternatives: Report them as failed pages.
 - Why: The job never saw them, so the job's failed count stays the job's own; listing them separately still accounts for every page (#54 review).
 - Reversible: yes.
+
+### D-0257 — Test helpers feed child stdin from a file, never a pipe
+
+- Date: 2026-10-15 · Spec/PR: process fix (#57) · Status: decided
+- Decision: `run()` in `tools/orchestrator/test/shell.ts` gives the child a temp file as stdin (empty when there is no input) instead of spawnSync's `input` pipe.
+- Alternatives: Drain stdin in the hook command (changes production for a test); catch EPIPE in `run()` (hides failures, in effect a retry); special-case the one test (other callers keep the race).
+- Why: A child that exits without reading stdin races the pipe write, and on Linux the lost race is an EPIPE (23 and 34 of 400 loaded runs failed before, 0 of 1,200 after); a file has no write to race.
+- Reversible: yes.

@@ -1,7 +1,8 @@
 // Helpers for tests that run the orchestrator tools as Claude Code and the orchestrator run them: through bash, with
 // stub programs on PATH.
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, mkdirSync, mkdtempSync, openSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -44,9 +45,21 @@ export const REAL_NODE = `exec "${process.execPath.replaceAll("\\", "/")}" "$@"`
 export function run(
   command: string,
   args: string[],
-  options: { cwd?: string; env?: NodeJS.ProcessEnv; input?: string },
+  { input = "", ...options }: { cwd?: string; env?: NodeJS.ProcessEnv; input?: string },
 ) {
-  const result = spawnSync(command, args, { ...options, encoding: "utf8", timeout: 120_000 });
+  // Stdin is a file, not spawnSync's `input` pipe: a child that exits without reading stdin (the hook denying before
+  // node runs) races that pipe write, and on Linux the lost race is an EPIPE thrown here.
+  const dir = mkdtempSync(join(tmpdir(), "stdin-"));
+  writeFileSync(join(dir, "stdin"), input);
+  const stdin = openSync(join(dir, "stdin"), "r");
+  const result = spawnSync(command, args, {
+    ...options,
+    stdio: [stdin, "pipe", "pipe"],
+    encoding: "utf8",
+    timeout: 120_000,
+  });
+  closeSync(stdin);
+  rmSync(dir, { recursive: true });
   if (result.error) throw result.error;
   return result;
 }

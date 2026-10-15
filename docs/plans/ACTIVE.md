@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-In flight: SPEC-11 PR 2, SPEC-13 PR 2, flaky hook test fix. Next: SPEC-11 PR 3-5, SPEC-12 PR 1. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
+In flight: SPEC-11 PR 2, SPEC-12 PR 1, SPEC-13 PR 2. Next: SPEC-11 PR 3-5. SPEC-07 PR 6 waits for every route (SPEC-11 to SPEC-13). Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
