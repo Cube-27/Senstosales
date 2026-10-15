@@ -5,7 +5,7 @@ import type { SQL } from "drizzle-orm";
 import { and, gte, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
-import type { KeyPart, KeysetPage } from "../src/repositories/keyset.ts";
+import type { Keyset, KeysetPage } from "../src/repositories/keyset.ts";
 import { keysetRows } from "../src/repositories/keyset.ts";
 import { byPoNumber } from "../src/repositories/sql.ts";
 import { d, id, rows } from "./seed-rows.ts";
@@ -35,11 +35,13 @@ function pages(where?: SQL) {
         .limit(page.limit),
     );
   };
-  const key: KeyPart<Awaited<ReturnType<typeof fetch>>[number]>[] = [
-    { by: dateKey, dir: "desc", field: "dateKey" },
-    { by: numberKey, dir: "asc", field: "numberKey" },
-    { by: po.id, dir: "asc", field: "id" },
-  ];
+  const key: Keyset<Awaited<ReturnType<typeof fetch>>[number]> = {
+    parts: [
+      { by: dateKey, dir: "desc", field: "dateKey" },
+      { by: numberKey, dir: "asc", field: "numberKey" },
+    ],
+    id: { by: po.id, dir: "asc", field: "id" },
+  };
   return { key, fetch, fetched };
 }
 
@@ -95,6 +97,16 @@ describe("keysetRows", () => {
     const { key, fetch, fetched } = pages();
     expect((await numbers(keysetRows(key, fetch, 7))).length).toBe(7);
     expect(fetched.length).toBe(2);
+  });
+
+  // #58 review: the tie-break must be unique, so the type admits only a primary-key column there.
+  it("takes only a primary-key column as the tie-break", () => {
+    const { key } = pages();
+    // @ts-expect-error -- po_number is not the primary key.
+    const byNumber: typeof key = { ...key, id: { by: po.poNumber, dir: "asc", field: "poNumber" } };
+    // @ts-expect-error -- an expression is not a column.
+    const byExpression: typeof key = { ...key, id: { by: numberKey, dir: "asc", field: "numberKey" } };
+    expect([byNumber.id.field, byExpression.id.field]).toEqual(["poNumber", "numberKey"]);
   });
 
   it("returns nothing from an empty table after one fetch", async () => {

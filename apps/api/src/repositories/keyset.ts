@@ -1,6 +1,6 @@
 // Keyset paging for exports (SPEC-13 §4.2, INV-99): every row in a fixed order, one page at a time, each page starting
 // after the last row of the one before (no OFFSET), so no row is read twice or skipped.
-import type { SQL, SQLWrapper } from "drizzle-orm";
+import type { Column, SQL, SQLWrapper } from "drizzle-orm";
 import { and, asc, desc, eq, gt, lt, or } from "drizzle-orm";
 
 /**
@@ -13,6 +13,18 @@ export interface KeyPart<Row> {
   readonly by: SQLWrapper;
   readonly dir: "asc" | "desc";
   readonly field: keyof Row;
+}
+
+/** A primary-key column: unique in its table, so a key ending in it orders rows totally. */
+export type PrimaryKey = Column & { readonly _: { readonly isPrimaryKey: true } };
+
+/**
+ * The sort key: the parts in order, then the table's primary key as the tie-break, which the type requires. The
+ * query must return one row per row of that table (no join that repeats it), or rows sharing an id could be skipped.
+ */
+export interface Keyset<Row> {
+  readonly parts: readonly KeyPart<Row>[];
+  readonly id: KeyPart<Row> & { readonly by: PrimaryKey };
 }
 
 export interface KeysetPage {
@@ -35,15 +47,13 @@ function after<Row>(key: readonly KeyPart<Row>[], last: Row): SQL | undefined {
   );
 }
 
-/**
- * Every row `fetch` returns, page by page, fetching a page only when the previous one has been read. The key's last
- * part must be unique (the id), so the key orders rows totally.
- */
+/** Every row `fetch` returns in `keyset` order, page by page, fetching a page only when the previous one has been read. */
 export async function* keysetRows<Row>(
-  key: readonly KeyPart<Row>[],
+  keyset: Keyset<Row>,
   fetch: (page: KeysetPage) => Promise<readonly Row[]>,
   pageSize = 500,
 ): AsyncGenerator<Row> {
+  const key = [...keyset.parts, keyset.id];
   const orderBy = key.map((part) => (part.dir === "asc" ? asc(part.by) : desc(part.by)));
   let last: Row | undefined;
   for (;;) {
