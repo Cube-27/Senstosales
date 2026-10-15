@@ -3,21 +3,18 @@
 // (written out below by hand). Synthetic values only (C1).
 import type { DcDocument, InvoiceDocument } from "@senstosales/documents";
 import { buildDcWorkbook, buildGcWorkbook, buildInvoiceWorkbook } from "@senstosales/documents";
-import type { GstPct, IsoDate, Money, Qty } from "@senstosales/domain";
+import type { GstPct } from "@senstosales/domain";
 import { downloadFileName } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { apiApp, closeApiApps } from "./api-app.ts";
 import { withDc } from "./invoice-fixtures.ts";
-import { id } from "./seed-rows.ts";
+import { d, id, m, q } from "./seed-rows.ts";
 
 afterEach(closeApiApps);
 
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-const money = (n: number) => n as Money;
-const qty = (n: number) => n as Qty;
-const date = (d: string) => d as IsoDate;
 
 /** The onboarded supplier as the documents print it; DC 7 and its invoice carry the same snapshot. */
 const SUPPLIER = {
@@ -31,16 +28,16 @@ const SUPPLIER = {
   jurisdiction: null,
 };
 
-const PO = { poNumber: "4500001", poDate: date("2025-03-10"), isGemc: false };
+const PO = { poNumber: "4500001", poDate: d("2025-03-10"), isGemc: false };
 
 /** DC 7 (2025-04-02) of 4 on item 10 at 100 and 2 on item 20 at 33.333; its GC takes the DC's number and date. */
 const DC_7: DcDocument = {
   supplier: SUPPLIER,
   dc: {
     number: "7",
-    dcDate: date("2025-04-02"),
+    dcDate: d("2025-04-02"),
     gcNumber: "7",
-    gcDate: date("2025-04-02"),
+    gcDate: d("2025-04-02"),
     ourRef: null,
     departmentNo: null,
     consigneeName: null,
@@ -49,8 +46,8 @@ const DC_7: DcDocument = {
   po: PO,
   invoiceNumber: "INV/31",
   items: [
-    { poItemNo: 10, description: "Example part", unit: "NOS", dspQty: qty(4_000), rate: money(10_000_000) },
-    { poItemNo: 20, description: "Example part", unit: "NOS", dspQty: qty(2_000), rate: money(3_333_300) },
+    { poItemNo: 10, description: "Example part", unit: "NOS", dspQty: q(4_000), rate: m(10_000_000) },
+    { poItemNo: 20, description: "Example part", unit: "NOS", dspQty: q(2_000), rate: m(3_333_300) },
   ],
 };
 
@@ -70,7 +67,7 @@ const INVOICE_31: InvoiceDocument = {
   supplier: SUPPLIER,
   invoice: {
     number: "INV/31",
-    invoiceDate: date("2025-04-03"),
+    invoiceDate: d("2025-04-03"),
     buyerName: "Example Unit",
     buyerAddress: "2 Example Road",
     buyerGstin: "TESTGSTIN0002",
@@ -81,31 +78,31 @@ const INVOICE_31: InvoiceDocument = {
     sgstPct: 600_000 as GstPct,
   },
   po: PO,
-  dc: { number: "7", dcDate: date("2025-04-02") },
+  dc: { number: "7", dcDate: d("2025-04-02") },
   items: [
     {
       poItemNo: 10,
       description: "Example part",
       unit: "NOS",
-      qty: qty(4_000),
-      rate: money(10_000_000),
-      taxable: money(40_000_000),
-      cgst: money(2_400_000),
-      sgst: money(2_400_000),
-      igst: money(0),
-      total: money(44_800_000),
+      qty: q(4_000),
+      rate: m(10_000_000),
+      taxable: m(40_000_000),
+      cgst: m(2_400_000),
+      sgst: m(2_400_000),
+      igst: m(0),
+      total: m(44_800_000),
     },
     {
       poItemNo: 20,
       description: "Example part",
       unit: "NOS",
-      qty: qty(2_000),
-      rate: money(3_333_300),
-      taxable: money(6_667_000),
-      cgst: money(400_000),
-      sgst: money(400_000),
-      igst: money(0),
-      total: money(7_467_000),
+      qty: q(2_000),
+      rate: m(3_333_300),
+      taxable: m(6_667_000),
+      cgst: m(400_000),
+      sgst: m(400_000),
+      igst: m(0),
+      total: m(7_467_000),
     },
   ],
 };
@@ -170,12 +167,12 @@ describe("Excel downloads", () => {
       lines: [{ poItemId: r.item10, qty: "1" }],
     });
     const file = await download(r.app, `/api/invoice/${direct.body.id}/excel`);
-    const line = { ...INVOICE_31.items[0]!, qty: qty(1_000), taxable: money(10_000_000), total: money(11_200_000) };
+    const line = { ...INVOICE_31.items[0]!, qty: q(1_000), taxable: m(10_000_000), total: m(11_200_000) };
     const expected: InvoiceDocument = {
       ...INVOICE_31,
-      invoice: { ...INVOICE_31.invoice, number: "32", invoiceDate: date("2025-05-01") },
+      invoice: { ...INVOICE_31.invoice, number: "32", invoiceDate: d("2025-05-01") },
       dc: null,
-      items: [{ ...line, cgst: money(600_000), sgst: money(600_000) }],
+      items: [{ ...line, cgst: m(600_000), sgst: m(600_000) }],
     };
     expect(file.fileName).toBe("Invoice_32.xlsx");
     expect(await cells(file.bytes)).toEqual(await cells(await buildInvoiceWorkbook(expected)));
@@ -183,16 +180,16 @@ describe("Excel downloads", () => {
 });
 
 describe("refusals", () => {
-  it.each(["/api/dc/:id/excel", "/api/dc/:id/gc-excel", "/api/invoice/:id/excel"])(
-    "%s: an unknown id is 404 and stores nothing",
-    async (route) => {
-      const r = await setup();
-      const res = await r.app.send(route.replace(":id", id("ZZ")));
-      const code = route.startsWith("/api/dc") ? "dc-not-found" : "invoice-not-found";
-      expect([res.status, ((await res.json()) as { code: string }).code]).toEqual([404, code]);
-      expect(r.app.storage.files.size).toBe(0);
-    },
-  );
+  it.each([
+    ["/api/dc/:id/excel", "dc-not-found"],
+    ["/api/dc/:id/gc-excel", "dc-not-found"],
+    ["/api/invoice/:id/excel", "invoice-not-found"],
+  ])("%s: an unknown id is 404 %s and stores nothing", async (route, code) => {
+    const r = await withDc();
+    const res = await r.app.send(route.replace(":id", id("ZZ")));
+    expect([res.status, ((await res.json()) as { code: string }).code]).toEqual([404, code]);
+    expect(r.app.storage.files.size).toBe(0);
+  });
 
   it("before onboarding there is no supplier profile: 409 onboarding-required", async () => {
     const app = await apiApp();

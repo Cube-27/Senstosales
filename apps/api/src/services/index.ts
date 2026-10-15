@@ -45,10 +45,11 @@ export interface SupplierDeps extends ServiceDeps {
 export function createServices(deps: ServiceDeps) {
   const withSupplier: SupplierDeps = { ...deps, supplierId: supplierRef(deps.db) };
   const tracker = deliveryTrackerService(deps);
+  const supplier = createSupplierService(withSupplier);
   return {
     auth: createAuthService(deps),
     onboarding: createOnboardingService(withSupplier),
-    supplier: createSupplierService(withSupplier),
+    supplier,
     settings: createSettingsService(withSupplier),
     buyers: createBuyersService(withSupplier),
     secrets: createSecretsService(withSupplier),
@@ -69,7 +70,7 @@ export function createServices(deps: ServiceDeps) {
     dashboard: dashboardService({ ...deps, tracker }),
     search: searchService(deps),
     registers: registersService(deps),
-    documents: documentsService(deps),
+    documents: documentsService({ ...deps, profile: supplier.get }),
   };
 }
 

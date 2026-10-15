@@ -1,56 +1,44 @@
 // The DC, GC and invoice Excel downloads (SPEC-12 §2): the document's data loaded, built by `@senstosales/documents`,
 // written through Storage under `exports/<ulid>.xlsx` and returned with the legacy file name. A download is not a
 // write batch, so it adds no audit row (SPEC-12 §9). The builders load on the first download (D-0335).
+import type * as documents from "@senstosales/documents";
 import type { DcDocument, InvoiceDocument } from "@senstosales/documents";
 import type { Download } from "@senstosales/schemas";
 
-import { dcNotFound, invoiceNotFound, onboardingRequired } from "../errors.ts";
+import { dcNotFound, invoiceNotFound } from "../errors.ts";
 import { newId } from "../ids.ts";
-import { invoicesOfDcs, itemsOfDc } from "../repositories/dc.ts";
+import { itemsOfDc } from "../repositories/dc.ts";
 import { dcForDocument, invoiceForDocument } from "../repositories/documents.ts";
 import { itemsOfInvoice } from "../repositories/invoice.ts";
-import { findSupplier } from "../repositories/supplier.ts";
+import type { Supplier } from "../repositories/supplier.ts";
 import type { ServiceDeps } from "./index.ts";
 
-const writers = () => import("@senstosales/documents");
+type Writers = typeof documents;
 
-export function documentsService({ db, storage }: Pick<ServiceDeps, "db" | "storage">) {
-  async function profile() {
-    const row = await findSupplier(db);
-    if (row === null) throw onboardingRequired();
-    return row;
-  }
+interface DocumentsDeps extends Pick<ServiceDeps, "db" | "storage"> {
+  /** The supplier profile; refuses with 409 `onboarding-required` before onboarding. */
+  readonly profile: () => Promise<Supplier>;
+}
 
-  async function dcDocument(id: string): Promise<DcDocument> {
-    const [row, items, invoices, supplier, { documentSupplier }] = await Promise.all([
-      dcForDocument(db, id),
-      itemsOfDc(db, id),
-      invoicesOfDcs(db, [id]),
-      profile(),
-      writers(),
-    ]);
+export function documentsService({ db, storage, profile }: DocumentsDeps) {
+  async function dcDocument(id: string, { documentSupplier }: Writers): Promise<DcDocument> {
+    const [row, items, supplier] = await Promise.all([dcForDocument(db, id), itemsOfDc(db, id), profile()]);
     if (row === undefined) throw dcNotFound();
     return {
       supplier: documentSupplier(supplier, row.dc),
       dc: row.dc,
       po: row.po,
-      invoiceNumber: invoices.get(id)?.number ?? null,
+      invoiceNumber: row.invoiceNumber,
       items,
     };
   }
 
-  async function invoiceDocument(id: string): Promise<InvoiceDocument> {
-    const [row, items, supplier, { documentSupplier }] = await Promise.all([
-      invoiceForDocument(db, id),
-      itemsOfInvoice(db, id),
-      profile(),
-      writers(),
-    ]);
+  async function invoiceDocument(id: string, { documentSupplier }: Writers): Promise<InvoiceDocument> {
+    const [row, items, supplier] = await Promise.all([invoiceForDocument(db, id), itemsOfInvoice(db, id), profile()]);
     if (row === undefined) throw invoiceNotFound();
     return { supplier: documentSupplier(supplier, row.invoice), invoice: row.invoice, po: row.po, dc: row.dc, items };
   }
 
-  /** Keeps a copy of the file under `exports/`, then hands it back as the download. */
   async function stored(fileName: string, bytes: Uint8Array): Promise<Download> {
     await storage.put(`exports/${newId()}.xlsx`, bytes);
     return { fileName, bytes };
@@ -58,19 +46,19 @@ export function documentsService({ db, storage }: Pick<ServiceDeps, "db" | "stor
 
   return {
     async dcExcel(id: string) {
-      const doc = await dcDocument(id);
-      const { buildDcWorkbook, dcFileName } = await writers();
-      return stored(dcFileName(doc.dc.number), await buildDcWorkbook(doc));
+      const w = await import("@senstosales/documents");
+      const doc = await dcDocument(id, w);
+      return stored(w.dcFileName(doc.dc.number), await w.buildDcWorkbook(doc));
     },
     async gcExcel(id: string) {
-      const doc = await dcDocument(id);
-      const { buildGcWorkbook, gcFileName } = await writers();
-      return stored(gcFileName(doc.dc.number), await buildGcWorkbook(doc));
+      const w = await import("@senstosales/documents");
+      const doc = await dcDocument(id, w);
+      return stored(w.gcFileName(doc.dc.number), await w.buildGcWorkbook(doc));
     },
     async invoiceExcel(id: string) {
-      const doc = await invoiceDocument(id);
-      const { buildInvoiceWorkbook, invoiceFileName } = await writers();
-      return stored(invoiceFileName(doc.invoice.number), await buildInvoiceWorkbook(doc));
+      const w = await import("@senstosales/documents");
+      const doc = await invoiceDocument(id, w);
+      return stored(w.invoiceFileName(doc.invoice.number), await w.buildInvoiceWorkbook(doc));
     },
   };
 }
