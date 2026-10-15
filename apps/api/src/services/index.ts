@@ -20,6 +20,7 @@ import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
 import { poService } from "./po.ts";
 import { poManualQtyService } from "./po-manual-qty.ts";
+import { reportsService } from "./reports.ts";
 import { searchService } from "./search.ts";
 import { createSecretsService } from "./secrets.ts";
 import { createSettingsService } from "./settings.ts";
@@ -62,6 +63,7 @@ export function createServices(deps: ServiceDeps) {
     flags: flagsService(deps),
     audit: auditService(deps),
     deliveryTracker: tracker,
+    reports: reportsService(deps),
     dashboard: dashboardService({ ...deps, tracker }),
     search: searchService(deps),
   };

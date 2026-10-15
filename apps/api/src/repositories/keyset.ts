@@ -64,3 +64,19 @@ export async function* keysetRows<Row>(
     if (rows.length < pageSize || last === undefined) return;
   }
 }
+
+/** A sort column's key parts; the list's `dir` gives their direction. */
+export type SortParts<Row> = readonly Omit<KeyPart<Row>, "dir">[];
+
+/**
+ * A list's key: the chosen sort's parts in `dir`, then the default order, whose tie-break is the id. Screen pages and
+ * exports read rows through the same key, so both show the same rows in the same order (SPEC-13 PR 5).
+ */
+export function listKey<Row, S extends string>(
+  sorts: Record<S, SortParts<Row>>,
+  defaults: Keyset<Row>,
+  { sort, dir }: { sort?: S | undefined; dir: "asc" | "desc" },
+): Keyset<Row> {
+  const chosen = sort === undefined ? [] : sorts[sort].map((part) => ({ ...part, dir }));
+  return { parts: [...chosen, ...defaults.parts], id: defaults.id };
+}

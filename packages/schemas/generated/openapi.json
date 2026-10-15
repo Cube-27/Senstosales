@@ -6709,6 +6709,11 @@
                           "poId": {
                             "$ref": "#/components/schemas/Id"
                           },
+                          "poItemNo": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "description": {
                             "type": [
                               "string",
@@ -6726,6 +6731,22 @@
                           },
                           "poNumber": {
                             "type": "string"
+                          },
+                          "poDate": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/components/schemas/IsoDate"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "gemcNumbers": {
                             "type": "array",
@@ -6788,11 +6809,14 @@
                         },
                         "required": [
                           "poId",
+                          "poItemNo",
                           "description",
                           "ordQty",
                           "dspQty",
                           "poItemId",
                           "poNumber",
+                          "poDate",
+                          "unit",
                           "gemcNumbers",
                           "dcs",
                           "invoices"
@@ -6978,6 +7002,11 @@
                           "poId": {
                             "$ref": "#/components/schemas/Id"
                           },
+                          "poItemNo": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
                           "description": {
                             "type": [
                               "string",
@@ -6996,22 +7025,38 @@
                           "poNumber": {
                             "type": "string"
                           },
+                          "poDate": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/components/schemas/IsoDate"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "rcdQty": {
                             "$ref": "#/components/schemas/Qty"
                           },
                           "rejQty": {
                             "$ref": "#/components/schemas/Qty"
+                          },
+                          "balanceQty": {
+                            "$ref": "#/components/schemas/Qty"
                           }
                         },
                         "required": [
                           "poId",
+                          "poItemNo",
                           "description",
                           "ordQty",
                           "dspQty",
                           "poItemId",
                           "poNumber",
+                          "poDate",
                           "rcdQty",
-                          "rejQty"
+                          "rejQty",
+                          "balanceQty"
                         ]
                       }
                     },

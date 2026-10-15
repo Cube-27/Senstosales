@@ -6,14 +6,16 @@ import { zPoItem, zPoLot } from "../entities/po.ts";
 import { zCount, zId, zIsoDate, zMoney, zQty } from "../primitives.ts";
 import { zDateRange, zFyDocRef, zItemInfo, zListQuery, zRangeFilters } from "./common.ts";
 
+/** The PO item columns both tabs and their exports show. */
 const zReportItem = zPoItem
-  .pick({ poId: true, description: true, ordQty: true, dspQty: true })
-  .extend({ poItemId: zId, poNumber: z.string() });
+  .pick({ poId: true, poItemNo: true, description: true, ordQty: true, dspQty: true })
+  .extend({ poItemId: zId, poNumber: z.string(), poDate: zIsoDate.nullable() });
 
 export const zPendingQuery = zListQuery(["description", "poNumber", "poDate", "ordQty", "dspQty"], zDateRange);
 
 /** A PO item with quantity still to supply, and the documents raised on it. */
 export const zPendingRow = zReportItem.extend({
+  unit: z.string().nullable(),
   gemcNumbers: z.array(z.string()),
   dcs: z.array(zFyDocRef),
   invoices: z.array(zFyDocRef),
@@ -26,8 +28,8 @@ export const zReconciliationQuery = zListQuery(
   reconciliationFilters,
 );
 
-/** Ordered, delivered (dispatched), received and rejected per PO item. */
-export const zReconciliationRow = zReportItem.extend({ rcdQty: zQty, rejQty: zQty });
+/** Ordered, delivered (dispatched), received, rejected and balance per PO item. */
+export const zReconciliationRow = zReportItem.extend({ rcdQty: zQty, rejQty: zQty, balanceQty: zQty });
 
 export const zRegisterExportQuery = z.object(zDateRange);
 

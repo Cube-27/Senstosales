@@ -13,6 +13,7 @@ import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
 import { poManualQtyRoutes, poRoutes } from "./po.ts";
 import { poUploadRoutes } from "./po-upload.ts";
+import { reportsRoutes } from "./reports.ts";
 import { searchRoutes } from "./search.ts";
 import { settingsRoutes } from "./settings.ts";
 import { srvUploadRoutes } from "./srv-upload.ts";
@@ -38,6 +39,7 @@ export function apiRoutes(services: Services): Handlers {
     ...flagsRoutes(services.flags),
     ...auditRoutes(services.audit),
     ...deliveryTrackerRoutes(services.deliveryTracker),
+    ...reportsRoutes(services.reports),
     ...dashboardRoutes(services.dashboard),
     ...searchRoutes(services.search),
   };
