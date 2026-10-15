@@ -39,7 +39,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancel",
   variant = "warning",
   loading = false,
-}: ConfirmDialogProps) {
+}: Readonly<ConfirmDialogProps>) {
   const tone = TONE[variant];
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !loading && onClose()}>

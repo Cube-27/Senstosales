@@ -19,7 +19,14 @@ const shown = (q: Qty): string => (q === 0 ? "" : fmtQtyInput(q));
  * and only quantities reach `onChange` (empty or negative is 0). There is no upper limit (C6): over-dispatch is
  * flagged after creation, never blocked here.
  */
-export function QuantityInput({ value, onChange, onBlur, className, placeholder = "0", ...props }: QuantityInputProps) {
+export function QuantityInput({
+  value,
+  onChange,
+  onBlur,
+  className,
+  placeholder = "0",
+  ...props
+}: Readonly<QuantityInputProps>) {
   const [text, setText] = useState(() => shown(value));
   const [seen, setSeen] = useState(value);
   // A new value from outside (a reset, a server answer) replaces the text, unless the text already reads as it.

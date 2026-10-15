@@ -1,13 +1,21 @@
 // shadcn/ui Calendar (MIT, see NOTICE) on react-day-picker, restyled to the legacy date-picker tokens (`--dp-*` in
 // globals.css): previous/next month buttons, month and year choosers, the today ring and the selected cell.
 import type { ComponentProps } from "react";
-import { DayPicker, getDefaultClassNames } from "react-day-picker";
+import { type ChevronProps, DayPicker, getDefaultClassNames } from "react-day-picker";
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "../../lib/icons.ts";
 import { cn } from "../../lib/cn.ts";
 
 const NAV_BUTTON =
   "inline-flex size-8 items-center justify-center rounded-sm text-[var(--dp-icon-color)] hover:bg-[var(--dp-cell-hover-bg)] aria-disabled:opacity-50";
+
+// As before: only left and right differ; up, down and none show the down chevron.
+const CHEVRON = { left: ChevronLeft, right: ChevronRight, up: ChevronDown, down: ChevronDown };
+
+function Chevron({ className, orientation = "down" }: Readonly<ChevronProps>) {
+  const Icon = CHEVRON[orientation];
+  return <Icon className={cn("size-4", className)} aria-hidden />;
+}
 
 function Calendar({ className, classNames, ...props }: ComponentProps<typeof DayPicker>) {
   const defaults = getDefaultClassNames();
@@ -54,10 +62,7 @@ function Calendar({ className, classNames, ...props }: ComponentProps<typeof Day
         ...classNames,
       }}
       components={{
-        Chevron: ({ className: chevron, orientation }) => {
-          const Icon = orientation === "left" ? ChevronLeft : orientation === "right" ? ChevronRight : ChevronDown;
-          return <Icon className={cn("size-4", chevron)} aria-hidden />;
-        },
+        Chevron,
       }}
       {...props}
     />

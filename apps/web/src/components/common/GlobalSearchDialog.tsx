@@ -32,7 +32,7 @@ const TOGGLE = "ml-1 flex size-9 shrink-0 items-center justify-center rounded-md
 const toggleState = (on: boolean): string =>
   on ? "bg-primary/10 text-accent" : "text-tertiary hover:bg-surface-sunken hover:text-foreground";
 
-export function GlobalSearchDialog(props: GlobalSearchDialogProps) {
+export function GlobalSearchDialog(props: Readonly<GlobalSearchDialogProps>) {
   const { open, onOpenChange, query, onQueryChange, loading, filtersPressed, savedPressed } = props;
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -49,8 +49,8 @@ export function GlobalSearchDialog(props: GlobalSearchDialogProps) {
 
           <div className="flex items-center border-b border-border px-4 py-3">
             <Search className="mr-3 size-4 shrink-0 text-tertiary" />
+            {/* Radix focuses the first field in the dialog when it opens. */}
             <input
-              autoFocus
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="Search POs, Challans, Invoices or SRVs..."

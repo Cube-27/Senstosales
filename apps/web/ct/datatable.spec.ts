@@ -60,7 +60,7 @@ test.describe("the light page", () => {
     await page.getByRole("button", { name: "Last page" }).click();
     const rows = page.locator("tbody tr");
     await expect(rows).toHaveCount(10);
-    expect(await page.locator("tbody tr[aria-hidden]").count()).toBe(7);
+    await expect(page.locator("tbody tr[aria-hidden]")).toHaveCount(7);
     expect((await page.locator("tbody").boundingBox())?.height).toBe(400);
   });
 

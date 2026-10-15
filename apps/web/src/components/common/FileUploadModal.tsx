@@ -98,7 +98,7 @@ const IDLE: UploadRun = { files: [], subscribe: () => () => {}, state: () => IDL
  * The legacy upload modal: shows a run's progress, the Success / Skipped / Failed counts and, per file not accepted,
  * the reason (SPEC-16). Cancel stops after the file in flight; the dialog closes only when no upload runs.
  */
-export function FileUploadModal({ run, onClose, title = "Upload Files" }: FileUploadModalProps) {
+export function FileUploadModal({ run, onClose, title = "Upload Files" }: Readonly<FileUploadModalProps>) {
   const shown = run ?? IDLE;
   const { phase, results } = useSyncExternalStore(shown.subscribe, shown.state);
   const { files } = shown;

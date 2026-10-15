@@ -115,9 +115,11 @@ interface HeaderProps {
   onSort(key: string): void;
 }
 
-function Header({ column, sort, onSort }: HeaderProps) {
+const SORT_ICON = { ascending: ArrowUp, descending: ArrowDown, none: Sortable };
+
+function Header({ column, sort, onSort }: Readonly<HeaderProps>) {
   const sorted = ariaSort(column.key, column.sortable ?? false, sort);
-  const Icon = sorted === "ascending" ? ArrowUp : sorted === "descending" ? ArrowDown : Sortable;
+  const Icon = SORT_ICON[sorted ?? "none"];
   return (
     <th
       scope="col"
@@ -204,20 +206,22 @@ type BodyStateProps = Pick<DataTableProps<never>, "state" | "error" | "emptyText
   readonly colSpan: number;
 };
 
-function BodyState({ state, error, emptyText, pageSize, colSpan }: BodyStateProps) {
-  const content =
-    state === "loading" ? (
+function BodyState({ state, error, emptyText, pageSize, colSpan }: Readonly<BodyStateProps>) {
+  let content = <span className="role-empty-text">{emptyText}</span>;
+  if (state === "loading") {
+    content = (
       <span role="status" className="inline-flex items-center gap-2 role-empty-text">
         <Loading className="size-4 animate-spin" aria-hidden />
         Loading...
       </span>
-    ) : state === "error" ? (
+    );
+  } else if (state === "error") {
+    content = (
       <span role="alert" className="role-empty-text text-error">
         {error ?? "Something went wrong"}
       </span>
-    ) : (
-      <span className="role-empty-text">{emptyText}</span>
     );
+  }
   return (
     // Every body row has the same 1px bottom border, so the collapsed table is the same height in every state.
     <tr className="border-b border-transparent">
@@ -234,7 +238,7 @@ function BodyState({ state, error, emptyText, pageSize, colSpan }: BodyStateProp
  * `aria-hidden` filler rows), loading/empty/error inside that body with the header and pager mounted, and the pager
  * always there.
  */
-export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
+export function DataTable<Row extends RowData>(props: Readonly<DataTableProps<Row>>) {
   const { columns, rows, pageSize, state, rowHighlight, onRowClick, selection } = props;
   const defs = useMemo<ColumnDef<typeof FEATURES, Row>[]>(
     () =>

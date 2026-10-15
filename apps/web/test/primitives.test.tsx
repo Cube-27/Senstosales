@@ -62,7 +62,7 @@ describe("FormField", () => {
       </FormField>,
     );
     expect(screen.getByRole("textbox", { name: "Remarks" }).getAttribute("aria-describedby")).toBeNull();
-    expect(container.querySelectorAll("p").length).toBe(1);
+    expect(container.querySelectorAll("p")).toHaveLength(1);
   });
 });
 
@@ -332,7 +332,7 @@ describe("ConfirmDialog", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByRole("button", { name: "Wait..." }).hasAttribute("disabled")).toBe(true);
     fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(onClose.mock.calls.length).toBe(0);
+    expect(onClose.mock.calls).toHaveLength(0);
   });
 });
 

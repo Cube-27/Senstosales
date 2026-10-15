@@ -140,7 +140,7 @@ describe("Toast", () => {
     fireEvent.click(screen.getByRole("button", { name: "raise" }));
     expect(screen.getByRole("status").textContent).toBe("Save failedNumber already used in this FY.");
     act(() => vi.advanceTimersByTime(3999));
-    expect(screen.queryByRole("status")).not.toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("Save failedNumber already used in this FY.");
     act(() => vi.advanceTimersByTime(1));
     expect(screen.queryByRole("status")).toBeNull();
   });
