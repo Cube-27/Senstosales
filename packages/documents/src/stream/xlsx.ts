@@ -10,6 +10,12 @@ export interface Sheet<K extends string> {
   readonly name: string;
   readonly columns: readonly Column<K>[];
   readonly pageSetup?: Partial<ExcelJS.PageSetup>;
+  /** The style of every header cell. */
+  readonly headerStyle?: Partial<ExcelJS.Style>;
+  /** The footer of odd (all) printed pages, in Excel's `&C`/`&P` codes. */
+  readonly oddFooter?: string;
+  /** With no rows, write the sheet bare: no header row, widths, page setup or footer (EC-45). */
+  readonly bareWhenEmpty?: true;
 }
 
 /**
@@ -34,21 +40,41 @@ function writable(out: PassThrough): Promise<void> {
   });
 }
 
+/** The worksheet with the sheet's widths, page setup, footer and header row. */
+function addSheet<K extends string>(workbook: ExcelJS.stream.xlsx.WorkbookWriter, sheet: Sheet<K>) {
+  const worksheet = workbook.addWorksheet(sheet.name, {
+    ...(sheet.pageSetup ? { pageSetup: sheet.pageSetup } : {}),
+    ...(sheet.oddFooter === undefined ? {} : { headerFooter: { oddFooter: sheet.oddFooter } }),
+  });
+  worksheet.columns = sheet.columns.map((c) => ({ width: c.width }));
+  const header = worksheet.addRow(sheet.columns.map((c) => c.header));
+  const { headerStyle } = sheet;
+  if (headerStyle) header.eachCell((cell) => (cell.style = headerStyle));
+  header.commit();
+  return worksheet;
+}
+
 async function write<K extends string>(sheet: Sheet<K>, rows: AsyncIterable<Row<K>>, out: PassThrough) {
   const closed = new Promise((resolve) => out.once("close", resolve));
   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: out, useStyles: true });
-  const worksheet = workbook.addWorksheet(sheet.name, sheet.pageSetup ? { pageSetup: sheet.pageSetup } : {});
-  worksheet.columns = sheet.columns.map((c) => ({ width: c.width }));
-  worksheet.addRow(sheet.columns.map((c) => c.header)).commit();
+  const source = rows[Symbol.asyncIterator]();
+  let next = await source.next();
+  const worksheet = next.done && sheet.bareWhenEmpty ? workbook.addWorksheet(sheet.name) : addSheet(workbook, sheet);
   const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
-  let written = 0;
-  for await (const row of rows) {
-    const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
-    for (const { key, numFmt, i } of formatted) if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
-    added.commit();
-    written += 1;
-    if (written % PACE === 0) await writable(out);
-    if (out.destroyed) return;
+  try {
+    for (let written = 1; !next.done; written++) {
+      const row = next.value;
+      const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
+      for (const { key, numFmt, i } of formatted)
+        if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
+      added.commit();
+      if (written % PACE === 0) await writable(out);
+      if (out.destroyed) return;
+      next = await source.next();
+    }
+  } finally {
+    // As `for await` does: a source left part-read is closed.
+    if (!next.done) await source.return?.();
   }
   worksheet.commit();
   const committed = workbook.commit();

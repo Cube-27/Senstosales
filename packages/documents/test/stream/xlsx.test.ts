@@ -74,6 +74,35 @@ describe("xlsxChunks", () => {
     await expect(collect(xlsxChunks(SHEET, rows))).rejects.toThrow("page failed");
   });
 
+  it("styles the header cells and writes the odd-page footer when the sheet has them", async () => {
+    const thin = { style: "thin" } as const;
+    const headerStyle = {
+      font: { bold: true },
+      border: { top: thin, left: thin, bottom: thin, right: thin },
+      fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFD7E4BC" } },
+    } as const;
+    const sheet = await read(
+      xlsxChunks({ ...SHEET, headerStyle, oddFooter: "&CPage &P of &N" }, of({ number: "N", note: null, qty: 1 })),
+    );
+    expect(["A1", "B1", "C1"].map((a) => sheet.getCell(a).style)).toEqual([headerStyle, headerStyle, headerStyle]);
+    expect(sheet.getCell("A2").style).toEqual({});
+    expect(sheet.headerFooter.oddFooter).toBe("&CPage &P of &N");
+  });
+
+  // EC-45: with no rows the legacy list workbook is the bare sheet.
+  it("writes a bare sheet with no rows when the sheet asks for it", async () => {
+    const sheet = await read(xlsxChunks({ ...SHEET, bareWhenEmpty: true, oddFooter: "&CPage" }, of()));
+    expect(sheet.rowCount).toBe(0);
+    expect(sheet.columns).toBeNull();
+    expect(sheet.pageSetup.orientation).toBe("portrait");
+    expect(sheet.headerFooter?.oddFooter).toBeUndefined();
+  });
+
+  it("writes the header row with no rows otherwise", async () => {
+    const sheet = await read(xlsxChunks(SHEET, of()));
+    expect(sheet.getSheetValues()).toEqual([undefined, [undefined, "Doc No", "Note", "Qty"]]);
+  });
+
   it("closes the source when the reader stops early", async () => {
     const { rows, state } = source(10_000);
     const chunks = xlsxChunks(SHEET, rows);

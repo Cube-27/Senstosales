@@ -91,6 +91,50 @@ describe("mounting from the route table", () => {
     expect(download).toEqual({ fileName: "Invoices 2024-25.xlsx", bytes: new Uint8Array([1, 2, 3]) });
   });
 
+  it("streams a download's chunks, pulling each only as the body is read (INV-99)", async () => {
+    const pulled: string[] = [];
+    async function* chunks() {
+      for (const chunk of ["a,b\r\n", "1,2\r\n"]) {
+        pulled.push(chunk);
+        yield chunk;
+      }
+      yield new Uint8Array([51]);
+    }
+    const { send } = testApp({ "invoice.export": () => ({ fileName: "List.csv", chunks: chunks() }) });
+    const res = await send("/api/invoice/export");
+    expect(res.headers.get("content-disposition")).toBe("attachment; filename*=UTF-8''List.csv");
+    expect(pulled).toEqual([]);
+    expect(await res.text()).toBe("a,b\r\n1,2\r\n3");
+  });
+
+  // SPEC-13 §4.3: an error mid-stream fails the download instead of ending it as a short file.
+  it("fails the body when the source fails mid-stream", async () => {
+    async function* chunks() {
+      yield "a,b\r\n";
+      throw new Error("page failed");
+    }
+    const { send } = testApp({ "invoice.export": () => ({ fileName: "List.csv", chunks: chunks() }) });
+    const res = await send("/api/invoice/export");
+    expect(res.status).toBe(200);
+    await expect(res.text()).rejects.toThrow("page failed");
+  });
+
+  it("closes the source when the client stops reading", async () => {
+    let closed = false;
+    async function* chunks() {
+      try {
+        for (;;) yield "row\r\n";
+      } finally {
+        closed = true;
+      }
+    }
+    const { send } = testApp({ "invoice.export": () => ({ fileName: "List.csv", chunks: chunks() }) });
+    const reader = (await send("/api/invoice/export")).body!.getReader();
+    await reader.read();
+    await reader.cancel();
+    expect(closed).toBe(true);
+  });
+
   it("mounts in route-table order, so a fixed segment wins over an id whatever the handler order", async () => {
     const { send } = testApp({
       "po.detail": () => {

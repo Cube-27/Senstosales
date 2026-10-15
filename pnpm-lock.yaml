@@ -30,6 +30,9 @@ importers:
       '@senstosales/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@senstosales/documents':
+        specifier: workspace:*
+        version: link:../../packages/documents
       '@senstosales/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -48,6 +51,10 @@ importers:
       zod:
         specifier: ^4.6.7
         version: 4.6.7
+    devDependencies:
+      exceljs:
+        specifier: ^4.4.0
+        version: 4.4.0
 
   packages/db:
     dependencies:

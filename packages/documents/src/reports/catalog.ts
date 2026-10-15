@@ -54,7 +54,14 @@ const col = (key: string, header: string, width: number): Column<string> => ({ k
 const table = <A extends unknown[]>(fileName: (...args: A) => string, columns: readonly Column<string>[]) => ({
   kind: "table" as const,
   fileName,
-  sheet: { name: TABLE.sheet, columns, pageSetup: TABLE.pageSetup } satisfies Sheet<string>,
+  sheet: {
+    name: TABLE.sheet,
+    columns,
+    pageSetup: TABLE.pageSetup,
+    headerStyle: TABLE.headerStyle,
+    oddFooter: TABLE.oddFooter,
+    bareWhenEmpty: true,
+  } satisfies Sheet<string>,
 });
 
 /** A CSV list: UTF-8 with a BOM, CRLF line ends, fields quoted only when they hold a comma, quote or line break. */

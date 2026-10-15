@@ -13,6 +13,8 @@ import {
   fmtMoneyCompactSpaced,
   fmtQty,
   fmtRate,
+  moneyNumber,
+  qtyNumber,
 } from "../src/index.ts";
 
 function unwrap<T>(r: Result<T>): T {
@@ -44,6 +46,30 @@ describe("fmtQty: whole units, Indian grouping", () => {
     ["-9007199254740.501", "-90,07,19,92,54,741"],
   ])("%s -> %s", (q, expected) => {
     expect(fmtQty(qty(q))).toBe(expected);
+  });
+});
+
+describe("qtyNumber and moneyNumber: export number cells, 2 dp half up", () => {
+  it.each([
+    ["0", 0],
+    ["1.25", 1.25],
+    ["2.5", 2.5],
+    ["1.254", 1.25],
+    ["1.255", 1.26],
+    ["-1.255", -1.25],
+    ["15", 15],
+  ])("qty %s -> %d", (q, expected) => {
+    expect(qtyNumber(qty(q))).toBe(expected);
+  });
+
+  it.each([
+    ["826", 826],
+    ["400.00499", 400],
+    ["400.005", 400.01],
+    ["0.1", 0.1],
+    ["1180.5", 1180.5],
+  ])("money %s -> %d", (m, expected) => {
+    expect(moneyNumber(money(m))).toBe(expected);
   });
 });
 
