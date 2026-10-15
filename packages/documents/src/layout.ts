@@ -26,6 +26,7 @@ const merge = (ws: ExcelJS.Worksheet, { top, left, bottom, right }: Range): void
 export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, like: number): void {
   if (count <= 0) return;
   const merges = ws.model.merges.map((range) => parseRange(ws, range));
+  if (merges.some((m) => m.top < at && m.bottom >= at)) throw new Error(`A merge spans row ${at}`);
   const moving = merges.filter((m) => m.top >= at);
   const repeated = merges.filter((m) => m.top === like && m.bottom === like);
   const width = ws.columnCount;
@@ -42,7 +43,8 @@ export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, lik
     cells.forEach(({ value, style }, i) => {
       const cell = ws.getCell(row, i + 1);
       cell.value = value;
-      cell.style = style;
+      // A copy: exceljs style setters mutate the object, which must not reach other cells.
+      cell.style = structuredClone(style);
     });
   below.forEach((cells, i) => write(at + count + i, cells));
   for (let row = at; row < at + count; row++) write(row, blank);

@@ -49,9 +49,11 @@ function put(ws: ExcelJS.Worksheet, address: string, value: Value): void {
   ws.getCell(address).value = value === "" ? null : value;
 }
 
-/** Legacy's department column held integers, so a number-only value prints as a number. */
-const departmentCell = (departmentNo: string | null): Value =>
-  departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : departmentNo;
+/** Legacy's department column held integers, so a number-only value prints as a number (`0456` -> 456). */
+function departmentCell(departmentNo: string | null): Value {
+  const number = departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : Number.NaN;
+  return Number.isSafeInteger(number) ? number : departmentNo;
+}
 
 function consignee({ consigneeName, consigneeAddress }: DcDocument["dc"]): string {
   const address = (consigneeAddress ?? "").split(/\r?\n/).map((line) => line.trim());
@@ -83,12 +85,11 @@ function writeItems(ws: ExcelJS.Worksheet, items: DcDocument["items"]): void {
   });
 }
 
-/** The numbered remarks, the GC line (INV-36), the consignment value and the signature block; returns the last row. */
-function writeFooter(
-  ws: ExcelJS.Worksheet,
-  { supplier, dc, po, invoiceNumber, items }: DcDocument,
-  at: number,
-): number {
+/**
+ * The numbered remarks, the GC line (INV-36) and the consignment value; returns the last row, the template's
+ * signature block 10 and 11 rows down.
+ */
+function writeFooter(ws: ExcelJS.Worksheet, { dc, po, invoiceNumber, items }: DcDocument, at: number): number {
   const total = sumMoney(items.map((item) => qtyValue(item.dspQty, item.rate)));
   const cells: Array<[number, string, Value]> = [
     [0, "B", 1],
@@ -101,9 +102,6 @@ function writeFooter(
     [3, "C", "TC No  dt.  Of"],
     [6, "C", "Lot No."],
     [7, "C", `Consignment Value of BHEL PO ${fmtFixed(total, { gemc: po.isGemc })}`],
-    [10, "C", "Received the Goods in good condition"],
-    [10, "H", `                 For ${supplier.name}`],
-    [11, "C", "E. & O.E."],
   ];
   for (const [offset, column, value] of cells) put(ws, `${column}${at + offset}`, value);
   return at + 11;
@@ -149,5 +147,5 @@ const FILE_NAME_SAFE = /^[\p{L}\p{N}_-]+$/u;
 /** Legacy's download name: path characters become `_`, anything else unsafe gives `export`; at most 100 characters. */
 export function dcFileName(number: string): string {
   const name = number.replace(/\.\.|[/\\]/g, "_");
-  return `DC_${FILE_NAME_SAFE.test(name) ? name.slice(0, 100) : "export"}.xlsx`;
+  return `DC_${FILE_NAME_SAFE.test(name) ? [...name].slice(0, 100).join("") : "export"}.xlsx`;
 }

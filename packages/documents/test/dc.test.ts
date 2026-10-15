@@ -4,9 +4,11 @@
 import { readFileSync } from "node:fs";
 
 import { parseMoney, parseQty, type Result } from "@senstosales/domain";
+import ExcelJS from "exceljs";
 import { describe, expect, it } from "vite-plus/test";
 
 import { buildDcWorkbook, dcFileName, type DcDocument } from "../src/dc.ts";
+import { insertRows } from "../src/layout.ts";
 import { templateBytes } from "../src/templates.ts";
 import { xlsxSnapshot, type CellSnapshot, type SheetSnapshot } from "./xlsx-snapshot.ts";
 
@@ -114,6 +116,24 @@ describe("DC workbook", () => {
     expect(hiddenRows).toEqual(hidden);
     expect([sheet!.pageSetup["printArea"], sheet!.pageSetup["fitToHeight"]]).toEqual([printArea, fitToHeight]);
   });
+
+  it.each([
+    ["0456", 456],
+    ["D-4", "D-4"],
+    ["12345678901234567", "12345678901234567"],
+  ])("department %s prints as %j", async (departmentNo, expected) => {
+    const one = input("dc-1");
+    const [sheet] = await build({ ...one, dc: { ...one.dc, departmentNo } });
+    expect(sheet!.cells["F15"]?.value).toBe(expected);
+  });
+});
+
+describe("insertRows", () => {
+  it("refuses to insert inside a merge", () => {
+    const ws = new ExcelJS.Workbook().addWorksheet("Sheet1");
+    ws.mergeCells("B2:B5");
+    expect(() => insertRows(ws, 3, 1, 2)).toThrow("A merge spans row 3");
+  });
 });
 
 describe("dcFileName: legacy DC_<number>.xlsx", () => {
@@ -126,6 +146,7 @@ describe("dcFileName: legacy DC_<number>.xlsx", () => {
     ["12 A", "DC_export.xlsx"],
     ["7.1", "DC_export.xlsx"],
     ["x".repeat(120), `DC_${"x".repeat(100)}.xlsx`],
+    ["x".repeat(99) + "𝐀x", `DC_${"x".repeat(99)}𝐀.xlsx`],
   ])("%s -> %s", (number, expected) => {
     expect(dcFileName(number)).toBe(expected);
   });
