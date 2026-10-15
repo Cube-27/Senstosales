@@ -38,7 +38,7 @@ Core:
   Badge/StatusBadge, QuantityInput, Autocomplete, FileUploadModal, `FormField` (label, help and error associated;
   icon-only buttons need `aria-label`).
 - DataTable and Pagination (INV-70, INV-71), custom on TanStack Table: `table-layout: fixed` with a required width per column; single-line
-  truncated cells with `title`; body height reserved as `pageSize × rowHeight` with `aria-hidden` filler rows;
+  truncated cells with `title`; one `auto` free-text column may take the leftover width; body height reserved as ten rows (the smallest page size) with `aria-hidden` filler rows, larger pages scrolling inside it under a sticky header (ARCHITECTURE rev 1.10);
   loading/empty/error rendered inside the reserved body with header and pager mounted; pager always mounted with page
   and range text in fixed-width `tabular-nums` slots; sort via a `<button>` in `<th>` with `aria-sort`; flag badge
   column with reserved width; highlighted rows. Toolbar count pills, Clear/Reset and badges keep their slot
@@ -119,8 +119,8 @@ touched shared component are review artefacts.
 - [ ] `globals.css` equals the legacy file except the ADR's listed fixes; every `:root` colour token has a `.dark`
       value.
 - [ ] **No layout shift:** clicking pagination (prev/next/page size), tabs, filters, toggles, expanders or sort
-      moves or resizes nothing around the control; the DataTable keeps fixed column widths and a reserved full-page
-      body with padded short pages; the pager stays in place on every page; loading, empty and error states take
+      moves or resizes nothing around the control; the DataTable keeps fixed column widths and a reserved ten-row
+      body with padded short pages and larger pages scrolling inside it; the pager stays in place on every page; loading, empty and error states take
       the same footprint (Playwright bounding-box tests).
 - [ ] Every flow works in a plain browser through `platform/web.ts`.
 - [ ] Shell bundle ≤ 250 kB gzip; `e2e` job green on Windows; `pnpm verify` and every CI job green.
