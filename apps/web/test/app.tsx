@@ -62,7 +62,7 @@ export function stubApi(api: FakeApi): Call[] {
       };
     }
     const { status, body: json } = isReply(answer) ? answer : { status: 200, body: answer };
-    return { ok: status < 400, status, headers: { get: () => null }, json: async () => json };
+    return { ok: status < 400, status, headers: { get: () => null }, json: () => Promise.resolve(json) };
   });
   return calls;
 }

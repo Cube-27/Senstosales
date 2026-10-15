@@ -35,7 +35,8 @@ function chunks(sql: string): Chunk[] {
       .split(/\r?\n/)
       .filter((line) => !line.trim().startsWith("--"))
       .join("\n")
-      .replace(/;?\s*$/, "")
+      .trimEnd()
+      .replace(/;$/, "")
       .trim();
     if (statement === "") return [];
     return [{ line: sql.slice(0, start).split("\n").length, statement }];
@@ -52,7 +53,7 @@ export function migrationSqlViolations(path: string, sql: string): string[] {
     if (VIEW.test(statement)) return finding("CREATE VIEW is not allowed");
     if (statement.includes(";")) return finding("more than one statement between breakpoints");
     const copy = COPY.exec(statement);
-    if (copy && copy[1] === `__new_${copy[2]}`) {
+    if (copy?.[1] === `__new_${copy?.[2]}`) {
       copied.add(copy[2] as string);
       return [];
     }
@@ -63,7 +64,7 @@ export function migrationSqlViolations(path: string, sql: string): string[] {
       return [];
     }
     const rename = RENAME.exec(statement);
-    if (rename && rename[1] === `__new_${rename[2]}`) {
+    if (rename?.[1] === `__new_${rename?.[2]}`) {
       if (!dropped.delete(rename[2] as string)) return finding(`RENAME of ${rename[1]} before DROP TABLE ${rename[2]}`);
       return [];
     }

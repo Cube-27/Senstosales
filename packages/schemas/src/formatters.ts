@@ -144,7 +144,8 @@ export function fmtAmountWords(m: Money): string {
   const rem = m % ONE_RUPEE;
   const paise = roundDiv(rem, ONE_RUPEE / 100);
   const words = `Rupees ${rupeeWords((m - rem) / ONE_RUPEE)}`;
-  return `${words}${paise > 0 ? ` and Paise ${rupeeWords(paise)}` : ""} Only`;
+  const paiseWords = paise > 0 ? ` and Paise ${rupeeWords(paise)}` : "";
+  return `${words}${paiseWords} Only`;
 }
 
 /** `2025-01-05` -> `"05/01/2025"`; no date -> `"—"`. */
@@ -217,7 +218,7 @@ export function parseQtyInput(text: string): Qty | null {
   if (trimmed === "") return 0 as Qty;
   const r = parseQty(trimmed);
   if (!r.ok) return null;
-  return r.value < 0 ? (0 as Qty) : r.value;
+  return Math.max(0, r.value) as Qty;
 }
 
 /** The date picker's field: `2019-12-22` -> `"Dec 22, 2019"`. */

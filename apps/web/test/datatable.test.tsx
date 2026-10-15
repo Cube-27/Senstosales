@@ -59,7 +59,7 @@ describe("DataTable", () => {
     ]);
     expect(Array.from(rows, (r) => (r as HTMLElement).style.height)).toEqual(Array<string>(10).fill("40px"));
     // Filler rows are hidden from assistive tech: only the header row and the 3 real rows are rows.
-    expect(screen.getAllByRole("row").length).toBe(4);
+    expect(screen.getAllByRole("row")).toHaveLength(4);
   });
 
   it("shows plain values with a title, an empty value as a dash, and rendered cells as rendered", () => {
@@ -107,10 +107,10 @@ describe("DataTable", () => {
   ])("%s with %j rows: the message fills the reserved body, header and pager stay", (state, rows, error, text) => {
     const { container } = table({ state, rows, error });
     const body = container.querySelectorAll("tbody tr");
-    expect(body.length).toBe(1);
+    expect(body).toHaveLength(1);
     const cell = container.querySelector<HTMLElement>("tbody td");
     expect([cell?.textContent, cell?.style.height]).toEqual([text, "400px"]);
-    expect(screen.getAllByRole("columnheader").length).toBe(3);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(3);
     expect(screen.getByRole("navigation", { name: "Pagination" }).textContent).toContain("21-23of23");
   });
 

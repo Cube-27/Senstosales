@@ -1,5 +1,5 @@
 import { fmtCount } from "@senstosales/schemas/formatters";
-import { useEffect, useRef, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { Loading, Upload, X } from "../../lib/icons.ts";
 import { cn } from "../../lib/cn.ts";
@@ -12,17 +12,29 @@ export interface UploadOutcome {
   readonly reason: string | null;
 }
 
-export interface FileUploadModalProps {
-  readonly open: boolean;
-  onClose(): void;
-  readonly files: readonly File[];
-  /** Uploads one file; a throw counts as a failure with the error's message. */
-  onUpload(file: File): Promise<UploadOutcome>;
-  readonly title?: string;
-}
-
 type Phase = "uploading" | "cancelled" | "complete";
 type Result = UploadOutcome & { readonly name: string };
+
+interface UploadState {
+  readonly phase: Phase;
+  readonly results: readonly Result[];
+}
+
+/** One upload run: started by the handler that picked the files, shown by {@link FileUploadModal}. */
+export interface UploadRun {
+  readonly files: readonly File[];
+  subscribe(listener: () => void): () => void;
+  state(): UploadState;
+  /** Stops after the file in flight. */
+  cancel(): void;
+}
+
+export interface FileUploadModalProps {
+  /** The run to show; null keeps the dialog closed. */
+  readonly run: UploadRun | null;
+  onClose(): void;
+  readonly title?: string;
+}
 
 const STATUS_TEXT: Record<Phase, { text: string; className: string }> = {
   uploading: { text: "Processing", className: "text-muted" },
@@ -30,7 +42,9 @@ const STATUS_TEXT: Record<Phase, { text: string; className: string }> = {
   complete: { text: "Upload Complete", className: "text-success" },
 };
 
-async function uploadOne(onUpload: FileUploadModalProps["onUpload"], file: File): Promise<Result> {
+type Upload = (file: File) => Promise<UploadOutcome>;
+
+async function uploadOne(onUpload: Upload, file: File): Promise<Result> {
   try {
     return { name: file.name, ...(await onUpload(file)) };
   } catch (error) {
@@ -39,43 +53,55 @@ async function uploadOne(onUpload: FileUploadModalProps["onUpload"], file: File)
 }
 
 /**
- * The legacy upload modal: opening it with files uploads them one by one, with progress, the Success / Skipped /
- * Failed counts and, per file not accepted, the reason (SPEC-16). Cancel stops after the file in flight; the dialog
- * closes only when no upload runs.
+ * Uploads `files` one by one through `onUpload` (a throw counts as a failure with the error's message). Cancelling,
+ * or closing the screen that shows the run, stops it after the file in flight.
  */
-export function FileUploadModal({ open, onClose, files, onUpload, title = "Upload Files" }: FileUploadModalProps) {
-  const [phase, setPhase] = useState<Phase>("uploading");
-  const [results, setResults] = useState<readonly Result[]>([]);
-  const cancelled = useRef(false);
-  // The run reads the latest handler, so a new `onUpload` identity mid-run neither restarts nor breaks it.
-  const upload = useRef(onUpload);
-  useEffect(() => {
-    upload.current = onUpload;
-  });
-
-  useEffect(() => {
-    if (!open) return;
-    if (files.length === 0) {
-      setPhase("complete");
-      return;
+export function startUpload(files: readonly File[], onUpload: Upload): UploadRun {
+  let state: UploadState = { phase: "uploading", results: [] };
+  let cancelled = false;
+  let shown = false;
+  const listeners = new Set<() => void>();
+  const update = (next: Partial<UploadState>): void => {
+    state = { ...state, ...next };
+    for (const listener of listeners) listener();
+  };
+  // A screen that showed the run and no longer does was closed; React re-subscribes within the same task (StrictMode),
+  // so the check before each next file sees only a real close.
+  const stopped = (): boolean => cancelled || (shown && listeners.size === 0);
+  void (async () => {
+    for (const file of files) {
+      if (stopped()) break;
+      const result = await uploadOne(onUpload, file);
+      update({ results: [...state.results, result] });
     }
-    let live = true;
-    cancelled.current = false;
-    setPhase("uploading");
-    setResults([]);
-    void (async () => {
-      for (const file of files) {
-        if (cancelled.current || !live) break;
-        const result = await uploadOne(upload.current, file);
-        if (!live) return;
-        setResults((done) => [...done, result]);
-      }
-      if (live) setPhase(cancelled.current ? "cancelled" : "complete");
-    })();
-    return () => {
-      live = false;
-    };
-  }, [open, files]);
+    update({ phase: cancelled ? "cancelled" : "complete" });
+  })();
+  return {
+    files,
+    subscribe(listener) {
+      shown = true;
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    state: () => state,
+    cancel() {
+      cancelled = true;
+    },
+  };
+}
+
+/** What a closed dialog shows: nothing runs. One state object, so the store reads as unchanged. */
+const IDLE_STATE: UploadState = { phase: "complete", results: [] };
+const IDLE: UploadRun = { files: [], subscribe: () => () => {}, state: () => IDLE_STATE, cancel() {} };
+
+/**
+ * The legacy upload modal: shows a run's progress, the Success / Skipped / Failed counts and, per file not accepted,
+ * the reason (SPEC-16). Cancel stops after the file in flight; the dialog closes only when no upload runs.
+ */
+export function FileUploadModal({ run, onClose, title = "Upload Files" }: Readonly<FileUploadModalProps>) {
+  const shown = run ?? IDLE;
+  const { phase, results } = useSyncExternalStore(shown.subscribe, shown.state);
+  const { files } = shown;
 
   const uploading = phase === "uploading";
   const count = { accepted: 0, skipped: 0, failed: 0 };
@@ -90,7 +116,7 @@ export function FileUploadModal({ open, onClose, files, onUpload, title = "Uploa
   ];
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && !uploading && onClose()}>
+    <Dialog open={run !== null} onOpenChange={(next) => !next && !uploading && onClose()}>
       <DialogContent className="max-w-[var(--modal-width-sm)] gap-0 overflow-hidden p-0" showCloseButton={false}>
         <DialogHeader className="border-b border-border bg-surface-sunken/50 px-4 py-3">
           <DialogTitle>
@@ -154,14 +180,7 @@ export function FileUploadModal({ open, onClose, files, onUpload, title = "Uploa
             </ul>
           )}
           {uploading ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                cancelled.current = true;
-              }}
-            >
+            <Button variant="outline" size="sm" className="w-full" onClick={shown.cancel}>
               <X aria-hidden />
               Cancel
             </Button>

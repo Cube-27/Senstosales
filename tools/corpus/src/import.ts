@@ -72,7 +72,9 @@ export async function importCorpus({
   // Both folders are listed first, so a corpus missing either fails before anything is made.
   const names = { po: await listPages(corpusDir, "po"), srv: await listPages(corpusDir, "srv") };
   const logged: string[] = [];
-  const log = (_fields: unknown, message: string) => void logged.push(message);
+  const log = (_fields: unknown, message: string): void => {
+    logged.push(message);
+  };
   const { db, services, jobs } = await openRuntime({
     dataDir,
     logger: { debug: () => {}, info: () => {}, warn: log, error: log },

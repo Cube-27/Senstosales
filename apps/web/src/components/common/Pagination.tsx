@@ -22,7 +22,7 @@ interface NavProps {
   onClick(): void;
 }
 
-function Nav({ label, icon: Icon, disabled, onClick }: NavProps) {
+function Nav({ label, icon: Icon, disabled, onClick }: Readonly<NavProps>) {
   return (
     <Button
       variant="ghost"
@@ -41,7 +41,7 @@ function Nav({ label, icon: Icon, disabled, onClick }: NavProps) {
  * The legacy pager: the row range, the page-size select and first/previous/next/last around "page / pages". The
  * range and page text sit in fixed-width `tabular-nums` slots, so no page moves a control (C8, INV-70).
  */
-export function Pagination({ page, pageSize, total, onPage, onPageSize, className }: PaginationProps) {
+export function Pagination({ page, pageSize, total, onPage, onPageSize, className }: Readonly<PaginationProps>) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const first = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const last = Math.min(page * pageSize, total);

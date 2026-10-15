@@ -47,7 +47,7 @@ export function Autocomplete({
   "aria-label": ariaLabel,
   className,
   ...field
-}: AutocompleteProps) {
+}: Readonly<AutocompleteProps>) {
   const listId = useId();
   const chosen = options.find((o) => o.value === value);
   const [open, setOpen] = useState(false);
@@ -126,7 +126,7 @@ export function Autocomplete({
         options={options}
         value={value}
         active={active}
-        emptyText={loading ? null : query ? "No results found." : "Type to search..."}
+        emptyText={emptyText(loading, query)}
         onPick={pick}
       />
     </div>
@@ -145,8 +145,23 @@ interface OptionListProps {
   onPick(option: AutocompleteOption): void;
 }
 
+/** What the open list says with no options: nothing while they load. */
+function emptyText(loading: boolean, query: string): string | null {
+  if (loading) return null;
+  return query ? "No results found." : "Type to search...";
+}
+
 /** The floating listbox under the field; option ids are `<id>-<index>` for `aria-activedescendant`. */
-function OptionList({ id, "aria-label": ariaLabel, open, options, value, active, emptyText, onPick }: OptionListProps) {
+function OptionList({
+  id,
+  "aria-label": ariaLabel,
+  open,
+  options,
+  value,
+  active,
+  emptyText,
+  onPick,
+}: Readonly<OptionListProps>) {
   return (
     <ul
       id={id}
@@ -194,7 +209,7 @@ interface TrailingProps {
 }
 
 /** The field's right end: a spinner while options load, else the clear button. */
-function Trailing({ loading, hidden, disabled, onClear }: TrailingProps) {
+function Trailing({ loading, hidden, disabled, onClear }: Readonly<TrailingProps>) {
   return (
     <span className="absolute top-1/2 right-1 flex size-6 -translate-y-1/2 items-center justify-center">
       {loading ? (

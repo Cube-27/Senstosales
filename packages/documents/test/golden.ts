@@ -41,18 +41,11 @@ const values = (sheet: SheetSnapshot): Record<string, unknown> =>
   );
 
 const rowOf = (address: string): number => Number(address.replace(/^[A-Z]+/, ""));
-const columnOf = (address: string): string => address.replace(/\d+$/, "");
+const columnOf = (address: string): string => address.replace(/\d/g, "");
 
 /** Each output cell's expected style: the template cell in the same column of the row the golden maps it to. */
 function expectedStyles(template: SheetSnapshot, golden: Golden): Record<string, Style> {
-  const byRow = Map.groupBy(Object.entries(template.cells), ([at]) => rowOf(at));
-  const out: Record<string, Style> = {};
-  for (const [first, last, templateFirst, templateLast] of golden.styleRows) {
-    for (let row = first; row <= last; row++) {
-      const source = templateFirst === templateLast ? templateFirst : templateFirst + row - first;
-      for (const [at, cell] of byRow.get(source) ?? []) out[`${columnOf(at)}${row}`] = cell.style;
-    }
-  }
+  const out = rowStyles(template, golden.styleRows);
   for (const [first, last, columns, numFmt] of golden.numFmts ?? []) {
     for (let row = first; row <= last; row++) {
       for (const column of columns) out[`${column}${row}`] = { ...out[`${column}${row}`], numFmt };
@@ -60,6 +53,19 @@ function expectedStyles(template: SheetSnapshot, golden: Golden): Record<string,
   }
   for (const [at, from] of Object.entries(golden.fontFrom ?? {})) {
     out[at] = { ...out[at], font: template.cells[from]!.style["font"]! };
+  }
+  return out;
+}
+
+/** Each output row's cells styled as the template row the golden maps it to. */
+function rowStyles(template: SheetSnapshot, styleRows: Golden["styleRows"]): Record<string, Style> {
+  const byRow = Map.groupBy(Object.entries(template.cells), ([at]) => rowOf(at));
+  const out: Record<string, Style> = {};
+  for (const [first, last, templateFirst, templateLast] of styleRows) {
+    for (let row = first; row <= last; row++) {
+      const source = templateFirst === templateLast ? templateFirst : templateFirst + row - first;
+      for (const [at, cell] of byRow.get(source) ?? []) out[`${columnOf(at)}${row}`] = cell.style;
+    }
   }
   return out;
 }

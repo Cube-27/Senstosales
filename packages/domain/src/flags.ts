@@ -1,6 +1,6 @@
 // Reconciliation flags (ARCHITECTURE §6.9, spec §8, A-7, A-13, A-15, A-24): accept data, flag deviation, don't reject.
 // Detection is pure; the recompute service (SPEC-08) stores what `diffFlags` returns.
-import type { IsoDate } from "./dates.ts";
+import { byCodeUnit, type IsoDate } from "./dates.ts";
 import type { ItemStatus } from "./status.ts";
 import type { Qty } from "./units.ts";
 import { gtTol, qtyToString } from "./units.ts";
@@ -95,8 +95,8 @@ function itemFlags(item: SnapshotItem, add: AddFlag): void {
         field: "manual_dispatched_qty",
         expected: null,
         actual: qtyToString(item.manualDispatchedQty),
-        // Code-unit order, not locale order: the fingerprint must not depend on the machine.
-        docIds: [...new Set(later)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+        // Code-unit order: the fingerprint must not depend on the machine.
+        docIds: [...new Set(later)].sort(byCodeUnit),
       });
     }
   }

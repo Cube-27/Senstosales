@@ -9,7 +9,13 @@ export { type Column, DataTable, type DataTableProps, type Selection, tableQuery
 export { DownloadButton, type DownloadButtonProps } from "./DownloadButton.tsx";
 export { DatePicker, type DatePickerProps } from "./DatePicker.tsx";
 export { type DetailTab, DetailTabs, type DetailTabsProps } from "./DetailTabs.tsx";
-export { FileUploadModal, type FileUploadModalProps, type UploadOutcome } from "./FileUploadModal.tsx";
+export {
+  FileUploadModal,
+  type FileUploadModalProps,
+  startUpload,
+  type UploadOutcome,
+  type UploadRun,
+} from "./FileUploadModal.tsx";
 export { FolderImport, type FolderImportProps } from "./FolderImport.tsx";
 export { FormField, type FormFieldProps } from "./FormField.tsx";
 export { GlobalSearchDialog, type GlobalSearchDialogProps } from "./GlobalSearchDialog.tsx";

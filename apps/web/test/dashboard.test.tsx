@@ -3,7 +3,7 @@ import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { renderApp, signedIn, stubApi } from "./app.tsx";
+import { renderApp, reply, signedIn, stubApi } from "./app.tsx";
 
 afterEach(() => {
   cleanup();
@@ -140,5 +140,15 @@ describe("dashboard (SPEC-15 PR 4)", () => {
     const slots = Array.from(section.querySelectorAll('[class~="h-[61px]"]'));
     expect(slots).toHaveLength(4);
     expect(slots.map((s) => s.getAttribute("aria-hidden"))).toEqual([null, "true", "true", "true"]);
+  });
+
+  it("says when the summary fails to load, and keeps every value at 0", async () => {
+    dashboardApi(() => reply(500, { code: "internal", message: "The database is not reachable." }));
+    renderApp("/");
+    const toast = await screen.findByRole("status");
+    expect([toast.textContent, cards()[3]]).toEqual([
+      "Failed to load summaryThe database is not reachable.",
+      ["Overdue", "0"],
+    ]);
   });
 });

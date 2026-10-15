@@ -83,7 +83,10 @@ const partials = new WeakMap<z.ZodObject, z.ZodObject>();
 
 function partial(query: z.ZodObject): z.ZodObject {
   let schema = partials.get(query);
-  if (!schema) partials.set(query, (schema = query.partial()));
+  if (!schema) {
+    schema = query.partial();
+    partials.set(query, schema);
+  }
   return schema;
 }
 
@@ -107,7 +110,7 @@ async function errorBody(res: FetchResponse): Promise<ErrorBody> {
 
 /** The `Content-Disposition` of a download named `fileName` (RFC 5987), as `downloadFileName` reads it back. */
 export function contentDisposition(fileName: string): string {
-  const encoded = encodeURIComponent(fileName).replace(/['()*]/g, (ch) => `%${ch.charCodeAt(0).toString(16)}`);
+  const encoded = encodeURIComponent(fileName).replace(/['()*]/g, (ch) => `%${(ch.codePointAt(0) ?? 0).toString(16)}`);
   return `attachment; filename*=UTF-8''${encoded}`;
 }
 

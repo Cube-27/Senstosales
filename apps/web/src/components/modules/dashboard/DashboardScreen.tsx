@@ -5,7 +5,7 @@
 import { fmtCount, fmtDate, fmtMoneyCompact, fmtQty, type RouteOutput, zMoney, zQty } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { apiQuery } from "../../../lib/api.ts";
 import { cn } from "../../../lib/cn.ts";
@@ -56,13 +56,12 @@ const TILE = "flex size-9 items-center justify-center rounded-sm";
 
 export function DashboardScreen() {
   const [range, setRange] = useState<Range>("month");
-  const summary = useQuery(apiQuery("dashboard.summary", { query: { range } }));
-  const activity = useQuery(apiQuery("dashboard.activity"));
   const { error: showError } = useToast();
-
-  useEffect(() => {
-    if (summary.error) showError("Failed to load summary", summary.error.message);
-  }, [summary.error, showError]);
+  const summary = useQuery({
+    ...apiQuery("dashboard.summary", { query: { range } }),
+    meta: { onError: (error) => showError("Failed to load summary", error.message) },
+  });
+  const activity = useQuery(apiQuery("dashboard.activity"));
 
   const s = summary.data ?? EMPTY;
   const refreshing = summary.isFetching;

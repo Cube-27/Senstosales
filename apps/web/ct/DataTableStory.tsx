@@ -26,7 +26,10 @@ function sorted(rows: Row[], sort: DataTableProps<Row>["sort"]): Row[] {
   if (!sort) return rows;
   const key = sort.key === "value" ? "value" : "number";
   const order = sort.dir === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => (a[key] < b[key] ? -order : a[key] > b[key] ? order : 0));
+  return [...rows].sort((a, b) => {
+    if (a[key] === b[key]) return 0;
+    return a[key] < b[key] ? -order : order;
+  });
 }
 
 export function DataTableStory() {

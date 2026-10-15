@@ -24,6 +24,13 @@ export interface ManualQtyCellProps {
   readonly overlap: boolean;
 }
 
+/** The manual-quantity button's tooltip: the quantity and its note, or what the button does. */
+function manualTitle(item: Item): string {
+  if (item.manualDispatchedQty <= 0) return "Set a manual dispatched quantity";
+  const note = item.manualNote ? `: ${item.manualNote}` : "";
+  return `Manual ${fmtQty(item.manualDispatchedQty)}${note}`;
+}
+
 /**
  * The item's Dispatched with the inline manual dispatched quantity and note (A-15, INV-08), where the legacy lot
  * override was edited. The editor opens over the row, so editing moves nothing (C8); saving recomputes the item and
@@ -77,11 +84,7 @@ export function ManualQtyCell({ poId, item, overlap }: ManualQtyCellProps) {
             variant="ghost"
             size="icon-sm"
             aria-label={`Manual dispatched quantity for item ${item.poItemNo}`}
-            title={
-              item.manualDispatchedQty > 0
-                ? `Manual ${fmtQty(item.manualDispatchedQty)}${item.manualNote ? `: ${item.manualNote}` : ""}`
-                : "Set a manual dispatched quantity"
-            }
+            title={manualTitle(item)}
           >
             <Edit className="size-3.5" aria-hidden />
           </Button>

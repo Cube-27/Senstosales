@@ -24,12 +24,15 @@ check_conflict() {
 
 # True when the check list $2 ("<name> <status> <conclusion>" lines) has a check named exactly $1.
 has_check() {
-  [[ $'\n'"$2" == *$'\n'"$1 "* ]]
+  local name=$1 checks=$2
+  [[ $'\n'"$checks" == *$'\n'"$name "* ]]
+  return
 }
 
 # Fails when the CI workflow has not started on the head by the grace deadline.
 check_ci_started() {
-  if ! has_check "$CI_FIRST_JOB" "$1" && (( $(date +%s) >= no_run_end )); then
+  local checks=$1
+  if ! has_check "$CI_FIRST_JOB" "$checks" && (( $(date +%s) >= no_run_end )); then
     err "no workflow run for $sha after ${no_run_s}s and the PR does not conflict: check the workflow triggers or re-push"
   fi
   return 0
@@ -44,9 +47,9 @@ all_reported() {
 
 # True when $CI_FIRST_JOB and, if set, $CI_GATE_CHECK succeeded: a skipped or neutral required check is not a pass.
 required_succeeded() {
-  local name
+  local checks=$1 name
   for name in "$CI_FIRST_JOB" ${CI_GATE_CHECK:+"$CI_GATE_CHECK"}; do
-    grep -qxF "$name COMPLETED SUCCESS" <<< "$1" || return 1
+    grep -qxF "$name COMPLETED SUCCESS" <<< "$checks" || return 1
   done
   return 0
 }

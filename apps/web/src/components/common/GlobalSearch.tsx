@@ -1,6 +1,6 @@
 // The header's search box: opens the search dialog on click or Ctrl/⌘+K. The dialog (SPEC-15 search, and Radix
 // Dialog with it) loads on the first open, keeping it out of the shell bundle (INV-104).
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 
 import { Search } from "../../lib/icons.ts";
 
@@ -17,7 +17,8 @@ export function GlobalSearch() {
     if (next) setOpened(true);
   };
 
-  useEffect(() => {
+  // Ctrl/⌘+K works anywhere while the search box is on screen: the listener lives as long as the button.
+  const listenForHotkey = useCallback((button: HTMLButtonElement) => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -25,13 +26,14 @@ export function GlobalSearch() {
         setOpen((was) => !was);
       }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    button.ownerDocument.addEventListener("keydown", onKey);
+    return () => button.ownerDocument.removeEventListener("keydown", onKey);
   }, []);
 
   return (
     <>
       <button
+        ref={listenForHotkey}
         type="button"
         onClick={() => show(true)}
         className="flex h-9 w-full max-w-[280px] items-center gap-2 rounded-md border border-border bg-surface-sunken/40 px-3 text-muted transition-colors hover:bg-surface-sunken/70 hover:text-foreground"

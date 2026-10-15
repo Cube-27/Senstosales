@@ -74,7 +74,7 @@ describe("useListSearch", () => {
     const { router, history, state, click } = await at("/po?page=2");
     await click("page 4");
     expect([(await state())["page"], router.state.location.search]).toEqual([4, { page: 4, pageSize: 10, dir: "asc" }]);
-    expect(history.length).toBe(1);
+    expect(history).toHaveLength(1);
   });
 
   it("keeps the first row on screen when the page size changes", async () => {

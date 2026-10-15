@@ -42,6 +42,8 @@ import {
   StatCard,
   qtyColumn,
   StatCardRow,
+  startUpload,
+  type UploadRun,
   useToast,
   tableQuery,
 } from "../../common/index.ts";
@@ -239,7 +241,7 @@ export function POList() {
   const stats = useQuery(apiQuery("po.stats", { query: filters }));
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
 
-  const [files, setFiles] = useState<readonly File[]>([]);
+  const [upload, setUpload] = useState<UploadRun | null>(null);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [busy, setBusy] = useState(false);
@@ -339,7 +341,11 @@ export function POList() {
                   variant="ghost"
                   size="sm"
                   className="justify-start"
-                  onClick={() => void pickHtmlPages().then((picked) => picked && setFiles(picked))}
+                  onClick={() =>
+                    void pickHtmlPages().then((picked) => {
+                      if (picked?.length) setUpload(startUpload(picked, (file) => uploadHtml("po.upload", file)));
+                    })
+                  }
                 >
                   <Upload aria-hidden />
                   Upload PO HTML
@@ -367,12 +373,10 @@ export function POList() {
         onImported={() => void invalidate("po", "srv")}
       />
       <FileUploadModal
-        open={files.length > 0}
-        files={files}
+        run={upload}
         title="Import PO Data"
-        onUpload={(file) => uploadHtml("po.upload", file)}
         onClose={() => {
-          setFiles([]);
+          setUpload(null);
           void refresh();
         }}
       />

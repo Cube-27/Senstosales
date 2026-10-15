@@ -36,7 +36,7 @@ export function DatePicker({
   onBlur,
   onKeyDown,
   ...props
-}: DatePickerProps) {
+}: Readonly<DatePickerProps>) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => shown(value));
   const [seen, setSeen] = useState(value);

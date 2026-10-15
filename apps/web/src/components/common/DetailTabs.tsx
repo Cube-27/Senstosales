@@ -16,7 +16,7 @@ export interface DetailTabsProps {
 }
 
 /** The tab strip of a detail page. Each tab controls the panel with id `<tab id>-panel`. */
-export function DetailTabs({ tabs, activeTab, onChange }: DetailTabsProps) {
+export function DetailTabs({ tabs, activeTab, onChange }: Readonly<DetailTabsProps>) {
   return (
     <div role="tablist" className="flex items-center gap-1 border-b border-border bg-surface px-4 pt-1">
       {tabs.map(({ id, label, badge, icon: TabIcon }) => {
