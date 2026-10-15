@@ -3,6 +3,7 @@
 // taken from the template row the legacy writer copies it from, with the formats and fonts legacy set over it.
 import { readFileSync } from "node:fs";
 
+import type { Result } from "@senstosales/domain";
 import { describe, expect, it } from "vite-plus/test";
 
 import { templateBytes, type TemplateName } from "../src/templates.ts";
@@ -22,6 +23,11 @@ export interface Golden {
   merges: string[];
   rows: SheetSnapshot["rows"];
   values: Record<string, unknown>;
+}
+
+export function unwrap<T>(r: Result<T>): T {
+  if (!r.ok) throw new Error(r.error);
+  return r.value;
 }
 
 export const readJson = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as T;
@@ -61,24 +67,29 @@ function expectedStyles(template: SheetSnapshot, golden: Golden): Record<string,
 const styles = (sheet: SheetSnapshot): Record<string, Style> =>
   Object.fromEntries(Object.entries(sheet.cells).map(([at, cell]) => [at, cell.style]));
 
-/** One `describe` per golden: the workbook built from `inputs/<name>.json` against `golden/<name>.json`. */
+/**
+ * One `describe` per golden: the workbook built from `inputs/<input(name)>.json` (by default `inputs/<name>.json`) against
+ * `golden/<name>.json`.
+ */
 export function describeGoldens<Doc>({
   template,
   names,
   build,
   fileName,
+  input = (name) => name,
 }: {
   template: TemplateName;
   names: readonly string[];
   build: (doc: Doc) => Promise<Uint8Array>;
   fileName: (doc: Doc) => string;
+  input?: (name: string) => string;
 }): void {
   describe(`${template} workbook goldens`, async () => {
     const [templateSheet, ...otherSheets] = await xlsxSnapshot(templateBytes(template));
 
     describe.each(names)("%s", async (name) => {
       const golden = readJson<Golden>(`./golden/${name}.json`);
-      const doc = readInput<Doc>(name);
+      const doc = readInput<Doc>(input(name));
       const [sheet, ...rest] = await xlsxSnapshot(await build(doc));
 
       it("has the golden's values", () => expect(values(sheet!)).toEqual(golden.values));

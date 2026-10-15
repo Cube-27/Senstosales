@@ -36,7 +36,7 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 ## Current focus
 
-Paused by the owner: nothing in flight; no new rows start until resumed. Next when resumed: SPEC-12 PR 5-6, SPEC-13 PR 4, SPEC-07 PR 6. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
+In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 after #74, then SPEC-07 PR 6 once every route is mounted. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -171,7 +171,7 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 | 2   | Golden inputs and legacy snapshots     | todo       | H5; include the manual 60-item print-preview check (SPEC-12 §6) (#68 review) |
 | 3   | DC workbook                            | done (#64) |                                                                              |
 | 4   | Invoice workbook                       | done (#68) |                                                                              |
-| 5   | GC workbook                            | todo       | needs 12-2 (H5)                                                              |
+| 5   | GC workbook                            | done (#73) | goldens from legacy code (H5 confirms in PR 2)                               |
 | 6   | Download routes                        | todo       |                                                                              |
 
 ## [SPEC-13 — Reports and exports](../specs/SPEC-13-reports-exports.md)

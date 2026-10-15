@@ -8,3 +8,4 @@ export type { Sheet } from "./stream/xlsx.ts";
 export { buildDcWorkbook, dcFileName, type DcDocument } from "./dc.ts";
 export { buildInvoiceWorkbook, invoiceFileName, type InvoiceDocument } from "./invoice.ts";
 export { documentSupplier, type DocumentSupplier } from "./supplier.ts";
+export { buildGcWorkbook, gcFileName, type GcDocument } from "./gc.ts";

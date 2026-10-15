@@ -2814,3 +2814,27 @@ None.
 - Alternatives: A merge-script check for unanswered bot threads (a second gate on a third-party bot's comment format).
 - Why: Findings were triaged only when an agent happened to read them; CodeAnt caught defects our review missed (#37, #40, #50).
 - Reversible: yes.
+
+### D-0345 — SPEC-12 PR 5 re-scoped: goldens from the legacy code
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 5 (#73) · Status: decided (orchestrator)
+- Decision: As D-0297 and D-0324, for the GC: the goldens are derived from the legacy GC writer's visible output (C16); SPEC-12 PR 2 (H5) confirms them.
+- Alternatives: Keep PR 5 blocked on H5.
+- Why: H5 is unavailable.
+- Reversible: yes.
+
+### D-0346 — The GC is built from the DC inputs
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 5 (#73) · Status: decided
+- Decision: `GcDocument` is a subset of `DcDocument` (supplier; DC number, dates, GC number and date, consignee; PO number and date; items), and the GC goldens `gc-N` are built from `inputs/dc-N.json`.
+- Alternatives: Separate `gc-N` input files copying the DC ones.
+- Why: Legacy printed the GC from the same DC detail data; one input set keeps H5 to one run per count.
+- Reversible: yes.
+
+### D-0347 — Legacy GC text and layout not described by the spec
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 5 (#73) · Status: decided
+- Decision: Reproduced (SPEC-12 §9): `<gc>  dt. <dd/mm/yyyy>`, `<po>  dt. <date>`, `<dc>  dt. <date>` in I9–I11, trimmed (`<po>  dt.` with no PO date); the guarantee text with `24 Months` (legacy overwrote the template's `24 Month`); `For <supplier name>` after 17 spaces; `<qty>  <UNIT>` in column J; unused item rows stay visible; item rows grow 17 points per 95 description characters; always `fitToHeight: 0`; print area `B1:J<34 + inserted rows>`.
+- Alternatives: None that keeps the format frozen.
+- Why: The format is frozen (A-2, INV-69).
+- Reversible: yes.
