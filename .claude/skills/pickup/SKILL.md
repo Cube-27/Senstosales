@@ -23,7 +23,7 @@ Adapted from pstack's session-pickup and pause-safely playbooks (MIT, see `NOTIC
    | Situation                                                | Action                                                                                                                                |
    | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
    | Open PR, CI green, no review                             | Its implementor starts one reviewer (`/implement-pr` §6.1); if the implementor is gone, start a fresh worker in the worktree to do it |
-   | Open PR whose latest `READY <sha7>` matches the head     | Queue it for `YOUR TURN` (`/run-plan` §1.3)                                                                                           |
+   | Open PR whose latest `READY <sha7>` matches the head     | Merge it (`/run-plan` §1.3), or send `REBASE` if it is behind `main` or conflicts                                                     |
    | Open PR with a `MERGE AFTER FIX` verdict                 | Its implementor makes the fixes, gets CI green, comments `READY`; no second review                                                    |
    | Branch with commits, no PR                               | A worker continues `/implement-pr` from §3 Verify                                                                                     |
    | Branch with no commits, or abandoned > 7 days with no PR | Remove the worktree and branch; the row is `todo` again                                                                               |

@@ -5,9 +5,9 @@ description: Orchestrate implementation from docs/plans/ACTIVE.md with minimal o
 
 # Run the plan
 
-You are the orchestrator. You don't write feature code. You assign rows, sequence merges, merge, and keep
-`ACTIVE.md` and `DECISIONS.md` true. You decide the tracker content (decision IDs, "Current focus") and send it with
-`YOUR TURN`; the implementor writes it in the PR's last commit. Adapted from pstack's autonomous-run and orchestrate
+You are the orchestrator. You only assign rows, merge, clean up and unblock stuck PRs; you write no code and don't
+relay messages between implementor and reviewer. You hand each implementor a decision-ID range at assignment; it
+writes its row and decisions in the PR's tracker commit before its first `READY`. Adapted from pstack's autonomous-run and orchestrate
 playbooks (MIT, see `NOTICE`).
 
 Requires herdr (`HERDR_ENV=1`). Without it, run `/implement-pr` solo instead.
@@ -17,7 +17,8 @@ Requires herdr (`HERDR_ENV=1`). Without it, run `/implement-pr` solo instead.
 1. Read `CLAUDE.md`, `docs/ENGINEERING.md`, `docs/plans/ACTIVE.md`, `docs/specs/README.md` (dependencies), and the
    open items in `docs/DECISIONS.md`.
 2. Write the exit predicate as something countable. Take it from the owner's request; the default is "every row of
-   the current layer is `done`, CI on `main` is green". It goes under "Current focus" with the next `YOUR TURN`.
+   the current layer is `done`, CI on `main` is green". "Current focus" is refreshed only when it materially
+   changes: ask the next implementor to replace it in its tracker commit.
 3. Run `/pickup` if open PRs or `spec-*` branches exist from an earlier session.
 
 ## 1. Loop
@@ -33,28 +34,28 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
    `MIN_FREE_MB` (default 1500) free. `start_agent.sh` refuses past either limit. Name reviewers `reviewer*`,
    everything else is a worker. Run independent ready rows in parallel; two workers never run rows that edit the
    same migration or generated file. For each assignment:
-   - create the worktree off fresh `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M` on branch
-     `spec-NN/pr-M-<short-name>`;
+   - `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>`: fetches and creates the worktree
+     off `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`. Never a raw `git worktree add`, and
+     never an MSYS drive path (`/c/...`): with path conversion off, git creates it under `C:/c/` (the path guard
+     denies such commands);
    - `tools/orchestrator/start_agent.sh <name> spec-NN-pr-M "<prompt>"` with: "Run `/implement-pr` for SPEC-NN
-     PR M. An orchestrator assigned you this row. Own the PR through `/implement-pr` §6 until it merges."
-3. **Review and merge.** The implementor owns its PR and starts one reviewer once the PR is implemented,
-   simplified and CI is green. The reviewer sends its items back to the implementor; with
-   `MERGE AFTER FIX` it fixes them and gets CI green; there is no second review. The implementor then hands the
-   PR back to you with `READY <sha7>` on green CI. After each merge, close the implementor's tab and worktree and
-   any processes it started, then tell the next waiting implementor to rebase.
-   **Plugin prompts** that land in the orchestrator session are forwarded, never run here (the orchestrator
-   writes no code and runs no reviews): `/simplify` is always the implementor's, before it opens the PR; code
-   review is the reviewer's, which the implementor starts. A reviewer never runs `/simplify`.
-   Then it comments `READY <sha7>`. You don't rebase, fix or edit PRs yourself.
-   - CI red after 3 honest attempts: escalate (§2).
-   - To merge, pick the next `READY` PR and send its implementor `YOUR TURN` with the next free decision IDs and the
-     new "Current focus" text. It rebases, adds the tracker commit and comments `READY` again. Then:
+     PR M. An orchestrator assigned you this row. Your decision IDs are D-NNNN..D-NNNN. Own the PR through
+     `/implement-pr` §6 until it merges." Give each implementor its own range of five free IDs, never overlapping
+     another open PR's.
+3. **Review and merge.** The implementor owns its PR end to end: it starts one reviewer once the PR is
+   implemented, simplified and CI is green, waits for the verdict itself, makes any `MERGE AFTER FIX` fixes (no
+   second review), adds the tracker commit and comments `READY <sha7>` on green CI. You don't relay verdicts,
+   rebase, fix or edit PRs. **Plugin prompts** that land in the orchestrator session are forwarded, never run here:
+   `/simplify` runs once, by the implementor, before the PR opens; code review runs once, by the reviewer.
+   - On `READY <sha7>`, merge directly, one PR at a time:
      `if tools/orchestrator/merge_pr.sh <n> <sha7>; then tools/orchestrator/close_agent.sh <impl> &&
      tools/orchestrator/cleanup_worktree.sh <worktree> <branch>; fi`
-     Never chain with `;`: a pane that didn't close keeps its worktree. Never run `gh pr merge` yourself (the merge guard denies it). A failed merge leaves the
-     PR open: retry.
-   - **Merge strictly one at a time.** `YOUR TURN` goes to one implementor only, after the previous merge, so IDs
-     never clash and every merge is tested against the real `main`.
+     Never chain with `;`: a pane that didn't close keeps its worktree. Never run `gh pr merge` yourself (the merge
+     guard denies it). A failed merge leaves the PR open: retry.
+   - Only when the branch is behind `main` or conflicts, send its implementor `REBASE`; it rebases, gets CI green
+     and comments `READY` again.
+   - Stuck PR (CI red after 3 honest attempts, an implementor gone or idle without `READY`): unblock it (a fresh
+     worker in the worktree) or escalate (§2).
    - `ESCALATE`: follow §2.
 4. **CI on main.** Check `main` is green before and after every merge. A red `main` comes before any new
    assignment: one worker fixes it, other merges wait.

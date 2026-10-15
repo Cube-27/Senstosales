@@ -147,7 +147,7 @@ describe("merge_pr.sh", SLOW, () => {
     expect(result).toMatchObject({ status: 1, merges: 0 });
     expect(result.stderr).toBe(
       "ERROR PR #7 (spec-01/pr-1-x) does not touch docs/plans/ACTIVE.md: the tracker commit is missing." +
-        " Send YOUR TURN and wait for READY before merging.\n",
+        " The implementor adds it before READY (/implement-pr §6.3).\n",
     );
   });
 

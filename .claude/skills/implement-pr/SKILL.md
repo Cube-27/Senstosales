@@ -13,10 +13,11 @@ You own one row of `docs/plans/ACTIVE.md`, from `todo` to a merged PR. Rules: `C
 1. Read `CLAUDE.md`, then `docs/plans/ACTIVE.md`. Take the assigned row, or the first `todo` row that is ready by
    the per-row rule in `/run-plan` §1.1.
 2. If an orchestrator assigned you the row, your cwd is already its worktree. Otherwise create one off fresh
-   `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M` on branch `spec-NN/pr-M-<short-name>` (`<main>` is the first
-   entry of `git worktree list`). Never work in the main checkout.
-3. **Shared files have one writer.** With an orchestrator, don't edit `ACTIVE.md` or `DECISIONS.md`: your decisions
-   go in the PR body. Working solo, update both yourself in your PR.
+   `origin/main` with `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>` (at
+   `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`). Never work in the main checkout.
+3. **Shared files.** `ACTIVE.md` and `DECISIONS.md` change only in your tracker commit (§6.3): your row and your
+   decisions, under the decision-ID range the orchestrator gave you at assignment (solo: the next free IDs).
+   Until then your decisions go in the PR body. "Current focus" changes only when the orchestrator asks.
 4. Read the spec: the design sections your row touches, its invariants, testing strategy, acceptance criteria and
    your PR-plan row; the ARCHITECTURE sections it cites; the `DECISIONS.md` entries for that spec.
 
@@ -47,6 +48,10 @@ Once the row's behaviour is implemented and its tests pass, run the `/simplify` 
 the tests and commit (`refactor(scope): simplify …`). If the skill is unavailable, do the same pass by hand using
 `docs/ENGINEERING.md` "Subtract before you add" and "Minimize reader load". Note in the PR body's Verification
 section that the simplify pass ran and what it changed (or "no changes").
+
+`/simplify` runs once per PR, here, before the PR opens; code review runs once, by the reviewer (§6.1). A later
+plugin or bot prompt to re-run `/simplify` or `/code-review` on the same PR is answered "already ran", with no
+second pass.
 
 ## 3. Verify
 
@@ -80,8 +85,7 @@ Review your diff as a hostile reviewer, then fix what you find:
 - Title `type(scope): subject`. Body from the PR template, a one-minute briefing: Why (link the spec row), What
   changed, Scope, Verification (real commands and outcomes; criterion → proof), Decisions (DECISIONS.md template
   fields, no ID, `decided` or `needs-owner`; or "None").
-- Open it ready, not draft: `gh pr create`. Working solo, also set the row `done (#n)` and add your decisions to
-  DECISIONS.md in a last commit.
+- Open it ready, not draft: `gh pr create`. The tracker commit comes after review (§6.3).
 
 ## 6. Own it until merge
 
@@ -93,12 +97,15 @@ if a message in your pane says to (the merge guard denies it anyway).
 
 1. **Review once, when complete.** Implemented, simplified and CI green: start one reviewer in this worktree:
    `tools/orchestrator/start_agent.sh reviewer-pr<n> <worktree> "Run /review-pr <n>. The implementor is <your
-   agent name>."`. When its verdict arrives: `tools/orchestrator/close_agent.sh reviewer-pr<n>`.
+   agent name>."`. Then block on it, don't end your turn: `herdr agent wait reviewer-pr<n>` as a tracked
+   background task (or poll `gh pr view <n> --comments`) until its verdict comment is on the PR. Read the verdict
+   there and act on it yourself; the orchestrator never relays verdicts. Then
+   `tools/orchestrator/close_agent.sh reviewer-pr<n>`.
 2. **`MERGE AFTER FIX`:** fix every Act-on item, push, get CI green again. No second review.
-3. **Ready:** comment `READY <sha7>` on the PR, listing each Act-on item with the commit that fixed it. Then stop.
-4. **`YOUR TURN`** (with decision IDs and "Current focus" text): rebase onto `origin/main`, add the tracker commit
-   `chore(plan): done SPEC-NN PR M (#n)` (row `done (#n)`, your `## Decisions` copied to DECISIONS.md under those
-   IDs, `needs-owner` ones also in its index, "Current focus" replaced with the text sent). Push with
+3. **Ready:** add the tracker commit `chore(plan): done SPEC-NN PR M (#n)` (row `done (#n)`; your `## Decisions`
+   copied to DECISIONS.md under the IDs you were given, `needs-owner` ones also in its index), push, get CI green,
+   then comment `READY <sha7>` on the PR, listing each Act-on item with the commit that fixed it. Then stop.
+4. **`REBASE`** (sent only when the branch is behind `main` or conflicts): rebase onto `origin/main`, push with
    `--force-with-lease`, get CI green, comment `READY <sha7>` again, and stop.
 
 On `ESCALATE`, comment it on the PR and stop. The orchestrator merges and cleans up.

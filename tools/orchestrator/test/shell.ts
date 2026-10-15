@@ -64,6 +64,14 @@ export function run(
   return result;
 }
 
+/** Runs the PreToolUse guards (src/guards.ts) on PAYLOAD as Claude Code runs them: hook JSON on stdin. */
+export const runGuards = (payload: string) =>
+  run(process.execPath, [join(ORCHESTRATOR, "src", "guards.ts")], { input: payload });
+
+/** The hook JSON Claude Code sends before running COMMAND in TOOL. */
+export const hookInput = (command: string, tool = "Bash"): string =>
+  JSON.stringify({ hook_event_name: "PreToolUse", tool_name: tool, tool_input: { command } });
+
 export function git(cwd: string, ...args: string[]): string {
   return execFileSync(GIT, args, { cwd, encoding: "utf8" }).trim();
 }

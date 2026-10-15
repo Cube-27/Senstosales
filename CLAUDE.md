@@ -57,20 +57,21 @@ Generic rules:
 One unit is **one row of a spec's PR plan**: one branch, one worktree, one PR. Project skills in `.claude/skills/`
 hold the procedures:
 
-| Skill           | Who runs it               | Does                                                                                                                                                                     |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/run-plan`     | The orchestrator          | Assigns ready rows to workers (at most 4 at once; reviewers don't count), sequences `YOUR TURN`, merges one at a time on green CI, keeps the tracker current, escalates. |
-| `/implement-pr` | A worker                  | Takes one row from `todo` to an open, verified PR: tests first, then code, self-review, PR body. Owns the PR until it merges.                                            |
-| `/review-pr`    | A fresh reviewer          | One verdict per PR against the spec row, §2 and `docs/ENGINEERING.md`: `MERGE`, `MERGE AFTER FIX` or `ESCALATE`.                                                         |
-| `/pickup`       | Anyone starting a session | Resumes in-flight rows from the trail, or pauses cleanly.                                                                                                                |
+| Skill           | Who runs it               | Does                                                                                                                                                                                  |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/run-plan`     | The orchestrator          | Assigns ready rows to workers (at most 4 at once; reviewers don't count), hands out decision IDs, merges `READY` PRs one at a time on green CI, keeps the tracker current, escalates. |
+| `/implement-pr` | A worker                  | Takes one row from `todo` to an open, verified PR: tests first, then code, self-review, PR body. Owns the PR until it merges.                                                         |
+| `/review-pr`    | A fresh reviewer          | One verdict per PR against the spec row, §2 and `docs/ENGINEERING.md`: `MERGE`, `MERGE AFTER FIX` or `ESCALATE`.                                                                      |
+| `/pickup`       | Anyone starting a session | Resumes in-flight rows from the trail, or pauses cleanly.                                                                                                                             |
 
 Worktrees live in `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M` (beside the repo, never inside it), on branch
 `spec-NN/pr-M-<short-name>`. Never work in the main checkout.
 
-**Shared files have one writer.** With an orchestrator running, it decides the tracker content (decision IDs,
-"Current focus") and sends it with `YOUR TURN`; the implementor writes it to `ACTIVE.md` and `DECISIONS.md` in the
-PR's last commit, one PR at a time. Workers put their decisions in the PR body (`## Decisions`). A solo agent with
-no orchestrator updates both files itself, in its PR.
+**Shared files.** With an orchestrator running, it gives each implementor a decision-ID range at assignment; the
+implementor writes its row (`done (#n)`) and its decisions to `ACTIVE.md` and `DECISIONS.md` in the PR's tracker
+commit, before its first `READY`. "Current focus" is refreshed only when it materially changes, by the implementor
+the orchestrator asks. Workers put their decisions in the PR body (`## Decisions`). A solo agent with no
+orchestrator uses the next free IDs.
 
 `main` requires a PR for every change, including tracker updates. Work in flight is read from open PRs and
 `spec-*` branches, not from ACTIVE.md. Never merge without a `MERGE` or `MERGE AFTER FIX` verdict from someone other
