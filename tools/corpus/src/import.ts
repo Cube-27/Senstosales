@@ -38,7 +38,7 @@ export interface KindImport {
 export interface CorpusImport {
   readonly po: KindImport;
   readonly srv: KindImport;
-  /** Errors the services logged, such as a job summary that could not be built. */
+  /** Warnings and errors the services logged, such as a job summary that could not be built. */
   readonly logged: readonly string[];
   /** Both jobs ended `done` and nothing was logged as an error. */
   readonly passed: boolean;
