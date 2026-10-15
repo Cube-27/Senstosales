@@ -282,3 +282,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Export it from the index.
 - Why: Its module-level registry would keep zod's JSON Schema converter in the web bundle.
 - Reversible: yes.
+
+### D-0606 — Amounts and rates show at least two decimals
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: `fmtRate` (and so `fmtMoney`) pads to two decimals; GEMC keeps up to five. Documents and exports are unchanged.
+- Alternatives: Trim trailing zeros as before.
+- Why: A column's amounts did not line up (UI-MISC); owner-approved rev 1.10.
+- Reversible: yes.

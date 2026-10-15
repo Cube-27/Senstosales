@@ -181,3 +181,67 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: ISO input only.
 - Why: Frozen legacy input behaviour (C7); day-first matches Indian dates.
 - Reversible: yes.
+
+### D-0595 — DataTable body is a fixed ten-row window
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: The body reserves ten rows (the smallest page size) under a sticky header; larger pages scroll inside it, so a page-size change resizes nothing. One `auto` column per table takes the leftover width.
+- Alternatives: Reserve the chosen page size's height (moves the pager on a size change).
+- Why: C8: the pager moved when the page size changed (UI-SHIFT); owner-approved rev 1.10.
+- Reversible: yes.
+
+### D-0596 — Sort arrow in the header padding
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: The sort arrow is positioned absolutely beside the header text, in the cell padding.
+- Alternatives: Widen every sortable column for the arrow.
+- Why: Headers were cut under the arrow at 1366 (UI-TRUNC) without widening tables.
+- Reversible: yes.
+
+### D-0597 — PO list keeps a sideways scroll at 1366
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: The PO list keeps its 14 frozen columns at measured widths and scrolls sideways at 1366 (needs about 1277 px against about 1090 px); nothing is truncated.
+- Alternatives: Drop or merge columns.
+- Why: C7 freezes the columns; truncating numbers would hide data.
+- Reversible: yes.
+
+### D-0598 — Deviations Type width
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: The Type column fits every v1 flag name except MANUAL ADJUSTMENT OVERLAP, which is cut with the full name in its title.
+- Alternatives: Size for the longest name.
+- Why: One rare name would cost every row about 60 px.
+- Reversible: yes.
+
+### D-0599 — Date placeholder
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: An empty date field shows `Mon DD, YYYY`.
+- Alternatives: A sample date.
+- Why: A real-looking placeholder read as a filled value (UI-MISC).
+- Reversible: yes.
+
+### D-0604 — Create-page error in the header
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: A create page's error sits in a fixed slot in the page header beside Save (`HeaderAlert`), invisible until set.
+- Alternatives: A reserved band above the form.
+- Why: The band left a blank strip on every create page (UI-MISC); the slot moves nothing (C8).
+- Reversible: yes.
+
+### D-0605 — Form dialogs sized to the window
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: `FormDialog` is capped at the window height and its fields scroll; the dialog's buttons stay visible.
+- Alternatives: A per-dialog max height.
+- Why: The invoice edit dialog was cut off on a short window (UI-MISC).
+- Reversible: yes.
+
+### D-0607 — Mark queries stale before leaving a create page
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: DC and invoice create mark their queries stale without refetching (`useMarkStale`), then navigate; the next page fetches each once.
+- Alternatives: Invalidate after navigating.
+- Why: Refetching the left page's invoice preview of a now-invoiced DC gave a 409; invalidating after navigating fetched the new page twice.
+- Reversible: yes.

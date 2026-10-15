@@ -90,3 +90,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: A polling loop inside the mutation.
 - Why: The shared 2 s poll rule (§7.3) and the owner's no-effects rule.
 - Reversible: yes.
+
+### D-0603 — Manual backups have their own name
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: Backup now writes `manual-<stamp>.db`; manual copies are never rotated and list as Manual. The job body takes an optional `manual` flag.
+- Alternatives: Overwrite the day's daily copy.
+- Why: Backup now replaced the daily copy (UI-SET-10); rev 1.9.
+- Reversible: yes.

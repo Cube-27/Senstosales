@@ -243,3 +243,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: A test-only composition.
 - Why: The test checks the server's own wiring (INV-101).
 - Reversible: yes.
+
+### D-0600 — Reset to defaults with the phrase alone
+
+- Date: 2026-10-15 · Spec/PR: E2E FIX-4 (#95) · Status: decided
+- Decision: `auth.resetDefaults` takes `{ confirmation }` only, from the login screen and Settings; it restores `admin`/`admin` and leaves data untouched. Settings drops the Current Password field.
+- Alternatives: Keep asking for the current password once changed.
+- Why: Owner answer 19 (rev 1.9): a forgotten password must be recoverable without the CLI (C11); EC-08 resolved.
+- Reversible: yes.

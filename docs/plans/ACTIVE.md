@@ -106,6 +106,12 @@ Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE r
 | FIX-3 | DC and GC laid out as the owner's documents                                                              | done (#94) | D-0586..D-0589.                                                                      |
 | FIX-3 | Daily dispatch summary (A-16 reversed): Reports tab and workbook                                         | done (#94) | D-0591..D-0593.                                                                      |
 | FIX-3 | Docs: ARCHITECTURE rev 1.12, INV-87, INV-116..120, EC-41/45/47/49/50/62; SPEC-04, 13, 17                 | done (#94) | D-0594.                                                                              |
+| FIX-4 | Tables fit 1366 from measured widths; ten-row body window, so a page-size change moves nothing           | done (#95) | D-0595..D-0598; PO list keeps a sideways scroll (D-0597).                            |
+| FIX-4 | Date placeholder, header error slot, dialogs sized to the window, two-decimal amounts                    | done (#95) | D-0599, D-0604..D-0606.                                                              |
+| FIX-4 | Stale invoice preview 409 after creating from a DC                                                       | done (#95) | D-0607.                                                                              |
+| FIX-4 | Settings: no currency, April-March FY only, GSTIN format; Backup now writes a manual copy                | done (#95) | D-0601..D-0603.                                                                      |
+| FIX-4 | Reset to defaults with the phrase alone, API and web                                                     | done (#95) | D-0600; EC-08 resolved.                                                              |
+| FIX-4 | Docs: ARCHITECTURE rev 1.9, 1.10, A-17; INV-80; SPEC-04, 07, 14, 15, 21; process commit                  | done (#95) | No new invariant.                                                                    |
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
