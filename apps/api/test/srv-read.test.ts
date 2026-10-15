@@ -167,7 +167,7 @@ const ROW_S1 = {
   poId: P1,
   ordQty: "15",
   rcdQty: "6",
-  acceptedQty: "6",
+  acceptedQty: "4",
   rejQty: "1",
   value: "440",
 };
@@ -179,7 +179,7 @@ const ROW_S2 = {
   poId: P1,
   ordQty: "10",
   rcdQty: "3",
-  acceptedQty: "3",
+  acceptedQty: "0",
   rejQty: "0",
   value: "300",
 };
@@ -192,7 +192,7 @@ const ROW_S3 = {
   poId: null,
   ordQty: "0",
   rcdQty: "7",
-  acceptedQty: "7",
+  acceptedQty: "0",
   rejQty: "0",
   value: "0",
 };
@@ -308,7 +308,7 @@ describe("GET /api/srv/by-po", () => {
     // The PO's stored ordered total.
     ordQty: "15",
     rcdQty: "9",
-    acceptedQty: "9",
+    acceptedQty: "4",
     rejQty: "1",
     value: "740",
   };
@@ -319,7 +319,7 @@ describe("GET /api/srv/by-po", () => {
     srvCount: 1,
     ordQty: "0",
     rcdQty: "7",
-    acceptedQty: "7",
+    acceptedQty: "0",
     rejQty: "0",
     value: "0",
   };
@@ -350,7 +350,7 @@ describe("GET /api/srv/by-po", () => {
     const app = await seeded();
     const { body } = await get(app, "/api/srv/by-po?from=2025-05-02");
     expect(body).toEqual({
-      items: [{ ...PO_4500001, srvCount: 1, rcdQty: "3", acceptedQty: "3", rejQty: "0", value: "300" }],
+      items: [{ ...PO_4500001, srvCount: 1, rcdQty: "3", acceptedQty: "0", rejQty: "0", value: "300" }],
       total: 1,
     });
   });
@@ -363,9 +363,9 @@ describe("GET /api/srv/by-po", () => {
 
 describe("GET /api/srv/stats", () => {
   it.each([
-    ["", { srvCount: 3, poCount: 2, rcdQty: "16", acceptedQty: "16", rejQty: "1" }],
-    ["?poNumber=4500001", { srvCount: 2, poCount: 1, rcdQty: "9", acceptedQty: "9", rejQty: "1" }],
-    ["?valueMax=0", { srvCount: 1, poCount: 1, rcdQty: "7", acceptedQty: "7", rejQty: "0" }],
+    ["", { srvCount: 3, poCount: 2, rcdQty: "16", acceptedQty: "4", rejQty: "1" }],
+    ["?poNumber=4500001", { srvCount: 2, poCount: 1, rcdQty: "9", acceptedQty: "4", rejQty: "1" }],
+    ["?valueMax=0", { srvCount: 1, poCount: 1, rcdQty: "7", acceptedQty: "0", rejQty: "0" }],
     ["?q=nothing", { srvCount: 0, poCount: 0, rcdQty: "0", acceptedQty: "0", rejQty: "0" }],
   ])("%s -> %j", async (query, expected) => {
     const app = await seeded();
@@ -440,7 +440,7 @@ describe("GET /api/srv/:id", () => {
             poItemId: I1,
             poItemNo: 10,
             srvItemNo: 1,
-            // rcd 0 falls back to accepted 4 (INV-11); Accepted shows received (INV-09).
+            // rcd 0 falls back to accepted 4 (INV-11); Accepted is the source value (INV-09).
             rcdQty: "4",
             acceptedQty: "4",
             rejQty: "1",
@@ -456,7 +456,7 @@ describe("GET /api/srv/:id", () => {
             srvItemNo: 2,
             ordQty: "5",
             rcdQty: "2",
-            acceptedQty: "2",
+            acceptedQty: "0",
             rejQty: "0",
             challanNo: null,
             challanDate: null,

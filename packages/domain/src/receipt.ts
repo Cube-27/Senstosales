@@ -49,10 +49,12 @@ export type SrvLineQty = Pick<SrvLine, "rcdQty" | "acceptedQty" | "rejQty">;
 
 export type SrvLineShown = { rcdQty: Qty; acceptedQty: Qty; rejQty: Qty };
 
-/** One line as the SRV screens show it: received per INV-11, Accepted as received (INV-09, EC-11), rejected 0 when absent (INV-12). */
+/**
+ * One line as the SRV screens show it: received per INV-11, Accepted as the SRV's own ACCEPTED QTY (INV-09, A2-8
+ * revised 2026-10-15), each 0 when absent (INV-12).
+ */
 export function srvLineShown(line: SrvLineQty): SrvLineShown {
-  const rcdQty = srvLineRcd(line);
-  return { rcdQty, acceptedQty: rcdQty, rejQty: line.rejQty ?? (0 as Qty) };
+  return { rcdQty: srvLineRcd(line), acceptedQty: line.acceptedQty ?? (0 as Qty), rejQty: line.rejQty ?? (0 as Qty) };
 }
 
 /** An SRV line as the SRV list totals it, with the PO item it is matched to (INV-39), or `null`. */
