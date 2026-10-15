@@ -4,25 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { type FakeApi, renderApp, signedIn, stubApi } from "./app.tsx";
+import { SUPPLIER } from "./wire-fixtures.ts";
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 
-const SUPPLIER = {
-  id: "01J0000000000000000000000S",
-  name: "Example Works",
-  gstin: null,
-  address: null,
-  state: null,
-  stateCode: null,
-  contact: null,
-  email: null,
-  bhelSupplierCode: null,
-  bankDetails: {},
-  invoiceDefaults: {},
-};
 const BUYER = {
   id: "01J0000000000000000000000B",
   unitName: "Example Unit",
@@ -40,6 +28,7 @@ function settingsApi(extra: FakeApi = {}, isDefaultPassword = false): FakeApi {
     "PUT /api/settings": (body: unknown) => body,
     "GET /api/buyers": [BUYER],
     "GET /api/settings/bhel-password": { saved: true },
+    "GET /api/backups": [],
     ...extra,
   };
 }

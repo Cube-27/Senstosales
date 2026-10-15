@@ -11,7 +11,8 @@ import { test as base } from "@playwright/test";
 import { DATASETS, type Dataset } from "./dataset.ts";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-const MAIN = join(REPO, "apps", "api", "src", "platform", "node", "main.ts");
+/** The API's node entry with the fake BHEL scraper (`e2e` mode, SPEC-19 §6). */
+const MAIN = join(REPO, "apps", "api", "test", "e2e-server.ts");
 const START_TIMEOUT_MS = 60_000;
 
 interface Server {
@@ -20,7 +21,7 @@ interface Server {
   readonly dataDir: string;
 }
 
-/** Starts the API's node entry on `dataDir` and resolves once it prints `SENSTO_PORT=<n>`. */
+/** Starts the API on `dataDir` and resolves once it prints `SENSTO_PORT=<n>`. */
 function startApi(dataDir: string): Promise<Server> {
   const child = spawn(process.execPath, [MAIN], {
     cwd: REPO,
