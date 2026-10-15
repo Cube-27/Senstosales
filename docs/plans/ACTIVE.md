@@ -38,6 +38,32 @@ Agents can't do these (secrets, accounts, purchases, data only a person may see)
 
 In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 after #74, then SPEC-07 PR 6 once every route is mounted. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
 
+## Done specs
+
+Full rows are in git history.
+
+- [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md): PRs 1–5 (#7, #8, #9, #11, #19)
+- [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md): PRs 1–6 (#12, #14, #15, #16, #17, #18)
+- [SPEC-04 — Schemas, route table and formatters](../specs/SPEC-04-schemas-routes-formatters.md): PRs 1–5 (#20, #23, #27, #31, #21)
+- [SPEC-05 — Database: schema, migrations, Db port, seed](../specs/SPEC-05-db-schema-migrations.md): PRs 1–5 (#22, #25, #26, #33, #32)
+- [SPEC-07 — API foundation, startup, auth, onboarding and settings](../specs/SPEC-07-api-foundation-auth-settings.md): PRs 1–6 (#35, #36, #39, #38, #41, #80)
+- [SPEC-08 — Ingestion services and the job model](../specs/SPEC-08-ingestion-jobs.md): PRs 1–6 (#40, #37, #42, #43, #47, #51)
+- [SPEC-10 — PO, SRV, flags, audit, dashboard and search APIs](../specs/SPEC-10-po-srv-flags-read-api.md): PRs 1–6 (#44, #46, #49, #45, #50, #53)
+- [SPEC-11 — DC and invoice services and APIs](../specs/SPEC-11-dc-invoice-services.md): PRs 1–6 (#55, #59, #60, #63, #65, #67)
+- [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md): PRs 1–8 (#78, #82)
+
+## Follow-ups
+
+Open notes, not yet rows. Notes on rows not done stay on those rows.
+
+- SPEC-10: INV rows for the delivery-tracker and dashboard rules.
+- SPEC-10 (#53 review): SRV search with a value range reads all candidate SRVs.
+- SPEC-08/SPEC-11 (#55): SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links.
+- SPEC-11 (#59 review): a DC create racing a DC edit that frees the same number (SRV items on a third PO).
+- SPEC-11 (#60 review): held-batch test for a DC delete committing between an invoice create's read and commit.
+- SPEC-05 (#80 simplify): indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id).
+- SPEC-08 PR 5 (#47 review): finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting.
+
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
 | PR  | Scope                                             | Status    | Notes |
@@ -57,49 +83,6 @@ In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 
 | 4   | Spike: exceljs output fidelity 1/20/21/60 | todo       | H5    |
 | 5   | Spike: parser feasibility                 | todo       | H4    |
 
-## [SPEC-02 — Domain: units, quantities, received/rejected, status](../specs/SPEC-02-domain-quantities-receipt-status.md)
-
-| PR  | Scope                               | Status     | Notes                  |
-| --- | ----------------------------------- | ---------- | ---------------------- |
-| 1   | Units, dates and tolerance          | done (#7)  |                        |
-| 2   | Quantities                          | done (#8)  |                        |
-| 3   | Received and rejected (date winner) | done (#9)  |                        |
-| 4   | Item and PO status                  | done (#11) |                        |
-| 5   | INV-64 single status source check   | done (#19) | before SPEC-08/SPEC-16 |
-
-## [SPEC-03 — Domain: FY, GEMC, tax, links, guards, flags](../specs/SPEC-03-domain-fy-gemc-tax-links-flags.md)
-
-| PR  | Scope                             | Status     | Notes |
-| --- | --------------------------------- | ---------- | ----- |
-| 1   | FY, document keys and GC defaults | done (#12) |       |
-| 2   | GEMC                              | done (#14) |       |
-| 3   | Tax                               | done (#15) |       |
-| 4   | Links and item matching           | done (#16) |       |
-| 5   | Guards and line validation        | done (#17) |       |
-| 6   | Flag detection and diff           | done (#18) |       |
-
-## [SPEC-04 — Schemas, route table and formatters](../specs/SPEC-04-schemas-routes-formatters.md)
-
-| PR  | Scope                            | Status     | Notes |
-| --- | -------------------------------- | ---------- | ----- |
-| 1   | Primitives and enums             | done (#20) |       |
-| 2   | Entities and API shapes          | done (#23) |       |
-| 3   | Route table and typed client     | done (#27) |       |
-| 4   | OpenAPI generation and freshness | done (#31) |       |
-| 5   | Shared formatters                | done (#21) |       |
-
-## [SPEC-05 — Database: schema, migrations, Db port, seed](../specs/SPEC-05-db-schema-migrations.md)
-
-| PR  | Scope                                  | Status     | Notes |
-| --- | -------------------------------------- | ---------- | ----- |
-| 1   | Db port and node:sqlite executor       | done (#22) |       |
-| 2   | Drizzle schema and custom types        | done (#25) |       |
-| 3   | Migration 0001 and migrator            | done (#26) |       |
-| 4   | D1 executor, dialect step and SQL lint | done (#33) |       |
-| 5   | Version helper and seed                | done (#32) |       |
-
-Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules; SRV search with a value range reads all candidate SRVs (#53 review). SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links (#55); a DC create racing a DC edit that frees the same number (SRV items on a third PO) (#59 review); held-batch test for a DC delete committing between an invoice create's read and commit (#60 review). Indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id) (#80 simplify).
-
 ## [SPEC-06 — BHEL parsers, anonymised fixtures and the corpus test](../specs/SPEC-06-bhel-parsers-fixtures.md)
 
 | PR  | Scope                                      | Status     | Notes                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -111,28 +94,6 @@ Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules
 | 5   | Fixture completion and golden runner       | done (#34) |                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 6   | Corpus test                                | todo       | H4. Check (from #28 review): cheerio `text()` joins `<br>` and nested-table cell text with no space; `findByLabel`'s value-below ignores colspan. Check (from #29 review): SRV error locations name no table on multi-table pages; the SRV date is the first row's when rows of one SRV disagree. Check (from #30 review): an empty DELY QTY with a LOT NO fails the file (revisit with corpus). |
 
-## [SPEC-07 — API foundation, startup, auth, onboarding and settings](../specs/SPEC-07-api-foundation-auth-settings.md)
-
-| PR  | Scope                                                 | Status     | Notes |
-| --- | ----------------------------------------------------- | ---------- | ----- |
-| 1   | App factory, errors and guards                        | done (#35) |       |
-| 2   | Node platform entry and adapters                      | done (#36) |       |
-| 3   | Startup upgrade gate                                  | done (#39) |       |
-| 4   | Simple login                                          | done (#38) |       |
-| 5   | Onboarding, supplier, settings, buyers, BHEL password | done (#41) |       |
-| 6   | Route conformance                                     | done (#80) |       |
-
-## [SPEC-08 — Ingestion services and the job model](../specs/SPEC-08-ingestion-jobs.md)
-
-| PR  | Scope                                  | Status     | Notes                                                                                                                                                    |
-| --- | -------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Jobs port, worker and job API          | done (#40) |                                                                                                                                                          |
-| 2   | Source documents and recompute service | done (#37) |                                                                                                                                                          |
-| 3   | PO ingest service and upload           | done (#42) | client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131)                                                                       |
-| 4   | SRV ingest service and upload          | done (#43) |                                                                                                                                                          |
-| 5   | Folder import jobs                     | done (#47) | finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting (#47 review) |
-| 6   | `recompute-all` job                    | done (#51) |                                                                                                                                                          |
-
 ## [SPEC-09 — Corpus import and report (local only)](../specs/SPEC-09-corpus-import-report.md)
 
 | PR  | Scope                                       | Status     | Notes                                                                                                                      |
@@ -140,28 +101,6 @@ Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules
 | 1   | Corpus import runner                        | done (#54) |                                                                                                                            |
 | 2   | Import report                               | done (#56) | report lists tooLarge pages so none is dropped silently (#54 review)                                                       |
 | 3   | Corpus ingestion assertions and idempotency | todo       | H4; a default run overwrites the previous import-report.* in the temp folder; handle with the idempotency run (#56 review) |
-
-## [SPEC-10 — PO, SRV, flags, audit, dashboard and search APIs](../specs/SPEC-10-po-srv-flags-read-api.md)
-
-| PR  | Scope                                       | Status     | Notes |
-| --- | ------------------------------------------- | ---------- | ----- |
-| 1   | PO list, stats and detail                   | done (#44) |       |
-| 2   | PO manual create, edit and delete           | done (#46) |       |
-| 3   | Manual dispatched quantity                  | done (#49) |       |
-| 4   | SRV list, by-PO list, detail and delete     | done (#45) |       |
-| 5   | Flags and audit                             | done (#50) |       |
-| 6   | Dashboard, search and delivery tracker data | done (#53) |       |
-
-## [SPEC-11 — DC and invoice services and APIs](../specs/SPEC-11-dc-invoice-services.md)
-
-| PR  | Scope                                            | Status     | Notes |
-| --- | ------------------------------------------------ | ---------- | ----- |
-| 1   | DC create and dispatchable items                 | done (#55) |       |
-| 2   | DC header edit, delete, list, stats, detail      | done (#59) |       |
-| 3   | DC-sourced invoice                               | done (#60) |       |
-| 4   | PO-direct invoice and previews                   | done (#63) |       |
-| 5   | Invoice header edit, delete, list, stats, detail | done (#65) |       |
-| 6   | Cross-flow API suite                             | done (#67) |       |
 
 ## [SPEC-12 — DC, invoice and GC Excel documents](../specs/SPEC-12-excel-documents.md)
 
@@ -184,19 +123,6 @@ Follow-ups (not yet rows): INV rows for the delivery-tracker and dashboard rules
 | 3   | Registers and list CSVs                             | done (#69) | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
 | 4   | Pending, reconciliation, export-selected, GC report | done (#75) |                                                                                                |
 | 5   | Report lists and delivery-tracker export            | done (#66) |                                                                                                |
-
-## [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md)
-
-| PR  | Scope                                 | Status     | Notes                                                                                                                |
-| --- | ------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| 1   | App skeleton, router and query        | done (#78) | static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review) |
-| 2   | Frozen design carry-over              | done (#78) |                                                                                                                      |
-| 3   | Design validators                     | done (#78) |                                                                                                                      |
-| 4   | Shell components                      | done (#78) |                                                                                                                      |
-| 5   | Primitives and FormField              | done (#82) |                                                                                                                      |
-| 6   | DataTable, Pagination and list search | done (#82) |                                                                                                                      |
-| 7   | Platform adapter                      | done (#82) |                                                                                                                      |
-| 8   | Playwright harness and `e2e` job      | done (#82) |                                                                                                                      |
 
 ## [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md)
 

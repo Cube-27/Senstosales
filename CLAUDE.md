@@ -5,13 +5,19 @@ owner is involved only for the escalations listed below. Read this file fully be
 
 ## 1. Read order
 
-1. `docs/plans/ACTIVE.md`: what is in progress, what is next, what is blocked.
+1. `docs/plans/ACTIVE.md`: its "Current focus" section and your spec's table (plus "Follow-ups" if your spec is
+   named there).
 2. The spec for your work in `docs/specs/`: its design, invariants, acceptance criteria, and your PR's row in the
    PR plan.
-3. The `docs/ARCHITECTURE.md` sections that spec cites. **§2 (the contract, C1–Cn) is binding on every change.**
-   Read it once per session.
-4. `docs/DECISIONS.md`: earlier decisions you must stay consistent with.
+3. `docs/ARCHITECTURE.md` §2 and only the sections your spec cites. **§2 (the contract, C1–Cn) is binding on every
+   change.** Read it once per session.
+4. Decisions you must stay consistent with: your spec's `docs/decisions/SPEC-NN.md` (large files: scan the `### D-`
+   headings, read the entries your rows touch), the "Index of open items" in `docs/DECISIONS.md`, and any D-ID
+   you are pointed to (`grep -rn "### D-NNNN" docs/DECISIONS.md docs/decisions`).
 5. `docs/ENGINEERING.md`: how to write code here. Read it once per session.
+
+**Never read `ACTIVE.md`, `ARCHITECTURE.md` or `DECISIONS.md` in full**: together they cost tens of thousands of
+tokens. Find sections with `grep -n "^#"` and read line ranges.
 
 `ARCHITECTURE.md` is the single source of truth. Where a spec and the architecture disagree, stop and escalate
 (§5). You may read every project document. Never read, copy or quote private data into the repo: the owner's local BHEL corpus (`SENSTO_CORPUS_DIR`), the legacy database, or anything under `C:/Projects/SenstoSales-private`. The legacy code backup may be read for business rules and visible output only (C16).
@@ -71,10 +77,10 @@ Worktrees live in `C:/Projects/SenstoSales-worktrees/spec-NN-pr-A-B` (beside the
 `spec-NN/pr-A-B-<short-name>`. Never work in the main checkout.
 
 **Shared files.** With an orchestrator running, it gives each implementor a decision-ID range at assignment; the
-implementor writes its rows (`done (#n)`) and its decisions to `ACTIVE.md` and `DECISIONS.md` in the PR's tracker
-commit, before its first `READY`. "Current focus" is refreshed only when it materially changes, by the implementor
-the orchestrator asks. Workers put their decisions in the PR body (`## Decisions`). A solo agent with no
-orchestrator uses the next free IDs.
+implementor writes its rows (`done (#n)`) to `ACTIVE.md` and its decisions to the decisions log (`DECISIONS.md`,
+"Where an entry goes") in the PR's tracker commit, before its first `READY`. "Current focus" is refreshed only when
+it materially changes, by the implementor the orchestrator asks. Workers put their decisions in the PR body
+(`## Decisions`). A solo agent with no orchestrator uses the next free IDs.
 
 `main` requires a PR for every change, including tracker updates. Work in flight is read from open PRs and
 `spec-*` branches, not from ACTIVE.md. Never merge without a `MERGE` or `MERGE AFTER FIX` verdict from someone other
@@ -83,7 +89,7 @@ than the author (every listed fix made) and green CI. One review per PR, no re-r
 
 ## 4. Decisions: decide and log, or escalate
 
-**Decide yourself and record it** (status `decided`, through the PR body or `DECISIONS.md` per §3): implementation
+**Decide yourself and record it** (status `decided`, through the PR body or the decisions log per §3): implementation
 choices within one spec's scope that don't change ARCHITECTURE, a public API shape, a schema other specs rely on,
 or a §2 rule. For example internal module structure, a library among licence-clean equivalents, naming, error
 messages, or the most conservative reading of a genuinely ambiguous spec detail. Don't log trivial choices.
@@ -110,9 +116,11 @@ messages, or the most conservative reading of a genuinely ambiguous spec detail.
 - `ARCHITECTURE.md` and `OPEN_QUESTIONS.md` change only with owner approval. When approved, add a revision-log row
   and keep the specs consistent in the same change.
 - Specs follow one template (`docs/specs/README.md`). Clarifying edits that don't change the architecture are
-  allowed and logged in `DECISIONS.md`.
+  allowed and logged in the spec's decisions file.
 - A spec that adds an invariant appends its row to `docs/INVARIANTS.md`. Invariants are never removed.
-- `ACTIVE.md` and `DECISIONS.md` are working documents: current, short and factual.
+- `ACTIVE.md`, `DECISIONS.md` and `docs/decisions/` are working documents: current, short and factual. In
+  `ACTIVE.md`, a spec whose rows are all done collapses to one line under "Done specs"; its open notes move to
+  "Follow-ups" unless a row not done already carries them.
 - Write plainly. No marketing language, and no claim that isn't backed by a test or a measured result.
 
 ## 7. Commands

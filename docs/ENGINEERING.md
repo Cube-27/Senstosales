@@ -66,9 +66,9 @@ convention.
 
 ## Working autonomously
 
-**Never block on the human for reversible work.** Decide, proceed, and log the decision in `DECISIONS.md`. The
-exceptions are in `CLAUDE.md` §4: architecture changes, candidates, secrets, paid accounts and irreversible actions
-are escalated, never decided.
+**Never block on the human for reversible work.** Decide, proceed, and log the decision (`docs/DECISIONS.md`,
+"Where an entry goes"). The exceptions are in `CLAUDE.md` §4: architecture changes, candidates, secrets, paid
+accounts and irreversible actions are escalated, never decided.
 
 **Own the exit condition.** Before starting, state "done" as a checkable predicate ("acceptance criteria 1–4 pass;
 `pnpm verify` green"). Drive to it. A plateau is not a stop: change approach. Never relax the predicate to

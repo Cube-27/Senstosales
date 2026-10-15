@@ -23,7 +23,8 @@ Planned for v1 (see the specs; nothing below is claimed until its tests pass):
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)     | The single design reference                                         |
 | [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md) | Owner decisions still open, each with a recommended default         |
 | [docs/specs/](docs/specs/README.md)              | Implementation specs in build order, each with a PR plan            |
-| [docs/DECISIONS.md](docs/DECISIONS.md)           | Log of decisions made during implementation                         |
+| [docs/DECISIONS.md](docs/DECISIONS.md)           | Decisions log: rules, cross-cutting entries, index of open items    |
+| [docs/decisions/](docs/decisions)                | Decisions made during implementation, one file per spec             |
 | [docs/plans/ACTIVE.md](docs/plans/ACTIVE.md)     | Current implementation state                                        |
 | [docs/INVARIANTS.md](docs/INVARIANTS.md)         | Testable invariants, each with what enforces it                     |
 | [docs/ENGINEERING.md](docs/ENGINEERING.md)       | Engineering principles for agents                                   |
