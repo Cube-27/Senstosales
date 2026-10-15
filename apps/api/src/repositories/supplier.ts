@@ -12,6 +12,14 @@ export async function findSupplier(db: Db): Promise<Supplier | null> {
   return rows[0] ?? null;
 }
 
+/** The supplier details a DC or invoice carries (`supplierSnapshot`), from the supplier row as it stands. */
+export const supplierSnapshotOf = (row: Supplier | null) => ({
+  supplierName: row?.name ?? null,
+  supplierAddress: row?.address ?? null,
+  supplierGstin: row?.gstin ?? null,
+  supplierContact: row?.contact ?? null,
+});
+
 export async function findSupplierId(db: Db): Promise<string | null> {
   const rows = await db.query(db.build.select({ id: supplier.id }).from(supplier).limit(1));
   return rows[0]?.id ?? null;

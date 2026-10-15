@@ -7,10 +7,9 @@ import type { IsoDate } from "@senstosales/domain";
 import { resolveDocLink } from "@senstosales/domain";
 import { eq } from "drizzle-orm";
 
-import type { CITATIONS } from "../repositories/srv.ts";
-import { srvItemsCiting } from "../repositories/srv.ts";
+import { CITATIONS, srvItemsCiting } from "../repositories/srv.ts";
 
-export interface Relink {
+interface Relink {
   readonly supplierId: string;
   readonly kind: keyof typeof CITATIONS;
   /** The numbers whose citations may resolve differently after the batch. */
@@ -26,11 +25,10 @@ export async function reresolveLinks(db: Db, { supplierId, kind, numbers, docs }
     const next = resolveDocLink(item.raw, item.srvDate, docs);
     if (next !== item.resolved) changes.set(item.id, next);
   }
-  const column = kind === "dc" ? "resolvedDcId" : "resolvedInvoiceId";
   const statements: Statement[] = [...changes].map(([id, next]) =>
     db.build
       .update(srvItem)
-      .set({ [column]: next })
+      .set({ [CITATIONS[kind].key]: next })
       .where(eq(srvItem.id, id)),
   );
   return { changes, statements };

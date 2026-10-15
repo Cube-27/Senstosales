@@ -70,8 +70,8 @@ export const srvItemKeysOf = (db: Db, srvIds: readonly string[]) =>
 
 /** The SRV fields that cite a DC or an invoice by number, and the resolved link kept beside each (INV-38). */
 export const CITATIONS = {
-  dc: { raw: srvItem.challanNo, resolved: srvItem.resolvedDcId },
-  invoice: { raw: srvItem.invoiceNo, resolved: srvItem.resolvedInvoiceId },
+  dc: { raw: srvItem.challanNo, resolved: srvItem.resolvedDcId, key: "resolvedDcId" },
+  invoice: { raw: srvItem.invoiceNo, resolved: srvItem.resolvedInvoiceId, key: "resolvedInvoiceId" },
 } as const;
 
 /**

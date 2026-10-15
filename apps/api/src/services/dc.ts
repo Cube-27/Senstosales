@@ -4,35 +4,22 @@
 // recompute with its flags, and the audit row (C4).
 import type { Statement } from "@senstosales/db";
 import { ConflictError as StaleVersionError, dc, dcItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
-import type { Issue, IsoDate, Qty } from "@senstosales/domain";
+import type { Issue } from "@senstosales/domain";
 import { defaultGc, fyOf, validateDcLines } from "@senstosales/domain";
+import type { routes } from "@senstosales/schemas";
+import type { z } from "zod";
 
 import { ConflictError, fieldError, NotFoundError, ValidationError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import { dcsNumbered, findDc, isNumberCollision } from "../repositories/dc.ts";
 import { findPoRow, itemsOfPo } from "../repositories/po-list.ts";
-import { findSupplier } from "../repositories/supplier.ts";
+import { findSupplier, supplierSnapshotOf } from "../repositories/supplier.ts";
 import { audit } from "./audit.ts";
 import type { SupplierDeps } from "./index.ts";
 import { reresolveLinks } from "./links.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
 
-type DcRow = typeof dc.$inferInsert;
-
-/** The editable header fields, as the create body and the form defaults carry them. */
-type Header = Omit<
-  DcRow,
-  "id" | "supplierId" | "poId" | "number" | "dcDate" | "financialYear" | "gcNumber" | "gcDate" | "version" | "createdAt"
->;
-
-export type DcCreate = Header & {
-  poId: string;
-  number: string;
-  dcDate: IsoDate;
-  gcNumber: string | null;
-  gcDate: IsoDate | null;
-  items: { poItemId: string; dspQty: Qty }[];
-};
+export type DcCreate = z.output<(typeof routes)["dc.create"]["body"]>;
 
 /** Header fields the form starts blank; the supplier's own details are filled in. */
 const BLANK_HEADER = {
@@ -48,7 +35,7 @@ const BLANK_HEADER = {
   transporter: null,
   modeOfTransport: null,
   remarks: null,
-} satisfies Header;
+} satisfies Partial<DcCreate>;
 
 /**
  * A create whose PO changed between its read and its commit is rebuilt from fresh rows; the guard makes it fail
@@ -67,7 +54,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
   async function createOnce(supplier: string, body: DcCreate, number: string) {
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
     const row = await loadPo(body.poId);
-    const snapshot = await loadPoSnapshot(db, body.poId);
+    const [snapshot, stored] = await Promise.all([loadPoSnapshot(db, body.poId), dcsNumbered(db, supplier, [number])]);
     const lines = body.items.map((item) => ({ poItemId: item.poItemId, qty: item.dspQty }));
     const issues = validateDcLines({ poItemIds: new Set(snapshot.items.map((i) => i.id)), lines });
     if (issues.length > 0) throw linesError(issues);
@@ -75,12 +62,12 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     const now = clock.now();
     const financialYear = fyOf(body.dcDate);
     const gc = gcOf(body, number);
-    const { items, poId, gcNumber: _n, gcDate: _d, number: _raw, ...header } = body;
+    const { items, ...fields } = body;
+    const { poId } = fields;
     const id = newId();
-    const dcRow = { ...header, ...gc, id, supplierId: supplier, poId, number, financialYear, createdAt: now };
+    const dcRow = { ...fields, ...gc, id, supplierId: supplier, number, financialYear, createdAt: now };
     const itemRows = items.map((item) => ({ id: newId(), supplierId: supplier, dcId: id, ...item, createdAt: now }));
 
-    const stored = await dcsNumbered(db, supplier, [number]);
     const links = await reresolveLinks(db, {
       supplierId: supplier,
       kind: "dc",
@@ -108,7 +95,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
           dcDate: body.dcDate,
           financialYear,
           ...gc,
-          items: items.map(({ poItemId, dspQty }) => ({ poItemId, dspQty })),
+          items,
         },
       }),
     ];
@@ -131,13 +118,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     /** The create form: the PO, header defaults and the PO's items with their balances (no cap, INV-32). */
     async dispatchable(poId: string) {
       const [row, items, supplier] = await Promise.all([loadPo(poId), itemsOfPo(db, poId), findSupplier(db)]);
-      const defaults = {
-        ...BLANK_HEADER,
-        supplierName: supplier?.name ?? null,
-        supplierAddress: supplier?.address ?? null,
-        supplierGstin: supplier?.gstin ?? null,
-        supplierContact: supplier?.contact ?? null,
-      };
+      const defaults = { ...BLANK_HEADER, ...supplierSnapshotOf(supplier) };
       return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, defaults, items };
     },
 
