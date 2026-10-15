@@ -1,17 +1,16 @@
-// The header's search box: opens the search dialog on click or Ctrl/⌘+K. The dialog (and Radix Dialog with it)
-// loads on the first open, keeping it out of the shell bundle (INV-104).
+// The header's search box: opens the search dialog on click or Ctrl/⌘+K. The dialog (SPEC-15 search, and Radix
+// Dialog with it) loads on the first open, keeping it out of the shell bundle (INV-104).
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { Search } from "../../lib/icons.ts";
 
-const GlobalSearchDialog = lazy(() =>
-  import("./GlobalSearchDialog.tsx").then((m) => ({ default: m.GlobalSearchDialog })),
+const SearchDialog = lazy(() =>
+  import("../modules/search/SearchDialog.tsx").then((m) => ({ default: m.SearchDialog })),
 );
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const [opened, setOpened] = useState(false);
-  const [query, setQuery] = useState("");
 
   const show = (next: boolean): void => {
     setOpen(next);
@@ -45,7 +44,7 @@ export function GlobalSearch() {
       </button>
       {opened && (
         <Suspense fallback={null}>
-          <GlobalSearchDialog open={open} onOpenChange={show} query={query} onQueryChange={setQuery} />
+          <SearchDialog open={open} onOpenChange={show} />
         </Suspense>
       )}
     </>

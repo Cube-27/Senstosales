@@ -9,6 +9,7 @@ export { DatePicker, type DatePickerProps } from "./DatePicker.tsx";
 export { type DetailTab, DetailTabs, type DetailTabsProps } from "./DetailTabs.tsx";
 export { FileUploadModal, type FileUploadModalProps, type UploadOutcome } from "./FileUploadModal.tsx";
 export { FormField, type FormFieldProps } from "./FormField.tsx";
+export { GlobalSearchDialog, type GlobalSearchDialogProps } from "./GlobalSearchDialog.tsx";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar.tsx";
 export { PageHeader, type PageHeaderProps } from "./PageHeader.tsx";
 export { Pagination, type PaginationProps } from "./Pagination.tsx";
