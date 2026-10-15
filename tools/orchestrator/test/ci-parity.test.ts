@@ -1,5 +1,6 @@
 // `pnpm verify` runs everything CI runs: each CI job runs one root `check:*` script (as `pnpm check:x` or as that
-// script's exact command), and `verify` chains every one of them in CI's job order.
+// script's exact command), and `verify` chains every one of them in CI's job order. The `changes` job only decides
+// which jobs run (tools/checks/src/changes.ts), so it runs none.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -9,13 +10,12 @@ import { REPO } from "./shell.ts";
 
 type Workflow = { jobs: Record<string, { steps: Array<{ run?: string }> }> };
 
-/** Job name -> its `run:` commands, in ci.yml order. */
+/** Job name -> its `run:` commands, in ci.yml order, without the `changes` gate. */
 function ciJobs(): Array<[string, string[]]> {
   const workflow = parse(readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8")) as Workflow;
-  return Object.entries(workflow.jobs).map(([job, { steps }]) => [
-    job,
-    steps.flatMap((step) => (step.run === undefined ? [] : [step.run.trim()])),
-  ]);
+  return Object.entries(workflow.jobs)
+    .filter(([job]) => job !== "changes")
+    .map(([job, { steps }]) => [job, steps.flatMap((step) => (step.run === undefined ? [] : [step.run.trim()]))]);
 }
 
 const scripts = (): Record<string, string> =>

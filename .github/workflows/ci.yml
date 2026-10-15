@@ -16,11 +16,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The first job: tools/orchestrator/config.sh CI_FIRST_JOB names it. Format, lint (C15 guardrails, C12/C3
-  # boundaries), the INV-90 language check, the INV-64 status-source check, the INV-84 migration SQL lint and D1
-  # dialect step (every migration applied on a local in-memory D1), typecheck, tests (including the orchestrator
-  # tools and `bash -n` over tools/orchestrator/*.sh).
+  # The first job: tools/orchestrator/config.sh CI_FIRST_JOB names it, and it never skips. It decides which jobs a
+  # pull request needs (tools/checks/src/changes.ts): one that touches only docs/**, *.md and .claude/skills/** skips
+  # check, licenses, build, audit and e2e; anything else, and every push to main, runs everything. The gate is a
+  # job-level `if:`, never workflow-level `paths:`, so a skipped job still reports and satisfies the required checks.
+  # real-data-scan always runs.
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.paths.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+      - id: paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node tools/checks/src/changes.ts "$BASE" "$HEAD"
+
+  # Format, lint (C15 guardrails, C12/C3 boundaries), the INV-90 language check, the INV-64 status-source check, the
+  # INV-84 migration SQL lint and D1 dialect step (every migration applied on a local in-memory D1), typecheck, tests
+  # (including the orchestrator tools and `bash -n` over tools/orchestrator/*.sh).
   check:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,7 +58,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:code
 
-  # Contract C1: no real data in this public repo. Needs no dependencies.
+  # Contract C1: no real data in this public repo. Needs no dependencies; runs on every change, docs included.
   real-data-scan:
     runs-on: ubuntu-24.04
     steps:
@@ -48,6 +72,8 @@ jobs:
 
   # Contract C13: dependency licence deny-list, plus a CycloneDX SBOM uploaded as an artifact.
   licenses:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -70,6 +96,8 @@ jobs:
 
   # Every workspace package's build script.
   build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,6 +114,8 @@ jobs:
   # Known vulnerabilities in production dependencies at high or above, then INV-108: every action pinned to a full
   # commit SHA and read-only default permissions (the pin check parses YAML, so it needs the install).
   audit:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -98,3 +128,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:audit
+
+  # Gated jobs added later (e2e, desktop) take the same two lines: `needs: changes` and
+  # `if: needs.changes.outputs.code == 'true'`.

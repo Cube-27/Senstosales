@@ -13,9 +13,10 @@ if [[ $WORKTREE_ROOT =~ ^/[A-Za-z]/ ]]; then
   WORKTREE_ROOT=$(cygpath -m "$WORKTREE_ROOT" 2>/dev/null || echo "$WORKTREE_ROOT")
 fi
 
-# The first job of the CI workflow. wait_ci.sh treats "no check of this name after WAIT_CI_NO_RUN_S" as "no
-# workflow run" (GitHub starts no pull_request workflow on a PR that conflicts with its base).
-CI_FIRST_JOB=${CI_FIRST_JOB:-check}
+# The first job of the CI workflow, the one that never skips (`changes` decides which other jobs run). wait_ci.sh
+# treats "no check of this name after WAIT_CI_NO_RUN_S" as "no workflow run" (GitHub starts no pull_request workflow
+# on a PR that conflicts with its base), and requires it to succeed; any other job may be skipped.
+CI_FIRST_JOB=${CI_FIRST_JOB:-changes}
 # An optional external quality gate reported as a check run (e.g. "SonarCloud Code Analysis"). When set, wait_ci.sh
 # also waits for it. Empty: none.
 CI_GATE_CHECK=${CI_GATE_CHECK:-}

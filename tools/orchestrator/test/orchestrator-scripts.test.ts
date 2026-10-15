@@ -35,21 +35,33 @@ function runScript(dir: string, script: string, args: string[], stubs: Record<st
 // `gh pr view` as wait_ci.sh asks for it: the head line, then one line per check run.
 const ghChecks = (...checks: string[]): string =>
   `printf "%s\\n" ${[`${HEAD} MERGEABLE CLEAN`, ...checks].map((line) => `"${line}"`).join(" ")}`;
-const GH_GREEN = ghChecks("check COMPLETED SUCCESS");
+const GH_GREEN = ghChecks("changes COMPLETED SUCCESS");
 
 describe("wait_ci.sh", SLOW, () => {
   it.each([HEAD.slice(0, 7), HEAD.slice(0, 12), HEAD])("accepts the head by any prefix length: %s", (sha) => {
     const result = runScript(tempDir(), "wait_ci.sh", ["1", sha, "1"], { gh: GH_GREEN }, { WAIT_CI_POLL_S: "1" });
 
-    expect([result.status, result.stdout]).toEqual([0, "check COMPLETED SUCCESS\n"]);
+    expect([result.status, result.stdout]).toEqual([0, "changes COMPLETED SUCCESS\n"]);
   });
 
   it.each([
-    [["check COMPLETED SKIPPED"], {}, 1],
-    [["check COMPLETED NEUTRAL"], {}, 1],
-    [["check COMPLETED SUCCESS", "advisory COMPLETED NEUTRAL", "docs COMPLETED SKIPPED"], {}, 0],
-    [["check COMPLETED SUCCESS", "Quality Gate COMPLETED SKIPPED"], { CI_GATE_CHECK: "Quality Gate" }, 1],
-    [["check COMPLETED SUCCESS", "Quality Gate COMPLETED SUCCESS"], { CI_GATE_CHECK: "Quality Gate" }, 0],
+    [["changes COMPLETED SKIPPED"], {}, 1],
+    [["changes COMPLETED NEUTRAL"], {}, 1],
+    [["changes COMPLETED SUCCESS", "advisory COMPLETED NEUTRAL", "docs COMPLETED SKIPPED"], {}, 0],
+    // A docs-only PR: the gated jobs are skipped and pass.
+    [
+      [
+        "changes COMPLETED SUCCESS",
+        "check COMPLETED SKIPPED",
+        "build COMPLETED SKIPPED",
+        "real-data-scan COMPLETED SUCCESS",
+      ],
+      {},
+      0,
+    ],
+    [["changes COMPLETED SUCCESS", "check COMPLETED FAILURE"], {}, 1],
+    [["changes COMPLETED SUCCESS", "Quality Gate COMPLETED SKIPPED"], { CI_GATE_CHECK: "Quality Gate" }, 1],
+    [["changes COMPLETED SUCCESS", "Quality Gate COMPLETED SUCCESS"], { CI_GATE_CHECK: "Quality Gate" }, 0],
   ])("requires the first job and the gate to succeed: %j %j", (checks, env, code) => {
     const stubs = { gh: ghChecks(...checks) };
     const result = runScript(tempDir(), "wait_ci.sh", ["1", HEAD.slice(0, 7), "1"], stubs, {
@@ -176,7 +188,7 @@ describe("merge_pr.sh", SLOW, () => {
       "pr merge",
     ]);
     expect(result.stdout).toBe(
-      "check COMPLETED SUCCESS\nretargeted PR #8 from spec-01/pr-1-x to main\n" +
+      "changes COMPLETED SUCCESS\nretargeted PR #8 from spec-01/pr-1-x to main\n" +
         "retargeted PR #9 from spec-01/pr-1-x to main\n",
     );
   });
