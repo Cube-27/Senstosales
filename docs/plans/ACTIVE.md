@@ -52,6 +52,7 @@ Full rows are in git history.
 - [SPEC-11 — DC and invoice services and APIs](../specs/SPEC-11-dc-invoice-services.md): PRs 1–6 (#55, #59, #60, #63, #65, #67)
 - [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md): PRs 1–8 (#78, #82)
 - [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md): PRs 1–5 (#83)
+- [SPEC-16 — Web: PO and SRV screens, uploads and folder import](../specs/SPEC-16-web-po-srv-import.md): PRs 1–5 (#84)
 
 ## Follow-ups
 
@@ -64,6 +65,10 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-11 (#60 review): held-batch test for a DC delete committing between an invoice create's read and commit.
 - SPEC-05 (#80 simplify): indexes on the remaining FK lookups: srv_item(srv_id), srv_item(po_item_id), po_lot(po_item_id), reconciliation_issue(scope_id).
 - SPEC-08 PR 5 (#47 review): finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting.
+- SPEC-16 (#84): light/dark screenshots of the PO and SRV screens (§7); `/po` e2e for paging bounding boxes and the blocked-delete reason once SPEC-18 can create a DC (now ct suite and unit tests).
+- SPEC-16 (#84): PO rows and items show received under Accepted (INV-09) in the UI; the API could return `acceptedQty` as SRV does.
+- SPEC-16 (#84 review): `JobProgress` shows "Waiting to start" while `jobs.detail` keeps failing, and the folder-import dialog stays busy; the by-PO SRV popover shows the first 100 SRVs.
+- SPEC-14/16 (#84): an `authed` e2e fixture for the default-password login the SPEC-16 spec does in its own `beforeEach`.
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
@@ -124,16 +129,6 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 | 3   | Registers and list CSVs                             | done (#69) | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
 | 4   | Pending, reconciliation, export-selected, GC report | done (#75) |                                                                                                |
 | 5   | Report lists and delivery-tracker export            | done (#66) |                                                                                                |
-
-## [SPEC-16 — Web: PO and SRV screens, uploads and folder import](../specs/SPEC-16-web-po-srv-import.md)
-
-| PR  | Scope                               | Status | Notes                                                                              |
-| --- | ----------------------------------- | ------ | ---------------------------------------------------------------------------------- |
-| 1   | PO list                             | todo   | client splits uploads into requests of at most 10 MB of JSON-encoded body (D-0131) |
-| 2   | PO detail and manual dispatched qty | todo   |                                                                                    |
-| 3   | PO create and edit                  | todo   |                                                                                    |
-| 4   | SRV list and detail                 | todo   |                                                                                    |
-| 5   | Folder import and job progress      | todo   |                                                                                    |
 
 ## [SPEC-17 — Web: deviations, ledger, delivery tracker and reports](../specs/SPEC-17-web-deviations-ledger-tracker-reports.md)
 
