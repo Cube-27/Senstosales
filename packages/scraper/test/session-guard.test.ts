@@ -78,6 +78,24 @@ describe("session guard", () => {
     expect(await session.listPoIds()).toEqual(["4500000001", "4500000002"]);
   });
 
+  it("refuses a second login call while one runs, so two requests never drive the page together", async () => {
+    let release: (where: "otp") => void = () => {};
+    const { driver: d, calls } = driver({
+      submitLogin: () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    });
+    const session = guardedSession(d);
+    await session.prepareLogin();
+    const first = session.submitCaptcha("SUP001", "secret-pass", "4821");
+    expect(await codeOf(session.submitCaptcha("SUP001", "secret-pass", "4821"))).toBe("out-of-order");
+    release("otp");
+    await first;
+    await session.submitOtp("123456");
+    expect(calls).toEqual(["openLogin", "submitLogin", "submitOtp", "loggedIn"]);
+  });
+
   it("a step that settles after close answers closed and does not reopen the session", async () => {
     let release: (png: Uint8Array) => void = () => {};
     const { driver: d, calls } = driver({

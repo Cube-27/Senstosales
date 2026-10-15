@@ -67,9 +67,10 @@ type Harness = { session: ScraperSession; fetched: Array<{ url: string; cookie: 
 // One headless Edge behind the dead proxy for the whole file; each session gets its own context, so cookies and
 // routes never mix between tests.
 let edge: Browser | undefined;
+// A cold Edge start on a busy CI runner takes longer than the default hook limit.
 beforeAll(async () => {
   edge = await chromium.launch({ channel: "msedge", headless: true, proxy: DEAD_PROXY });
-});
+}, 60_000);
 afterAll(async () => {
   await edge?.close();
 });

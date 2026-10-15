@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Supplier login (synthetic)</title>
@@ -47,19 +47,19 @@
       <button id="suvidhaOkBtn" onclick="if (suvidhaAgree.checked) notice3.hidden = true;">OK</button>
     </div>
     <form method="post" action="login_check.asp">
-      <table>
+      <table role="presentation">
         <tr>
-          <td>Supplier code</td>
-          <td><input type="text" name="supp_code" /></td>
+          <td><label for="supp_code">Supplier code</label></td>
+          <td><input type="text" name="supp_code" id="supp_code" /></td>
         </tr>
         <tr>
-          <td>Password</td>
-          <td><input type="password" name="b2b_passwd" /></td>
+          <td><label for="b2b_passwd">Password</label></td>
+          <td><input type="password" name="b2b_passwd" id="b2b_passwd" /></td>
         </tr>
         <tr>
           <td>Captcha</td>
           <td>
-            <table>
+            <table role="presentation">
               <tr>
                 <td><img src="captcha.asp?d=1" alt="" width="20" height="30" /></td>
                 <td><img src="captcha.asp?d=2" alt="" width="20" height="30" /></td>
@@ -68,8 +68,8 @@
           </td>
         </tr>
         <tr>
-          <td>Enter captcha</td>
-          <td><input type="text" name="c" /></td>
+          <td><label for="c">Enter captcha</label></td>
+          <td><input type="text" name="c" id="c" /></td>
         </tr>
         <tr>
           <td></td>

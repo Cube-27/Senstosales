@@ -27,13 +27,13 @@ export function createFakeScraper(script: FakeScript): Scraper {
   };
 }
 
-function fakeDriver(script: FakeScript): PortalDriver {
-  async function page(pages: Record<string, string>, poId: string): Promise<string> {
-    const html = pages[poId];
-    if (html === undefined) throw new ScraperError("fetch-failed");
-    return html;
-  }
+async function page(pages: Record<string, string>, poId: string): Promise<string> {
+  const html = pages[poId];
+  if (html === undefined) throw new ScraperError("fetch-failed");
+  return html;
+}
 
+function fakeDriver(script: FakeScript): PortalDriver {
   return {
     openLogin: () => Promise.resolve(script.captchaPng),
     async submitLogin({ captcha }) {

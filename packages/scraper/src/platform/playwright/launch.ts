@@ -24,7 +24,7 @@ export async function launchEdge(browserType?: Pick<BrowserType, "launch">): Pro
     const context = await browser.newContext({ userAgent: USER_AGENT });
     return { browser, page: await context.newPage() };
   } catch {
-    await browser.close();
+    await browser.close().catch(() => {});
     throw new ScraperError("edge-unavailable");
   }
 }

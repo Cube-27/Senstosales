@@ -34,6 +34,8 @@ type StepOf<K extends Step["kind"]> = Extract<Step, { kind: K }>;
 
 export function guardedSession(driver: PortalDriver): ScraperSession {
   let step: Step = { kind: "start" };
+  /** A login step is running; listing and fetching do not set it. */
+  let busy = false;
 
   const isAt = <K extends Step["kind"]>(s: Step, kinds: readonly K[]): s is StepOf<K> =>
     (kinds as readonly string[]).includes(s.kind);
@@ -62,22 +64,36 @@ export function guardedSession(driver: PortalDriver): ScraperSession {
     return result;
   }
 
+  /** Runs one login step from one of `kinds`. A second login call while one runs is out of order, so two requests (a
+   * double click) never drive the portal page together. */
+  async function loginStep<K extends Step["kind"], T>(kinds: K[], run: (from: StepOf<K>) => Promise<T>): Promise<T> {
+    const from = at(...kinds);
+    if (busy) throw new ScraperError("out-of-order");
+    busy = true;
+    try {
+      return await run(from);
+    } finally {
+      busy = false;
+    }
+  }
+
   return {
-    async prepareLogin() {
-      at("start", "captcha");
-      const png = await login(() => driver.openLogin());
-      step = { kind: "captcha" };
-      return png;
-    },
-    async submitCaptcha(supplierCode, password, captcha) {
-      at("captcha");
-      const where = await login(() => driver.submitLogin({ supplierCode, password, captcha }));
-      step = { kind: "otp", skipped: where === "po-list" };
-    },
-    async submitOtp(otp) {
-      if (!at("otp").skipped) await login(() => driver.submitOtp(otp));
-      step = { kind: "ready", pages: await login(() => driver.loggedIn()) };
-    },
+    prepareLogin: () =>
+      loginStep(["start", "captcha"], async () => {
+        const png = await login(() => driver.openLogin());
+        step = { kind: "captcha" };
+        return png;
+      }),
+    submitCaptcha: (supplierCode, password, captcha) =>
+      loginStep(["captcha"], async () => {
+        const where = await login(() => driver.submitLogin({ supplierCode, password, captcha }));
+        step = { kind: "otp", skipped: where === "po-list" };
+      }),
+    submitOtp: (otp) =>
+      loginStep(["otp"], async ({ skipped }) => {
+        if (!skipped) await login(() => driver.submitOtp(otp));
+        step = { kind: "ready", pages: await login(() => driver.loggedIn()) };
+      }),
     async listPoIds() {
       return (await at("ready").pages.listPoIds()).filter(isPoId);
     },
