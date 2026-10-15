@@ -129,21 +129,16 @@ describe("templates", () => {
     expect(templateBytes(name)).toEqual(new Uint8Array(file));
   });
 
-  it("dc: labels and placeholders only, and two empty sheets as in legacy", async () => {
-    expect(await values("dc")).toEqual([
-      ["Sheet1", CONTENT.dc],
-      ["Sheet2", {}],
-      ["Sheet3", {}],
-    ]);
-  });
-
-  it("gc: labels and placeholders only, and two empty sheets as in legacy", async () => {
-    expect(await values("gc")).toEqual([
-      ["Sheet1", CONTENT.gc],
-      ["Sheet2", {}],
-      ["Sheet3", {}],
-    ]);
-  });
+  it.each(["dc", "gc"] as const)(
+    "%s: labels and placeholders only, and two empty sheets as in legacy",
+    async (name) => {
+      expect(await values(name)).toEqual([
+        ["Sheet1", CONTENT[name]],
+        ["Sheet2", {}],
+        ["Sheet3", {}],
+      ]);
+    },
+  );
 
   it("invoice: labels and placeholders only, on a sheet not named after a document", async () => {
     expect(await values("invoice")).toEqual([["Sheet1", CONTENT.invoice]]);

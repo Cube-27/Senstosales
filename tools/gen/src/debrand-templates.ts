@@ -7,9 +7,9 @@ import { join } from "node:path";
 
 import ExcelJS from "exceljs";
 
+import { TEMPLATES_DIR } from "./templates.ts";
+
 export interface TemplatePlan {
-  /** The name the content sheet gets. */
-  sheet: string;
   /** Cells of the content sheet whose text is a fixed label, kept as it is. */
   labels: readonly string[];
   /** Supplier identity cells of the content sheet and the placeholder text each one gets. */
@@ -32,7 +32,6 @@ export const PLANS: Readonly<Record<string, { source: string; plan: TemplatePlan
   "dc.xlsx": {
     source: "DC_sample_template.xlsx",
     plan: {
-      sheet: "Sheet1",
       labels: cells("F7 H9 H10 H11 B14 H14 B15 H17 B20 C20 I20 C41 C42"),
       identity: { ...LETTERHEAD, H1: "GSTIN: {supplier.gstin}", H41: FOR_SUPPLIER },
     },
@@ -40,7 +39,6 @@ export const PLANS: Readonly<Record<string, { source: string; plan: TemplatePlan
   "gc.xlsx": {
     source: "GC_sample_template.xlsx",
     plan: {
-      sheet: "Sheet1",
       labels: cells("F7 H9 H10 H11 B16 C16 J16 B27"),
       identity: { ...LETTERHEAD, H34: FOR_SUPPLIER },
     },
@@ -48,7 +46,6 @@ export const PLANS: Readonly<Record<string, { source: string; plan: TemplatePlan
   "invoice.xlsx": {
     source: "GST_INV_sample_template.xlsx",
     plan: {
-      sheet: "Sheet1",
       // Title, header labels, the item table's two header rows, totals and tax-summary labels, declaration.
       labels: cells(
         "A1 O2 I3 N3 N4 I6 N6 A7 I8 N8 A10 I10 N10 P10 A11 A12 I12 N12 I14",
@@ -93,7 +90,7 @@ export function debrand(wb: ExcelJS.Workbook, plan: TemplatePlan): void {
   clearValues(content, (address) => keep.has(address) || address in plan.identity);
   for (const [address, text] of Object.entries(plan.identity)) content.getCell(address).value = text;
   for (const ws of others) clearValues(ws, () => false);
-  content.name = plan.sheet;
+  content.name = "Sheet1";
   for (const ws of wb.worksheets) ws.headerFooter = {};
   for (const key of DOCUMENT_PROPERTIES) wb[key] = "";
   wb.created = wb.modified = FIXED_DATE;
@@ -107,8 +104,6 @@ function clearValues(ws: ExcelJS.Worksheet, kept: (address: string) => boolean):
   });
 }
 
-const OUTPUT_DIR = "packages/documents/templates";
-
 if (import.meta.main) {
   const legacyDir = process.env["SENSTO_LEGACY_TEMPLATES_DIR"];
   if (!legacyDir) {
@@ -119,6 +114,6 @@ if (import.meta.main) {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(join(legacyDir, source));
     debrand(wb, plan);
-    await wb.xlsx.writeFile(join(OUTPUT_DIR, output));
+    await wb.xlsx.writeFile(join(TEMPLATES_DIR, output));
   }
 }

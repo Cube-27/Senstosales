@@ -12,31 +12,39 @@ export interface CellSnapshot {
   style: Record<string, Json>;
 }
 
+export interface Dimension {
+  size?: number;
+  hidden?: true;
+}
+
 export interface SheetSnapshot {
   name: string;
   state: string;
   cells: Record<string, CellSnapshot>;
   merges: string[];
-  columns: Record<string, { width?: number; hidden?: true }>;
-  rows: Record<string, { height?: number; hidden?: true }>;
+  /** Widths by column letter, heights by row number. */
+  columns: Record<string, Dimension>;
+  rows: Record<string, Dimension>;
   pageBreaks: { rows: number[]; columns: number[] };
   pageSetup: Record<string, Json>;
 }
 
-const PAGE_SETUP_KEYS = [
-  "printArea",
-  "printTitlesRow",
-  "printTitlesColumn",
-  "orientation",
-  "paperSize",
-  "fitToPage",
-  "fitToWidth",
-  "fitToHeight",
-  "scale",
-  "horizontalCentered",
-  "verticalCentered",
-  "margins",
-] as const;
+// Every recorded page-setup key with the value Excel uses when the file leaves it out, so a writer that omits a
+// default and one that writes it snapshot alike. `null`: no value (no print area, the printer's paper).
+const PAGE_SETUP_DEFAULTS = {
+  printArea: null,
+  printTitlesRow: null,
+  printTitlesColumn: null,
+  orientation: "portrait",
+  paperSize: null,
+  fitToPage: false,
+  fitToWidth: 1,
+  fitToHeight: 1,
+  scale: 100,
+  horizontalCentered: false,
+  verticalCentered: false,
+  margins: null,
+} as const;
 
 // exceljs ships `ValueType` as a plain object, without TypeScript's reverse mapping.
 const TYPE_NAMES = new Map<number, string>(
@@ -58,7 +66,6 @@ function styleOf(cell: ExcelJS.Cell): Record<string, Json> {
 
 function cellValue(cell: ExcelJS.Cell): Json {
   const value = cell.value;
-  if (value instanceof Date) return value.toISOString();
   if (cell.type === ExcelJS.ValueType.Merge) return null;
   if (cell.type === ExcelJS.ValueType.RichText) return cell.text;
   return plain(value);
@@ -82,15 +89,18 @@ function cells(ws: ExcelJS.Worksheet): Record<string, CellSnapshot> {
   return out;
 }
 
+/** A column's width or a row's height and its hidden flag, or undefined when it has neither. */
+function dimension(size: number | undefined, hidden: boolean): Dimension | undefined {
+  if (size === undefined && !hidden) return undefined;
+  return { ...(size === undefined ? {} : { size }), ...(hidden ? { hidden: true as const } : {}) };
+}
+
 function columns(ws: ExcelJS.Worksheet): SheetSnapshot["columns"] {
   const out: SheetSnapshot["columns"] = {};
   for (let index = 1; index <= (ws.columns?.length ?? 0); index++) {
     const column = ws.getColumn(index);
-    const entry = {
-      ...(column.width === undefined ? {} : { width: column.width }),
-      ...(column.hidden ? { hidden: true as const } : {}),
-    };
-    if (Object.keys(entry).length > 0) out[column.letter] = entry;
+    const entry = dimension(column.width, column.hidden);
+    if (entry) out[column.letter] = entry;
   }
   return out;
 }
@@ -98,20 +108,16 @@ function columns(ws: ExcelJS.Worksheet): SheetSnapshot["columns"] {
 function rows(ws: ExcelJS.Worksheet): SheetSnapshot["rows"] {
   const out: SheetSnapshot["rows"] = {};
   ws.eachRow({ includeEmpty: true }, (row, number) => {
-    const entry = {
-      ...(row.height === undefined ? {} : { height: row.height }),
-      ...(row.hidden ? { hidden: true as const } : {}),
-    };
-    if (Object.keys(entry).length > 0) out[String(number)] = entry;
+    const entry = dimension(row.height, row.hidden);
+    if (entry) out[String(number)] = entry;
   });
   return out;
 }
 
 function pageSetup(ws: ExcelJS.Worksheet): Record<string, Json> {
   const out: Record<string, Json> = {};
-  for (const key of PAGE_SETUP_KEYS) {
-    const value = ws.pageSetup[key];
-    if (value !== undefined) out[key] = plain(value);
+  for (const [key, fallback] of Object.entries(PAGE_SETUP_DEFAULTS)) {
+    out[key] = plain(ws.pageSetup[key as keyof typeof PAGE_SETUP_DEFAULTS] ?? fallback);
   }
   return out;
 }

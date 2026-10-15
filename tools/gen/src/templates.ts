@@ -27,10 +27,10 @@ export function renderTemplates(files: readonly TemplateFile[]): string {
   ].join("\n");
 }
 
-export function readTemplateFiles(dir = TEMPLATES_DIR): TemplateFile[] {
-  return readdirSync(dir)
+export function readTemplateFiles(): TemplateFile[] {
+  return readdirSync(TEMPLATES_DIR)
     .filter((file) => file.endsWith(".xlsx"))
-    .map((file) => ({ file, bytes: readFileSync(join(dir, file)) }));
+    .map((file) => ({ file, bytes: readFileSync(join(TEMPLATES_DIR, file)) }));
 }
 
 if (import.meta.main) writeFileSync(OUTPUT, renderTemplates(readTemplateFiles()));

@@ -25,7 +25,6 @@ function legacyLike(): ExcelJS.Workbook {
 }
 
 const PLAN = {
-  sheet: "Sheet1",
   labels: ["A2"],
   identity: { A1: "{supplier.name}" },
 };
