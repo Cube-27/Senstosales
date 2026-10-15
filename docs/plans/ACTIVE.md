@@ -23,16 +23,16 @@ Updated: 2026-10-15.
 Agents can't do these (secrets, accounts, purchases, data only a person may see). Rows that depend on them are
 `human` until done; the Notes column of each spec table names the task.
 
-| #   | Task                                                                                                                                  | Needed by                                | Status           |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ---------------- |
-| H1  | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7). | SPEC-00 PR 4                             | todo             |
-| H2  | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped.                                          | —                                        | dropped (D-0010) |
-| H3  | BHEL portal credentials and OTP mailbox, on the owner's machine only.                                                                 | SPEC-01 PR 2, SPEC-19 PR 6               | todo             |
-| H4  | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine.                                                                | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3 | todo             |
-| H5  | Run the legacy app on synthetic input and produce the golden output, outside the repo.                                                | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1 | todo             |
-| H6  | Tauri updater signing key as a release secret.                                                                                        | SPEC-20 PR 5                             | todo             |
-| H7  | Fresh Windows VM install, upgrade and operations test.                                                                                | SPEC-20 (L8 exit), SPEC-21 PR 5          | todo             |
-| H8  | Owner cutover: fresh import, review and sign-off.                                                                                     | SPEC-22 PR 2–3                           | todo             |
+| #   | Task                                                                                                                                  | Needed by                                 | Status           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------- |
+| H1  | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7). | SPEC-00 PR 4                              | todo             |
+| H2  | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped.                                          | —                                         | dropped (D-0010) |
+| H3  | BHEL portal credentials and OTP mailbox, on the owner's machine only.                                                                 | SPEC-01 PR 2, SPEC-19 PR 6                | todo             |
+| H4  | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine.                                                                | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3  | todo             |
+| H5  | Run the legacy app on synthetic input and produce the golden output, outside the repo.                                                | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1b | todo             |
+| H6  | Tauri updater signing key as a release secret.                                                                                        | SPEC-20 PR 5                              | todo             |
+| H7  | Fresh Windows VM install, upgrade and operations test.                                                                                | SPEC-20 (L8 exit), SPEC-21 PR 5           | todo             |
+| H8  | Owner cutover: fresh import, review and sign-off.                                                                                     | SPEC-22 PR 2–3                            | todo             |
 
 ## Current focus
 
@@ -178,7 +178,8 @@ Follow-ups (not yet rows): po_id indexes on dc, invoice, srv and reconciliation_
 
 | PR  | Scope                                               | Status     | Notes                                                                                          |
 | --- | --------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
-| 1   | Export inventory and goldens                        | todo       | H5                                                                                             |
+| 1   | Export inventory and goldens                        | todo       | goldens from legacy code (H5 moved to PR 1b)                                                   |
+| 1b  | Confirm goldens against H5 legacy output            | todo       | H5                                                                                             |
 | 2   | Streaming writers and keyset paging                 | done (#58) |                                                                                                |
 | 3   | Registers and list CSVs                             | todo       | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
 | 4   | Pending, reconciliation, export-selected, GC report | todo       |                                                                                                |
