@@ -154,9 +154,17 @@ export const fmtDate = (d: IsoDate | null): string =>
 /** India has one time zone and no daylight saving: IST is UTC+05:30. */
 const IST_OFFSET_MS = 330 * 60 * 1000;
 
+/** An instant (`*_at`, UTC) in IST, as `YYYY-MM-DDTHH:MM:SS.sss` without a zone. */
+const istIso = (at: string): string => new Date(Date.parse(at) + IST_OFFSET_MS).toISOString();
+
+/** An instant's IST calendar date: `2025-06-01T20:00:00.000Z` -> `2025-06-02`. */
+export const istDateOf = (at: string): IsoDate => istIso(at).slice(0, 10) as IsoDate;
+
 /** An instant (`*_at`, UTC) as its IST calendar date: `2025-06-01T20:00:00.000Z` -> `"02/06/2025"`. */
-export const fmtInstantDate = (at: string): string =>
-  fmtDate(new Date(Date.parse(at) + IST_OFFSET_MS).toISOString().slice(0, 10) as IsoDate);
+export const fmtInstantDate = (at: string): string => fmtDate(istDateOf(at));
+
+/** An instant as the ledger and deviations print it (legacy en-GB, IST): `"02/06/2025, 01:30:00 IST"`. */
+export const fmtInstantDateTime = (at: string): string => `${fmtInstantDate(at)}, ${istIso(at).slice(11, 19)} IST`;
 
 /** The pending summary's export date: `2025-06-01` -> `"01-06-2025"`. */
 export const fmtDateDashed = (d: IsoDate): string => `${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}`;
