@@ -35,6 +35,7 @@ fn main() {
         )
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .run(tauri::generate_context!())
         .expect("SenstoSales could not open its window");
 }

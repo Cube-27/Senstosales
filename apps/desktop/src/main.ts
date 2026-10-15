@@ -2,7 +2,10 @@
 // starts the sidecar, waits for its port line and for health, then opens the app from loopback in the `main` window.
 // Because it outlives the navigation, it can also report a sidecar that stops later. Closing the app window closes this
 // one too; the app then exits and the shell plugin ends the sidecar.
+import { defaultWindowIcon } from "@tauri-apps/api/app";
+import { Menu } from "@tauri-apps/api/menu";
 import { join, localDataDir } from "@tauri-apps/api/path";
+import { TrayIcon } from "@tauri-apps/api/tray";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
@@ -67,6 +70,33 @@ async function start(): Promise<void> {
     center: true,
   });
   await app.once("tauri://destroyed", () => void quit());
+  await addTray(app);
+}
+
+/** The tray icon `main`: platform/tauri.ts sets its tooltip as the status (SPEC-14); its menu opens or quits the app. */
+async function addTray(app: WebviewWindow): Promise<void> {
+  const show = async () => {
+    await app.unminimize();
+    await app.show();
+    await app.setFocus();
+  };
+  const menu = await Menu.new({
+    items: [
+      { id: "open", text: "Open SenstoSales", action: () => void show() },
+      { id: "quit", text: "Quit", action: () => void app.close() },
+    ],
+  });
+  const icon = await defaultWindowIcon();
+  await TrayIcon.new({
+    id: "main",
+    ...(icon && { icon }),
+    tooltip: "SenstoSales",
+    menu,
+    showMenuOnLeftClick: false,
+    action: (event) => {
+      if (event.type === "Click" && event.button === "Left" && event.buttonState === "Up") void show();
+    },
+  });
 }
 
 start().catch((err: unknown) => fail(COULD_NOT_START, err instanceof Error ? err.message : String(err)));

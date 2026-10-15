@@ -5,7 +5,12 @@
   "windows": ["shell"],
   "permissions": [
     "core:default",
+    "core:app:allow-default-window-icon",
+    "core:window:allow-close",
     "core:window:allow-destroy",
+    "core:window:allow-set-focus",
+    "core:window:allow-show",
+    "core:window:allow-unminimize",
     "core:webview:allow-create-webview-window",
     "dialog:allow-ask",
     "log:default",
@@ -19,7 +24,7 @@
         {
           "name": "explorer",
           "cmd": "explorer",
-          "args": [{ "validator": "^[A-Za-z]:\\[^\"]*\\SenstoSales\\logs$" }]
+          "args": [{ "validator": "^[A-Za-z]:\\\\[^\"]*\\\\SenstoSales\\\\logs$" }]
         }
       ]
     }
