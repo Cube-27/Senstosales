@@ -103,10 +103,10 @@ async function serve(web: WebFiles, scraper: Scraper | undefined): Promise<void>
     version: pkg.version,
     ...(scraper && { scraper }),
   });
-  process.stdout.write(`SENSTO_PORT=${server.port}\n`);
-  const backup = server.startDailyBackup();
-  // Ctrl+C in a terminal (`pnpm start`) takes the same clean path as the shell closing stdin. Registered in the tick
-  // that announces the port, and closing only once the backup job has started, so an early stop still waits for it.
+  // Ctrl+C in a terminal (`pnpm start`) takes the same clean path as the shell closing stdin. The handlers exist
+  // before the port is announced (a reader may signal the moment it sees the line), and the close waits until the
+  // backup job has started, so an early stop still waits for it.
+  let backup = Promise.resolve();
   let closing: Promise<void> | undefined;
   const stop = (): void => {
     process.stdin.destroy();
@@ -115,6 +115,8 @@ async function serve(web: WebFiles, scraper: Scraper | undefined): Promise<void>
   process.stdin.on("end", stop);
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
+  process.stdout.write(`SENSTO_PORT=${server.port}\n`);
+  backup = server.startDailyBackup();
   process.stdin.resume();
 }
 
