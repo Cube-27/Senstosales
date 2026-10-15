@@ -41,6 +41,8 @@ const DC_HEADER = {
   transporter: "Example Transport",
   modeOfTransport: "Road",
   remarks: null,
+  invoiceNumber: null,
+  invoiceDate: null,
   supplierName: null,
   supplierAddress: null,
   supplierGstin: null,
@@ -213,7 +215,7 @@ const CASES = [
   {
     name: "dc item",
     schema: zDcItem,
-    wire: { id: ID, dcId: DC_ID, poItemId: ITEM_ID, dspQty: "0.001", createdAt: AT },
+    wire: { id: ID, dcId: DC_ID, poItemId: ITEM_ID, dspQty: "0.001", packets: 2, createdAt: AT },
     decoded: { dspQty: 1 },
   },
   {
@@ -243,6 +245,8 @@ const CASES = [
       sgst: "194.20551",
       igst: "0",
       total: "2546.25",
+      hsn: "0000",
+      packets: null,
     },
     decoded: { qty: 3000, taxable: 215783898, cgst: 19420551, total: 254625000 },
   },

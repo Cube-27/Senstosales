@@ -49,7 +49,7 @@ describe("/invoice/:id (SPEC-18 PR 3)", () => {
       within(line)
         .getAllByRole("cell")
         .map((td) => td.textContent),
-    ).toEqual(["2", "SYN100020Synthetic part 20", "—", "NOS", "2", "40", "₹80", "₹7.2", "₹7.2", "₹94.4"]);
+    ).toEqual(["2", "SYN100020Synthetic part 20", "0000", "NOS", "2", "40", "₹80", "₹7.2", "₹7.2", "₹94.4"]);
     expect(screen.getByText("₹566.4")).toBeTruthy();
   });
 

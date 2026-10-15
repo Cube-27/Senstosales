@@ -66,6 +66,8 @@ const BLANK_HEADER = {
   transporter: null,
   modeOfTransport: null,
   remarks: null,
+  invoiceNumber: null,
+  invoiceDate: null,
 } satisfies Partial<DcCreate>;
 
 /** The plain reason a DC delete is refused (INV-35). */

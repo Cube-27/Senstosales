@@ -16,6 +16,8 @@ interface Values {
   readonly ourRef: string;
   readonly consigneeName: string;
   readonly consigneeAddress: string;
+  readonly invoiceNumber: string;
+  readonly invoiceDate: IsoDate | "";
 }
 
 const valuesOf = (dc: Dc): Values => ({
@@ -25,14 +27,9 @@ const valuesOf = (dc: Dc): Values => ({
   ourRef: dc.ourRef ?? "",
   consigneeName: dc.consigneeName ?? "",
   consigneeAddress: dc.consigneeAddress ?? "",
+  invoiceNumber: dc.invoiceNumber ?? "",
+  invoiceDate: dc.invoiceDate ?? "",
 });
-
-/** The legacy edit checks, in its order and words. */
-function editError(v: Values): string | null {
-  if (v.consigneeName.trim() === "") return "Consignee is required.";
-  if (v.gcNumber.trim() === "") return "GC number is required.";
-  return null;
-}
 
 /** The update body: the stored header with the edited fields, the DC's own number and date, and its version. */
 function updateBody(dc: Dc, v: Values) {
@@ -45,9 +42,11 @@ function updateBody(dc: Dc, v: Values) {
     ourRef: blankToNull(v.ourRef),
     consigneeName: blankToNull(v.consigneeName),
     consigneeAddress: blankToNull(v.consigneeAddress),
-    gcNumber: v.gcNumber.trim(),
-    // A cleared GC date takes the DC date (INV-26).
+    // A cleared GC number or date takes the DC's (INV-26).
+    gcNumber: blankToNull(v.gcNumber),
     gcDate: v.gcDate === "" ? null : v.gcDate,
+    invoiceNumber: blankToNull(v.invoiceNumber),
+    invoiceDate: v.invoiceDate === "" ? null : v.invoiceDate,
   };
 }
 
@@ -75,13 +74,10 @@ export function DCHeaderEdit({ dc, open, onClose }: Readonly<DCHeaderEditProps>)
   };
 
   async function save() {
-    const values = getValues();
-    const problem = editError(values);
-    setError(problem);
-    if (problem !== null) return;
+    setError(null);
     setSaving(true);
     try {
-      await api.request("dc.update", { params: { id: dc.id }, body: updateBody(dc, values) });
+      await api.request("dc.update", { params: { id: dc.id }, body: updateBody(dc, getValues()) });
       toast("Updated", `DC ${dc.number} updated`, "success");
       await invalidate("dc");
       onClose();
@@ -108,7 +104,7 @@ export function DCHeaderEdit({ dc, open, onClose }: Readonly<DCHeaderEditProps>)
         <FormField label="Our Ref">
           <Input {...register("ourRef")} />
         </FormField>
-        <FormField label="GC Number" required>
+        <FormField label="GC Number">
           <Input {...register("gcNumber")} />
         </FormField>
         <Controller
@@ -120,12 +116,25 @@ export function DCHeaderEdit({ dc, open, onClose }: Readonly<DCHeaderEditProps>)
             </FormField>
           )}
         />
-        <FormField label="Consignee" required className="col-span-2">
+        <FormField label="Consignee" className="col-span-2">
           <Input {...register("consigneeName")} />
         </FormField>
         <FormField label="Consignee Address" className="col-span-2">
           <Textarea {...register("consigneeAddress")} className="min-h-16" />
         </FormField>
+        {/* The invoice the DC sheet cites, filled in by the user (EC-47); blank prints the DC's own invoice. */}
+        <FormField label="Invoice No">
+          <Input {...register("invoiceNumber")} />
+        </FormField>
+        <Controller
+          control={control}
+          name="invoiceDate"
+          render={({ field }) => (
+            <FormField label="Invoice Date">
+              <DatePicker value={field.value} onChange={field.onChange} />
+            </FormField>
+          )}
+        />
       </div>
     </FormDialog>
   );

@@ -18,7 +18,7 @@ import {
   validateDcInvoiceLines,
   validateDirectInvoiceLines,
 } from "@senstosales/domain";
-import type { routes } from "@senstosales/schemas";
+import { INVOICE_DEFAULTS, type routes } from "@senstosales/schemas";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 
@@ -39,6 +39,7 @@ import {
   srvsOfInvoice,
 } from "../repositories/invoice.ts";
 import { itemsOfPo } from "../repositories/po-list.ts";
+import { findSupplier } from "../repositories/supplier.ts";
 import { audit } from "./audit.ts";
 import { commit, docWrites, loadPo, NO_LINKS } from "./doc-writes.ts";
 import type { SupplierDeps } from "./index.ts";
@@ -54,8 +55,15 @@ type DirectInvoiceCreate = Extract<InvoiceCreate, { kind: "direct" }>;
 type InvoiceUpdate = z.output<(typeof routes)["invoice.update"]["body"]>;
 type ListQuery = z.output<(typeof routes)["invoice.list"]["query"]>;
 
-/** A line before tax. */
-type Line = { poItemId: string; dcItemId: string | null; qty: Qty; rate: Money };
+/** A line before tax, with its HSN as typed (blank takes the settings' default) and its packets. */
+type Line = {
+  poItemId: string;
+  dcItemId: string | null;
+  qty: Qty;
+  rate: Money;
+  hsn: string | null;
+  packets: number | null;
+};
 
 /**
  * Where an invoice comes from: its PO, its DC if any, and its lines. A PO-direct invoice's lines are checked against
@@ -113,8 +121,12 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     if (stored === undefined) throw dcNotFound();
     const issues = validateDcInvoiceLines({ dcLines, lines: body.lines });
     if (issues.length > 0) throw linesError(issues);
-    // The lines equal the DC's (INV-29), so they are built from the DC's in its order.
-    const lines = dcLines.map(({ dcItemId, poItemId, qty, poRate }) => ({ poItemId, dcItemId, qty, rate: poRate }));
+    // The lines equal the DC's (INV-29), so they are built from the DC's in its order; packets left blank are the DC's.
+    const typed = new Map(body.lines.map((line) => [line.dcItemId, line]));
+    const lines = dcLines.map(({ dcItemId, poItemId, qty, poRate, packets }) => {
+      const line = typed.get(dcItemId);
+      return { poItemId, dcItemId, qty, rate: poRate, hsn: line?.hsn ?? null, packets: line?.packets ?? packets };
+    });
     return { poId: stored.poId, dc: { id: stored.id, number: stored.number }, lines: () => Promise.resolve(lines) };
   }
 
@@ -127,7 +139,14 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       const issues = validateDirectInvoiceLines({ poItemIds: new Set(items.map((i) => i.id)), lines: body.lines });
       if (issues.length > 0) throw linesError(issues);
       const rates = new Map(items.map((i) => [i.id, i.rate]));
-      return body.lines.map(({ poItemId, qty }) => ({ poItemId, dcItemId: null, qty, rate: rates.get(poItemId)! }));
+      return body.lines.map(({ poItemId, qty, hsn, packets }) => ({
+        poItemId,
+        dcItemId: null,
+        qty,
+        rate: rates.get(poItemId)!,
+        hsn,
+        packets,
+      }));
     },
   });
 
@@ -136,10 +155,12 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
    * deleted meanwhile is a 404.
    */
   async function createOnce(supplier: string, body: InvoiceCreate, number: string) {
-    const [source, rates] = await Promise.all([
+    const [source, rates, supplierRow] = await Promise.all([
       body.kind === "dc" ? dcSource(body) : directSource(body),
       gstRatesOf(db, supplier),
+      findSupplier(db),
     ]);
+    const defaultHsn = supplierRow?.invoiceDefaults[INVOICE_DEFAULTS.hsn] ?? null;
     const { poId, dc } = source;
     // The version is read before the snapshot, so a PO changed in between fails the batch (D-0220, INV-95).
     const row = await loadPo(db, poId);
@@ -158,6 +179,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
       supplierId: supplier,
       invoiceId: id,
       ...line,
+      hsn: line.hsn || defaultHsn,
       ...invoiceLineTax({ ...line, cgstPct, sgstPct, gemc: row.isGemc }),
     }));
     const totals = invoiceTotals(itemRows);

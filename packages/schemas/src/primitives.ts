@@ -69,3 +69,6 @@ export const zPoId = z.string().regex(/^\d{1,10}$/);
 
 /** A count of rows, documents or files. */
 export const zCount = z.int().nonnegative();
+
+/** A line's number of packets, a whole count; blank when not entered. */
+export const zPackets = zCount.nullable();

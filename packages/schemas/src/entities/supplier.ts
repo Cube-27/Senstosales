@@ -19,6 +19,17 @@ export const zSupplier = z.object({
   invoiceDefaults: zTextMap,
 });
 
+/**
+ * The supplier's `invoiceDefaults` keys: the letterhead's description line and the invoice's jurisdiction city the
+ * documents print (D-0298), and the place of supply and HSN new invoices start from (owner, 2026-10-15).
+ */
+export const INVOICE_DEFAULTS = {
+  description: "description",
+  jurisdiction: "jurisdiction",
+  placeOfSupply: "placeOfSupply",
+  hsn: "hsn",
+} as const;
+
 /** The supplier details a DC or invoice carries, editable per document as in legacy. */
 export const zSupplierSnapshot = z.object({
   supplierName: z.string().nullable(),

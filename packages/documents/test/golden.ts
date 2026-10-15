@@ -16,7 +16,7 @@ export interface Golden {
   pageSetup: SheetSnapshot["pageSetup"];
   /** `[first, last, templateFirst, templateLast]`: output rows `first..last` carry the styles of those template rows. */
   styleRows: Array<[number, number, number, number]>;
-  /** `[first, last, columns, format]`: the number format legacy set on those columns of rows `first..last`. */
+  /** `[first, last, columns, format]`: the number format set on those columns of rows `first..last`. */
   numFmts?: Array<[number, number, string, string]>;
   /** Output cell -> template cell whose font legacy copied onto it. */
   fontFrom?: Record<string, string>;
@@ -48,7 +48,11 @@ function expectedStyles(template: SheetSnapshot, golden: Golden): Record<string,
   const out = rowStyles(template, golden.styleRows);
   for (const [first, last, columns, numFmt] of golden.numFmts ?? []) {
     for (let row = first; row <= last; row++) {
-      for (const column of columns) out[`${column}${row}`] = { ...out[`${column}${row}`], numFmt };
+      for (const column of columns) {
+        // `General` is Excel's default, which a read-back cell reports as no format.
+        const { numFmt: _, ...style } = out[`${column}${row}`] ?? {};
+        out[`${column}${row}`] = numFmt === "General" ? style : { ...style, numFmt };
+      }
     }
   }
   for (const [at, from] of Object.entries(golden.fontFrom ?? {})) {

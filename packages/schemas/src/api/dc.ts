@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zDc, zDcHeader, zDcItem } from "../entities/dc.ts";
 import { zFlag } from "../entities/flag.ts";
 import { zPoItem } from "../entities/po.ts";
-import { zCount, zFy, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zCount, zFy, zIsoDate, zMoney, zPackets, zQty } from "../primitives.ts";
 import { zDocRef, zFyDocRef, zItemInfo, zListQuery, zPoRef, zRangeFilters } from "./common.ts";
 
 export const zDcListQuery = zListQuery(
@@ -51,9 +51,11 @@ export const zDispatchable = z.object({
 /** A blank GC number or date defaults to the DC's (INV-26). */
 const zGc = { gcNumber: z.string().nullable(), gcDate: zIsoDate.nullable() };
 
-export const zDcCreateBody = zDc
-  .pick({ poId: true, number: true, dcDate: true })
-  .extend({ ...zGc, ...zDcHeader.shape, items: z.array(zDcItem.pick({ poItemId: true, dspQty: true })) });
+export const zDcCreateBody = zDc.pick({ poId: true, number: true, dcDate: true }).extend({
+  ...zGc,
+  ...zDcHeader.shape,
+  items: z.array(zDcItem.pick({ poItemId: true, dspQty: true }).extend({ packets: zPackets.default(null) })),
+});
 
 /** A changed date moves the DC to its new FY (INV-25); the version guards the edit (INV-95). */
 export const zDcUpdateBody = zDc

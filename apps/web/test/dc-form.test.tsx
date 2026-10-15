@@ -23,6 +23,8 @@ const DEFAULTS = {
   transporter: null,
   modeOfTransport: null,
   remarks: null,
+  invoiceNumber: null,
+  invoiceDate: null,
   supplierName: "Example Supplier",
   supplierAddress: "1 Example Road",
   supplierGstin: "TESTGSTIN0001",
@@ -86,7 +88,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
       within(row)
         .getAllByRole("cell")
         .map((td) => td.textContent),
-    ).toEqual(["10", "SYN100010Synthetic part 10", "NOS", "100", "10", "4", "6", "", "₹0"]);
+    ).toEqual(["10", "SYN100010Synthetic part 10", "NOS", "100", "10", "4", "6", "", "", "₹0"]);
     expect((screen.getByLabelText("Consignee") as HTMLInputElement).value).toBe("Example Consignee");
   });
 
@@ -103,6 +105,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
     expect((screen.getByLabelText("GC Number") as HTMLInputElement).value).toBe("17");
     // 12 against a balance of 6: no cap; the flag comes back after save (A-7).
     fireEvent.change(screen.getByLabelText("Dispatch qty of item 10"), { target: { value: "12" } });
+    fireEvent.change(screen.getByLabelText("Packets of item 10"), { target: { value: "3" } });
     expect(screen.getByText("Guarantee Certificate No. 17 Dt. 02/05/2025")).toBeTruthy();
     expect(screen.getByText("Consignment value of BHEL PO: ₹1,200")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Add Note" }));
@@ -121,7 +124,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
       gcNumber: null,
       gcDate: null,
       remarks: "Packed in two cases",
-      items: [{ poItemId: ITEM_A, dspQty: "12" }],
+      items: [{ poItemId: ITEM_A, dspQty: "12", packets: 3 }],
     });
   });
 

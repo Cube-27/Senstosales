@@ -91,6 +91,8 @@ const INVOICE_31: InvoiceDocument = {
       sgst: m(2_400_000),
       igst: m(0),
       total: m(44_800_000),
+      hsn: null,
+      packets: null,
     },
     {
       poItemNo: 20,
@@ -103,6 +105,8 @@ const INVOICE_31: InvoiceDocument = {
       sgst: m(400_000),
       igst: m(0),
       total: m(7_467_000),
+      hsn: null,
+      packets: null,
     },
   ],
 };

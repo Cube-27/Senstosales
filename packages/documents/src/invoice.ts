@@ -36,7 +36,15 @@ export interface InvoiceDocument {
   dc: { number: string; dcDate: IsoDate } | null;
   /** The stored lines, with the amounts computed at creation (INV-41). */
   items: ReadonlyArray<
-    LineTax & { poItemNo: number; description: string | null; unit: string | null; qty: Qty; rate: Money }
+    LineTax & {
+      poItemNo: number;
+      description: string | null;
+      unit: string | null;
+      qty: Qty;
+      rate: Money;
+      hsn: string | null;
+      packets: number | null;
+    }
   >;
 }
 
@@ -46,6 +54,11 @@ const ITEM_SLOTS = TOTAL_ROW - FIRST_ITEM_ROW;
 const LAST_ROW = 32;
 /** Columns legacy formats as amounts on the item, Total and tax-summary rows: rate, taxable, CGST, SGST, total. */
 const AMOUNT_COLUMNS = ["L", "N", "P", "R", "S"];
+
+/** Quantities show every decimal they have and none when whole (`12.345`, `16`), so a fraction is never hidden. */
+const QTY_FORMAT = "General";
+/** A line with no packets entered prints legacy's 1. */
+const packetsOf = (item: { packets: number | null }): number => item.packets ?? 1;
 
 /** Number cells hold the exact decimal; formats do the rounding on screen, as legacy's float cells did. */
 const amount = (m: Money): number => Number(moneyToString(m));
@@ -108,8 +121,8 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
     const values: Array<[string, Value]> = [
       ["A", item.poItemNo],
       ["B", item.description || "No Description"],
-      // No column stores packets; legacy printed 1 for every item.
-      ["J", 1],
+      ["I", item.hsn],
+      ["J", packetsOf(item)],
       ["K", qtyNumber(item.qty)],
       ["L", amount(item.rate)],
       ["M", item.unit || "NO"],
@@ -122,13 +135,14 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
     ];
     for (const [column, value] of values) put(ws, `${column}${row}`, value);
     setAmountFormat(ws, row, numFmt);
+    restyle(ws.getCell(`K${row}`), { numFmt: QTY_FORMAT });
   });
 
   const { taxable, cgst, sgst, total } = invoiceTotals(items);
   const taxRow = totalRow + 4;
   const cells: Array<[string, number, Value]> = [
     ["B", totalRow, "Total"],
-    ["J", totalRow, items.length],
+    ["J", totalRow, items.reduce((sum, item) => sum + packetsOf(item), 0)],
     ["K", totalRow, qtyNumber(sumQty(items.map((item) => item.qty)))],
     ["N", totalRow, amount(taxable)],
     ["P", totalRow, amount(cgst)],
@@ -146,6 +160,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
   ];
   for (const [column, row, value] of cells) put(ws, `${column}${row}`, value);
   setAmountFormat(ws, totalRow, numFmt);
+  restyle(ws.getCell(`K${totalRow}`), { numFmt: QTY_FORMAT });
   setAmountFormat(ws, taxRow, numFmt);
 }
 

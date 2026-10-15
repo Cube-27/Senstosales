@@ -35,7 +35,7 @@ async function bigPo() {
 /** A DC dispatching 11 of each 10 ordered, so every line opens an OVER_DISPATCH flag. */
 async function bigDc(poId: string, itemIds: readonly string[]) {
   const form = await app.client.request("dc.dispatchable", { params: { poId } });
-  const items = itemIds.map((poItemId) => ({ poItemId, dspQty: zQty.decode("11") }));
+  const items = itemIds.map((poItemId) => ({ poItemId, dspQty: zQty.decode("11"), packets: null }));
   const body = { ...form.defaults, poId, number: "1", dcDate: day("2025-04-05"), gcNumber: null, gcDate: null, items };
   return app.client.request("dc.create", { body });
 }
@@ -79,7 +79,13 @@ describe(`a document with ${LINES} lines binds at most 100 parameters per statem
       await most(async () => {
         dcId = (await bigDc(poId, itemIds)).id;
         const preview = await app.client.request("invoice.previewDc", { params: { dcId } });
-        const lines = preview.lines.map((l) => ({ dcItemId: l.dcItemId!, qty: l.qty!, rate: l.rate }));
+        const lines = preview.lines.map((l) => ({
+          dcItemId: l.dcItemId!,
+          qty: l.qty!,
+          rate: l.rate,
+          hsn: l.hsn,
+          packets: l.packets,
+        }));
         const header = { ...preview.header, kind: "dc" as const, dcId, number: "1", invoiceDate: day("2025-04-06") };
         await app.client.request("invoice.create", { body: { ...header, lines } });
       }),
@@ -107,7 +113,7 @@ describe(`a document with ${LINES} lines binds at most 100 parameters per statem
     const { poId, itemIds } = await bigPo();
     const form = await app.client.request("dc.dispatchable", { params: { poId } });
     for (let n = 1; n <= 100; n += 1) {
-      const items = [{ poItemId: itemIds[0]!, dspQty: zQty.decode("1") }];
+      const items = [{ poItemId: itemIds[0]!, dspQty: zQty.decode("1"), packets: null }];
       const body = {
         ...form.defaults,
         poId,

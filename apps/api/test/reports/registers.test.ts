@@ -100,7 +100,13 @@ describe("a GEMC PO with fractional quantities", () => {
     await db.batch([
       r.po({ id: id("P1"), poNumber: "4500900", poDate: "2025-05-01", poValue: 123_45678, gemcNumber: "GEMC-1" }),
       r.item({ id: id("I1"), poId: id("P1"), poItemNo: 10, ordQty: 12_345, rate: m(10_00001) }),
-      r.dc({ id: id("D1"), poId: id("P1"), number: "301", dcDate: "2025-05-10", createdAt: "2025-05-10T00:00:00.000Z" }),
+      r.dc({
+        id: id("D1"),
+        poId: id("P1"),
+        number: "301",
+        dcDate: "2025-05-10",
+        createdAt: "2025-05-10T00:00:00.000Z",
+      }),
       r.dcItem({ id: id("L1"), dcId: id("D1"), poItemId: id("I1"), dspQty: 1 }),
       r.invoice({
         id: id("V1"),

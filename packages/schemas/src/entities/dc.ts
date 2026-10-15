@@ -2,7 +2,7 @@
 // dialog show (SPEC-11 §9); they are the only fields an edit may change (INV-33).
 import { z } from "zod";
 
-import { zFy, zId, zInstant, zIsoDate, zQty } from "../primitives.ts";
+import { zFy, zId, zInstant, zIsoDate, zPackets, zQty } from "../primitives.ts";
 import { zSupplierSnapshot } from "./supplier.ts";
 
 const text = z.string().nullable();
@@ -21,6 +21,9 @@ export const zDcHeader = z.object({
   transporter: text,
   modeOfTransport: text,
   remarks: text,
+  /** The invoice the DC sheet cites, as the user fills it in (EC-47); blank prints the DC's own invoice. */
+  invoiceNumber: text,
+  invoiceDate: zIsoDate.nullable(),
   ...zSupplierSnapshot.shape,
 });
 
@@ -45,5 +48,7 @@ export const zDcItem = z.object({
   dcId: zId,
   poItemId: zId,
   dspQty: zQty,
+  /** Packets the line ships in, as the user enters them; the daily dispatch summary prints them. */
+  packets: zPackets,
   createdAt: zInstant,
 });

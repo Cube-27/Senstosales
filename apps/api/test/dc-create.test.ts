@@ -90,8 +90,8 @@ describe("POST /api/dc", () => {
           gcNumber: "7",
           gcDate: "2025-04-02",
           items: [
-            { poItemId: item10, dspQty: 4000 },
-            { poItemId: item20, dspQty: 5000 },
+            { poItemId: item10, dspQty: 4000, packets: null },
+            { poItemId: item20, dspQty: 5000, packets: null },
           ],
         },
       }),

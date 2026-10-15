@@ -1,7 +1,8 @@
 // What the invoice create form starts from (SPEC-11 §2): the PO, the DC if any, header defaults, the settings' GST
 // rates and the lines. Each line shows its item's uninvoiced quantity as information, never as a cap (INV-05, C6).
-// The defaults are the legacy previews' where v1 stores the field; the rest start blank (EC-36, EC-46).
-import type { routes } from "@senstosales/schemas";
+// The defaults are the legacy previews' where v1 stores the field; the rest start blank (EC-36, EC-46). The place of
+// supply and each line's HSN start as the settings' defaults (owner, 2026-10-15).
+import { INVOICE_DEFAULTS, type routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
 import { dcHasInvoice, dcNotFound, NotFoundError } from "../errors.ts";
@@ -58,20 +59,23 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
       findSupplier(db),
     ]);
     if (row === undefined) throw new NotFoundError("po-not-found", "This PO was not found.");
+    const defaults = supplierRow?.invoiceDefaults ?? {};
     const header = {
       ...BLANK_HEADER,
       ...supplierSnapshotOf(supplierRow),
+      placeOfSupply: defaults[INVOICE_DEFAULTS.placeOfSupply] ?? null,
       buyersOrderDate: row.poDate,
       gemcNumber: row.gemcNumber,
       remarks: row.remarks,
     };
-    return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, header, ...rates };
+    const hsn = defaults[INVOICE_DEFAULTS.hsn] ?? null;
+    return { po: { id: row.id, poNumber: row.poNumber, isGemc: row.isGemc }, header, hsn, ...rates };
   }
 
   return {
     /** Every item of the PO with no qty: the user types each line's quantity (INV-31). */
     async fromPo(poId: string) {
-      const [preview, items] = await Promise.all([base(poId), itemsOfPo(db, poId)]);
+      const [{ hsn, ...preview }, items] = await Promise.all([base(poId), itemsOfPo(db, poId)]);
       const lines = items.map((item) => ({
         ...itemInfo(item),
         rate: item.rate,
@@ -79,6 +83,8 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
         dcItemId: null,
         qty: null,
         uninvoicedQty: item.uninvoicedQty,
+        hsn,
+        packets: null,
       }));
       return { ...preview, dc: null, lines };
     },
@@ -92,7 +98,7 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
       ]);
       if (stored === undefined) throw dcNotFound();
       if (invoices.has(dcId)) throw dcHasInvoice(stored.number);
-      const { header, ...preview } = await base(stored.poId);
+      const { header, hsn, ...preview } = await base(stored.poId);
       return {
         ...preview,
         dc: { id: stored.id, number: stored.number, date: stored.dcDate, financialYear: stored.financialYear },
@@ -113,6 +119,8 @@ export function invoicePreviewService({ db, supplierId }: Pick<SupplierDeps, "db
           dcItemId: line.dcItemId,
           qty: line.qty,
           uninvoicedQty: line.uninvoicedQty,
+          hsn,
+          packets: line.packets,
         })),
       };
     },

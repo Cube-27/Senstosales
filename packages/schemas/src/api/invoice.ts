@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zFlag } from "../entities/flag.ts";
 import { zInvoice, zInvoiceBase, zInvoiceHeader, zInvoiceItem } from "../entities/invoice.ts";
 import { zInvoiceKind } from "../enums.ts";
-import { zCount, zGstPct, zId, zMoney, zQty } from "../primitives.ts";
+import { zCount, zGstPct, zId, zMoney, zPackets, zQty } from "../primitives.ts";
 import { zDocRef, zFyDocRef, zItemInfo, zListQuery, zPoRef, zRangeFilters } from "./common.ts";
 
 const zInvoiceCore = zInvoiceBase.pick({
@@ -59,23 +59,29 @@ export const zInvoicePreview = z.object({
       ...zInvoiceItem.pick({ poItemId: true, dcItemId: true }).shape,
       qty: zQty.nullable(),
       uninvoicedQty: zQty,
+      /** The settings' default HSN, and the DC line's packets (none from a PO). */
+      hsn: zInvoiceItem.shape.hsn,
+      packets: zPackets,
     }),
   ),
 });
 
 const zInvoiceFields = zInvoiceBase.pick({ number: true, invoiceDate: true }).extend(zInvoiceHeader.shape);
 
+/** A line's HSN and packets as typed; blank HSN takes the settings' default, blank packets the DC line's. */
+const zLineExtras = { hsn: z.string().trim().nullable().default(null), packets: zPackets.default(null) };
+
 /** DC-sourced lines repeat the DC qty and PO rate, which the service checks (INV-29); PO-direct lines take the PO rate. */
 export const zInvoiceCreateBody = z.discriminatedUnion("kind", [
   zInvoiceFields.extend({
     kind: z.literal(zInvoiceKind.enum.dc),
     dcId: zId,
-    lines: z.array(z.object({ dcItemId: zId, qty: zQty, rate: zMoney })),
+    lines: z.array(z.object({ dcItemId: zId, qty: zQty, rate: zMoney, ...zLineExtras })),
   }),
   zInvoiceFields.extend({
     kind: z.literal(zInvoiceKind.enum.direct),
     poId: zId,
-    lines: z.array(z.object({ poItemId: zId, qty: zQty })),
+    lines: z.array(z.object({ poItemId: zId, qty: zQty, ...zLineExtras })),
   }),
 ]);
 

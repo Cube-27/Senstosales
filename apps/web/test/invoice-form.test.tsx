@@ -33,6 +33,9 @@ const previewLine = (poItemId: string, dcItemId: string | null, no: number, rate
   dcItemId,
   qty,
   uninvoicedQty: no === 10 ? "6" : "5",
+  // The settings' default HSN; packets from the DC line.
+  hsn: "0000",
+  packets: dcItemId === null ? null : 2,
 });
 
 const FROM_DC = {
@@ -96,7 +99,9 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
     expect(cells("SYN100010Synthetic part 10")).toEqual([
       "1",
       "SYN100010Synthetic part 10",
-      "—",
+      // The HSN and packets inputs.
+      "",
+      "",
       "NOS",
       "4",
       "100",
@@ -123,6 +128,10 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
     const { router } = renderApp(`/invoice/create?dc=${DC_ID}`);
     await fill("INV-17");
     fireEvent.change(screen.getByLabelText("SRV No"), { target: { value: "5000101" } });
+    expect((screen.getByLabelText("HSN of item 10") as HTMLInputElement).value).toBe("0000");
+    expect((screen.getByLabelText("Packets of item 10") as HTMLInputElement).value).toBe("2");
+    fireEvent.change(screen.getByLabelText("HSN of item 20"), { target: { value: "1111" } });
+    fireEvent.change(screen.getByLabelText("Packets of item 20"), { target: { value: "" } });
     await waitFor(() => expect(saveButton().disabled).toBe(false));
     fireEvent.click(saveButton());
     fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
@@ -135,8 +144,8 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
       kind: "dc",
       dcId: DC_ID,
       lines: [
-        { dcItemId: DC_ITEM_A, qty: "4", rate: "100" },
-        { dcItemId: DC_ITEM_B, qty: "2", rate: "40" },
+        { dcItemId: DC_ITEM_A, qty: "4", rate: "100", hsn: "0000", packets: 2 },
+        { dcItemId: DC_ITEM_B, qty: "2", rate: "40", hsn: "1111", packets: null },
       ],
     });
   });
@@ -179,7 +188,7 @@ describe("/invoice/create (SPEC-18 PR 4)", () => {
       buyerStateCode: "99",
       kind: "direct",
       poId: PO_ID,
-      lines: [{ poItemId: ITEM_A, qty: "8" }],
+      lines: [{ poItemId: ITEM_A, qty: "8", hsn: "0000", packets: null }],
     });
   });
 

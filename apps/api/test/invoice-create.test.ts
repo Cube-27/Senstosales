@@ -15,6 +15,33 @@ import { srvPage } from "./srv-pages.ts";
 afterEach(closeApiApps);
 
 describe("POST /api/invoice from a DC", () => {
+  test("stores each line's HSN (typed, else the settings' default) and packets (typed, else the DC line's)", async () => {
+    const r = await ready();
+    const { id: _, ...supplier } = (await r.send("/api/supplier")).body;
+    await r.send("/api/supplier", json("PUT", { ...supplier, invoiceDefaults: { hsn: "1111" } }));
+    const { poId, item10, item20 } = await r.storedPo();
+    const created = await r.createDc({
+      poId,
+      number: "7",
+      dcDate: "2025-04-02",
+      items: [
+        { poItemId: item10, dspQty: "4", packets: 2 },
+        { poItemId: item20, dspQty: "2", packets: 5 },
+      ],
+    });
+    const [dcItem10, dcItem20] = (await r.dcLines()).map((l) => l.id);
+    const lines = [
+      { dcItemId: dcItem10, qty: "4", rate: "100", hsn: "2222", packets: null },
+      { dcItemId: dcItem20, qty: "2", rate: "33.333", hsn: " ", packets: 1 },
+    ];
+    const res = await r.createInvoice({ dcId: created.body.id, number: "1", invoiceDate: "2025-04-03", lines });
+    expect(res.status).toBe(200);
+    expect((await r.invoiceLines()).map((l) => [l.dcItemId, l.hsn, l.packets])).toEqual([
+      [dcItem10, "2222", 2],
+      [dcItem20, "1111", 1],
+    ]);
+  });
+
   test("stores the DC's lines with tax, recomputes the PO and writes one audit row", async () => {
     const { createInvoice, poId, dcId, item10, item20, dcItem10, dcItem20, lines, items, invoiceLines, invoiceAudit } =
       await withDc();

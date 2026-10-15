@@ -60,7 +60,10 @@ describe("DC create: GC number and date may be blank (INV-26)", () => {
       ...dcHeader,
       items: [{ poItemId: ITEM, dspQty: "0.5" }],
     };
-    expect(routes["dc.create"].body.parse(wire)).toEqual({ ...wire, items: [{ poItemId: ITEM, dspQty: 500 }] });
+    expect(routes["dc.create"].body.parse(wire)).toEqual({
+      ...wire,
+      items: [{ poItemId: ITEM, dspQty: 500, packets: null }],
+    });
   });
 });
 

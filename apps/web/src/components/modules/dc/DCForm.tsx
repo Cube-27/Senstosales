@@ -9,7 +9,7 @@ import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from
 import { useNumberCheck } from "../../../hooks/useNumberCheck.ts";
 import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
 import { todayIst } from "../../../lib/today.ts";
-import { blankToNull } from "../../../lib/text.ts";
+import { blankToNull, countOrNull } from "../../../lib/text.ts";
 import { Save } from "../../../lib/icons.ts";
 import {
   Button,
@@ -42,6 +42,8 @@ interface DcFormValues {
   readonly ourRef: string;
   /** Dispatch quantity per dispatchable item, in its order. */
   readonly qty: readonly Qty[];
+  /** Packets per dispatchable item, as typed; blank is none. */
+  readonly packets: readonly string[];
   readonly notes: readonly { readonly text: string }[];
 }
 
@@ -67,7 +69,7 @@ function dcCreateBody(data: Dispatchable, v: DcFormValues) {
     remarks: remarks.length === 0 ? null : remarks.join("\n\n"),
     items: data.items.flatMap((item, i) => {
       const dspQty = v.qty[i] ?? sumQty([]);
-      return dspQty > 0 ? [{ poItemId: item.id, dspQty }] : [];
+      return dspQty > 0 ? [{ poItemId: item.id, dspQty, packets: countOrNull(v.packets[i]) }] : [];
     }),
   };
 }
@@ -81,6 +83,7 @@ const COLUMNS: readonly LineColumn[] = [
   { label: "Dispatched", width: "w-24", align: "right" },
   { label: "Balance", width: "w-24", align: "right" },
   { label: "Dispatch Qty", width: "w-28", align: "right" },
+  { label: "Packets", width: "w-20", align: "right" },
   { label: "Value", width: "w-32", align: "right" },
 ];
 
@@ -134,7 +137,7 @@ function ChallanFields({ duplicate }: Readonly<{ duplicate: boolean }>) {
 
 /** The PO's items with their balances and a dispatch quantity each, with no cap (INV-32). */
 function DispatchItems({ data }: { readonly data: Dispatchable | null }) {
-  const { control, watch } = useFormContext<DcFormValues>();
+  const { control, register, watch } = useFormContext<DcFormValues>();
   const qty = watch("qty");
   const items = data?.items ?? [];
   const gemc = data?.po.isGemc ?? false;
@@ -172,6 +175,14 @@ function DispatchItems({ data }: { readonly data: Dispatchable | null }) {
                     aria-label={`Dispatch qty of item ${item.poItemNo}`}
                   />
                 )}
+              />
+            </LineCell>
+            <LineCell>
+              <Input
+                {...register(`packets.${i}`)}
+                inputMode="numeric"
+                className="text-right"
+                aria-label={`Packets of item ${item.poItemNo}`}
               />
             </LineCell>
             <LineCell align="right">{fmtMoney(values[i] ?? sumMoney([]), { gemc })}</LineCell>
@@ -246,6 +257,7 @@ const defaultsOf = (data: Dispatchable | null): DcFormValues => ({
   consigneeName: data?.defaults.consigneeName ?? "",
   ourRef: data?.defaults.ourRef ?? "",
   qty: (data?.items ?? []).map(() => sumQty([])),
+  packets: (data?.items ?? []).map(() => ""),
   notes: [],
 });
 

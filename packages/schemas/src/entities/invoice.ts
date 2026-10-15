@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { zInvoiceKind } from "../enums.ts";
-import { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zQty } from "../primitives.ts";
+import { zFy, zGstPct, zId, zInstant, zIsoDate, zMoney, zPackets, zQty } from "../primitives.ts";
 import { zSupplierSnapshot } from "./supplier.ts";
 
 const text = z.string().nullable();
@@ -68,4 +68,7 @@ export const zInvoiceItem = z.object({
   qty: zQty,
   rate: zMoney,
   ...zTaxAmounts.shape,
+  /** The line's HSN/SAC code: the settings' default unless the user changed it. */
+  hsn: text,
+  packets: zPackets,
 });
