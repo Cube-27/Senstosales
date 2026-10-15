@@ -2646,3 +2646,91 @@ None.
 - Alternatives: One shared mutable dataset that the tests walk through in sequence.
 - Why: Each test stays independent of order; the lifecycle test still covers how the flows interact.
 - Reversible: yes.
+
+### D-0324 — SPEC-12 PR 4 re-scoped: goldens from the legacy code
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided (orchestrator)
+- Decision: As D-0297, for the invoice: the goldens are derived from the legacy invoice writer's visible output (C16); SPEC-12 PR 2 (H5) confirms them.
+- Alternatives: Keep PR 4 blocked on H5.
+- Why: H5 is unavailable.
+- Reversible: yes.
+
+### D-0325 — Invoice golden format: number formats and copied fonts
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: Invoice goldens add `numFmts` (`[first, last, columns, format]`) and `fontFrom` (cell -> template cell) to D-0299's `styleRows`; the golden checks are shared in `test/golden.ts`.
+- Alternatives: List every formatted cell; a full snapshot dump.
+- Why: Legacy sets formats per cell over the copied styles; ranges keep the goldens reviewable.
+- Reversible: yes.
+
+### D-0326 — The legacy invoice row layout is reproduced
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: An inserted item row takes the last template item row's styles, B:H merge and height; rows below keep the height of their row number (as D-0300). Up to three items, one blank item row shows under them and the rest are hidden.
+- Alternatives: Move heights with their rows.
+- Why: The output is frozen (A-2, INV-69).
+- Reversible: yes.
+
+### D-0327 — Legacy invoice text not described by the spec
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: Reproduced (SPEC-12 §9): `GEMC:- <no> Dt:-<dd-mm-yyyy>` (`GEMC:-  Dt:-` when not GEMC); `By Loading Vehicle`; `BUYER` with no buyer name; `No Description`; the unit as stored, `NO` when missing (not upper-cased); 1 packet per item, the item count as total; `Total Amount (In Words) :- …`, `CGST (in words)  : …`, `SGST (in words)  : …`; the supplier block in the GSTIN line's font.
+- Alternatives: None that keeps the format frozen.
+- Why: The format is frozen.
+- Reversible: yes.
+
+### D-0328 — Amount in words
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: `fmtAmountWords` (`packages/schemas`) ports legacy's words: Crore/Lakh/Thousand, `Hundred and`, `and Paise …` when paise > 0, paise rounded half up from the exact amount (D-0021; legacy rounded a float). Paise can reach `One Hundred` and 1000 crore or more throws, as in legacy (EC-49).
+- Alternatives: Carry paise into rupees; extend past 999 crore.
+- Why: Either changes visible output or invents a rule.
+- Reversible: yes.
+
+### D-0329 — Invoice number cells are exact; the invoice's own GST percentages
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: Number cells hold the exact decimal of the stored integer (`Number(moneyToString(m))`) and formats round on screen; totals are `invoiceTotals` of the stored lines, the qty total `sumQty`; the rate cells print the invoice's `cgstPct`/`sgstPct`, where legacy read the current settings.
+- Alternatives: Float sums; current settings; `moneyNumber` (2 dp).
+- Why: C3; the percentages are copied onto the invoice at creation (A2-4), so the printed rates match its amounts.
+- Reversible: yes.
+
+### D-0330 — Invoice GEMC formats follow `po.isGemc`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: The 5-dp formats apply when the PO is GEMC, the flag the stored amounts were rounded by; legacy checked for a non-blank invoice GEMC number.
+- Alternatives: The invoice's `gemcNumber`.
+- Why: They agree whenever the GEMC number came from the PO (D-0291), and the format always matches the amounts' precision.
+- Reversible: yes.
+
+### D-0331 — Invoice items in PO item order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: Invoice lines print sorted by PO item number, like the DC.
+- Alternatives: Insert order.
+- Why: Legacy ordered them by a random UUID, so there was no order to keep.
+- Reversible: yes.
+
+### D-0332 — Invoice header date fallbacks
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: The challan date is the DC's, or the invoice date on a PO-direct invoice; the buyer's order date is the invoice's, else the PO date, as legacy.
+- Alternatives: Blank.
+- Why: The format is frozen.
+- Reversible: yes.
+
+### D-0333 — Invoice download name
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: `Invoice_<number>.xlsx` with the DC's sanitising rule (`documentFileName` in `layout.ts`), falling back to `Invoice_invoice.xlsx` as the legacy invoice route did.
+- Alternatives: The DC's `export` fallback.
+- Why: The legacy names differ.
+- Reversible: yes.
+
+### D-0334 — Blank invoice buyer prints `BUYER`
+
+- Date: 2026-10-15 · Spec/PR: SPEC-12 PR 4 (#68) · Status: decided
+- Decision: The builder prints the invoice's stored buyer fields; a blank name prints `BUYER`, blank fields stay empty. Legacy's fallback to buyer settings and the default buyer row is not carried: v1 has no such settings and `buyer` has no address (EC-46).
+- Alternatives: Fill from the `buyer` table in SPEC-12 PR 6.
+- Why: The most conservative reading; no new data source.
+- Reversible: yes.
