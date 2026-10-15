@@ -32,11 +32,10 @@ if (import.meta.main) {
   // Kept alive until the entry exits; a signal sent to this script alone still stops the entry.
   process.on("SIGINT", app.stop);
   process.on("SIGTERM", app.stop);
-  app.url.then(
-    (url) => process.stdout.write(`SenstoSales is running at ${url}  (Ctrl+C to stop)\n`),
-    (err: Error) => process.stderr.write(`${err.message}\n`),
-  );
-  void app.exited.then((code) => {
-    process.exitCode = code;
-  });
+  try {
+    process.stdout.write(`SenstoSales is running at ${await app.url}  (Ctrl+C to stop)\n`);
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+  }
+  process.exitCode = await app.exited;
 }

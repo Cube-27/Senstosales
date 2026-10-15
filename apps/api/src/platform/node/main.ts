@@ -104,12 +104,13 @@ async function serve(web: WebFiles, scraper: Scraper | undefined): Promise<void>
     ...(scraper && { scraper }),
   });
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
-  await server.startDailyBackup();
-  // Ctrl+C in a terminal (`pnpm start`) takes the same clean path as the shell closing stdin.
+  const backup = server.startDailyBackup();
+  // Ctrl+C in a terminal (`pnpm start`) takes the same clean path as the shell closing stdin. Registered in the tick
+  // that announces the port, and closing only once the backup job has started, so an early stop still waits for it.
   let closing: Promise<void> | undefined;
   const stop = (): void => {
     process.stdin.destroy();
-    closing ??= server.close();
+    closing ??= backup.then(() => server.close());
   };
   process.stdin.on("end", stop);
   process.on("SIGINT", stop);
