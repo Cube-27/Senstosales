@@ -1,11 +1,11 @@
 // The invoice workbook (SPEC-12 §4.1): the de-branded template filled as the legacy invoice download fills it, for any
 // number of items (A-2, INV-69). Three item rows fit the template; more are inserted above its Total row.
-import type { GstPct, IsoDate, Money, Qty } from "@senstosales/domain";
-import { moneyToString, pctToString, qtyToString, sumMoney, sumQty } from "@senstosales/domain";
+import type { GstPct, IsoDate, LineTax, Money, Qty } from "@senstosales/domain";
+import { invoiceTotals, moneyToString, pctToString, qtyToString, sumMoney, sumQty } from "@senstosales/domain";
 import { fmtAmountWords, fmtDate } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
-import { documentFileName, insertRows, put } from "./layout.ts";
+import { documentFileName, insertRows, put, restyle, type Value } from "./layout.ts";
 import { fillSupplier, type DocumentSupplier } from "./supplier.ts";
 import { templateBytes } from "./templates.ts";
 
@@ -34,17 +34,10 @@ export interface InvoiceDocument {
   po: { poNumber: string; poDate: IsoDate | null; isGemc: boolean };
   /** The source DC; null on a PO-direct invoice. */
   dc: { number: string; dcDate: IsoDate } | null;
-  items: ReadonlyArray<{
-    poItemNo: number;
-    description: string | null;
-    unit: string | null;
-    qty: Qty;
-    rate: Money;
-    taxable: Money;
-    cgst: Money;
-    sgst: Money;
-    total: Money;
-  }>;
+  /** The stored lines, with the amounts computed at creation (INV-41). */
+  items: ReadonlyArray<
+    LineTax & { poItemNo: number; description: string | null; unit: string | null; qty: Qty; rate: Money }
+  >;
 }
 
 const FIRST_ITEM_ROW = 17;
@@ -59,12 +52,12 @@ const amount = (m: Money): number => Number(moneyToString(m));
 const quantity = (q: Qty): number => Number(qtyToString(q));
 const percent = (p: GstPct): number => Number(pctToString(p));
 
-/** `2025-03-20` -> `20-03-2025`, the GEMC date's format. */
-const dashed = (d: IsoDate | null): string => (d === null ? "" : fmtDate(d).replaceAll("/", "-"));
 const date = (d: IsoDate | null): string => (d === null ? "" : fmtDate(d));
+/** `2025-03-20` -> `20-03-2025`, the GEMC date's format. */
+const dashed = (d: IsoDate | null): string => date(d).replaceAll("/", "-");
 
 function writeHeader(ws: ExcelJS.Worksheet, { invoice, po, dc }: InvoiceDocument): void {
-  const cells: Array<[string, string | null]> = [
+  const cells: Array<[string, Value]> = [
     ["K3", invoice.number],
     ["O3", date(invoice.invoiceDate)],
     ["I4", `GEMC:- ${(invoice.gemcNumber ?? "").trim()} Dt:-${dashed(invoice.gemcDate)}`.trim()],
@@ -92,21 +85,18 @@ function writeHeader(ws: ExcelJS.Worksheet, { invoice, po, dc }: InvoiceDocument
 function prepareItemRows(ws: ExcelJS.Worksheet, count: number): number {
   const extra = Math.max(0, count - ITEM_SLOTS);
   const like = TOTAL_ROW - 1;
+  const height = ws.getRow(like).height;
   insertRows(ws, TOTAL_ROW, extra, like);
-  for (let row = TOTAL_ROW; row < TOTAL_ROW + extra; row++) ws.getRow(row).height = ws.getRow(like).height;
-  // While the items fit, one blank item row stays visible under them and the rest are hidden.
   for (let row = FIRST_ITEM_ROW; row < TOTAL_ROW + extra; row++) {
+    if (row >= TOTAL_ROW) ws.getRow(row).height = height;
+    // While the items fit, one blank item row stays visible under them and the rest are hidden.
     ws.getRow(row).hidden = extra === 0 && row > FIRST_ITEM_ROW + count;
   }
   return TOTAL_ROW + extra;
 }
 
 function setAmountFormat(ws: ExcelJS.Worksheet, row: number, numFmt: string): void {
-  for (const column of AMOUNT_COLUMNS) {
-    const cell = ws.getCell(`${column}${row}`);
-    // A new object: cells of a template merge share one style, and the setter would change them all.
-    cell.style = { ...cell.style, numFmt };
-  }
+  for (const column of AMOUNT_COLUMNS) restyle(ws.getCell(`${column}${row}`), { numFmt });
 }
 
 /** The item rows, the Total row, the amount and tax in words and the tax summary. */
@@ -116,7 +106,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
   const sgstPct = percent(invoice.sgstPct);
   items.forEach((item, i) => {
     const row = FIRST_ITEM_ROW + i;
-    const values: Array<[string, string | number]> = [
+    const values: Array<[string, Value]> = [
       ["A", item.poItemNo],
       ["B", item.description || "No Description"],
       // No column stores packets; legacy printed 1 for every item.
@@ -135,10 +125,9 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
     setAmountFormat(ws, row, numFmt);
   });
 
-  const sum = (key: "taxable" | "cgst" | "sgst" | "total"): Money => sumMoney(items.map((item) => item[key]));
-  const [taxable, cgst, sgst, total] = [sum("taxable"), sum("cgst"), sum("sgst"), sum("total")];
+  const { taxable, cgst, sgst, total } = invoiceTotals(items);
   const taxRow = totalRow + 4;
-  const cells: Array<[string, number, string | number]> = [
+  const cells: Array<[string, number, Value]> = [
     ["B", totalRow, "Total"],
     ["J", totalRow, items.length],
     ["K", totalRow, quantity(sumQty(items.map((item) => item.qty)))],
@@ -184,7 +173,7 @@ export async function buildInvoiceWorkbook(doc: InvoiceDocument): Promise<Uint8A
 
   fillSupplier(ws, doc.supplier);
   // Legacy set the supplier block in the font of the GSTIN line under it.
-  ws.getCell("A3").font = structuredClone(ws.getCell("A4").font);
+  restyle(ws.getCell("A3"), { font: ws.getCell("A4").font });
   writeHeader(ws, doc);
   const totalRow = prepareItemRows(ws, items.length);
   writeItems(ws, { ...doc, items }, totalRow);

@@ -8,6 +8,15 @@ export function put(ws: ExcelJS.Worksheet, address: string, value: Value): void 
   ws.getCell(address).value = value === "" ? null : value;
 }
 
+/**
+ * Sets style fields on one cell. Cells can share a style object (a template merge's cells do), and exceljs setters
+ * mutate it in place, so the cell gets its own deep copy first.
+ */
+export function restyle(cell: ExcelJS.Cell, patch: Partial<ExcelJS.Style>): void {
+  cell.style = structuredClone({ ...cell.style, ...patch });
+}
+
+// Reports name their files by `fileSafe` (reports/catalog.ts): a different legacy rule, with no fallback.
 const FILE_NAME_SAFE = /^[\p{L}\p{N}_-]+$/u;
 
 /**

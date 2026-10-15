@@ -26,6 +26,9 @@ export interface Golden {
 
 export const readJson = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as T;
 
+/** The synthetic document `inputs/<name>.json`. */
+export const readInput = <Doc>(name: string): Doc => readJson<Doc>(`./inputs/${name}.json`);
+
 const values = (sheet: SheetSnapshot): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(sheet.cells).flatMap(([at, cell]) => (cell.value === null ? [] : [[at, cell.value]])),
@@ -36,13 +39,12 @@ const columnOf = (address: string): string => address.replace(/\d+$/, "");
 
 /** Each output cell's expected style: the template cell in the same column of the row the golden maps it to. */
 function expectedStyles(template: SheetSnapshot, golden: Golden): Record<string, Style> {
+  const byRow = Map.groupBy(Object.entries(template.cells), ([at]) => rowOf(at));
   const out: Record<string, Style> = {};
   for (const [first, last, templateFirst, templateLast] of golden.styleRows) {
     for (let row = first; row <= last; row++) {
       const source = templateFirst === templateLast ? templateFirst : templateFirst + row - first;
-      for (const [at, cell] of Object.entries(template.cells)) {
-        if (rowOf(at) === source) out[`${columnOf(at)}${row}`] = cell.style;
-      }
+      for (const [at, cell] of byRow.get(source) ?? []) out[`${columnOf(at)}${row}`] = cell.style;
     }
   }
   for (const [first, last, columns, numFmt] of golden.numFmts ?? []) {
@@ -76,7 +78,7 @@ export function describeGoldens<Doc>({
 
     describe.each(names)("%s", async (name) => {
       const golden = readJson<Golden>(`./golden/${name}.json`);
-      const doc = readJson<Doc>(`./inputs/${name}.json`);
+      const doc = readInput<Doc>(name);
       const [sheet, ...rest] = await xlsxSnapshot(await build(doc));
 
       it("has the golden's values", () => expect(values(sheet!)).toEqual(golden.values));

@@ -7,7 +7,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { buildDcWorkbook, dcFileName, type DcDocument } from "../src/dc.ts";
 import { insertRows } from "../src/layout.ts";
-import { describeGoldens, readJson } from "./golden.ts";
+import { describeGoldens, readInput } from "./golden.ts";
 import { xlsxSnapshot, type SheetSnapshot } from "./xlsx-snapshot.ts";
 
 function unwrap<T>(r: Result<T>): T {
@@ -15,7 +15,7 @@ function unwrap<T>(r: Result<T>): T {
   return r.value;
 }
 
-const input = (name: string): DcDocument => readJson<DcDocument>(`./inputs/${name}.json`);
+const input = readInput<DcDocument>;
 
 async function build(doc: DcDocument): Promise<SheetSnapshot[]> {
   return xlsxSnapshot(await buildDcWorkbook(doc));

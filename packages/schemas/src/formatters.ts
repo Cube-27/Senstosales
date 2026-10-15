@@ -99,18 +99,12 @@ export function fmtMoneyCompactSpaced(m: Money): string {
   return compact(m < 0 && abs >= ONE_RUPEE / 2, abs, " ");
 }
 
-const UNITS = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
-const TEENS = [
-  "Ten",
-  "Eleven",
-  "Twelve",
-  "Thirteen",
-  "Fourteen",
-  "Fifteen",
-  "Sixteen",
-  "Seventeen",
-  "Eighteen",
-  "Nineteen",
+/** The words for 0..19, by index. */
+const BELOW_20 = [
+  "",
+  ..."One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen".split(
+    " ",
+  ),
 ];
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
 
@@ -118,13 +112,9 @@ const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", 
 function hundredsWords(n: number): string {
   const below100 = n % 100;
   const tens =
-    below100 < 10
-      ? UNITS[below100]!
-      : below100 < 20
-        ? TEENS[below100 - 10]!
-        : `${TENS[Math.floor(below100 / 10)]} ${UNITS[below100 % 10]}`.trimEnd();
+    below100 < 20 ? BELOW_20[below100]! : `${TENS[Math.floor(below100 / 10)]} ${BELOW_20[below100 % 10]}`.trimEnd();
   if (n < 100) return tens;
-  const hundreds = `${UNITS[Math.floor(n / 100)]} Hundred`;
+  const hundreds = `${BELOW_20[Math.floor(n / 100)]} Hundred`;
   return below100 === 0 ? hundreds : `${hundreds} and ${tens}`;
 }
 

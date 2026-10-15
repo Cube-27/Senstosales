@@ -3,10 +3,10 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { buildInvoiceWorkbook, invoiceFileName, type InvoiceDocument } from "../src/invoice.ts";
-import { describeGoldens, readJson } from "./golden.ts";
+import { describeGoldens, readInput } from "./golden.ts";
 import { xlsxSnapshot, type SheetSnapshot } from "./xlsx-snapshot.ts";
 
-const input = (name: string): InvoiceDocument => readJson<InvoiceDocument>(`./inputs/${name}.json`);
+const input = readInput<InvoiceDocument>;
 
 async function build(doc: InvoiceDocument): Promise<SheetSnapshot> {
   const [sheet] = await xlsxSnapshot(await buildInvoiceWorkbook(doc));
@@ -48,15 +48,11 @@ describe("invoice workbook", () => {
   });
 });
 
+// The sanitising rule is the DC's (dc.test.ts); the invoice has its own prefix and fallback.
 describe("invoiceFileName: legacy Invoice_<number>.xlsx", () => {
   it.each([
-    ["7", "Invoice_7.xlsx"],
     ["INV/20", "Invoice_INV_20.xlsx"],
-    ["A\\B", "Invoice_A_B.xlsx"],
-    ["1..2", "Invoice_1_2.xlsx"],
     ["12 A", "Invoice_invoice.xlsx"],
-    ["7.1", "Invoice_invoice.xlsx"],
-    ["x".repeat(120), `Invoice_${"x".repeat(100)}.xlsx`],
   ])("%s -> %s", (number, expected) => {
     expect(invoiceFileName(number)).toBe(expected);
   });
