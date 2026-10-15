@@ -103,9 +103,9 @@ describe("fake scraper: ids and fetch failures", () => {
   );
 
   it("accepts ids of 1 to 10 digits", async () => {
-    const session = await loggedIn({ poPages: { "7": "<p>7</p>", "9999999999": "<p>9</p>" } });
+    const session = await loggedIn({ poPages: { "7": "<p>7</p>", "1000000000": "<p>9</p>" } });
     expect(await session.fetchPoHtml("7")).toBe("<p>7</p>");
-    expect(await session.fetchPoHtml("9999999999")).toBe("<p>9</p>");
+    expect(await session.fetchPoHtml("1000000000")).toBe("<p>9</p>");
   });
 
   it("a page the portal does not serve fails that fetch only", async () => {
