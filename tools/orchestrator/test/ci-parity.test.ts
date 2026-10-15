@@ -8,12 +8,13 @@ import { parse } from "yaml";
 
 import { REPO } from "./shell.ts";
 
-type Workflow = { jobs: Record<string, { steps: Array<{ run?: string }> }> };
+type Workflow = { jobs: Record<string, { steps: Array<{ run?: string; if?: string }> }> };
+
+const workflow = (): Workflow => parse(readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8")) as Workflow;
 
 /** Job name -> its `run:` commands, in ci.yml order, without the `changes` gate. */
 function ciJobs(): Array<[string, string[]]> {
-  const workflow = parse(readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8")) as Workflow;
-  return Object.entries(workflow.jobs)
+  return Object.entries(workflow().jobs)
     .filter(([job]) => job !== "changes")
     .map(([job, { steps }]) => [job, steps.flatMap((step) => (step.run === undefined ? [] : [step.run.trim()]))]);
 }
@@ -40,5 +41,17 @@ describe("CI parity", () => {
     const inCi = ciJobs().map(([, commands]) => checkScriptsOf(commands)[0]);
 
     expect(scripts()["verify"]).toBe(inCi.map((name) => `pnpm ${name}`).join(" && "));
+  });
+
+  // A docs-only change skips `check`, but Oxfmt also formats *.md: the changes job checks the changed files' format.
+  it("format-checks the changed files when the code jobs are skipped", () => {
+    const docsOnly = workflow()
+      .jobs["changes"]?.steps.filter((step) => step.if === "steps.paths.outputs.code == 'false'")
+      .map((step) => step.run);
+
+    expect(docsOnly).toEqual([
+      "pnpm install --frozen-lockfile",
+      `xargs -d '\\n' pnpm exec vp fmt --check --no-error-on-unmatched-pattern < "$RUNNER_TEMP/changed.txt"`,
+    ]);
   });
 });
