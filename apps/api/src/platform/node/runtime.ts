@@ -33,14 +33,18 @@ export interface Runtime {
   readonly db: NodeDb;
   readonly services: Services;
   readonly jobs: JobRunner;
-  /** Closes every scraper session (INV-100); the caller runs it at exit, before closing `db`. */
-  closeSessions(): Promise<void>;
+  /** At exit: closes every scraper session (INV-100), then `db`. */
+  close(): Promise<void>;
 }
 
 /** Opens the database in `dataDir`, upgrading it first if it is older (C9), and builds the services. The caller
- * closes `db`. */
-export async function openRuntime(options: RuntimeOptions): Promise<Runtime> {
-  const { dataDir, version = pkg.version, logger, scraper } = options;
+ * runs `close` (or closes `db` when it opened no scraper session). */
+export async function openRuntime({
+  dataDir,
+  version = pkg.version,
+  logger,
+  scraper,
+}: RuntimeOptions): Promise<Runtime> {
   const paths = await prepareDataDir(dataDir);
   const clock = createClock();
   const db = openNodeDb(paths.db);
@@ -62,9 +66,13 @@ export async function openRuntime(options: RuntimeOptions): Promise<Runtime> {
   const jobs = createJobRunner(jobWorker({ db, clock, logger, handlers }));
   // `unref`: the sweep never keeps the process alive on its own.
   const sweep = bhel && setInterval(() => void bhel.sessions.closeIdle(), IDLE_SWEEP_MS).unref();
-  const closeSessions = async () => {
+  const close = async () => {
     clearInterval(sweep);
-    await bhel?.sessions.closeAll();
+    try {
+      await bhel?.sessions.closeAll();
+    } finally {
+      db.close();
+    }
   };
-  return { db, services: createServices({ db, clock, jobs, storage, ...(bhel && { bhel }) }), jobs, closeSessions };
+  return { db, services: createServices({ db, clock, jobs, storage, ...(bhel && { bhel }) }), jobs, close };
 }

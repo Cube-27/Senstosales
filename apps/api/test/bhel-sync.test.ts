@@ -75,9 +75,6 @@ afterEach(() => db.close());
 
 const post = (path: string, body?: unknown) => http.send(path, json("POST", body ?? {}));
 
-/** The base64 the wire carries for `bytes`. */
-const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
-
 /** A session through captcha and OTP, ready to scrape. */
 async function loggedIn(): Promise<string> {
   const { sessionId } = await http.client.request("bhel.start", {});
@@ -100,13 +97,13 @@ async function runScrape(body: {
 describe("the login wizard", () => {
   test("captcha, then OTP, each asked again in place when wrong", async () => {
     const start = await http.client.request("bhel.start", {});
-    expect(start).toEqual({ sessionId: expect.stringMatching(/^[0-9A-Z]{26}$/), captchaPng: b64(CAPTCHA_PNG) });
+    expect(start).toEqual({ sessionId: expect.stringMatching(/^[0-9A-Z]{26}$/), captchaPng: "iVBORw==" });
     const { sessionId } = start;
     const params = { sessionId };
 
     expect(await http.client.request("bhel.captcha", { params, body: { captcha: "WRONG" } })).toEqual({
       step: "captcha",
-      captchaPng: b64(CAPTCHA_PNG),
+      captchaPng: "iVBORw==",
       message: "The captcha was not accepted. Type the new captcha and try again.",
     });
     expect(await http.client.request("bhel.captcha", { params, body: { captcha: "AB12C" } })).toEqual({

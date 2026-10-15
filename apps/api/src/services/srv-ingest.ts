@@ -17,7 +17,7 @@ import { dcNumbersOf } from "../repositories/dc.ts";
 import { invoiceNumbersOf } from "../repositories/invoice.ts";
 import { findPoByNumber } from "../repositories/po.ts";
 import { srvItemKeysOf, srvsOfPoNumber } from "../repositories/srv.ts";
-import type { FileResult, IngestOptions, UploadFile } from "./po-ingest.ts";
+import type { FileResult, UploadFile } from "./po-ingest.ts";
 import type { PoSnapshot } from "./recompute.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
 import type { IngestContext, SourceDocumentDeps } from "./source-documents.ts";
@@ -50,7 +50,7 @@ export async function ingestSrvFile(
   deps: SrvIngestDeps,
   file: UploadFile,
   ctx: IngestContext,
-  { stored: preStored = false }: IngestOptions = {},
+  preStored = false,
 ): Promise<FileResult> {
   const { name } = file;
   const parsed = parseSrv(file.html);

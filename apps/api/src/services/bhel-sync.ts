@@ -13,10 +13,9 @@ import type { DocumentResult, JobHandler, JobHandlers, JobStart } from "../ports
 import type { Secrets } from "../ports/secrets.ts";
 import { findSupplier } from "../repositories/supplier.ts";
 import { flagsSummary } from "./folder-import.ts";
-import type { FileResult, IngestOptions, UploadFile } from "./po-ingest.ts";
 import { ingestPoFile } from "./po-ingest.ts";
 import { ingestSrvFile } from "./srv-ingest.ts";
-import type { IngestContext, SourceDocumentDeps } from "./source-documents.ts";
+import type { SourceDocumentDeps } from "./source-documents.ts";
 import { ingestContext, storeSourceDocument } from "./source-documents.ts";
 
 /** The scraper and the open sessions; the platform entry supplies both, or neither when sync is unavailable. */
@@ -28,6 +27,13 @@ export interface BhelDeps {
 type Step = RouteOutput<"bhel.otp">;
 
 const sessionEnded = () => new NotFoundError("bhel-session-ended", "This BHEL login has ended. Start the sync again.");
+
+/** The open session under `sessionId`; once it has ended, a 404 to the wizard and a failed job to a scrape. */
+function openSession(sessions: Sessions, sessionId: string): ScraperSession {
+  const open = sessions.get(sessionId);
+  if (open === undefined) throw sessionEnded();
+  return open;
+}
 
 /** A scraper failure as the API answers it; the messages are the port's fixed plain ones (INV-81, INV-106). */
 function appError(err: ScraperError): AppError {
@@ -70,12 +76,6 @@ export function bhelWizardService(deps: SourceDocumentDeps & BhelDeps & { secret
     return { supplierCode, password };
   }
 
-  function session(sessionId: string): ScraperSession {
-    const open = sessions.get(sessionId);
-    if (open === undefined) throw sessionEnded();
-    return open;
-  }
-
   return {
     /** Opens a session and returns its captcha. Edge missing or the portal down: a plain 409, nothing kept. */
     async start(): Promise<RouteOutput<"bhel.start">> {
@@ -94,7 +94,7 @@ export function bhelWizardService(deps: SourceDocumentDeps & BhelDeps & { secret
 
     /** A wrong captcha answers a fresh one to type, in place (SPEC-19 §4.2). */
     async captcha(sessionId: string, captcha: string): Promise<Step> {
-      const open = session(sessionId);
+      const open = openSession(sessions, sessionId);
       const { supplierCode, password } = await login();
       return answer(async () => {
         try {
@@ -109,7 +109,7 @@ export function bhelWizardService(deps: SourceDocumentDeps & BhelDeps & { secret
 
     /** A wrong OTP is asked again in place. */
     async otp(sessionId: string, otp: string): Promise<Step> {
-      const open = session(sessionId);
+      const open = openSession(sessions, sessionId);
       return answer(async () => {
         try {
           await open.submitOtp(otp);
@@ -132,35 +132,20 @@ export type BhelWizardService = ReturnType<typeof bhelWizardService>;
 
 type ScrapeStart = Extract<JobStart, { sessionId: string }>;
 type Kind = "po" | "srv";
-type IngestFile = (
-  deps: SourceDocumentDeps,
-  file: UploadFile,
-  ctx: IngestContext,
-  options?: IngestOptions,
-) => Promise<FileResult>;
 
 /** The handlers of both scrape job types. */
 export function bhelScrapeHandlers(deps: SourceDocumentDeps & BhelDeps): JobHandlers {
   return {
-    "po.scrape": scrapeHandler(deps, "po", ingestPoFile),
-    "srv.scrape": scrapeHandler(deps, "srv", ingestSrvFile),
+    "po.scrape": scrapeHandler(deps, "po"),
+    "srv.scrape": scrapeHandler(deps, "srv"),
   };
 }
 
-function scrapeHandler<S extends ScrapeStart>(
-  deps: SourceDocumentDeps & BhelDeps,
-  kind: Kind,
-  ingest: IngestFile,
-): JobHandler<S> {
+function scrapeHandler<S extends ScrapeStart>(deps: SourceDocumentDeps & BhelDeps, kind: Kind): JobHandler<S> {
   const { sessions } = deps;
+  const ingest = kind === "po" ? ingestPoFile : ingestSrvFile;
   const label = (poId: string) => `${kind === "po" ? "PO" : "SRV of PO"} ${poId}`;
-
-  /** The job's session; a throw fails the job with the plain message. */
-  function session({ sessionId }: S): ScraperSession {
-    const open = sessions.get(sessionId);
-    if (open === undefined) throw new Error(sessionEnded().message);
-    return open;
-  }
+  const session = ({ sessionId }: S) => openSession(sessions, sessionId);
 
   return {
     async documents(start) {
@@ -181,7 +166,7 @@ function scrapeHandler<S extends ScrapeStart>(
       // A scrape knows the PO id before parsing, so the page is kept even when it then does not parse (D-0178).
       const ctx = await ingestContext(deps.db, jobId);
       await storeSourceDocument(deps, { kind, key: poId, html }, ctx);
-      const result = await ingest(deps, { name: label(poId), html }, ctx, { stored: true });
+      const result = await ingest(deps, { name: label(poId), html }, ctx, true);
       return result.status === "accepted"
         ? { outcome: "done" }
         : { outcome: result.status, reason: result.reason ?? "" };

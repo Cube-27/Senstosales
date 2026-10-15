@@ -26,11 +26,6 @@ export interface UploadFile {
   readonly html: string;
 }
 
-/** How an ingest is run: by a scrape that already stored the raw page, or not. */
-export interface IngestOptions {
-  readonly stored?: boolean;
-}
-
 export type FileResult = RouteOutput<"po.upload">["results"][number];
 
 export type StoredPo = NonNullable<Awaited<ReturnType<typeof findPoByNumber>>>;
@@ -82,13 +77,13 @@ export async function uploadPoFiles(deps: PoIngestDeps, files: readonly UploadFi
 
 /**
  * One PO file: accepted, skipped as older than the stored PO (INV-42, INV-44), or failed with a reason (INV-50).
- * `stored`: a scrape stored the page before parsing (D-0178), so it is not stored again.
+ * `preStored`: a scrape stored the page before parsing (D-0178), so it is not stored again.
  */
 export async function ingestPoFile(
   deps: PoIngestDeps,
   file: UploadFile,
   ctx: IngestContext,
-  { stored: preStored = false }: IngestOptions = {},
+  preStored = false,
 ): Promise<FileResult> {
   const { name } = file;
   const parsed = parsePo(file.html);

@@ -48,7 +48,7 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const { db, services, closeSessions } = await openRuntime({ ...options, logger: stderrLogger });
+  const { db, services, close: closeRuntime } = await openRuntime({ ...options, logger: stderrLogger });
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
   // port earlier.
@@ -71,15 +71,10 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
       new Promise<void>((resolve, reject) => {
         server.closeAllConnections();
         server.close((err) => {
-          void closeSessions()
-            .catch((closeErr: unknown) =>
-              stderrLogger.error({ error: String(closeErr) }, "scraper sessions not closed"),
-            )
-            .finally(() => {
-              db.close();
-              if (err) reject(err);
-              else resolve();
-            });
+          closeRuntime().then(
+            () => (err ? reject(err) : resolve()),
+            (closeErr: unknown) => reject(err ?? closeErr),
+          );
         });
       }),
   };

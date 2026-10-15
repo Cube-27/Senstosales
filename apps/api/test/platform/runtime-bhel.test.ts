@@ -8,7 +8,8 @@ import { GST_DEFAULTS } from "@senstosales/db";
 import { createFakeScraper, type Scraper } from "@senstosales/scraper";
 import { afterEach, beforeEach, expect, test } from "vite-plus/test";
 
-import { openRuntime, type Runtime } from "../../src/platform/node/runtime.ts";
+import { openRuntime } from "../../src/platform/node/runtime.ts";
+import { memoryLogger } from "../helpers.ts";
 
 const PROFILE = {
   name: "Example Supplier",
@@ -23,19 +24,13 @@ const PROFILE = {
   invoiceDefaults: {},
   ...GST_DEFAULTS,
 };
-const quiet = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} };
 
 let dataDir: string;
-let runtime: Runtime | undefined;
 
 beforeEach(async () => {
   dataDir = await mkdtemp(join(tmpdir(), "senstosales-runtime-"));
 });
-afterEach(async () => {
-  runtime?.db.close();
-  runtime = undefined;
-  await rm(dataDir, { recursive: true, force: true });
-});
+afterEach(() => rm(dataDir, { recursive: true, force: true }));
 
 /** A fake scraper that counts its closed sessions. */
 function countingScraper() {
@@ -51,21 +46,21 @@ function countingScraper() {
 }
 
 test("without a scraper, BHEL sync is not offered", async () => {
-  runtime = await openRuntime({ dataDir, logger: quiet });
+  const runtime = await openRuntime({ dataDir, logger: memoryLogger() });
   expect(runtime.services.bhel).toBeUndefined();
-  await runtime.closeSessions();
+  await runtime.close();
 });
 
 test("with a scraper, the wizard opens sessions and app exit closes every one", async () => {
   const { scraper, counts } = countingScraper();
-  runtime = await openRuntime({ dataDir, logger: quiet, scraper });
+  const runtime = await openRuntime({ dataDir, logger: memoryLogger(), scraper });
   const { services } = runtime;
   await services.onboarding.complete(PROFILE);
   await services.secrets.set("bhel-password", "portal-pass-synthetic");
 
   await services.bhel!.start();
   await services.bhel!.start();
-  await runtime.closeSessions();
+  await runtime.close();
 
   expect(counts.closed).toBe(2);
 });
