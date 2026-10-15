@@ -30,15 +30,23 @@ function checkScriptsOf(commands: string[]): string[] {
   return [...named, ...commands.flatMap((command) => byCommand.get(command) ?? [])];
 }
 
+/** CI-only check scripts, left out of `verify`: each changes the machine it runs on. */
+const CI_ONLY = new Set([
+  // Installs the app per user, launches its window and uninstalls it (SPEC-20).
+  "check:desktop",
+]);
+
 describe("CI parity", () => {
   it("runs exactly one check script in every CI job", () => {
     const counts = Object.fromEntries(ciJobs().map(([job, commands]) => [job, checkScriptsOf(commands).length]));
 
-    expect(counts).toEqual({ check: 1, "real-data-scan": 1, licenses: 1, build: 1, audit: 1, e2e: 1 });
+    expect(counts).toEqual({ check: 1, "real-data-scan": 1, licenses: 1, build: 1, audit: 1, e2e: 1, desktop: 1 });
   });
 
-  it("chains every CI check script in job order in verify", () => {
-    const inCi = ciJobs().map(([, commands]) => checkScriptsOf(commands)[0]);
+  it("chains every CI check script in job order in verify, except the CI-only ones", () => {
+    const inCi = ciJobs()
+      .map(([, commands]) => checkScriptsOf(commands)[0])
+      .filter((name) => name === undefined || !CI_ONLY.has(name));
 
     expect(scripts()["verify"]).toBe(inCi.map((name) => `pnpm ${name}`).join(" && "));
   });

@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "app",
+  "description": "The app at the loopback origin, for platform/tauri.ts (SPEC-14 §12.4): file dialogs, notifications and the tray status. No shell, file system or window control.",
+  "windows": ["main"],
+  "remote": { "urls": ["http://127.0.0.1:*"] },
+  "permissions": [
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "notification:default",
+    "core:tray:allow-get-by-id",
+    "core:tray:allow-set-tooltip"
+  ]
+}

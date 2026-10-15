@@ -23,6 +23,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { prepareDataDir } from "../../src/platform/node/data-dir.ts";
 import { startServer } from "../../src/platform/node/main.ts";
+import { createFsStorage } from "../../src/platform/node/storage-fs.ts";
 import { upgradeGate } from "../../src/platform/node/startup.ts";
 import { migratedDb } from "../db.ts";
 
@@ -182,7 +183,7 @@ describe("startServer", () => {
       ]),
     );
 
-    const server = await startServer({ dataDir: tmp, webRoot: join(tmp, "web"), version: "1.2.3" });
+    const server = await startServer({ dataDir: tmp, web: createFsStorage(join(tmp, "web")), version: "1.2.3" });
     await server.close();
 
     expect(await hash(dbPath)).toBe(before);
@@ -190,7 +191,7 @@ describe("startServer", () => {
 
   it("migrates a new data folder before serving", async () => {
     const dataDir = join(tmp, "fresh");
-    const server = await startServer({ dataDir, webRoot: join(tmp, "web"), version: "1.2.3" });
+    const server = await startServer({ dataDir, web: createFsStorage(join(tmp, "web")), version: "1.2.3" });
     await server.close();
 
     const [backup, ...rest] = await readdir(join(dataDir, "backups"));

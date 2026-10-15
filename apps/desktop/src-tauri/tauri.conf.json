@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SenstoSales",
+  "version": "0.1.0",
+  "identifier": "app.senstosales.desktop",
+  "build": { "frontendDist": "../dist" },
+  "app": {
+    "windows": [{ "label": "shell", "url": "index.html", "title": "SenstoSales", "visible": false }],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:*"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "externalBin": ["binaries/sensto-sidecar"],
+    "icon": ["icons/icon.ico"],
+    "windows": {
+      "nsis": { "installMode": "currentUser", "installerHooks": "installer-hooks.nsh" }
+    }
+  }
+}

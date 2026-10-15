@@ -1,11 +1,14 @@
 // Serves the built SPA from the API's own origin (ARCHITECTURE §9: one process, one port). A path that names a file
 // gets that file; any other app path gets `index.html`, so the SPA's router handles it. A placeholder page stands in
-// until `apps/web` is built. Files are read through the Storage adapter, so the same key rule keeps every read inside
-// the SPA folder (INV-96).
+// until `apps/web` is built. On disk the files are read through the Storage adapter, so the same key rule keeps every
+// read inside the SPA folder (INV-96); the sidecar serves them from its bundle (`tools/release`).
 import type { Context, MiddlewareHandler } from "hono";
 import { getMimeType } from "hono/utils/mime";
 
-import { createFsStorage } from "./storage-fs.ts";
+import type { Storage } from "../../ports/storage.ts";
+
+/** The SPA's files by key (`index.html`, `assets/app.js`); `get` may refuse a key by throwing. */
+export type WebFiles = Pick<Storage, "get">;
 
 const PLACEHOLDER = new TextEncoder().encode(
   '<!doctype html><html lang="en"><meta charset="utf-8"><title>SenstoSales</title><p>SenstoSales is running.</p></html>',
@@ -14,8 +17,7 @@ const PLACEHOLDER = new TextEncoder().encode(
 const send = (c: Context, bytes: Uint8Array, name: string): Response =>
   c.body(new Uint8Array(bytes), 200, { "content-type": getMimeType(name) ?? "application/octet-stream" });
 
-export function spa(root: string): MiddlewareHandler {
-  const files = createFsStorage(root);
+export function spa(files: WebFiles): MiddlewareHandler {
   return async (c, next) => {
     const path = c.req.path;
     if (path === "/api" || path.startsWith("/api/")) return next();

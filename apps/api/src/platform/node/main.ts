@@ -16,14 +16,15 @@ import { createClock } from "./clock.ts";
 import { resolveDataDir } from "./data-dir.ts";
 import { createFileLogger } from "./logger.ts";
 import { openRuntime } from "./runtime.ts";
-import { spa } from "./static.ts";
+import { spa, type WebFiles } from "./static.ts";
+import { createFsStorage } from "./storage-fs.ts";
 
 const HOST = "127.0.0.1";
 
 export interface ServerOptions {
   readonly dataDir: string;
-  /** The built SPA (`apps/web/dist`). */
-  readonly webRoot: string;
+  /** The built SPA (`apps/web/dist`, or embedded in the sidecar). */
+  readonly web: WebFiles;
   readonly version: string;
 }
 
@@ -68,7 +69,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     { port: address.port, logger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
     allRoutes(services, { health: { version: options.version, db }, restore }),
   );
-  app.get("*", spa(options.webRoot));
+  app.get("*", spa(options.web));
   server.on("request", getRequestListener(app.fetch));
 
   return {
@@ -92,23 +93,21 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   };
 }
 
-async function main(): Promise<void> {
-  const server = await startServer({
-    dataDir: resolveDataDir(process.env),
-    webRoot: fileURLToPath(new URL("../../../../web/dist", import.meta.url)),
-    version: pkg.version,
-  });
+async function serve(web: WebFiles): Promise<void> {
+  const server = await startServer({ dataDir: resolveDataDir(process.env), web, version: pkg.version });
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
   await server.startDailyBackup();
   process.stdin.on("end", () => void server.close());
   process.stdin.resume();
 }
 
-if (import.meta.main) {
-  try {
-    await main();
-  } catch (err) {
+/** Runs the process: serves `web` until stdin closes, or reports a failed start on stderr. The sidecar's entry
+ * (`tools/release`) calls it with the SPA embedded in the bundle. No top-level await: a SEA runs CommonJS. */
+export function run(web: WebFiles): void {
+  serve(web).catch((err: unknown) => {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     process.exitCode = 1;
-  }
+  });
 }
+
+if (import.meta.main) run(createFsStorage(fileURLToPath(new URL("../../../../web/dist", import.meta.url))));

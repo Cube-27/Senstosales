@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished } from "vit
 
 import { DATA_FOLDERS, resolveDataDir } from "../../src/platform/node/data-dir.ts";
 import { type RunningServer, startServer } from "../../src/platform/node/main.ts";
+import { createFsStorage } from "../../src/platform/node/storage-fs.ts";
 import { migratedDb } from "../db.ts";
 import { json } from "../helpers.ts";
 import { poPage } from "../po-pages.ts";
@@ -69,7 +70,7 @@ async function webRoot(): Promise<string> {
 async function start(web: string) {
   const dataDir = join(tmp, "data");
   await migrate(dataDir);
-  const server = await startServer({ dataDir, webRoot: web, version: "1.2.3" });
+  const server = await startServer({ dataDir, web: createFsStorage(web), version: "1.2.3" });
   servers.push(server);
   return server;
 }

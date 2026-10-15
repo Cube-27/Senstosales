@@ -6,3 +6,5 @@ CLAUDE.md:private-repo-path  # names the owner's private folder to forbid readin
 tools/checks/src/real-data-scan.ts:private-repo-path  # the rule pattern itself
 apps/web/index.html:html-outside-fixtures  # the SPA entry page, written for this app (no captured markup)
 apps/web/ct/index.html:html-outside-fixtures  # the component-test page, written for this app (no captured markup)
+apps/desktop/index.html:html-outside-fixtures  # the Tauri shell page, written for this app (no captured markup)
+apps/desktop/src-tauri/Cargo.lock:mobile  # crate checksums: hex digests whose digit runs look like phone numbers
