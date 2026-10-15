@@ -12,5 +12,5 @@
     "types": ["vite-plus/client"]
   },
   "include": ["src", "test", "e2e", "ct", "vite.config.ts", "playwright.config.ts"],
-  "references": [{ "path": "../../packages/schemas" }]
+  "references": [{ "path": "../../packages/domain" }, { "path": "../../packages/schemas" }]
 }
