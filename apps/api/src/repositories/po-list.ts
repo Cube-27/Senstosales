@@ -155,26 +155,35 @@ export function openFlagsOfPo(db: Db, poId: string) {
   );
 }
 
-/** A DC reference with its FY (INV-24). */
+/** A DC reference as links and popovers show it, with its FY (INV-24); listed oldest first. */
 export const dcRefColumns = { id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear };
+export const DC_REF_ORDER = [dc.dcDate, dc.id] as const;
 
-/** DC references as links and popovers show them, with their FY (INV-24), oldest first. */
+/** An invoice reference as links and popovers show it, with its FY (INV-24); listed oldest first. */
+export const invoiceRefColumns = {
+  id: invoice.id,
+  number: invoice.number,
+  date: invoice.invoiceDate,
+  financialYear: invoice.financialYear,
+};
+export const INVOICE_REF_ORDER = [invoice.invoiceDate, invoice.id] as const;
+
 export const dcRefs = (db: Db, where: SQL | undefined) =>
-  db.query(db.build.select(dcRefColumns).from(dc).where(where).orderBy(dc.dcDate, dc.id));
+  db.query(
+    db.build
+      .select(dcRefColumns)
+      .from(dc)
+      .where(where)
+      .orderBy(...DC_REF_ORDER),
+  );
 
-/** Invoice references as links and popovers show them, with their FY (INV-24), oldest first. */
 export const invoiceRefs = (db: Db, where: SQL | undefined) =>
   db.query(
     db.build
-      .select({
-        id: invoice.id,
-        number: invoice.number,
-        date: invoice.invoiceDate,
-        financialYear: invoice.financialYear,
-      })
+      .select(invoiceRefColumns)
       .from(invoice)
       .where(where)
-      .orderBy(invoice.invoiceDate, invoice.id),
+      .orderBy(...INVOICE_REF_ORDER),
   );
 
 /** SRV references as links and popovers show them, oldest first. */

@@ -5,8 +5,8 @@ import { RANGE } from "@senstosales/documents/test/reports/dataset";
 import type { IsoDate } from "@senstosales/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
-import { createServices } from "../../src/services/index.ts";
-import { fixedClock, memoryStorage } from "../service-deps.ts";
+import { reportsService } from "../../src/services/reports.ts";
+import { fixedClock } from "../service-deps.ts";
 import { reportDb, reportIds } from "./dataset-db.ts";
 import { exportApp, workbookGoldenFile } from "./golden.ts";
 
@@ -159,9 +159,7 @@ describe("GET /api/reports/reconciliation", () => {
 });
 
 describe("list rows are export rows", () => {
-  const services = () =>
-    createServices({ db, clock: fixedClock, jobs: { enqueue: () => {}, holds: () => false }, storage: memoryStorage() })
-      .reports;
+  const services = () => reportsService({ db, clock: fixedClock });
   const all = async <T>(rows: AsyncIterable<T>) => {
     const out: T[] = [];
     for await (const row of rows) out.push(row);

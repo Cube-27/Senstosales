@@ -1,6 +1,6 @@
 // Delivery tracker list and stats (SPEC-10 §2; export in SPEC-13). A row is one scheduled lot with its item's
 // stored quantities (INV-06); the due buckets, days to due and values come from the domain (C2, D-0101).
-import type { Db, Instant } from "@senstosales/db";
+import type { Db } from "@senstosales/db";
 import { EXPORTS, xlsxChunks } from "@senstosales/documents";
 import type { IsoDate } from "@senstosales/domain";
 import { addDays, deliveryDue, pendingValueOfItems, qtyValue } from "@senstosales/domain";
@@ -9,22 +9,21 @@ import { fmtDaysToDue, moneyNumber, qtyNumber } from "@senstosales/schemas";
 import type { z } from "zod";
 
 import type { Clock } from "../ports/clock.ts";
+import { istDateTime } from "../ports/clock.ts";
 import type { TrackerFilters, TrackerLot } from "../repositories/delivery-tracker.ts";
-import { TRACKER_ORDER, TRACKER_SORTS, trackerLots } from "../repositories/delivery-tracker.ts";
+import { lotColumns, TRACKER_ORDER, TRACKER_SORTS, trackerLots } from "../repositories/delivery-tracker.ts";
 import { keysetRows, listKey } from "../repositories/keyset.ts";
-import { pageOfRows } from "./paging.ts";
+import { inValueRange, LIST_READ_PAGE, pageOfRows } from "./paging.ts";
 
 type Query = z.output<(typeof routes)["deliveryTracker.export"]["query"]>;
 
-/** A lot as the tracker shows it, with its due buckets for the status filter and stats. */
-type Row = ReturnType<typeof toRow>;
-
-const IST_OFFSET_MINUTES = 5 * 60 + 30;
-const DAY_MINUTES = 24 * 60;
-
 const BUCKET = { overdue: "overdue", "due-soon": "dueSoon", "due-this-month": "dueThisMonth" } as const;
 
-function toRow({ delyQty, status, delyDate, ...lot }: TrackerLot & { delyDate: IsoDate }, today: IsoDate) {
+/** A scheduled lot as the tracker shows it, with its due buckets for the status filter and stats. */
+function toRow(
+  { delyQty, status, delyDate, ...lot }: ReturnType<typeof lotColumns> & { delyDate: IsoDate },
+  today: IsoDate,
+) {
   const { daysToDue, ...due } = deliveryDue(delyDate, today, status);
   return {
     ...lot,
@@ -37,37 +36,20 @@ function toRow({ delyQty, status, delyDate, ...lot }: TrackerLot & { delyDate: I
   };
 }
 
-/** What the filters other than status keep: open lots in the value range. */
-const kept = (r: Row, { valueMin, valueMax }: Partial<TrackerFilters>) =>
-  r.due.open &&
-  (valueMin === undefined || r.lotValue >= valueMin) &&
-  (valueMax === undefined || r.lotValue <= valueMax);
+type Row = ReturnType<typeof toRow>;
+
+/** The lot's row if the filters other than status keep it: a scheduled, open lot in the value range. */
+function keptRow(lot: TrackerLot, today: IsoDate, filters: Partial<TrackerFilters>): Row | undefined {
+  const { delyDate, ...rest } = lotColumns(lot);
+  if (delyDate === null) return undefined;
+  const row = toRow({ ...rest, delyDate }, today);
+  return row.due.open && inValueRange(row.lotValue, filters) ? row : undefined;
+}
 
 const withStatus = (status: TrackerFilters["status"]) => (r: Row) => status === undefined || r.due[BUCKET[status]];
 
 /** A row as the list sends it. */
-const listed = ({
-  due: _,
-  lotValue: __,
-  unit: ___,
-  kDelyDate: ____,
-  kEntryDate: _____,
-  kPoNumber: ______,
-  kMaterialCode: _______,
-  kPendingValue: ________,
-  ...row
-}: Row) => row;
-
-/** The IST date and `HH:MM` of an instant; IST is a fixed +05:30 (C3). */
-function istMinute(now: Instant) {
-  const minutes = Number(now.slice(11, 13)) * 60 + Number(now.slice(14, 16)) + IST_OFFSET_MINUTES;
-  const utcDate = now.slice(0, 10) as IsoDate;
-  const time = (n: number) => String(n).padStart(2, "0");
-  return {
-    date: minutes >= DAY_MINUTES ? addDays(utcDate, 1) : utcDate,
-    time: `${time(Math.floor(minutes / 60) % 24)}:${time(minutes % 60)}`,
-  };
-}
+const listed = ({ due: _, lotValue: __, unit: ___, ...row }: Row) => row;
 
 /** Export cells (SPEC-13 catalog): quantities and amounts as numbers at 2 dp, dates and codes as text. */
 async function* cells(rows: AsyncIterable<Row>) {
@@ -95,26 +77,23 @@ export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) 
   /** The open lots the filters other than status keep, unordered. */
   async function rows(filters: Partial<TrackerFilters>): Promise<Row[]> {
     const today = clock.today();
-    return (await trackerLots(db, filters))
-      .flatMap((lot) => (lot.delyDate === null ? [] : [toRow({ ...lot, delyDate: lot.delyDate }, today)]))
-      .filter((r) => kept(r, filters));
+    return (await trackerLots(db, filters)).flatMap((lot) => keptRow(lot, today, filters) ?? []);
   }
 
   /** The rows the filters keep in the list's order, a keyset page at a time; the list and the export read these. */
-  async function* ordered(query: Query) {
+  async function* ordered(query: Query, pageSize?: number) {
     const today = clock.today();
-    const lots = keysetRows(listKey(TRACKER_SORTS, TRACKER_ORDER, query), (page) => trackerLots(db, query, page));
+    const key = listKey(TRACKER_SORTS, TRACKER_ORDER, query);
     const inStatus = withStatus(query.status);
-    for await (const lot of lots) {
-      if (lot.delyDate === null) continue;
-      const row = toRow({ ...lot, delyDate: lot.delyDate }, today);
-      if (kept(row, query) && inStatus(row)) yield row;
+    for await (const lot of keysetRows(key, (page) => trackerLots(db, query, page), pageSize)) {
+      const row = keptRow(lot, today, query);
+      if (row !== undefined && inStatus(row)) yield row;
     }
   }
 
   return {
     async list(query: Query & { page: number; pageSize: number }) {
-      const { items, total } = await pageOfRows(ordered(query), query);
+      const { items, total } = await pageOfRows(ordered(query, LIST_READ_PAGE), query);
       return { items: items.map(listed), total };
     },
 
@@ -122,7 +101,7 @@ export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) 
     export(query: Query) {
       const { deliveryTracker } = EXPORTS;
       return {
-        fileName: deliveryTracker.fileName(istMinute(clock.now())),
+        fileName: deliveryTracker.fileName(istDateTime(clock.now())),
         chunks: xlsxChunks(deliveryTracker.sheet, cells(ordered(query))),
       };
     },

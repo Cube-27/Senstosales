@@ -7,16 +7,16 @@ import { and, eq, gte, isNotNull, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import type { Keyset, KeysetPage, SortParts } from "./keyset.ts";
-import { byPoNumber, contains } from "./sql.ts";
+import { contains, orEmpty, PO_NUMBER_KEY, PO_NUMBER_SORT } from "./sql.ts";
 
 export type TrackerFilters = z.output<(typeof routes)["deliveryTracker.stats"]["query"]>;
 
 /** NOT NULL sort values, selected so the keyset cursor holds them (D-0262). */
 const keys = {
-  kDelyDate: sql<string>`COALESCE(${poLot.delyDate}, '')`,
-  kEntryDate: sql<string>`COALESCE(${poLot.entryAllowDate}, '')`,
-  kPoNumber: sql<number>`${byPoNumber[0]}`,
-  kMaterialCode: sql<string>`COALESCE(${poItem.materialCode}, '')`,
+  kDelyDate: orEmpty(poLot.delyDate),
+  kEntryDate: orEmpty(poLot.entryAllowDate),
+  kPoNumber: PO_NUMBER_KEY,
+  kMaterialCode: orEmpty(poItem.materialCode),
   /**
    * Orders rows as balance × rate does; never shown or stored (the value is the domain's `qtyValue`). REAL, because
    * the integer product can pass 2^63 and node:sqlite returns an integer past 2^53 inexactly to the cursor.
@@ -74,14 +74,21 @@ export const trackerLots = (db: Db, f: Partial<TrackerFilters> = {}, page?: Keys
 
 export type TrackerLot = Awaited<ReturnType<typeof trackerLots>>[number];
 
+/** A lot without its sort keys. */
+export const lotColumns = ({
+  kDelyDate: _,
+  kEntryDate: __,
+  kPoNumber: ___,
+  kMaterialCode: ____,
+  kPendingValue: _____,
+  ...lot
+}: TrackerLot) => lot;
+
 /** The tracker's sort columns (D-0241): a missing entry date or material code sorts first ascending. */
 export const TRACKER_SORTS = {
   delyDate: [{ by: keys.kDelyDate, field: "kDelyDate" }],
   entryAllowDate: [{ by: keys.kEntryDate, field: "kEntryDate" }],
-  poNumber: [
-    { by: keys.kPoNumber, field: "kPoNumber" },
-    { by: po.poNumber, field: "poNumber" },
-  ],
+  poNumber: PO_NUMBER_SORT,
   materialCode: [{ by: keys.kMaterialCode, field: "kMaterialCode" }],
   ordQty: [{ by: poItem.ordQty, field: "ordQty" }],
   dspQty: [{ by: poItem.dspQty, field: "dspQty" }],
@@ -93,8 +100,7 @@ export const TRACKER_SORTS = {
 export const TRACKER_ORDER: Keyset<TrackerLot> = {
   parts: [
     { by: keys.kDelyDate, field: "kDelyDate", dir: "desc" },
-    { by: keys.kPoNumber, field: "kPoNumber", dir: "asc" },
-    { by: po.poNumber, field: "poNumber", dir: "asc" },
+    ...PO_NUMBER_SORT.map((p) => ({ ...p, dir: "asc" as const })),
     { by: poItem.poItemNo, field: "poItemNo", dir: "asc" },
     { by: poLot.lotNo, field: "lotNo", dir: "asc" },
   ],

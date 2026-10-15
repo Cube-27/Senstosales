@@ -34,7 +34,7 @@ interface ListRow {
 }
 
 async function listed(query: string) {
-  const res = await send(`/api/delivery-tracker?pageSize=100${query === "" ? "" : `&${query}`}`);
+  const res = await send(`/api/delivery-tracker?pageSize=100&${query}`);
   expect(res.status).toBe(200);
   const body = (await res.json()) as { items: ListRow[] };
   return body.items.map((r) => `${r.poNumber} ${r.materialCode} L${r.lotNo} ${r.delyDate}`);
@@ -59,11 +59,13 @@ describe("GET /api/delivery-tracker/export", () => {
     "sort=pendingValue&dir=desc",
     "sort=rcdQty&dir=asc",
   ])("has the list's rows in the list's order: %s", async (query) => {
-    const { rows } = await exported(query === "" ? "" : `?${query}`);
-    const lots = rows.slice(1).map(lotOfCells);
-    expect(lots).toEqual(await listed(query));
-    // A20 (M-120) is dispatched in full (Delivered), so only A10's past lot is overdue.
-    if (query === "status=overdue") expect(lots).toEqual(["4500101 M-110 L1 2025-05-20"]);
+    const { rows } = await exported(`?${query}`);
+    expect(rows.slice(1).map(lotOfCells)).toEqual(await listed(query));
+  });
+
+  it("keeps the status filter: A20 (M-120) is dispatched in full, so only A10's past lot is overdue", async () => {
+    const { rows } = await exported("?status=overdue");
+    expect(rows.slice(1).map(lotOfCells)).toEqual(["4500101 M-110 L1 2025-05-20"]);
   });
 
   it("with nothing to list, writes the bare Report sheet (EC-45)", async () => {

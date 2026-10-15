@@ -32,3 +32,13 @@ export const byPoNumber = [sql`CAST(${po.poNumber} AS INTEGER)`, po.poNumber] as
  */
 export const istDayStart = (date: IsoDate, days = 0) =>
   sql`strftime('%Y-%m-%dT%H:%M:%fZ', ${date}, ${`${days} days`}, '-330 minutes')`;
+
+/** {@link byPoNumber} as keyset sort parts: select `kPoNumber: PO_NUMBER_KEY` and `poNumber` (D-0262). */
+export const PO_NUMBER_KEY = sql<number>`${byPoNumber[0]}`;
+export const PO_NUMBER_SORT = [
+  { by: PO_NUMBER_KEY, field: "kPoNumber" },
+  { by: po.poNumber, field: "poNumber" },
+] as const;
+
+/** A nullable column as a NOT NULL sort value; a missing value sorts first ascending. */
+export const orEmpty = (column: SQLWrapper) => sql<string>`COALESCE(${column}, '')`;
