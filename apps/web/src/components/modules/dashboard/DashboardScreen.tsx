@@ -24,7 +24,7 @@ import {
 } from "../../../lib/icons.ts";
 import { ButtonGroup, PageHeader, StatCard, StatCardRow, useToast } from "../../common/index.ts";
 import { DOC } from "../documents.ts";
-import { pendingDispatch, sharePct } from "./funnel.ts";
+import { sharePct } from "./funnel.ts";
 
 type Range = "month" | "30d" | "all";
 type Summary = RouteOutput<"dashboard.summary">;
@@ -47,7 +47,7 @@ const EMPTY: Summary = {
   uninvoicedDcCount: 0,
   openFlagCount: 0,
   pendingDispatchValue: NO_MONEY,
-  funnel: { ordQty: NO_QTY, dspQty: NO_QTY, invoicedQty: NO_QTY, rcdQty: NO_QTY },
+  funnel: { ordQty: NO_QTY, dspQty: NO_QTY, invoicedQty: NO_QTY, rcdQty: NO_QTY, pendingQty: NO_QTY },
 };
 
 const ROW =
@@ -240,7 +240,7 @@ const STAGES = [
 ] as const;
 
 function Funnel({ funnel }: { readonly funnel: Summary["funnel"] }) {
-  const pending = pendingDispatch(funnel);
+  const pending = funnel.pendingQty;
   return (
     <section
       aria-labelledby="funnel"

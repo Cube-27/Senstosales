@@ -19,7 +19,8 @@ export const zDashboardSummary = z.object({
   uninvoicedDcCount: zCount,
   openFlagCount: zCount,
   pendingDispatchValue: zMoney,
-  funnel: z.object({ ordQty: zQty, dspQty: zQty, invoicedQty: zQty, rcdQty: zQty }),
+  /** `pendingQty`: ordered minus dispatched, never below 0 (A-22). */
+  funnel: z.object({ ordQty: zQty, dspQty: zQty, invoicedQty: zQty, rcdQty: zQty, pendingQty: zQty }),
 });
 
 const zDocType = z.enum(["po", "dc", "invoice", "srv"]);

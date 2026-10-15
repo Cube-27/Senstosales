@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DashboardRange } from "../src/index.ts";
-import { averageLeadTimeDays, rangeStart } from "../src/index.ts";
-import { date } from "./unwrap.ts";
+import { averageLeadTimeDays, pendingDispatchQty, rangeStart } from "../src/index.ts";
+import { date, qty } from "./unwrap.ts";
 
 // SPEC-10 §2: the legacy dashboard's period and lead time.
 describe("rangeStart", () => {
@@ -34,5 +34,18 @@ describe("averageLeadTimeDays", () => {
     ["only SRVs before the PO date", [po("2025-04-10", "2025-04-01")], null],
   ])("%s -> %s", (_, pos, expected) => {
     expect(averageLeadTimeDays(pos)).toBe(expected);
+  });
+});
+
+// A-22: the funnel's Pending Dispatch, in milli-units.
+describe("pendingDispatchQty", () => {
+  it.each([
+    ["10", "4", 6000],
+    ["4", "10", 0],
+    ["10", "10", 0],
+    ["0", "0", 0],
+    ["2.5", "0.75", 1750],
+  ])("ordered %s, dispatched %s -> %i", (ordQty, dspQty, expected) => {
+    expect(pendingDispatchQty({ ordQty: qty(ordQty), dspQty: qty(dspQty) })).toBe(expected);
   });
 });

@@ -1,7 +1,6 @@
-import { zQty } from "@senstosales/schemas";
 import { describe, expect, it } from "vite-plus/test";
 
-import { pendingDispatch, sharePct } from "../src/components/modules/dashboard/funnel.ts";
+import { sharePct } from "../src/components/modules/dashboard/funnel.ts";
 
 describe("funnel display (SPEC-15 PR 4)", () => {
   it.each([
@@ -13,12 +12,5 @@ describe("funnel display (SPEC-15 PR 4)", () => {
     [-5, 1000, 0, "0.0%"],
   ])("%i of %i -> %s / %s", (part, whole, width, text) => {
     expect(sharePct(part, whole)).toEqual({ width, text });
-  });
-
-  it.each([
-    ["10", "4", 6_000],
-    ["4", "10", 0],
-  ])("pending dispatch of %s ordered, %s dispatched = %i milli-units", (ordered, dispatched, expected) => {
-    expect(pendingDispatch({ ordQty: zQty.decode(ordered), dspQty: zQty.decode(dispatched) })).toBe(expected);
   });
 });

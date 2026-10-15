@@ -1,7 +1,15 @@
 // Dashboard summary and recent activity (SPEC-10 §2): the legacy cards, funnel and activity plus the open-flag count
 // (INV-60); no insights or forecast (INV-87). Values, the period and lead time come from the domain (C2).
 import type { Db } from "@senstosales/db";
-import { averageLeadTimeDays, qtyValue, rangeStart, srvLineShown, sumMoney, sumQty } from "@senstosales/domain";
+import {
+  averageLeadTimeDays,
+  pendingDispatchQty,
+  qtyValue,
+  rangeStart,
+  srvLineShown,
+  sumMoney,
+  sumQty,
+} from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
@@ -49,6 +57,7 @@ export function dashboardService({ db, clock, tracker }: { db: Db; clock: Clock;
           dspQty: pos.dspQty,
           invoicedQty: invoicedQty.qty,
           rcdQty: sumQty(srvLines.map((line) => srvLineShown(line).rcdQty)),
+          pendingQty: pendingDispatchQty(pos),
         },
       };
     },

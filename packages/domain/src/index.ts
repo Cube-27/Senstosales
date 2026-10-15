@@ -48,4 +48,4 @@ export { deliveryDue, pendingValueOfItems } from "./tracker.ts";
 export type { ListProgress } from "./list-exports.ts";
 export { dcListProgress, dcListTotals, invoiceListProgress } from "./list-exports.ts";
 export type { DashboardRange } from "./dashboard.ts";
-export { averageLeadTimeDays, rangeStart } from "./dashboard.ts";
+export { averageLeadTimeDays, pendingDispatchQty, rangeStart } from "./dashboard.ts";

@@ -18,7 +18,7 @@ const SUMMARY = {
   uninvoicedDcCount: 1,
   openFlagCount: 2,
   pendingDispatchValue: "250000",
-  funnel: { ordQty: "1000", dspQty: "400", invoicedQty: "250", rcdQty: "333.4" },
+  funnel: { ordQty: "1000", dspQty: "400", invoicedQty: "250", rcdQty: "333.4", pendingQty: "550" },
 };
 
 const ACTIVITY = [
@@ -114,7 +114,7 @@ describe("dashboard (SPEC-15 PR 4)", () => {
       "AcceptedConfirmed via SRV33333.3%",
     );
     expect(within(funnel).getByText("Pending Dispatch").parentElement?.textContent).toBe(
-      "Pending Dispatch600 units(60.0%)",
+      "Pending Dispatch550 units(55.0%)",
     );
   });
 

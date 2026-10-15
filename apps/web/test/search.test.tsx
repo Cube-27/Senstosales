@@ -60,7 +60,7 @@ function searchApi(answer: (url: URL) => unknown = () => HITS) {
       uninvoicedDcCount: 0,
       openFlagCount: 0,
       pendingDispatchValue: "0",
-      funnel: { ordQty: "0", dspQty: "0", invoicedQty: "0", rcdQty: "0" },
+      funnel: { ordQty: "0", dspQty: "0", invoicedQty: "0", rcdQty: "0", pendingQty: "0" },
     },
     "GET /api/dashboard/activity": [],
     "GET /api/search": (_body: unknown, url: URL) => {

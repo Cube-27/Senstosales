@@ -9508,13 +9508,17 @@
                         },
                         "rcdQty": {
                           "$ref": "#/components/schemas/Qty"
+                        },
+                        "pendingQty": {
+                          "$ref": "#/components/schemas/Qty"
                         }
                       },
                       "required": [
                         "ordQty",
                         "dspQty",
                         "invoicedQty",
-                        "rcdQty"
+                        "rcdQty",
+                        "pendingQty"
                       ]
                     }
                   },
