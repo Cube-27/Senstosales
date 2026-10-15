@@ -15,6 +15,10 @@ export async function findPo(db: Db, poId: string) {
   return rows[0];
 }
 
+/** Every PO's id and number, in PO-number order. */
+export const allPoRefs = (db: Db) =>
+  db.query(db.build.select({ id: po.id, poNumber: po.poNumber }).from(po).orderBy(po.poNumber, po.id));
+
 /** The supplier's PO with this BHEL number, with what the ingest guard, its version check and the audit read, or `undefined`. */
 export async function findPoByNumber(db: Db, supplierId: string, poNumber: string) {
   const rows = await db.query(

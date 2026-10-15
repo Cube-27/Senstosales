@@ -7,8 +7,17 @@ import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { type Instant, LATEST_VERSION, readSchemaVersion, schemaMigration, type Statement } from "@senstosales/db";
+import {
+  type Instant,
+  LATEST_VERSION,
+  po,
+  readSchemaVersion,
+  schemaMigration,
+  type Statement,
+  supplier,
+} from "@senstosales/db";
 import { openNodeDb, type NodeDb } from "@senstosales/db/node";
+import type { IsoDate, Qty } from "@senstosales/domain";
 import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
@@ -147,6 +156,37 @@ describe("upgradeGate", () => {
 });
 
 describe("startServer", () => {
+  it("leaves an up-to-date database untouched, so recompute-all never runs at startup (C9)", async () => {
+    // A PO whose stored totals are wrong for its rows (it has none), as recompute-all would correct them.
+    (await migratedDb(dbPath)).close();
+    const wrong = 5_000 as Qty;
+    const before = await closedDb((db) =>
+      db.batch([
+        db.build.insert(supplier).values({ id: "S1", name: "Example Supplier", bankDetails: {}, invoiceDefaults: {} }),
+        db.build.insert(po).values({
+          id: "P1",
+          supplierId: "S1",
+          poNumber: "4500001",
+          poDate: "2025-04-10" as IsoDate,
+          amendNo: 0,
+          isGemc: false,
+          rawHeader: {},
+          status: "Pending",
+          ordQty: wrong,
+          dspQty: wrong,
+          rcdQty: wrong,
+          rejQty: wrong,
+          balanceQty: wrong,
+        }),
+      ]),
+    );
+
+    const server = await startServer({ dataDir: tmp, webRoot: join(tmp, "web"), version: "1.2.3" });
+    await server.close();
+
+    expect(await hash(dbPath)).toBe(before);
+  });
+
   it("migrates a new data folder before serving", async () => {
     const dataDir = join(tmp, "fresh");
     const server = await startServer({ dataDir, webRoot: join(tmp, "web"), version: "1.2.3" });

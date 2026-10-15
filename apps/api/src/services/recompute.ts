@@ -2,7 +2,7 @@
 // It returns statements instead of committing them, so every write use case that touches a PO adds them to its own
 // batch (INV-14, INV-84). Every value comes from a domain function (C2); this file groups rows by item and hands them over.
 import type { Db, Statement } from "@senstosales/db";
-import { po, poItem, reconciliationIssue } from "@senstosales/db";
+import { DbError, po, poItem, reconciliationIssue, WriteBatch } from "@senstosales/db";
 import type { IsoDate, PoFlagSnapshot } from "@senstosales/domain";
 import {
   computeItemQuantities,
@@ -19,11 +19,13 @@ import { eq } from "drizzle-orm";
 import { NotFoundError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import type { Clock } from "../ports/clock.ts";
+import type { DocumentResult, JobHandlers } from "../ports/jobs.ts";
 import { dcLinesOfPo } from "../repositories/dc.ts";
 import { flagFingerprintsOfPo } from "../repositories/flags.ts";
 import { invoiceLinesOfPo } from "../repositories/invoice.ts";
-import { findPo, poItemsOf } from "../repositories/po.ts";
+import { allPoRefs, findPo, poItemsOf } from "../repositories/po.ts";
 import { srvLinesOfPo } from "../repositories/srv.ts";
+import { audit } from "./audit.ts";
 
 export interface RecomputeDeps {
   readonly db: Db;
@@ -63,6 +65,38 @@ export async function loadPoSnapshot(db: Db, poId: string): Promise<PoSnapshot> 
 /** The statements that bring the PO's derived columns and flags in line with its stored rows. */
 export async function recomputePo(deps: RecomputeDeps, poId: string): Promise<Statement[]> {
   return recomputeStatements(deps, await loadPoSnapshot(deps.db, poId));
+}
+
+/**
+ * The `recompute-all` job (ARCHITECTURE §7.3): every PO, in PO-number order, gets its derived columns and flags
+ * rebuilt from its stored rows in its own batch with an audit row. Only a user starts it; never at startup (C9).
+ */
+export function recomputeAllHandlers(deps: RecomputeDeps): JobHandlers {
+  const { db, clock } = deps;
+  return {
+    "recompute-all": {
+      documents: async () => (await allPoRefs(db)).map((ref) => ({ key: ref.id, label: ref.poNumber })),
+
+      async process(poId, _start, jobId): Promise<DocumentResult> {
+        try {
+          const statements = await recomputePo(deps, poId);
+          const entry = { action: "po.recompute", entityType: "po", entityId: poId, jobId };
+          await statements
+            .reduce((batch, s) => batch.add(s), new WriteBatch(db))
+            .add(audit(db, clock.now(), entry))
+            .commit();
+        } catch (err) {
+          if (err instanceof NotFoundError) {
+            return { outcome: "skipped", reason: "This PO was deleted after the job started." };
+          }
+          // A refused statement fails this PO only and the job goes on (SPEC-08 §4.3). The event names the PO.
+          if (!(err instanceof DbError)) throw err;
+          return { outcome: "failed", reason: "Could not be recomputed. Its stored values were kept." };
+        }
+        return { outcome: "done" };
+      },
+    },
+  };
 }
 
 /**
