@@ -225,7 +225,7 @@ export const EXPORTS = {
       col("rate", "Unit Rate", 12),
       // Balance × rate (D-0239).
       col("pendingValue", "Pending Value", 15),
-      // `N days overdue`, `Due in N days`, `Due Today`; empty without a delivery date.
+      // `N days overdue`, `Due in N days`, `Due Today`.
       col("daysOverdue", "Days Overdue", 17),
     ],
   ),

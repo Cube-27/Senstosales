@@ -123,6 +123,13 @@ describe("table goldens", () => {
     for (const row of g.rows.slice(1)) expect(row).toHaveLength(sheet.columns.length);
   });
 
+  it("lists only open lots in the tracker: C10 is Closed (D-0238)", () => {
+    const lots = golden("delivery-tracker.json")
+      .rows.slice(1)
+      .map((row) => `${text(row[0])} ${text(row[1])} ${text(row[3])}`);
+    expect(lots).toEqual(["4500102 M-210 L1", "4500101 M-110 L2", "4500101 M-120 L1", "4500101 M-110 L1"]);
+  });
+
   it("an empty export is the bare Report sheet: no header row, no page setup (EC-45)", () => {
     expect(golden("po-register-empty.json")).toEqual({
       fileName: "PO_Register.xlsx",
