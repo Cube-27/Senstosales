@@ -20,9 +20,18 @@ function check(ok: boolean, what: string): void {
   console.log(`ok - ${what}`);
 }
 
+/** Windows PowerShell by its full path, not looked up on PATH. */
+const POWERSHELL = join(
+  process.env["SystemRoot"] ?? "C:\\Windows",
+  "System32",
+  "WindowsPowerShell",
+  "v1.0",
+  "powershell.exe",
+);
+
 /** The output lines of a PowerShell query; a failing query fails the test. */
 const powershell = (script: string): string[] =>
-  execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8" })
+  execFileSync(POWERSHELL, ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8" })
     .split(/\s+/)
     .filter(Boolean);
 
@@ -74,10 +83,10 @@ async function smokeRun(): Promise<void> {
     const found = listening(sidecarPid);
     return found.length > 0 ? found : null;
   });
-  check(sockets.length === 1 && sockets[0]?.startsWith("127.0.0.1:") === true, `on 127.0.0.1 only (${sockets})`);
+  check(sockets.length === 1 && sockets[0]?.startsWith("127.0.0.1:") === true, "the sidecar listens on 127.0.0.1 only");
   const health = await fetch(`http://${sockets[0]}/api/health`);
   const body = (await health.json()) as { version?: unknown };
-  check(health.status === 200 && typeof body.version === "string", `/api/health answers (${String(body.version)})`);
+  check(health.status === 200 && typeof body.version === "string", "/api/health answers with a version");
   await waitFor("the app window opens", 30, () => (hasWindow(shellPid) ? true : null));
 
   check((await run(APP)) === 0, "a second launch exits with code 0");
@@ -94,7 +103,7 @@ async function main(): Promise<void> {
   if (!setup || others.length > 0) throw new Error(`smoke: expected one installer in ${bundle}`);
   const installer = join(bundle, setup);
   check((await run(installer, ["/S"])) === 0, "the installer runs silently without admin rights");
-  check(existsSync(APP), `the app is installed in ${INSTALL_DIR}`);
+  check(existsSync(APP), "the app is installed in %LOCALAPPDATA%\\Programs\\SenstoSales");
   await smokeRun();
   check(existsSync(DATABASE), "the data is in the data folder");
 

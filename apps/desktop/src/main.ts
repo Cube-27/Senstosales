@@ -99,4 +99,4 @@ async function addTray(app: WebviewWindow): Promise<void> {
   });
 }
 
-start().catch((err: unknown) => fail(COULD_NOT_START_TITLE, err instanceof Error ? err.message : String(err)));
+await start().catch((err: unknown) => fail(COULD_NOT_START_TITLE, err instanceof Error ? err.message : String(err)));

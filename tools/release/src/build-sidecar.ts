@@ -1,9 +1,9 @@
 // The sidecar build (SPEC-20 PR 1, ADR 0001): esbuild bundles the API's node entry into one CommonJS file with the
 // built SPA embedded, then Node 26 turns it into a single executable (`--build-sea`). `--fallback` instead writes the
 // `node` binary beside the bundle (ARCHITECTURE §13.1); the shell ships the SEA.
-// Usage: node tools/release/src/build-sidecar.ts [--fallback] [--web <dir>] [--out <dir>]
-//   --web  the built SPA (default apps/web/dist)
-//   --out  the output folder (default apps/desktop/src-tauri/binaries, where Tauri's `externalBin` looks)
+// Usage: node tools/release/src/build-sidecar.ts [--fallback]
+//   reads the built SPA from apps/web/dist and writes to apps/desktop/src-tauri/binaries, where Tauri's `externalBin`
+//   looks. The folders are fixed: no path comes from the command line.
 import { execFileSync } from "node:child_process";
 import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -117,13 +117,11 @@ export async function buildSidecar({ kind, web, outDir }: BuildOptions): Promise
 }
 
 async function main(): Promise<void> {
-  const { values } = parseArgs({
-    options: { fallback: { type: "boolean" }, web: { type: "string" }, out: { type: "string" } },
-  });
+  const { values } = parseArgs({ options: { fallback: { type: "boolean" } } });
   const sidecar = await buildSidecar({
     kind: values.fallback ? "fallback" : "sea",
-    web: resolve(values.web ?? join(ROOT, "apps/web/dist")),
-    outDir: resolve(values.out ?? join(ROOT, "apps/desktop/src-tauri/binaries")),
+    web: join(ROOT, "apps/web/dist"),
+    outDir: join(ROOT, "apps/desktop/src-tauri/binaries"),
   });
   console.log(spawnArgs(sidecar).flat().join(" "));
 }
