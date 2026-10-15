@@ -6,7 +6,6 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { fileURLToPath } from "node:url";
 
-import { openNodeDb } from "@senstosales/db/node";
 import { getRequestListener } from "@hono/node-server";
 
 import pkg from "../../../package.json" with { type: "json" };
@@ -14,16 +13,9 @@ import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
 import { healthRoutes } from "../../routes/health.ts";
 import { apiRoutes } from "../../routes/index.ts";
-import { folderImportHandlers } from "../../services/folder-import.ts";
-import { createServices } from "../../services/index.ts";
-import { jobWorker } from "../../services/job-worker.ts";
-import { recomputeAllHandlers } from "../../services/recompute.ts";
-import { createClock } from "./clock.ts";
-import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
-import { createJobRunner } from "./job-runner.ts";
-import { upgradeGate } from "./startup.ts";
+import { resolveDataDir } from "./data-dir.ts";
+import { openRuntime } from "./runtime.ts";
 import { spa } from "./static.ts";
-import { createFsStorage } from "./storage-fs.ts";
 
 const HOST = "127.0.0.1";
 
@@ -56,30 +48,12 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const paths = await prepareDataDir(options.dataDir);
-  const clock = createClock();
-  const db = openNodeDb(paths.db);
-  try {
-    await upgradeGate(db, {
-      backupsDir: paths.backups,
-      appVersion: options.version,
-      now: clock.now(),
-    });
-  } catch (err) {
-    db.close();
-    throw err;
-  }
+  const { db, services } = await openRuntime({ ...options, logger: stderrLogger });
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  // The scrape and backup handlers arrive with their PRs (SPEC-19, SPEC-21); until then a start fails plainly. Jobs
-  // run only when a user starts one, never at startup (C9).
-  const storage = createFsStorage(options.dataDir);
-  const handlers = { ...folderImportHandlers({ db, clock, storage }), ...recomputeAllHandlers({ db, clock }) };
-  const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers }));
-  const services = createServices({ db, clock, jobs, storage });
   const app = createApp(
     { port: address.port, logger: stderrLogger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
     {
