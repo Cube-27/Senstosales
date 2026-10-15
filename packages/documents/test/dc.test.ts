@@ -1,7 +1,7 @@
 // The DC workbook against goldens derived from the legacy DC download (SPEC-12 §4.2, INV-69): every value, merge,
 // row height and page-setup field, and each cell's style taken from the template row the legacy writer copies it
 // from. Inputs and goldens are synthetic (C1, INV-75); SPEC-12 PR 2 confirms the goldens against legacy output (H5).
-import { parseMoney, parseQty } from "@senstosales/domain";
+import { parseMoney, parseQty, type IsoDate } from "@senstosales/domain";
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -29,6 +29,50 @@ describe("DC workbook", () => {
     expect(sheet!.cells["C32"]?.value).toBe("Guarantee Certificate No. 7   Dt. 03/06/2025");
   });
 
+  it("prints the consignee over three rows: the name, the first address line, then the rest", async () => {
+    const [sheet] = await build(input("dc-1"));
+    expect(["B9", "B10", "B11"].map((at) => sheet!.cells[at]?.value)).toEqual([
+      "The Example Manager (Stores)",
+      "Example Unit",
+      "Example Road, Example City - 000000",
+    ]);
+  });
+
+  it.each([
+    ["75", "4500000001", 75, 4500000001],
+    ["075", "45-1", "075", "45-1"],
+  ])("DC %s and PO %s print as %j and %j", async (number, poNumber, dcCell, poCell) => {
+    const one = input("dc-1");
+    const [sheet] = await build({ ...one, dc: { ...one.dc, number }, po: { ...one.po, poNumber } });
+    expect([sheet!.cells["I9"]?.value, sheet!.cells["D14"]?.value]).toEqual([dcCell, poCell]);
+  });
+
+  it("EC-47: prints the invoice number and date the user filled in, else the DC's own invoice's", async () => {
+    const one = input("dc-1");
+    const cells = async (doc: DcDocument) => {
+      const [sheet] = await build(doc);
+      return [sheet!.cells["I17"]?.value, sheet!.cells["C31"]?.value];
+    };
+    expect(await cells(one)).toEqual(["INV-7  Dt. 04/06/2025", "GST Bill No. INV-7 Dt.04/06/2025"]);
+    const filled = { ...one, dc: { ...one.dc, invoiceNumber: "75", invoiceDate: "2025-06-09" as IsoDate } };
+    expect(await cells(filled)).toEqual(["75  Dt. 09/06/2025", "GST Bill No. 75 Dt.09/06/2025"]);
+    expect(await cells({ ...one, invoice: null })).toEqual(["Dt.", "GST Bill No.  Dt."]);
+  });
+
+  it("prints the DC's notes as remarks 4 to 6, the rest joined onto the sixth, in place of the blank TC line", async () => {
+    const one = input("dc-1");
+    // The DC form saves its notes joined by blank lines.
+    const remarks = ["TC No 1 dt.01-01-2025 Of Example Lab", "TC No 2", "Lot No. 9", "Extra"].join("\n\n");
+    const [sheet] = await build({ ...one, dc: { ...one.dc, remarks } });
+    const rows = [34, 35, 36, 37].map((row) => [sheet!.cells[`B${row}`]?.value, sheet!.cells[`C${row}`]?.value]);
+    expect(rows).toEqual([
+      [4, "TC No 1 dt.01-01-2025 Of Example Lab"],
+      [5, "TC No 2"],
+      [6, "Lot No. 9  Extra"],
+      [null, "Lot No."],
+    ]);
+  });
+
   it("INV-18: prints a GEMC consignment value at 5 dp, others at 2", async () => {
     const one = input("dc-1");
     const item = { ...one.items[0]!, dspQty: unwrap(parseQty("3")), rate: unwrap(parseMoney("719.27966")) };
@@ -38,6 +82,11 @@ describe("DC workbook", () => {
       "Consignment Value of BHEL PO 2157.84",
       "Consignment Value of BHEL PO 2157.83898",
     ]);
+    // No trailing zeros: 1 × 123900 prints `123900`.
+    const whole = { ...item, dspQty: unwrap(parseQty("1")), rate: unwrap(parseMoney("123900")) };
+    expect((await build({ ...one, items: [whole] }))[0]!.cells["C38"]?.value).toBe(
+      "Consignment Value of BHEL PO 123900",
+    );
   });
 
   it.each([

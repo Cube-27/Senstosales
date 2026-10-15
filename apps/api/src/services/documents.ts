@@ -28,7 +28,10 @@ export function documentsService({ db, storage, profile }: DocumentsDeps) {
       supplier: documentSupplier(supplier, row.dc),
       dc: row.dc,
       po: row.po,
-      invoiceNumber: row.invoiceNumber,
+      invoice:
+        row.invoiceNumber === null || row.invoiceDate === null
+          ? null
+          : { number: row.invoiceNumber, invoiceDate: row.invoiceDate },
       items,
     };
   }

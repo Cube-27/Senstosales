@@ -34,9 +34,10 @@ describe("GC workbook", () => {
   });
 
   it.each([
-    ["2.5", "nos", "2.5  NOS"],
-    ["3", null, "3  NO"],
-    ["0.125", "", "0.125  NO"],
+    // One space, as the owner's GCs print it (the DC keeps two).
+    ["2.5", "nos", "2.5 NOS"],
+    ["3", null, "3 NO"],
+    ["0.125", "", "0.125 NO"],
   ])("quantity %s %j prints as %j", async (qty, unit, expected) => {
     const item = { ...one.items[0]!, dspQty: unwrap(parseQty(qty)), unit };
     const sheet = await build({ ...one, items: [item] });
@@ -50,7 +51,8 @@ describe("GC workbook", () => {
     const items = Array.from({ length: count }, (_, i) => ({ ...one.items[0]!, poItemNo: i + 1 }));
     const sheet = await build({ ...one, items });
     expect(sheet.pageSetup["printArea"]).toBe(printArea);
-    expect(String(sheet.cells[guarantee]?.value)).toMatch(/^The goods supplied as above are guaranteed/);
+    // The template's own wording, as the owner's GCs print it.
+    expect(String(sheet.cells[guarantee]?.value)).toMatch(/^The goods supplied as above .* for 24 Month from delivery/);
     expect(sheet.cells[sign]?.value).toBe("                 For EXAMPLE PRECISION WORKS");
   });
 });

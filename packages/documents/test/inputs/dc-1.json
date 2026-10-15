@@ -17,14 +17,20 @@
     "ourRef": "REF-0001",
     "departmentNo": "123",
     "consigneeName": "The Example Manager (Stores)",
-    "consigneeAddress": "Example Unit\r\nExample Road\n\nExample City - 000000"
+    "consigneeAddress": "Example Unit\r\nExample Road\n\nExample City - 000000",
+    "remarks": null,
+    "invoiceNumber": null,
+    "invoiceDate": null
   },
   "po": {
     "poNumber": "4500000001",
     "poDate": "2025-04-15",
     "isGemc": false
   },
-  "invoiceNumber": "INV-7",
+  "invoice": {
+    "number": "INV-7",
+    "invoiceDate": "2025-06-04"
+  },
   "items": [
     {
       "poItemNo": 10,

@@ -17,14 +17,17 @@
     "ourRef": null,
     "departmentNo": "D-4",
     "consigneeName": null,
-    "consigneeAddress": null
+    "consigneeAddress": null,
+    "remarks": null,
+    "invoiceNumber": null,
+    "invoiceDate": null
   },
   "po": {
     "poNumber": "4500000002",
     "poDate": null,
     "isGemc": false
   },
-  "invoiceNumber": null,
+  "invoice": null,
   "items": [
     {
       "poItemNo": 200,

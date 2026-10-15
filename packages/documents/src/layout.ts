@@ -81,11 +81,27 @@ export function insertRows(ws: ExcelJS.Worksheet, at: number, count: number, lik
   for (let row = at; row < at + count; row++) for (const m of repeated) merge(ws, { ...m, top: row, bottom: row });
 }
 
-/** The consignee block the DC and GC print: name, then the address lines, blanks dropped; `Consignee` when empty. */
-export function consignee(dc: { consigneeName: string | null; consigneeAddress: string | null }): string {
+type Consignee = { consigneeName: string | null; consigneeAddress: string | null };
+
+/** The consignee's name, then its address lines, blanks dropped. */
+function consigneeParts(dc: Consignee): string[] {
   const address = (dc.consigneeAddress ?? "").split(/\r?\n/).map((line) => line.trim());
-  const lines = [(dc.consigneeName ?? "").trim(), ...address].filter((line) => line !== "");
+  return [(dc.consigneeName ?? "").trim(), ...address].filter((line) => line !== "");
+}
+
+/** The consignee block the GC prints in one cell: its lines; `Consignee` when empty. */
+export function consignee(dc: Consignee): string {
+  const lines = consigneeParts(dc);
   return lines.length > 0 ? lines.join("\n") : "Consignee";
+}
+
+/**
+ * The consignee over the DC's three rows, as the owner's DCs print it: the first line (`Consignee` when empty), the
+ * second, then the rest joined by `, `.
+ */
+export function consigneeLines(dc: Consignee): [string, string, string] {
+  const [first = "Consignee", second = "", ...rest] = consigneeParts(dc);
+  return [first, second, rest.join(", ")];
 }
 
 export interface ItemRow {
@@ -98,14 +114,22 @@ export interface ItemRow {
 /** Legacy grows an item row by `lineHeight` points for each 95 characters of description. */
 const CHARS_PER_LINE = 95;
 
+interface ItemLayout {
+  firstRow: number;
+  qtyColumn: string;
+  /** Between the quantity and the unit: two spaces on the DC, one on the GC, as the owner's documents print them. */
+  qtyGap: string;
+  lineHeight: number;
+}
+
 /**
- * The DC and GC item rows from `firstRow` down: PO item number in B, description in C, `<qty>  <UNIT>` (upper-cased,
+ * The DC and GC item rows from `firstRow` down: PO item number in B, description in C, `<qty><gap><UNIT>` (upper-cased,
  * `NO` when missing) in `qtyColumn`; each row at least as high as the first.
  */
 export function writeItemRows(
   ws: ExcelJS.Worksheet,
   items: readonly ItemRow[],
-  { firstRow, qtyColumn, lineHeight }: { firstRow: number; qtyColumn: string; lineHeight: number },
+  { firstRow, qtyColumn, qtyGap, lineHeight }: ItemLayout,
 ): void {
   const baseHeight = ws.getRow(firstRow).height;
   items.forEach((item, i) => {
@@ -113,7 +137,7 @@ export function writeItemRows(
     const description = item.description ?? "";
     put(ws, `B${row}`, item.poItemNo);
     put(ws, `C${row}`, description);
-    put(ws, `${qtyColumn}${row}`, `${qtyToString(item.dspQty)}  ${(item.unit || "NO").toUpperCase()}`);
+    put(ws, `${qtyColumn}${row}`, `${qtyToString(item.dspQty)}${qtyGap}${(item.unit || "NO").toUpperCase()}`);
     const lines = Math.floor([...description].length / CHARS_PER_LINE) + 1;
     ws.getRow(row).height = Math.max(baseHeight, lines * lineHeight);
   });
