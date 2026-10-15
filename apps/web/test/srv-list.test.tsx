@@ -71,7 +71,7 @@ describe("/srv (SPEC-16 PR 4)", () => {
     expect(within(first).getByRole("link", { name: "4100000101" }).getAttribute("href")).toBe(`/po/${PO_ID}`);
     expect(within(second).getByText("PO not found")).toBeTruthy();
     expect(within(second).queryByRole("link", { name: "4100000999" })).toBeNull();
-    expect(within(first).getByText("₹600")).toBeTruthy();
+    expect(within(first).getByText("₹600.00")).toBeTruthy();
   });
 
   it("switches to the by-PO view, whose SRV count opens that PO's SRVs", async () => {

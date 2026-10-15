@@ -28,7 +28,7 @@ function roundDiv(n: number, unit: number): number {
   return up * 2 >= unit ? floor + 1 : floor;
 }
 
-/** GEMC amounts and rates show up to 5 dp, others up to 2 (A-12). */
+/** GEMC amounts and rates show up to 5 dp, others 2 (A-12). */
 interface Precision {
   readonly gemc: boolean;
 }
@@ -52,11 +52,14 @@ export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-
 /** A quantity in whole units, as legacy shows every quantity: `2.5` -> `"3"` (EC-21). */
 export const fmtQty = (q: Qty): string => fmtCount(roundDiv(q, ONE_UNIT));
 
-/** A unit rate without the rupee sign (legacy rate cells draw it apart): `1234.50` -> `"1,234.5"`. */
+/**
+ * A unit rate without the rupee sign (legacy rate cells draw it apart), always with two decimals or more, so the
+ * amounts of a column line up (UI-MISC): `1234.5` -> `"1,234.50"`, GEMC `719.27966` -> `"719.27966"`.
+ */
 export function fmtRate(m: Money, precision: Precision): string {
-  const [int = "", frac] = fmtPlain(m, precision).split(".");
+  const [int = "", frac = ""] = fmtPlain(m, precision).split(".");
   const sign = int.startsWith("-") ? "-" : "";
-  return sign + groupIndian(int.slice(sign.length)) + (frac === undefined ? "" : `.${frac}`);
+  return `${sign}${groupIndian(int.slice(sign.length))}.${frac.padEnd(2, "0")}`;
 }
 
 /**

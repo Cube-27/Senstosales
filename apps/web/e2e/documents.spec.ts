@@ -86,12 +86,12 @@ test("downloads the DC and GC, then invoices the DC with its lines locked (INV-2
   await page.getByLabel("Invoice No.").fill("17");
   await typeDate(page, "Dated*", "01/07/2023");
   const totals = page.getByRole("region", { name: "Totals" });
-  await expect(totals).toContainText("₹17,700");
+  await expect(totals).toContainText("₹17,700.00");
   await page.getByRole("button", { name: "Save Invoice" }).click();
   await page.getByRole("button", { name: "Generate", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/invoice/${ULID}$`));
   // The stored totals are the ones the form showed.
-  await expect(page.getByRole("cell", { name: "₹17,700" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "₹17,700.00" })).toBeVisible();
   expect(await downloads(page, "Download")).toMatch(/\.xlsx$/);
 });
 
@@ -144,5 +144,5 @@ test("adding a note or a quantity grows only its own section (C8)", async ({ pag
   await expectNoLayoutShift(page, { details, lines, totals }, () =>
     page.getByLabel("Invoice qty of item 10").fill("3"),
   );
-  await expect(totals).toContainText("₹4,425");
+  await expect(totals).toContainText("₹4,425.00");
 });

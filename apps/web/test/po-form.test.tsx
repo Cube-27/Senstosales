@@ -129,7 +129,9 @@ describe("/po/create (SPEC-16 PR 3)", () => {
     fireEvent.change(screen.getByLabelText("Unit of item 1"), { target: { value: "NOS" } });
     fireEvent.change(screen.getByLabelText("Qty of item 1"), { target: { value: "10" } });
     fireEvent.change(screen.getByLabelText("Rate of item 1"), { target: { value: "848.75" } });
-    expect(screen.getByRole("heading", { level: 1 }).parentElement?.textContent).toContain("1 items • Total: ₹8,487.5");
+    expect(screen.getByRole("heading", { level: 1 }).parentElement?.textContent).toContain(
+      "1 items • Total: ₹8,487.50",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Save PO" }));
     fireEvent.click(await screen.findByRole("button", { name: "Create PO" }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/po/${PO_ID}`));

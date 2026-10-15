@@ -44,14 +44,14 @@ describe("/dc/:id (SPEC-18 PR 1)", () => {
       within(line)
         .getAllByRole("cell")
         .map((td) => td.textContent),
-    ).toEqual(["20", "SYN100020Synthetic part 20", "NOS", "2", "40", "₹80"]);
+    ).toEqual(["20", "SYN100020Synthetic part 20", "NOS", "2", "40.00", "₹80.00"]);
     // 4 × 100 + 2 × 40; received is each line's PO item received (2 + 0, EC-38).
     expect(screen.getByText("2 items")).toBeTruthy();
-    expect(screen.getByText("Value: ₹480")).toBeTruthy();
+    expect(screen.getByText("Value: ₹480.00")).toBeTruthy();
     await waitFor(() => expect(screen.getByText("Received").textContent).toBe("Received 2"));
     expect(screen.getByText("Dispatched", { selector: "span" }).textContent).toBe("Dispatched 6");
     expect(screen.getByText("Guarantee Certificate No. 17 Dt. 02/05/2025")).toBeTruthy();
-    expect(screen.getByText("Consignment Value of DC ₹480")).toBeTruthy();
+    expect(screen.getByText("Consignment Value of DC ₹480.00")).toBeTruthy();
     expect(screen.getByText("First note")).toBeTruthy();
     expect(screen.getByText("Second note")).toBeTruthy();
   });

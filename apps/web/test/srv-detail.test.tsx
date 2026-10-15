@@ -79,7 +79,7 @@ describe("/srv/:id (SPEC-16 PR 4)", () => {
     // REV NO and UNIT are the SRV row's own.
     expect([within(row).getByText("2"), within(row).getByText("KG")]).toHaveLength(2);
     expect(await within(row).findByText("Synthetic valve body")).toBeTruthy();
-    expect(within(row).getByText("100")).toBeTruthy();
+    expect(within(row).getByText("100.00")).toBeTruthy();
     // An item not matched to a PO item shows its own number and no material.
     expect(screen.getByText("#10")).toBeTruthy();
   });

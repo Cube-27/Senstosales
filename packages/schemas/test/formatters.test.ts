@@ -103,32 +103,33 @@ describe("fmtCount", () => {
   });
 });
 
-describe("fmtMoney: rupee sign, 2 dp, trailing zeros dropped", () => {
+// Always two decimals, so the amounts of a column line up (UI-MISC, 2026-10-15); legacy dropped trailing zeros.
+describe("fmtMoney: rupee sign, 2 dp", () => {
   it.each([
-    ["0", "₹0"],
+    ["0", "₹0.00"],
     ["848.75", "₹848.75"],
-    ["500", "₹500"],
-    ["1.50", "₹1.5"],
+    ["500", "₹500.00"],
+    ["1.50", "₹1.50"],
     ["719.27966", "₹719.28"],
     ["848.755", "₹848.76"], // legacy "₹848.75"
     ["848.745", "₹848.75"],
-    ["0.004", "₹0"],
+    ["0.004", "₹0.00"],
     ["0.005", "₹0.01"],
-    ["99999.999", "₹1,00,000"],
-    ["12345678.9", "₹1,23,45,678.9"],
+    ["99999.999", "₹1,00,000.00"],
+    ["12345678.9", "₹1,23,45,678.90"],
     ["-848.75", "-₹848.75"],
     ["-848.755", "-₹848.76"], // legacy "-₹848.75"
-    ["-0.001", "₹0"], // legacy "-₹0"
+    ["-0.001", "₹0.00"], // legacy "-₹0"
   ])("%s -> %s", (m, expected) => {
     expect(fmtMoney(money(m), { gemc: false })).toBe(expected);
   });
 });
 
-describe("fmtMoney: GEMC at 5 dp (A-12)", () => {
+describe("fmtMoney: GEMC at 2 to 5 dp (A-12)", () => {
   it.each([
-    ["0", "₹0"],
-    ["100", "₹100"],
-    ["719.2", "₹719.2"],
+    ["0", "₹0.00"],
+    ["100", "₹100.00"],
+    ["719.2", "₹719.20"],
     ["719.27966", "₹719.27966"],
     ["1234567.12345", "₹12,34,567.12345"],
     ["-0.00001", "-₹0.00001"],
@@ -139,12 +140,13 @@ describe("fmtMoney: GEMC at 5 dp (A-12)", () => {
 
 describe("fmtRate: as fmtMoney without the rupee sign", () => {
   it.each([
-    ["0", false, "0"],
+    ["0", false, "0.00"],
     ["848.75", false, "848.75"],
-    ["1234.50", false, "1,234.5"],
+    ["1234.50", false, "1,234.50"],
     ["719.27966", false, "719.28"],
     ["719.27966", true, "719.27966"],
-    ["-12.3", false, "-12.3"],
+    ["719.2", true, "719.20"],
+    ["-12.3", false, "-12.30"],
   ])("%s gemc=%s -> %s", (m, gemc, expected) => {
     expect(fmtRate(money(m), { gemc })).toBe(expected);
   });
