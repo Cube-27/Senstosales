@@ -48,7 +48,10 @@ export function useListSearch<S extends ListSearch>(): ListSearchApi<S> {
   const search = parsed as S;
   const navigate = useNavigate();
   const update = (paging: Partial<ListSearch>, filters?: Partial<ListFilters<S>>): void => {
-    void navigate({ to: ".", search: (prev: object) => ({ ...prev, ...filters, ...paging }), replace: true });
+    const merge = (prev: object): object => ({ ...prev, ...filters, ...paging });
+    // A generic hook cannot type the merged search against each registered route's own search (a list's `sort` is
+    // its own enum). `to: "."` stays on the current route, whose `validateSearch` checks the result.
+    void navigate({ to: ".", search: merge as never, replace: true });
   };
   const setPage = (page: number): void => update({ page });
   const setPageSize = (pageSize: number): void =>
