@@ -2,7 +2,6 @@
 // step goes through the typed web client as the screens call it (create form data, then create; previews, then
 // invoice), so requests and responses are checked against the shared schemas too. Expected values are worked by hand
 // from ARCHITECTURE §6.2-§6.10. Synthetic values only (C1).
-import type { Instant } from "@senstosales/db";
 import type { RouteInput } from "@senstosales/schemas";
 import { ApiError, zGstPct, zMoney, zQty } from "@senstosales/schemas";
 import { afterEach, describe, expect, test } from "vite-plus/test";
@@ -10,6 +9,7 @@ import { afterEach, describe, expect, test } from "vite-plus/test";
 import { closeApiApps, onboardedApp } from "../api-app.ts";
 import { poPage } from "../po-pages.ts";
 import { d as day } from "../seed-rows.ts";
+import { tickingClock } from "../service-deps.ts";
 import { srvPage } from "../srv-pages.ts";
 
 afterEach(closeApiApps);
@@ -19,16 +19,6 @@ type Client = Awaited<ReturnType<typeof onboardedApp>>["client"];
 const qty = (s: string) => zQty.decode(s);
 const text = (v: Parameters<typeof zQty.encode>[0]) => zQty.encode(v);
 const money = (v: Parameters<typeof zMoney.encode>[0]) => zMoney.encode(v);
-
-/** A clock one second later on every read, so each write is after the one before it. */
-function tickingClock() {
-  let seconds = 0;
-  const start = Date.UTC(2025, 5, 1, 5, 30);
-  return {
-    today: () => day("2025-06-01"),
-    now: () => new Date(start + 1000 * seconds++).toISOString() as Instant,
-  };
-}
 
 /**
  * The dataset every flow starts from, entered as a user would: onboarding, GST 9 % + 9 %, and two uploaded POs.

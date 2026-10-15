@@ -3,7 +3,6 @@
 import type { Db, Instant } from "@senstosales/db";
 import { job } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
-import type { IsoDate } from "@senstosales/domain";
 import { zJob, zPaged } from "@senstosales/schemas";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
@@ -15,15 +14,7 @@ import { jobWorker } from "../src/services/job-worker.ts";
 import { jobsService } from "../src/services/jobs.ts";
 import { migratedDb } from "./db.ts";
 import { gate, ID, json, memoryLogger, testApp } from "./helpers.ts";
-
-/** A clock that moves one second per call, so jobs created one after another sort by `createdAt`. */
-function tickingClock(): Clock {
-  let seconds = 0;
-  return {
-    today: () => "2025-04-01" as IsoDate,
-    now: () => new Date(Date.UTC(2025, 3, 1, 5, 30, seconds++)).toISOString() as Instant,
-  };
-}
+import { tickingClock } from "./service-deps.ts";
 
 /** Documents whose key is their label. */
 const docs = (...keys: string[]): JobDocument[] => keys.map((key) => ({ key, label: key }));
@@ -74,7 +65,7 @@ describe("start and run", () => {
       id: expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{26}$/),
       type: "recompute-all",
       status: "queued",
-      createdAt: "2025-04-01T05:30:00.000Z",
+      createdAt: "2025-06-01T05:30:00.000Z",
       startedAt: null,
       finishedAt: null,
       cancelRequested: false,
@@ -89,8 +80,8 @@ describe("start and run", () => {
       job: {
         ...queued,
         status: "done",
-        startedAt: "2025-04-01T05:30:01.000Z",
-        finishedAt: "2025-04-01T05:30:02.000Z",
+        startedAt: "2025-06-01T05:30:01.000Z",
+        finishedAt: "2025-06-01T05:30:02.000Z",
         progress: { total: 3, done: 3, skipped: 0, failed: 0, current: null },
         summary: { total: 3, done: 3, skipped: 0, failed: 0, skippedDocuments: [], failedDocuments: [] },
       },
@@ -256,7 +247,7 @@ describe("cancel", () => {
     expect(cancelled).toMatchObject({
       status: "cancelled",
       cancelRequested: true,
-      finishedAt: "2025-04-01T05:30:01.000Z",
+      finishedAt: "2025-06-01T05:30:01.000Z",
       progress: { total: 10, done: 2, skipped: 0, failed: 1, current: null },
     });
     const { id } = await client.request("jobs.start", { body: { type: "recompute-all" } });
