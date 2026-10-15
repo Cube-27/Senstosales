@@ -39,6 +39,11 @@ describe("onboarding (SPEC-15 PR 2, INV-78)", () => {
       "GSTIN (Tax ID)",
       "Registered Address",
       "Business Tagline / GC Header",
+      "State",
+      "State Code",
+      "Jurisdiction (City)",
+      "Place of Supply",
+      "Default HSN",
       "CGST %",
       "SGST %",
     ]);

@@ -1,7 +1,7 @@
 // The settings form (SPEC-15 §2): the supplier profile, the GST rates and the legacy System Defaults selects, as the
 // form edits them (text) and as the API takes them. The form state is derived from the server value and never stored
 // elsewhere (§4.1). Rates are validated by the shared `zGstPct` codec, the one parser of percentages (C3).
-import { type RouteOutput, zGstPct } from "@senstosales/schemas";
+import { INVOICE_DEFAULTS, type RouteOutput, zGstPct } from "@senstosales/schemas";
 import { z } from "zod";
 
 type Supplier = RouteOutput<"supplier.get">;
@@ -26,7 +26,8 @@ const PREF_DEFAULT = { currency: "INR", fyCycle: "APR_MAR", igstPct: "18" } as c
 
 const zText = z.string();
 
-/** The supplier profile fields of the legacy Supplier Profile section, in its order. */
+/** The supplier profile fields of the legacy Supplier Profile section, in its order, then the fields the documents
+ * print or new invoices start from (owner, 2026-10-15). */
 export const zSupplierFields = z.object({
   name: zText,
   contact: zText,
@@ -34,7 +35,15 @@ export const zSupplierFields = z.object({
   gstin: zText,
   address: zText,
   description: zText,
+  state: zText,
+  stateCode: zText,
+  jurisdiction: zText,
+  placeOfSupply: zText,
+  hsn: zText,
 });
+
+/** The profile fields stored as `invoiceDefaults` keys rather than supplier columns. */
+const DEFAULT_FIELDS = ["description", "jurisdiction", "placeOfSupply", "hsn"] as const;
 
 export const zRates = z.object({ cgstPct: zGstPct, sgstPct: zGstPct });
 
@@ -52,26 +61,50 @@ export const zOnboardingForm = zSettingsForm.pick({ supplier: true, rates: true 
 export type OnboardingFormInput = z.input<typeof zOnboardingForm>;
 export type OnboardingFormOutput = z.output<typeof zOnboardingForm>;
 
-/** The supplier and rate fields' API paths as the form's (the letterhead description is
- * `invoiceDefaults.description`); onboarding and settings both write them. */
+/** The supplier and rate fields' API paths as the form's (the `invoiceDefaults` keys are fields of their own);
+ * onboarding and settings both write them. */
 export const SUPPLIER_SERVER_FIELDS = {
   name: "supplier.name",
   contact: "supplier.contact",
   email: "supplier.email",
   gstin: "supplier.gstin",
   address: "supplier.address",
+  state: "supplier.state",
+  stateCode: "supplier.stateCode",
   "invoiceDefaults.description": "supplier.description",
+  "invoiceDefaults.jurisdiction": "supplier.jurisdiction",
+  "invoiceDefaults.placeOfSupply": "supplier.placeOfSupply",
+  "invoiceDefaults.hsn": "supplier.hsn",
   cgstPct: "rates.cgstPct",
   sgstPct: "rates.sgstPct",
 } as const;
 
 export const EMPTY_ONBOARDING: OnboardingFormInput = {
-  supplier: { name: "", contact: "", email: "", gstin: "", address: "", description: "" },
+  supplier: {
+    name: "",
+    contact: "",
+    email: "",
+    gstin: "",
+    address: "",
+    description: "",
+    state: "",
+    stateCode: "",
+    jurisdiction: "",
+    placeOfSupply: "",
+    hsn: "",
+  },
   rates: { cgstPct: "9", sgstPct: "9" },
 };
 
 const pref = (settings: Settings, key: keyof typeof PREF): string =>
   settings.preferences[PREF[key]] ?? PREF_DEFAULT[key];
+
+/** The `invoiceDefaults` fields as the form edits them. */
+const defaultFields = (stored: Readonly<Record<string, string>>) =>
+  Object.fromEntries(DEFAULT_FIELDS.map((field) => [field, stored[INVOICE_DEFAULTS[field]] ?? ""])) as Record<
+    (typeof DEFAULT_FIELDS)[number],
+    string
+  >;
 
 /** The form's values for what the server holds. */
 export function toForm(supplier: Supplier, settings: Settings): SettingsFormInput {
@@ -82,7 +115,9 @@ export function toForm(supplier: Supplier, settings: Settings): SettingsFormInpu
       email: supplier.email ?? "",
       gstin: supplier.gstin ?? "",
       address: supplier.address ?? "",
-      description: supplier.invoiceDefaults["description"] ?? "",
+      ...defaultFields(supplier.invoiceDefaults),
+      state: supplier.state ?? "",
+      stateCode: supplier.stateCode ?? "",
     },
     rates: { cgstPct: z.encode(zGstPct, settings.cgstPct), sgstPct: z.encode(zGstPct, settings.sgstPct) },
     defaults: {
@@ -97,9 +132,14 @@ export function toForm(supplier: Supplier, settings: Settings): SettingsFormInpu
 const orNull = (text: string): string | null => (text.trim() === "" ? null : text);
 
 /** The supplier body: the edited fields over the stored record, a blank field stored as no value. The letterhead
- * description is the `invoiceDefaults` key the documents print (D-0298). */
+ * description, jurisdiction, place of supply and HSN are `invoiceDefaults` keys (D-0298); a blank one is removed. */
 export function supplierBody(stored: Omit<Supplier, "id">, fields: z.output<typeof zSupplierFields>) {
-  const { description: _replaced, ...defaults } = stored.invoiceDefaults;
+  const invoiceDefaults: Record<string, string> = { ...stored.invoiceDefaults };
+  for (const field of DEFAULT_FIELDS) {
+    const value = orNull(fields[field].trim());
+    if (value === null) delete invoiceDefaults[INVOICE_DEFAULTS[field]];
+    else invoiceDefaults[INVOICE_DEFAULTS[field]] = value;
+  }
   return {
     ...stored,
     name: fields.name,
@@ -107,7 +147,9 @@ export function supplierBody(stored: Omit<Supplier, "id">, fields: z.output<type
     email: orNull(fields.email),
     gstin: orNull(fields.gstin),
     address: orNull(fields.address),
-    invoiceDefaults: orNull(fields.description) === null ? defaults : { ...defaults, description: fields.description },
+    state: orNull(fields.state),
+    stateCode: orNull(fields.stateCode),
+    invoiceDefaults,
   };
 }
 
