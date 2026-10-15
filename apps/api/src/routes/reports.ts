@@ -9,5 +9,6 @@ export function reportsRoutes(reports: ReportsService) {
     "reports.pendingExport": ({ query }) => reports.pendingExport(query),
     "reports.reconciliationExport": ({ query }) => reports.reconciliationExport(query),
     "reports.exportSelected": ({ body }) => reports.exportSelected(body),
+    "reports.guaranteeCertificateExport": ({ query }) => reports.guaranteeCertificate(query),
   } satisfies Handlers;
 }

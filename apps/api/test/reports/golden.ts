@@ -52,7 +52,7 @@ const readDefaults = (async () => {
   await read.xlsx.load(await blank.xlsx.writeBuffer());
   // A sheet with print options reads back each one; those it leaves off are false.
   const printOptions = { showGridLines: false, showRowColHeaders: false, horizontalCentered: false, verticalCentered: false };
-  return { ...printOptions, ...(plain(read.worksheets[0]!.pageSetup) as Record<string, Json>) };
+  return { ...printOptions, ...(plain(read.worksheets[0]!.pageSetup) as Record<string, Json>) } as Record<string, Json>;
 })();
 
 /**

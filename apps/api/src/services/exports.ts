@@ -1,6 +1,6 @@
 // What the export services share (SPEC-13 §4.2): a download's file name and chunks, written by the documents
 // package's streaming writers from rows pulled as the client reads (INV-99).
-import type { Column, Row, Sheet, SummaryHeading, SummaryTotal } from "@senstosales/documents";
+import type { Column, GcDocument, Row, Sheet, SummaryHeading, SummaryTotal } from "@senstosales/documents";
 
 /** The writers, loaded on the first export: exceljs would add most of a second to every start of the app. */
 const writers = () => import("@senstosales/documents");
@@ -43,4 +43,10 @@ export const summaryFile = (
   chunks: (async function* () {
     yield* (await writers()).summaryChunks(heading, rows, total);
   })(),
+});
+
+/** The SPEC-12 guarantee-certificate workbook, named `fileName`. */
+export const gcFile = async (fileName: string, doc: GcDocument) => ({
+  fileName,
+  bytes: await (await writers()).buildGcWorkbook(doc),
 });

@@ -13,8 +13,9 @@ import type { SQL } from "drizzle-orm";
 import { and, eq, gt, gte, lte } from "drizzle-orm";
 import type { z } from "zod";
 
-import { poNotFound } from "../errors.ts";
+import { dcNotFound, onboardingRequired, poNotFound } from "../errors.ts";
 import type { Clock } from "../ports/clock.ts";
+import { findDcWithPo, itemsOfDc } from "../repositories/dc.ts";
 import type { Keyset } from "../repositories/keyset.ts";
 import { keysetRows, listKey } from "../repositories/keyset.ts";
 import type { ReportItem } from "../repositories/reports.ts";
@@ -30,12 +31,13 @@ import {
 } from "../repositories/reports.ts";
 import { inBatches } from "../repositories/sql.ts";
 import { findSupplier } from "../repositories/supplier.ts";
-import { mapped, summaryFile, xlsxFile } from "./exports.ts";
+import { gcFile, mapped, summaryFile, xlsxFile } from "./exports.ts";
 import { byNumber, LIST_READ_PAGE, pageOfRows } from "./paging.ts";
 
 type PendingQuery = z.output<(typeof routes)["reports.pendingExport"]["query"]>;
 type ReconciliationQuery = z.output<(typeof routes)["reports.reconciliationExport"]["query"]>;
 type ExportSelectedBody = z.output<(typeof routes)["reports.exportSelected"]["body"]>;
+type DcIdQuery = z.output<(typeof routes)["reports.guaranteeCertificateExport"]["query"]>;
 type Paged = { page: number; pageSize: number };
 
 /** Legacy's reconciliation tab without a full date range: the 30 days to today. */
@@ -204,6 +206,21 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     exportSelected(body: ExportSelectedBody) {
       const { exportSelected } = EXPORTS;
       return xlsxFile(exportSelected.fileName(), exportSelected.sheet, mapped(selectedRows(body), reconciliationCells));
+    },
+
+    /** The SPEC-12 guarantee-certificate workbook of the chosen DC, reached from the reports screen. */
+    async guaranteeCertificate({ dcId }: DcIdQuery) {
+      const [found, items, supplier, { documentSupplier }] = await Promise.all([
+        findDcWithPo(db, dcId),
+        itemsOfDc(db, dcId),
+        findSupplier(db),
+        import("@senstosales/documents"),
+      ]);
+      if (found === undefined) throw dcNotFound();
+      if (supplier === null) throw onboardingRequired();
+      const { dc, po: dcPo } = found;
+      const doc = { supplier: documentSupplier(supplier, dc), dc, po: dcPo, items };
+      return gcFile(EXPORTS.guaranteeCertificate.fileName(dc.number), doc);
     },
 
     async pending(query: PendingQuery & Paged) {

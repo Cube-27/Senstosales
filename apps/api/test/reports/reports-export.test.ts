@@ -2,7 +2,9 @@
 // legacy-derived goldens (INV-68) cell for cell, with the catalog's file names; Accepted is the received quantity
 // (INV-09) and only the balance is clamped (INV-61), as the goldens' worked values show.
 import type { NodeDb } from "@senstosales/db/node";
-import { RANGE } from "@senstosales/documents/test/reports/dataset";
+import { buildGcWorkbook } from "@senstosales/documents";
+import { RANGE, SUPPLIER } from "@senstosales/documents/test/reports/dataset";
+import type { IsoDate, Qty } from "@senstosales/domain";
 import { downloadFileName } from "@senstosales/schemas";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vite-plus/test";
 
@@ -122,6 +124,41 @@ describe("over the report dataset", () => {
 
     it("rejects an empty selection", async () => {
       expect((await send("/api/reports/export-selected", selected())).status).toBe(400);
+    });
+  });
+
+  describe("GET /api/reports/guarantee-certificate/export", () => {
+    it("is the SPEC-12 GC workbook of the chosen DC, named GC_<dc number>.xlsx", async () => {
+      const res = await send(`/api/reports/guarantee-certificate/export?dcId=${reportIds.dc["101"]}`);
+      expect(res.status).toBe(200);
+      expect(downloadFileName(res)).toBe("GC_101.xlsx");
+      const expected = await buildGcWorkbook({
+        supplier: {
+          ...{ name: SUPPLIER.name, address: SUPPLIER.address, contact: SUPPLIER.contact },
+          ...{ gstin: null, state: null, stateCode: null, description: null, jurisdiction: null },
+        },
+        dc: {
+          number: "101",
+          dcDate: "2025-04-25" as IsoDate,
+          gcNumber: "101",
+          gcDate: "2025-04-25" as IsoDate,
+          consigneeName: "Example Works Unit",
+          consigneeAddress: null,
+        },
+        po: { poNumber: "4500101", poDate: "2025-04-02" as IsoDate },
+        items: [
+          { poItemNo: 10, description: "Hex bolt M10", unit: "NOS", dspQty: 6_000 as Qty },
+          { poItemNo: 20, description: "Plain washer", unit: "NOS", dspQty: 5_000 as Qty },
+        ],
+      });
+      const got = await workbookGolden(new Uint8Array(await res.arrayBuffer()), "GC_101.xlsx", {});
+      expect(got).toEqual(await workbookGolden(expected, "GC_101.xlsx", {}));
+    });
+
+    it("answers 404 for an unknown DC", async () => {
+      const res = await send(`/api/reports/guarantee-certificate/export?dcId=${id("ZZ")}`);
+      expect(res.status).toBe(404);
+      expect(await res.json()).toMatchObject({ code: "dc-not-found" });
     });
   });
 });
