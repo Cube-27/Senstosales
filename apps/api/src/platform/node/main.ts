@@ -13,6 +13,7 @@ import { createApp } from "../../app.ts";
 import type { Logger, LogFields } from "../../ports/logger.ts";
 import { healthRoutes } from "../../routes/health.ts";
 import { apiRoutes } from "../../routes/index.ts";
+import { restoreRoutes } from "../../routes/restore.ts";
 import { resolveDataDir } from "./data-dir.ts";
 import { openRuntime } from "./runtime.ts";
 import { spa } from "./static.ts";
@@ -29,6 +30,9 @@ export interface ServerOptions {
 export interface RunningServer {
   readonly host: string;
   readonly port: number;
+  /** Starts today's backup unless it exists; `main` calls it once the port is announced (SPEC-21, C9). */
+  startDailyBackup(): Promise<void>;
+  /** Stops serving, waits for the running job, then closes the database. */
   close(): Promise<void>;
 }
 
@@ -48,7 +52,17 @@ function listen(server: Server): Promise<AddressInfo> {
 }
 
 export async function startServer(options: ServerOptions): Promise<RunningServer> {
-  const { db, services, close: closeRuntime } = await openRuntime({ ...options, logger: stderrLogger });
+  const {
+    db,
+    services,
+    jobs,
+    close: closeRuntime,
+    restore,
+    startDailyBackup,
+  } = await openRuntime({
+    ...options,
+    logger: stderrLogger,
+  });
 
   // The Host guard needs the port, known only once listening; the app answers from then on, and nobody knows the
   // port earlier.
@@ -59,6 +73,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     {
       ...healthRoutes({ version: options.version, db }),
       ...apiRoutes(services),
+      ...restoreRoutes(restore),
     },
   );
   app.get("*", spa(options.webRoot));
@@ -67,14 +82,18 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   return {
     host: address.address,
     port: address.port,
+    startDailyBackup,
     close: () =>
       new Promise<void>((resolve, reject) => {
         server.closeAllConnections();
         server.close((err) => {
-          closeRuntime().then(
-            () => (err ? reject(err) : resolve()),
-            (closeErr: unknown) => reject(err ?? closeErr),
-          );
+          jobs
+            .idle()
+            .then(closeRuntime)
+            .then(
+              () => (err ? reject(err) : resolve()),
+              (closeErr: unknown) => reject(err ?? closeErr),
+            );
         });
       }),
   };

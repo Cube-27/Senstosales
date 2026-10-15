@@ -41,6 +41,11 @@ export async function findActiveJob(db: Db) {
   return row ?? null;
 }
 
+/** Every queued or running job. */
+export function activeJobs(db: Db): Promise<JobRow[]> {
+  return db.query(db.build.select().from(job).where(inArray(job.status, ACTIVE)));
+}
+
 export async function findJob(db: Db, id: string): Promise<JobRow | null> {
   const rows = await db.query(db.build.select().from(job).where(eq(job.id, id)).limit(1));
   return rows[0] ?? null;

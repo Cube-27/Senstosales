@@ -61,6 +61,7 @@ const RESOURCES: [string, string[]][] = [
       "settings.clearBhelPassword",
     ],
   ],
+  ["backups", ["backups.list", "backups.restore"]],
   ["buyers", ["buyers.list", "buyers.create", "buyers.update", "buyers.delete"]],
   [
     "po",

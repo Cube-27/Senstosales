@@ -7,7 +7,7 @@ import type { ErrorBody } from "@senstosales/schemas";
 type Details = NonNullable<ErrorBody["details"]>;
 
 export abstract class AppError extends Error {
-  abstract readonly status: 400 | 401 | 403 | 404 | 409 | 413 | 415;
+  abstract readonly status: 400 | 401 | 403 | 404 | 409 | 413 | 415 | 500;
   readonly code: string;
   readonly details: Details | undefined;
 
@@ -53,6 +53,11 @@ export class PayloadTooLargeError extends AppError {
 /** A mutation that is not JSON (INV-102). */
 export class UnsupportedMediaTypeError extends AppError {
   readonly status = 415;
+}
+
+/** An operation that failed part way, whose message tells the user what was kept and where (SPEC-21 restore). */
+export class OperationFailedError extends AppError {
+  readonly status = 500;
 }
 
 /** A 400 naming the field, so a form can show the message there. */

@@ -7,10 +7,13 @@ import { createSessions, type Scraper } from "@senstosales/scraper";
 import pkg from "../../../package.json" with { type: "json" };
 import type { Logger } from "../../ports/logger.ts";
 import { bhelScrapeHandlers } from "../../services/bhel-sync.ts";
+import { backupHandlers, startDailyBackup } from "../../services/backup.ts";
 import { folderImportHandlers } from "../../services/folder-import.ts";
 import { createServices, type Services } from "../../services/index.ts";
 import { jobWorker } from "../../services/job-worker.ts";
 import { recomputeAllHandlers } from "../../services/recompute.ts";
+import { restoreService, type RestoreService } from "../../services/restore.ts";
+import { createBackupFiles } from "./backup-fs.ts";
 import { createClock } from "./clock.ts";
 import { prepareDataDir } from "./data-dir.ts";
 import { createJobRunner, type JobRunner } from "./job-runner.ts";
@@ -35,6 +38,10 @@ export interface Runtime {
   readonly jobs: JobRunner;
   /** At exit: closes every scraper session (INV-100), then `db`. */
   close(): Promise<void>;
+  readonly restore: RestoreService;
+  /** Starts today's backup unless it exists (SPEC-21). The caller runs it once the app serves, never during
+   * startup (C9). */
+  startDailyBackup(): Promise<void>;
 }
 
 /** Opens the database in `dataDir`, upgrading it first if it is older (C9), and builds the services. The caller
@@ -54,14 +61,15 @@ export async function openRuntime({
     db.close();
     throw err;
   }
-  // The backup handler arrives with SPEC-21; until then a start fails plainly. Jobs run only when a user starts one,
-  // never at startup (C9).
+  // Jobs run only when a user starts one or once the app serves (the daily backup), never at startup (C9).
   const storage = createFsStorage(dataDir);
   const bhel = scraper && { scraper, sessions: createSessions(clock) };
+  const backups = createBackupFiles({ db, dataDir, storage, appVersion: version, now: clock.now });
   const handlers = {
     ...folderImportHandlers({ db, clock, storage }),
     ...recomputeAllHandlers({ db, clock }),
     ...(bhel && bhelScrapeHandlers({ db, clock, storage, ...bhel })),
+    ...backupHandlers({ clock, backups }),
   };
   const jobs = createJobRunner(jobWorker({ db, clock, logger, handlers }));
   // `unref`: the sweep never keeps the process alive on its own.
@@ -74,5 +82,13 @@ export async function openRuntime({
       db.close();
     }
   };
-  return { db, services: createServices({ db, clock, jobs, storage, ...(bhel && { bhel }) }), jobs, close };
+  const services = createServices({ db, clock, jobs, storage, ...(bhel && { bhel }) });
+  return {
+    db,
+    services,
+    jobs,
+    close,
+    restore: restoreService({ db, clock, backups, logger }),
+    startDailyBackup: () => startDailyBackup({ clock, backups, jobs: services.jobs, logger }),
+  };
 }
