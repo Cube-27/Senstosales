@@ -130,6 +130,18 @@ describe("global search (SPEC-15 PR 5, INV-24)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("a focused hit opens its own page on Enter, not the selected one", async () => {
+    searchApi();
+    const { router } = renderApp("/");
+    const dialog = await openSearch();
+    await userEvent.type(within(dialog).getByRole("textbox", { name: /Search POs/ }), "12");
+    const options = await within(dialog).findAllByRole("option");
+    options[1]?.focus();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/dc/${id("DC1")}`));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("a linked document opens its page", async () => {
     searchApi();
     const { router } = renderApp("/");

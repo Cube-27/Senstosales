@@ -72,8 +72,15 @@ export function ResultList({
             key={`${hit.type}-${hit.id}`}
             role="option"
             aria-selected={i === selected}
+            tabIndex={-1}
             onMouseEnter={() => onHover(i)}
             onClick={() => onOpen(hit)}
+            onKeyDown={(e) => {
+              // A focused option opens on Enter itself; the dialog's handler serves the search box.
+              if (e.key !== "Enter") return;
+              e.stopPropagation();
+              onOpen(hit);
+            }}
             className={cn(
               "flex h-11 cursor-pointer items-center gap-3 border-b border-border/50 px-3",
               i === selected ? "bg-primary/10 text-accent" : "text-muted hover:bg-surface-sunken hover:text-foreground",
