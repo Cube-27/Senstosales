@@ -8,6 +8,7 @@ import { dashboardRoutes } from "./dashboard.ts";
 import { deliveryTrackerRoutes } from "./delivery-tracker.ts";
 import { dcRoutes } from "./dc.ts";
 import { flagsRoutes } from "./flags.ts";
+import { invoiceRoutes } from "./invoice.ts";
 import { jobStagingRoutes, jobsRoutes } from "./jobs.ts";
 import { onboardingRoutes } from "./onboarding.ts";
 import { poManualQtyRoutes, poRoutes } from "./po.ts";
@@ -33,6 +34,7 @@ export function apiRoutes(services: Services): Handlers {
     ...srvUploadRoutes(services.srvIngest),
     ...srvRoutes(services.srv),
     ...dcRoutes(services.dc),
+    ...invoiceRoutes(services.invoice),
     ...flagsRoutes(services.flags),
     ...auditRoutes(services.audit),
     ...deliveryTrackerRoutes(services.deliveryTracker),

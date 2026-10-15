@@ -13,6 +13,7 @@ import { deliveryTrackerService } from "./delivery-tracker.ts";
 import { dcService } from "./dc.ts";
 import { flagsService } from "./flags.ts";
 import { folderImportService } from "./folder-import.ts";
+import { invoiceService } from "./invoice.ts";
 import { jobsService } from "./jobs.ts";
 import { poIngestService } from "./po-ingest.ts";
 import { createOnboardingService } from "./onboarding.ts";
@@ -55,6 +56,7 @@ export function createServices(deps: ServiceDeps) {
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),
     dc: dcService(withSupplier),
+    invoice: invoiceService(withSupplier),
     flags: flagsService(deps),
     audit: auditService(deps),
     deliveryTracker: tracker,

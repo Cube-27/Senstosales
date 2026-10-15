@@ -1,6 +1,6 @@
 // Settings (A2-4): the GST percentages copied onto each invoice and the settings-page preferences, all `settings`
 // rows of the supplier. An update replaces every row.
-import { GST_KEYS, seedStatements, WriteBatch, type GstRates } from "@senstosales/db";
+import { GST_KEYS, seedStatements, WriteBatch, type Db, type GstRates } from "@senstosales/db";
 import { parsePct, pctToString } from "@senstosales/domain";
 
 import * as repo from "../repositories/supplier.ts";
@@ -16,16 +16,24 @@ const isGstKey = (key: string): boolean => key === GST_KEYS.cgstPct || key === G
 /** The rates as the audit row stores them: their strings. */
 export const ratesForAudit = (r: GstRates) => ({ cgstPct: pctToString(r.cgstPct), sgstPct: pctToString(r.sgstPct) });
 
-function toSettings(rows: readonly repo.SettingRow[]): Settings {
+function ratesOf(rows: readonly repo.SettingRow[]): GstRates {
   const values = new Map(rows.map((r) => [r.key, r.value]));
   const rate = (key: string) => {
     const parsed = parsePct(values.get(key) ?? "");
     if (!parsed.ok) throw new Error(`Setting ${key}: ${parsed.error}`);
     return parsed.value;
   };
-  const preferences = Object.fromEntries(rows.filter((r) => !isGstKey(r.key)).map((r) => [r.key, r.value]));
-  return { cgstPct: rate(GST_KEYS.cgstPct), sgstPct: rate(GST_KEYS.sgstPct), preferences };
+  return { cgstPct: rate(GST_KEYS.cgstPct), sgstPct: rate(GST_KEYS.sgstPct) };
 }
+
+function toSettings(rows: readonly repo.SettingRow[]): Settings {
+  const preferences = Object.fromEntries(rows.filter((r) => !isGstKey(r.key)).map((r) => [r.key, r.value]));
+  return { ...ratesOf(rows), preferences };
+}
+
+/** The supplier's GST rates, which an invoice copies at creation (A2-4). */
+export const gstRatesOf = async (db: Db, supplierId: string): Promise<GstRates> =>
+  ratesOf(await repo.settingsOf(db, supplierId));
 
 export function createSettingsService({ db, clock, supplierId }: SupplierDeps) {
   return {

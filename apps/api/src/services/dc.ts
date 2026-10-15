@@ -4,8 +4,8 @@
 // batch: the version guards, the DC rows, the SRV links to its numbers, the recompute of every PO whose rows or flags
 // change, and the audit row (C4).
 import type { Statement } from "@senstosales/db";
-import { ConflictError as StaleVersionError, dc, dcItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
-import type { DeleteBlockReason, Issue, Money, Qty } from "@senstosales/domain";
+import { dc, dcItem, po, updateWithVersion, WriteBatch } from "@senstosales/db";
+import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
   defaultGc,
@@ -20,7 +20,7 @@ import type { routes } from "@senstosales/schemas";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 
-import { ConflictError, fieldError, NotFoundError, ValidationError } from "../errors.ts";
+import { ConflictError, fieldError, linesError, NotFoundError } from "../errors.ts";
 import { newId } from "../ids.ts";
 import type { DcFilters } from "../repositories/dc.ts";
 import {
@@ -46,6 +46,7 @@ import type { Comparator } from "./paging.ts";
 import { byNum, byNumber, byText, desc, inValueRange, on, page } from "./paging.ts";
 import type { PoSnapshot } from "./recompute.ts";
 import { loadPoSnapshot, recomputeStatements } from "./recompute.ts";
+import { retrying } from "./retry.ts";
 
 export type DcCreate = z.output<(typeof routes)["dc.create"]["body"]>;
 type DcUpdate = z.output<(typeof routes)["dc.update"]["body"]>;
@@ -79,24 +80,6 @@ const DELETE_BLOCKED: Partial<Record<DeleteBlockReason, string>> = {
   "dc-has-invoice": "This DC has an invoice. Delete the invoice first.",
   "dc-linked-srv": "An SRV is linked to this DC, so it cannot be deleted.",
 };
-
-/**
- * A write whose PO changed between its read and its commit is rebuilt from fresh rows; the guard makes it fail
- * instead of writing derived columns from rows it never saw. A bound keeps a PO that never settles from looping.
- */
-const ATTEMPTS = 3;
-
-/** Runs `attempt` again while its batch fails on a stale row of one of `tables`, at most `ATTEMPTS` times. */
-async function retrying<T>(tables: readonly string[], attempt: () => Promise<T>): Promise<T> {
-  for (let n = 1; ; n++) {
-    try {
-      return await attempt();
-    } catch (err) {
-      const retry = err instanceof StaleVersionError && tables.includes(err.table) && n < ATTEMPTS;
-      if (!retry) throw err;
-    }
-  }
-}
 
 /** A list row: the legacy DC list's totals over the DC's lines. */
 type Line = Awaited<ReturnType<typeof dcListLines>>[number];
@@ -208,7 +191,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     ]);
     const lines = body.items.map((item) => ({ poItemId: item.poItemId, qty: item.dspQty }));
     const issues = validateDcLines({ poItemIds: new Set(snapshot.items.map((i) => i.id)), lines });
-    if (issues.length > 0) throw linesError(issues);
+    if (issues.length > 0) throw linesError(issues, dcBodyPath);
 
     const now = clock.now();
     const financialYear = fyOf(body.dcDate);
@@ -420,9 +403,5 @@ export type DcService = ReturnType<typeof dcService>;
 const gcOf = (body: Omit<Numbered, "number">, number: string) =>
   defaultGc({ dcNumber: number, dcDate: body.dcDate, gcNumber: body.gcNumber?.trim() ?? null, gcDate: body.gcDate });
 
-/** The 400 for invalid lines: the first issue's code, and every issue at its body path (SPEC-11 §4.3). */
-function linesError(issues: readonly Issue[]): ValidationError {
-  const path = (p: string) => `body.${p.replace(/^lines/, "items").replace(/\.qty$/, ".dspQty")}`;
-  const fields = issues.map((issue) => ({ path: path(issue.path), message: issue.message }));
-  return new ValidationError(issues[0]!.code, issues[0]!.message, { fields });
-}
+/** A DC line issue's path in the create body: `lines.N.qty` is `items.N.dspQty` (D-0250). */
+const dcBodyPath = (path: string) => path.replace(/^lines/, "items").replace(/\.qty$/, ".dspQty");

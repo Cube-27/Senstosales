@@ -1,6 +1,7 @@
 // The one error hierarchy (ARCHITECTURE §4): services and middleware throw these, and `onError` turns each into its
 // status and the body `{ code, message, details? }`. `code` is stable for the UI; `message` is plain language for the
 // user (C11); `details` never carries a secret or a document body (INV-81, INV-106).
+import type { Issue } from "@senstosales/domain";
 import type { ErrorBody } from "@senstosales/schemas";
 
 type Details = NonNullable<ErrorBody["details"]>;
@@ -57,6 +58,15 @@ export class UnsupportedMediaTypeError extends AppError {
 /** A 400 naming the field, so a form can show the message there. */
 export const fieldError = (code: string, field: string, message: string): ValidationError =>
   new ValidationError(code, message, { fields: [{ path: `body.${field}`, message }] });
+
+/**
+ * The 400 for invalid document lines: the first issue's code, and every issue at its body path, so a form can show
+ * each message on its line (SPEC-11 §4.3, D-0250). `bodyPath` maps a domain path to the body's field names.
+ */
+export function linesError(issues: readonly Issue[], bodyPath = (path: string) => path): ValidationError {
+  const fields = issues.map((issue) => ({ path: `body.${bodyPath(issue.path)}`, message: issue.message }));
+  return new ValidationError(issues[0]!.code, issues[0]!.message, { fields });
+}
 
 /** An edit that sent a version someone else has since changed (INV-95, D-0124). */
 export const staleVersion = (): ConflictError =>

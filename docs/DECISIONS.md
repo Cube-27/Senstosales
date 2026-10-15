@@ -2226,3 +2226,51 @@ None.
 - Alternatives: One code per reason.
 - Why: Matches PO delete; the UI shows the reason.
 - Reversible: yes.
+
+### D-0272 — DC-sourced invoice lines are built from the DC's lines
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 3 (#60) · Status: decided
+- Decision: After INV-29 validation, the stored lines come from the DC's lines (DC order, DC qty, PO rate), not from the request.
+- Alternatives: Store the request's lines.
+- Why: Validation has proved them equal, and building from the DC removes a lookup per line.
+- Reversible: yes.
+
+### D-0273 — Invoice create 409 codes
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 3 (#60) · Status: decided
+- Decision: A unique-index refusal maps to `invoice-number-taken` ("Invoice N already exists in FY X.") or `dc-has-invoice` ("DC N already has an invoice."). There is no pre-read check; the indexes decide.
+- Alternatives: Pre-check with a read, which would still need the index for concurrent creates.
+- Why: SPEC-11 §4.2 says to map the index violations, and one mechanism covers both the single and the concurrent case.
+- Reversible: yes.
+
+### D-0274 — Invoice 400 field paths
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 3 (#60) · Status: decided
+- Decision: As D-0250, the 400 carries the first issue's code and every issue at `body.lines.N.<field>`. An empty `lines` reports `dc-line-missing` (D-0041), not `no-lines`.
+- Alternatives: `no-lines` for an empty invoice.
+- Why: `validateDcInvoiceLines` already decides this, and C2 keeps the rule in one place.
+- Reversible: yes.
+
+### D-0275 — Invoice create guards and retries on the PO version
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 3 (#60) · Status: decided
+- Decision: The same rule as D-0247: `updateWithVersion(po)` first in the batch, with the version read before the snapshot, retried up to 3 times through the shared `retrying` helper.
+- Alternatives: No guard, which lets two invoices on one PO write `uninvoiced_qty` from stale rows.
+- Why: An invoice changes the PO's derived quantities.
+- Reversible: yes.
+
+### D-0276 — PO-direct kind is a 400 until PR 4
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 3 (#60) · Status: decided
+- Decision: `kind: "direct"` answers 400 `kind-unavailable` and writes nothing. PR 4 replaces this.
+- Alternatives: Narrow the shared body schema, which would break the client contract.
+- Why: The route body is a union, and a plain refusal is honest until the mode exists.
+- Reversible: yes.
+
+### D-0277 — Buyer snapshot as sent
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 3 (#60) · Status: decided
+- Decision: Create stores the buyer fields from the body (the form is prefilled by the preview, PR 4) and does not fill blanks from the `buyer` table.
+- Alternatives: Default blanks from the PO's buyer.
+- Why: C18 says not to invent defaults; the preview is where defaults come from.
+- Reversible: yes.
