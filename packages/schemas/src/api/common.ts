@@ -6,7 +6,6 @@ import { zPo, zPoItem } from "../entities/po.ts";
 import { PAGE_SIZES } from "../paging.ts";
 import { zCount, zFy, zId, zIsoDate, zMoney } from "../primitives.ts";
 
-
 /**
  * A list's query string. `sortKeys` is that list's allowlist, so an unknown sort column is a 400 (SPEC-10 §4.2).
  * Build each list's schema once, as a module constant, not per request.
