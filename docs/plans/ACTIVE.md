@@ -51,6 +51,7 @@ Full rows are in git history.
 - [SPEC-10 — PO, SRV, flags, audit, dashboard and search APIs](../specs/SPEC-10-po-srv-flags-read-api.md): PRs 1–6 (#44, #46, #49, #45, #50, #53)
 - [SPEC-11 — DC and invoice services and APIs](../specs/SPEC-11-dc-invoice-services.md): PRs 1–6 (#55, #59, #60, #63, #65, #67)
 - [SPEC-14 — Web shell, frozen design system, DataTable and platform adapter](../specs/SPEC-14-web-shell-design-datatable.md): PRs 1–8 (#78, #82)
+- [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md): PRs 1–5 (#83)
 
 ## Follow-ups
 
@@ -123,16 +124,6 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 | 3   | Registers and list CSVs                             | done (#69) | make the last keyset key part's uniqueness typed or tested across a page boundary (#58 review) |
 | 4   | Pending, reconciliation, export-selected, GC report | done (#75) |                                                                                                |
 | 5   | Report lists and delivery-tracker export            | done (#66) |                                                                                                |
-
-## [SPEC-15 — Web: onboarding, login, settings, dashboard and search](../specs/SPEC-15-web-onboarding-login-settings-dashboard.md)
-
-| PR  | Scope                      | Status | Notes |
-| --- | -------------------------- | ------ | ----- |
-| 1   | Login and session handling | todo   |       |
-| 2   | Onboarding                 | todo   |       |
-| 3   | Settings                   | todo   |       |
-| 4   | Dashboard                  | todo   |       |
-| 5   | Global search              | todo   |       |
 
 ## [SPEC-16 — Web: PO and SRV screens, uploads and folder import](../specs/SPEC-16-web-po-srv-import.md)
 
