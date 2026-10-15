@@ -13,7 +13,7 @@ function ErrorLine({ message, compact }: AlertProps & { readonly compact: boolea
       title={compact ? (message ?? undefined) : undefined}
       className={cn(
         "flex items-center gap-2 rounded-md border border-error/20 bg-error/10 px-3 text-error",
-        compact ? "h-8 w-96 shrink-0 role-body-text-sm" : "min-h-10 role-body-text",
+        compact ? "h-8 w-96 min-w-0 role-body-text-sm" : "min-h-10 role-body-text",
         !message && "invisible",
       )}
     >

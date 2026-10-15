@@ -279,8 +279,7 @@ export function DataTable<Row extends RowData>(props: Readonly<DataTableProps<Ro
     <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-card">
       <div className="overflow-x-auto">
         {/* The gutter is always reserved, so a scrollbar appearing never narrows the columns. */}
-        <div
-          role="region"
+        <section
           aria-label="Table rows"
           // Focusable, so the rows of a larger page can be scrolled from the keyboard.
           tabIndex={0}
@@ -367,7 +366,7 @@ export function DataTable<Row extends RowData>(props: Readonly<DataTableProps<Ro
               )}
             </tbody>
           </table>
-        </div>
+        </section>
       </div>
       <Pagination
         page={props.page}
