@@ -46,7 +46,7 @@ function columns(gemc: boolean, sn: (line: Line) => number): Column<Line>[] {
       title: (line) => materialTitle(line.materialCode, line.description, line.drawingNo),
       render: (line) => <MaterialCell code={line.materialCode} description={line.description} />,
     },
-    // v1 stores no HSN code (EC-50, EC-61).
+    // v1 stores no HSN code (EC-50, EC-62).
     { key: "hsn", header: "HSN", width: "72px", render: () => "—" },
     { key: "unit", header: "Unit", width: "64px", render: (line) => line.unit ?? "—" },
     {

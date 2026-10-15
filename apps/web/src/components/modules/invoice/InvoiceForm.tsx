@@ -225,7 +225,7 @@ function LineItems({ preview, taxes }: { readonly preview: Preview | null; reado
             <LineCell title={materialTitle(line.materialCode, line.description)}>
               <MaterialCell code={line.materialCode} description={line.description} />
             </LineCell>
-            {/* v1 stores no HSN code (EC-50, EC-61). */}
+            {/* v1 stores no HSN code (EC-50, EC-62). */}
             <LineCell align="center">—</LineCell>
             <LineCell align="center">{line.unit ?? "—"}</LineCell>
             <LineCell align="right">{preview && <QtyCell preview={preview} i={i} />}</LineCell>

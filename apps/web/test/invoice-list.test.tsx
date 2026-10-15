@@ -70,7 +70,7 @@ describe("/invoice (SPEC-18 PR 3)", () => {
     expect(screen.getByText("Taxable Value").parentElement?.textContent).toContain("1,000");
   });
 
-  it("keeps the legacy row checkboxes and select-all, which drive no action (C7, EC-63)", async () => {
+  it("keeps the legacy row checkboxes and select-all, which drive no action (C7, EC-64)", async () => {
     const calls = api([invoiceRow(), invoiceRow({ id: DIRECT_ID, number: "INV-18", kind: "direct", dc: null })]);
     renderApp("/invoice");
     await screen.findByRole("link", { name: "INV-18" });
