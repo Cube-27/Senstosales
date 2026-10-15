@@ -23,6 +23,7 @@ import {
   qtyColumn,
   StatCard,
   StatCardRow,
+  tableQuery,
   useToast,
 } from "../../common/index.ts";
 import { dcDeleteReason } from "../delete-reasons.ts";
@@ -38,7 +39,7 @@ interface RowActionsProps {
 }
 
 /** Generate Invoice (kept in its slot once invoiced, C8), the DC's Excel, and delete with its reason (INV-35). */
-function RowActions({ row, downloading, onDownload, onDelete }: RowActionsProps) {
+function RowActions({ row, downloading, onDownload, onDelete }: Readonly<RowActionsProps>) {
   // The list row knows the invoice only; an SRV-linked DC is refused by the API with its reason (EC-62).
   const blocked = dcDeleteReason({ invoice: row.invoice, srvs: [] });
   return (
@@ -241,9 +242,7 @@ export function DCList() {
         <DataTable
           columns={cols}
           rows={rows.data?.items}
-          total={rows.data?.total ?? 0}
-          state={rows.isError ? "error" : rows.isFetching ? "loading" : "ready"}
-          error={rows.error?.message}
+          {...tableQuery(rows)}
           emptyText="No delivery challans found."
           rowHighlight={(row) => row.openFlagCount > 0}
           {...list.table}

@@ -117,7 +117,7 @@ interface InvoiceHeaderEditProps {
  * The invoice header edit (SPEC-18 §2, INV-33): the fields the legacy page edited, in a dialog over the page so
  * editing moves nothing (C8). Lines, quantities, rates and taxes never change after save.
  */
-export function InvoiceHeaderEdit({ invoice, open, onClose }: InvoiceHeaderEditProps) {
+export function InvoiceHeaderEdit({ invoice, open, onClose }: Readonly<InvoiceHeaderEditProps>) {
   const invalidate = useInvalidate();
   const { toast } = useToast();
   const { register, control, getValues, reset } = useForm<InvoiceEditValues>({ values: valuesOf(invoice) });

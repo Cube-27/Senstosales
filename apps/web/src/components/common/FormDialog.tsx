@@ -19,7 +19,16 @@ export interface FormDialogProps {
 }
 
 /** A dialog that edits fields over the page (a document's header): the fields, an error line, Cancel and Save. */
-export function FormDialog({ open, onClose, title, description, error, saving, onSave, children }: FormDialogProps) {
+export function FormDialog({
+  open,
+  onClose,
+  title,
+  description,
+  error,
+  saving,
+  onSave,
+  children,
+}: Readonly<FormDialogProps>) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     onSave();

@@ -119,11 +119,11 @@ function DocumentFields({
   preview,
   duplicate,
   onNumberTyped,
-}: {
-  readonly preview: Preview | null;
-  readonly duplicate: boolean;
+}: Readonly<{
+  preview: Preview | null;
+  duplicate: boolean;
   onNumberTyped(): void;
-}) {
+}>) {
   const { register } = useFormContext<InvoiceFormValues>();
   const dc = preview?.dc ?? null;
   const source = preview && <SourceLink po={preview.po} dc={dc} />;
@@ -219,9 +219,7 @@ function LineItems({ preview, taxes }: { readonly preview: Preview | null; reado
     <section aria-label="Line Items" className="overflow-hidden rounded-md border border-border bg-surface">
       <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 role-section-title">
         <span>Line Items</span>
-        {preview && preview.dc === null && (
-          <span className="role-helper-text">Select lines and set the invoice qty.</span>
-        )}
+        {preview?.dc === null && <span className="role-helper-text">Select lines and set the invoice qty.</span>}
       </h2>
       <LineTable columns={COLUMNS} empty={empty}>
         {lines.map((line, i) => (

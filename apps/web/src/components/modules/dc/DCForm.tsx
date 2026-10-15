@@ -92,7 +92,7 @@ function lineValues(items: readonly Item[], qty: readonly Qty[]) {
 }
 
 /** The header fields; the GC number and date show the DC's until typed (INV-26). */
-function ChallanFields({ duplicate, onNumberTyped }: { readonly duplicate: boolean; onNumberTyped(): void }) {
+function ChallanFields({ duplicate, onNumberTyped }: Readonly<{ duplicate: boolean; onNumberTyped(): void }>) {
   const { register, control, watch, setValue } = useFormContext<DcFormValues>();
   const [number, dcDate, gcNumber, gcDate] = watch(["number", "dcDate", "gcNumber", "gcDate"]);
   return (

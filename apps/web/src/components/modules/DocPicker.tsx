@@ -18,7 +18,7 @@ interface DocPickerProps {
  * The create forms' source search (legacy header autocomplete and Link): the global search's hits of `types`; picking
  * one links it, as does Link after a pick.
  */
-export function DocPicker({ types, placeholder, onLink }: DocPickerProps) {
+export function DocPicker({ types, placeholder, onLink }: Readonly<DocPickerProps>) {
   const [q, setQ] = useState("");
   const [chosen, setChosen] = useState<SearchHit | null>(null);
   const query = q.trim();

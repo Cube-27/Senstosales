@@ -22,6 +22,7 @@ import {
   qtyColumn,
   StatCard,
   StatCardRow,
+  tableQuery,
   useToast,
 } from "../../common/index.ts";
 import type { InvoiceSearch } from "./search.ts";
@@ -220,9 +221,7 @@ export function InvoiceList() {
         <DataTable
           columns={cols}
           rows={rows.data?.items}
-          total={rows.data?.total ?? 0}
-          state={rows.isError ? "error" : rows.isFetching ? "loading" : "ready"}
-          error={rows.error?.message}
+          {...tableQuery(rows)}
           emptyText="No invoices found."
           {...list.table}
         />

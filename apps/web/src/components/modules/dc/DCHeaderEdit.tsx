@@ -61,7 +61,7 @@ interface DCHeaderEditProps {
  * The DC header edit (SPEC-18 §2, INV-33): the fields the legacy page edited, in a dialog over the page so editing
  * moves nothing (C8). Lines and quantities never change after save.
  */
-export function DCHeaderEdit({ dc, open, onClose }: DCHeaderEditProps) {
+export function DCHeaderEdit({ dc, open, onClose }: Readonly<DCHeaderEditProps>) {
   const invalidate = useInvalidate();
   const { toast } = useToast();
   const { register, control, getValues, reset } = useForm<Values>({ values: valuesOf(dc) });
