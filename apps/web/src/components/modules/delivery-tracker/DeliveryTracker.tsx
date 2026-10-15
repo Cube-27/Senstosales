@@ -6,21 +6,22 @@ import { useDownload } from "../../../hooks/useDownload.ts";
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
 import { api, apiQuery } from "../../../lib/api.ts";
-import { AlertTriangle, CalendarIcon, Clock, FileDown, Loading, Plus, TrendingDown } from "../../../lib/icons.ts";
+import { AlertTriangle, CalendarIcon, Clock, Plus, TrendingDown } from "../../../lib/icons.ts";
 import { todayIst } from "../../../lib/today.ts";
 import {
   Badge,
-  Button,
   type Column,
   DataTable,
+  DownloadButton,
   ListToolbar,
   PageHeader,
   qtyColumn,
   StatCard,
   StatCardRow,
+  tableQuery,
 } from "../../common/index.ts";
-import { anyFilter, CHIPS, CLEARED, isActive, toggleChip, toggleStatus } from "./chips.ts";
-import { type TrackerSearch, trackerFilters } from "./search.ts";
+import { anyFilter, CLEARED, isActive, toggleChip, toggleStatus } from "./chips.ts";
+import { type TrackerStatus, type TrackerSearch, trackerFilters } from "./search.ts";
 import { SmartFilterChips } from "./SmartFilterChips.tsx";
 import { TrackerFilters } from "./TrackerFilters.tsx";
 
@@ -92,36 +93,35 @@ const COLUMNS: Column<Lot>[] = [
   { key: "daysToDue", header: "Days Overdue", width: "132px", render: (l) => <DaysToDue days={l.daysToDue} /> },
 ];
 
-/** The stat cards; the three counts double as status toggles (D-0240). */
-function TrackerStats({ search, onToggle }: { readonly search: TrackerSearch; onToggle(s: Status): void }) {
+/** The three counting cards, each also a status toggle (D-0240). */
+const STATUS_CARDS = [
+  { status: "overdue", title: "Overdue", count: "overdueCount", Icon: AlertTriangle, color: "error" },
+  { status: "due-soon", title: "Due This Week", count: "dueSoonCount", Icon: Clock, color: "warning" },
+  {
+    status: "due-this-month",
+    title: "Due This Month",
+    count: "dueThisMonthCount",
+    Icon: CalendarIcon,
+    color: "primary",
+  },
+] as const;
+
+/** The stat cards; the three counts double as status toggles. */
+function TrackerStats({ search, onToggle }: { readonly search: TrackerSearch; onToggle(s: TrackerStatus): void }) {
   const stats = useQuery(apiQuery("deliveryTracker.stats", { query: trackerFilters(search) })).data;
-  const count = (n: number | undefined) => (n === undefined ? "—" : fmtCount(n));
   return (
     <StatCardRow>
-      <StatCard
-        title="Overdue"
-        value={count(stats?.overdueCount)}
-        icon={<AlertTriangle className="size-4" />}
-        color="error"
-        onClick={() => onToggle("overdue")}
-        isActive={search.status === "overdue"}
-      />
-      <StatCard
-        title="Due This Week"
-        value={count(stats?.dueSoonCount)}
-        icon={<Clock className="size-4" />}
-        color="warning"
-        onClick={() => onToggle("due-soon")}
-        isActive={search.status === "due-soon"}
-      />
-      <StatCard
-        title="Due This Month"
-        value={count(stats?.dueThisMonthCount)}
-        icon={<CalendarIcon className="size-4" />}
-        color="primary"
-        onClick={() => onToggle("due-this-month")}
-        isActive={search.status === "due-this-month"}
-      />
+      {STATUS_CARDS.map(({ status, title, count, Icon, color }) => (
+        <StatCard
+          key={status}
+          title={title}
+          value={stats ? fmtCount(stats[count]) : "—"}
+          icon={<Icon className="size-4" />}
+          color={color}
+          onClick={() => onToggle(status)}
+          isActive={search.status === status}
+        />
+      ))}
       <StatCard
         title="Pending Value"
         value={stats ? fmtMoneyCompactSpaced(stats.pendingValue) : "—"}
@@ -131,8 +131,6 @@ function TrackerStats({ search, onToggle }: { readonly search: TrackerSearch; on
     </StatCardRow>
   );
 }
-
-type Status = NonNullable<TrackerSearch["status"]>;
 
 /**
  * `/delivery-tracker` (SPEC-17 §2): the scheduled lots with the stat cards, smart chips, More Filters and the Excel
@@ -171,19 +169,11 @@ export function DeliveryTracker() {
             onClear={() => setFilters(CLEARED)}
             canClear={anyFilter(search)}
           />
-          <Button
-            size="sm"
-            onClick={() => void exportFile()}
-            disabled={download.busy}
-            aria-busy={download.busy}
-            className="border-excel bg-excel text-white hover:border-excel-hover hover:bg-excel-hover"
-          >
-            {download.busy ? <Loading className="animate-spin" aria-hidden /> : <FileDown aria-hidden />}
+          <DownloadButton busy={download.busy} onClick={() => void exportFile()}>
             Download
-          </Button>
+          </DownloadButton>
         </ListToolbar>
         <SmartFilterChips
-          chips={CHIPS}
           isActive={(chip) => isActive(chip, search, today)}
           onToggle={(chip) => setFilters(toggleChip(chip, search, today))}
           onClear={() => setFilters(CLEARED)}
@@ -191,10 +181,8 @@ export function DeliveryTracker() {
         <DataTable
           columns={COLUMNS}
           rows={lots.data?.items}
-          total={lots.data?.total ?? 0}
+          {...tableQuery(lots)}
           {...list.table}
-          state={lots.isError ? "error" : lots.isFetching ? "loading" : "ready"}
-          error={lots.error?.message}
           emptyText="No delivery items found for the selected filters"
           rowHighlight={(l) => l.overdue}
         />

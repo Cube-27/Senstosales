@@ -1,8 +1,9 @@
 import { fmtInstantDateTime, type RouteOutput } from "@senstosales/schemas";
 
 import { History } from "../../../lib/icons.ts";
+import { titleCase } from "../../../lib/text.ts";
 import { Badge, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../common/index.ts";
-import { eventTitle, moduleOf } from "./modules.ts";
+import { moduleOf } from "./modules.ts";
 
 export type AuditRow = RouteOutput<"audit.list">["items"][number];
 
@@ -28,7 +29,7 @@ export function LogDetailDialog({ entry, onClose }: LogDetailDialogProps) {
           <div className="flex flex-col gap-6 p-6">
             <div className="flex flex-col gap-1.5 border-b border-border/50 pb-4">
               <p className="role-field-label">Event Class</p>
-              <h3 className="role-section-title">{eventTitle(entry.action)}</h3>
+              <h3 className="role-section-title">{titleCase(entry.action)}</h3>
               <code className="role-helper-text">{entry.action}</code>
             </div>
             <div className="grid grid-cols-2 gap-8">

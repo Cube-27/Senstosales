@@ -3,7 +3,7 @@
 import { routes } from "@senstosales/schemas";
 import { z } from "zod";
 
-import { zRangeSearch } from "../../../lib/search.ts";
+import { sortIn, zRangeSearch } from "../../../lib/search.ts";
 
 const zSrvSort = routes["srv.list"].query.shape.sort.unwrap();
 const zPoSort = routes["srv.byPo"].query.shape.sort.unwrap();
@@ -18,14 +18,8 @@ export const zSrvSearch = routes["srv.list"].query.pick({ page: true, pageSize: 
 
 export type SrvSearch = z.output<typeof zSrvSearch>;
 
-type SrvSort = (typeof SRV_SORTS)[number];
-type PoSort = (typeof PO_SORTS)[number];
-
-const isIn = <T extends string>(options: readonly T[], value: string | undefined): value is T =>
-  options.some((o) => o === value);
-
 /** The search's sort for the SRV list, or none when it names a by-PO column. */
-export const srvSort = (sort: string | undefined): SrvSort | undefined => (isIn(SRV_SORTS, sort) ? sort : undefined);
+export const srvSort = sortIn(SRV_SORTS);
 
 /** The search's sort for the by-PO list, or none when it names an SRV column. */
-export const poSort = (sort: string | undefined): PoSort | undefined => (isIn(PO_SORTS, sort) ? sort : undefined);
+export const poSort = sortIn(PO_SORTS);

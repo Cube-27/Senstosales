@@ -1,6 +1,6 @@
 import { cn } from "../../../lib/cn.ts";
 import { Button } from "../../common/index.ts";
-import type { Chip, ChipColor } from "./chips.ts";
+import { type Chip, type ChipColor, CHIPS } from "./chips.ts";
 
 const TONE: Record<ChipColor, { active: string; inactive: string }> = {
   default: {
@@ -26,7 +26,6 @@ const TONE: Record<ChipColor, { active: string; inactive: string }> = {
 };
 
 export interface SmartFilterChipsProps {
-  readonly chips: readonly Chip[];
   isActive(chip: Chip): boolean;
   onToggle(chip: Chip): void;
   /** Clear all: kept in its slot (hidden) while no chip is on (INV-71). */
@@ -34,23 +33,23 @@ export interface SmartFilterChipsProps {
 }
 
 /** The tracker's quick filter chips: each a toggle; Clear all clears every filter. */
-export function SmartFilterChips({ chips, isActive, onToggle, onClear }: SmartFilterChipsProps) {
-  const anyActive = chips.some(isActive);
+export function SmartFilterChips({ isActive, onToggle, onClear }: SmartFilterChipsProps) {
+  const active = CHIPS.map(isActive);
   return (
     <div className="flex w-full min-w-0 items-center gap-2 border-b border-border px-4 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
-        {chips.map((chip) => {
-          const active = isActive(chip);
+        {CHIPS.map((chip, i) => {
+          const on = active[i] ?? false;
           return (
             <Button
               key={chip.id}
               variant="ghost"
               size="sm"
-              aria-pressed={active}
+              aria-pressed={on}
               onClick={() => onToggle(chip)}
               className={cn(
                 "h-8 shrink-0 rounded-md border px-3 role-body-text-sm",
-                TONE[chip.color][active ? "active" : "inactive"],
+                TONE[chip.color][on ? "active" : "inactive"],
               )}
             >
               {chip.label}
@@ -62,7 +61,7 @@ export function SmartFilterChips({ chips, isActive, onToggle, onClear }: SmartFi
         variant="ghost"
         size="sm"
         onClick={onClear}
-        className={cn("shrink-0 text-tertiary hover:text-foreground", !anyActive && "invisible")}
+        className={cn("shrink-0 text-tertiary hover:text-foreground", !active.includes(true) && "invisible")}
       >
         Clear all
       </Button>

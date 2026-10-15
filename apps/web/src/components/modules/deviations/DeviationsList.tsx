@@ -6,9 +6,19 @@ import { useMemo, useState } from "react";
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
 import { apiQuery } from "../../../lib/api.ts";
+import { searchText } from "../../../lib/search.ts";
 import { cn } from "../../../lib/cn.ts";
 import { CheckCircle, ExternalLink, Refresh, X } from "../../../lib/icons.ts";
-import { Badge, Button, Checkbox, type Column, DataTable, ListToolbar, PageHeader } from "../../common/index.ts";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  type Column,
+  DataTable,
+  ListToolbar,
+  PageHeader,
+  tableQuery,
+} from "../../common/index.ts";
 import { type FlagRow, issueText, SCOPE_LABEL } from "./issue.ts";
 import { ResolveDialog } from "./ResolveDialog.tsx";
 import type { DeviationsSearch } from "./search.ts";
@@ -109,7 +119,7 @@ export function DeviationsList() {
     page: search.page,
     pageSize: search.pageSize,
     dir: search.dir,
-    q: search.q?.trim() || undefined,
+    q: searchText(search.q),
     type: search.type,
     poId: search.poId,
     status: search.resolved ? undefined : ("open" as const),
@@ -153,10 +163,8 @@ export function DeviationsList() {
         <DataTable
           columns={cols}
           rows={flags.data?.items}
-          total={flags.data?.total ?? 0}
+          {...tableQuery(flags)}
           {...list.table}
-          state={flags.isError ? "error" : flags.isFetching ? "loading" : "ready"}
-          error={flags.error?.message}
           emptyText="No deviations found for the current filters"
           rowHighlight={(f) => f.status === "open"}
         />

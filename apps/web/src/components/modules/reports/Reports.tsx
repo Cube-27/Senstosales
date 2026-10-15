@@ -7,10 +7,20 @@ import { useDownload } from "../../../hooks/useDownload.ts";
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
 import { api, apiQuery } from "../../../lib/api.ts";
+import { searchText } from "../../../lib/search.ts";
 import { cn } from "../../../lib/cn.ts";
-import { FileDown } from "../../../lib/icons.ts";
 import { todayIst } from "../../../lib/today.ts";
-import { Button, ButtonGroup, DataTable, DatePicker, Input, PageHeader, type Selection } from "../../common/index.ts";
+import {
+  Button,
+  ButtonGroup,
+  DataTable,
+  DatePicker,
+  DownloadButton,
+  Input,
+  tableQuery,
+  PageHeader,
+  type Selection,
+} from "../../common/index.ts";
 import { PENDING_COLUMNS, type PendingRow, RECONCILIATION_COLUMNS, type ReconciliationRow } from "./columns.tsx";
 import { defaultRange, pendingSort, reconciliationSort, type ReportsSearch } from "./search.ts";
 
@@ -42,12 +52,7 @@ function useRowSelection(rows: readonly Row[] | undefined) {
       setSelected(new Map(kept));
     },
   };
-  const toggle = (row: Row): void => {
-    const keys = new Set(selection.selected);
-    if (!keys.delete(row.poItemId)) keys.add(row.poItemId);
-    selection.onChange(keys);
-  };
-  return { selection, toggle, poIds: [...new Set(selected.values())], clear: () => setSelected(new Map()) };
+  return { selection, poIds: [...new Set(selected.values())], clear: () => setSelected(new Map()) };
 }
 
 /** Both tabs' lists for the search; only the open tab's is read. */
@@ -57,7 +62,7 @@ function useReportRows(search: ReportsSearch, tab: Tab, range: Range) {
     pageSize: search.pageSize,
     dir: search.dir,
     ...range,
-    q: search.q?.trim() || undefined,
+    q: searchText(search.q),
   };
   const pending = useQuery({
     ...apiQuery("reports.pending", { query: { ...query, sort: pendingSort(search.sort) } }),
@@ -72,12 +77,12 @@ function useReportRows(search: ReportsSearch, tab: Tab, range: Range) {
 
 /** Download: the selected rows' POs (export-selected, then the selection clears), else the tab's workbook. */
 function exportRequest(tab: Tab, search: ReportsSearch, range: Range, poIds: readonly string[]) {
-  if (poIds.length > 0) return () => api.request("reports.exportSelected", { body: { poIds: [...poIds] } });
+  if (poIds.length > 0) return api.request("reports.exportSelected", { body: { poIds: [...poIds] } });
   // As legacy, the workbook covers the range in the tab's sort; the search box narrows only the screen.
   const query = { ...range, dir: search.dir };
   return tab === "pending"
-    ? () => api.request("reports.pendingExport", { query: { ...query, sort: pendingSort(search.sort) } })
-    : () => api.request("reports.reconciliationExport", { query: { ...query, sort: reconciliationSort(search.sort) } });
+    ? api.request("reports.pendingExport", { query: { ...query, sort: pendingSort(search.sort) } })
+    : api.request("reports.reconciliationExport", { query: { ...query, sort: reconciliationSort(search.sort) } });
 }
 
 interface ReportActionsProps {
@@ -115,16 +120,9 @@ function ReportActions(p: ReportActionsProps) {
       >
         Reset
       </Button>
-      <Button
-        size="sm"
-        onClick={p.onDownload}
-        disabled={p.busy}
-        aria-busy={p.busy}
-        className="w-36 border-excel bg-excel text-white hover:border-excel-hover hover:bg-excel-hover"
-      >
-        <FileDown className={cn(p.busy && "animate-spin")} aria-hidden />
+      <DownloadButton busy={p.busy} onClick={p.onDownload} className="w-36">
         {p.selectedCount > 0 ? `Download (${p.selectedCount})` : "Download"}
-      </Button>
+      </DownloadButton>
     </div>
   );
 }
@@ -156,24 +154,18 @@ export function Reports() {
     });
   };
 
-  const exportFile = (): Promise<void> => {
-    const fetchFile = exportRequest(tab, search, range, picked.poIds);
-    const selected = picked.poIds.length > 0;
-    return download.run(async () => {
-      const file = await fetchFile();
-      if (selected) picked.clear();
+  const exportFile = (): Promise<void> =>
+    download.run(async () => {
+      const file = await exportRequest(tab, search, range, picked.poIds);
+      if (picked.poIds.length > 0) picked.clear();
       return file;
     });
-  };
 
   const table = {
     ...list.table,
-    total: active.data?.total ?? 0,
-    state: active.isError ? "error" : active.isFetching ? "loading" : "ready",
-    error: active.error?.message,
+    ...tableQuery(active),
     emptyText: "No data found for this period",
     selection: picked.selection,
-    onRowClick: picked.toggle,
   } as const;
 
   return (

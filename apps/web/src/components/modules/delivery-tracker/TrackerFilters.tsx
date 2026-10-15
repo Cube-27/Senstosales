@@ -2,6 +2,7 @@ import type { IsoDate } from "@senstosales/domain";
 import { useState } from "react";
 
 import { CalendarIcon, Filter, TrendingDown, X } from "../../../lib/icons.ts";
+import { orNone } from "../../../lib/search.ts";
 import { Button, DatePicker, Input, Popover, PopoverContent, PopoverTrigger } from "../../common/index.ts";
 import type { FilterPatch } from "./chips.ts";
 import type { TrackerSearch } from "./search.ts";
@@ -13,8 +14,6 @@ export interface TrackerFiltersProps {
   onClear(): void;
   readonly canClear: boolean;
 }
-
-const orNone = <T extends string>(v: T | ""): T | undefined => (v === "" ? undefined : v);
 
 interface RangeProps {
   readonly label: string;

@@ -5,7 +5,7 @@ import { addDays } from "@senstosales/domain";
 import { routes, zIsoDate } from "@senstosales/schemas";
 import { z } from "zod";
 
-import { zUrlText } from "../../../lib/search.ts";
+import { sortIn, zUrlText } from "../../../lib/search.ts";
 
 const zPendingSort = routes["reports.pending"].query.shape.sort.unwrap();
 const zReconciliationSort = routes["reports.reconciliation"].query.shape.sort.unwrap();
@@ -21,15 +21,11 @@ export const zReportsSearch = routes["reports.pending"].query.pick({ page: true,
 
 export type ReportsSearch = z.output<typeof zReportsSearch>;
 
-const isIn = <T extends string>(options: readonly T[], value: string | undefined): value is T =>
-  options.some((o) => o === value);
-
 /** The search's sort for the pending tab, or none when it names a reconciliation column. */
-export const pendingSort = (sort: string | undefined) => (isIn(zPendingSort.options, sort) ? sort : undefined);
+export const pendingSort = sortIn(zPendingSort.options);
 
 /** The search's sort for the reconciliation tab, or none when it names a pending column. */
-export const reconciliationSort = (sort: string | undefined) =>
-  isIn(zReconciliationSort.options, sort) ? sort : undefined;
+export const reconciliationSort = sortIn(zReconciliationSort.options);
 
 /** The legacy tabs' default range: the day before `today`, to `today`. */
 export const defaultRange = (today: IsoDate) => ({ from: addDays(today, -1), to: today });

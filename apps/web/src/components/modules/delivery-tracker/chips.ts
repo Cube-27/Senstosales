@@ -4,9 +4,8 @@
 import type { IsoDate } from "@senstosales/domain";
 import { addDays } from "@senstosales/domain";
 
-import type { TrackerSearch } from "./search.ts";
+import type { TrackerStatus, TrackerSearch } from "./search.ts";
 
-type Status = NonNullable<TrackerSearch["status"]>;
 export type ChipColor = "default" | "primary" | "warning" | "error" | "success";
 
 /** A change to the URL's filters; `undefined` clears one. */
@@ -69,7 +68,7 @@ export function toggleChip(chip: Chip, s: TrackerSearch, today: IsoDate): Filter
 }
 
 /** Pressing a status card: toggles that status and clears any due-date range. */
-export const toggleStatus = (status: Status, s: TrackerSearch): FilterPatch => ({
+export const toggleStatus = (status: TrackerStatus, s: TrackerSearch): FilterPatch => ({
   status: s.status === status ? undefined : status,
   dueFrom: undefined,
   dueTo: undefined,

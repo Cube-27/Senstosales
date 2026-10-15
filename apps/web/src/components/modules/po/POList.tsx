@@ -43,6 +43,7 @@ import {
   qtyColumn,
   StatCardRow,
   useToast,
+  tableQuery,
 } from "../../common/index.ts";
 import { LinkedDocsPopover } from "./LinkedDocsPopover.tsx";
 import { StatusCell } from "./status.tsx";
@@ -354,9 +355,7 @@ export function POList() {
         <DataTable
           columns={cols}
           rows={rows.data?.items}
-          total={rows.data?.total ?? 0}
-          state={rows.isError ? "error" : rows.isFetching ? "loading" : "ready"}
-          error={rows.error?.message}
+          {...tableQuery(rows)}
           emptyText="No purchase orders found."
           rowHighlight={(row) => row.openFlagCount > 0}
           {...list.table}

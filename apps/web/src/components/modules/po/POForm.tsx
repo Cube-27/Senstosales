@@ -1,7 +1,5 @@
-import type { IsoDate } from "@senstosales/domain";
 import type { RouteOutput } from "@senstosales/schemas";
-import { fmtCount, fmtInstantDate, fmtMoney } from "@senstosales/schemas";
-import { parseDateInput } from "@senstosales/schemas/formatters";
+import { fmtCount, fmtMoney } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -9,6 +7,7 @@ import { Controller, type FieldPathByValue, useFieldArray, useForm, type UseForm
 
 import { api, apiQuery, useInvalidate } from "../../../lib/api.ts";
 import { AlertCircle, Delete, Plus, Save } from "../../../lib/icons.ts";
+import { todayIst } from "../../../lib/today.ts";
 import {
   Button,
   ConfirmDialog,
@@ -34,7 +33,6 @@ import {
 type Detail = RouteOutput<"po.detail">;
 
 /** Today's IST calendar date, the legacy form's default PO date. */
-const today = (): IsoDate | "" => parseDateInput(fmtInstantDate(new Date().toISOString())) ?? "";
 
 type TextField = { readonly name: FieldPathByValue<FormValues, string>; readonly label: string };
 
@@ -80,7 +78,7 @@ function POFormView({ detail }: POFormProps) {
   const invalidate = useInvalidate();
   const editing = detail !== undefined;
   const storedItemNos = detail?.items.map((i) => i.poItemNo) ?? [];
-  const form = useForm<FormValues>({ defaultValues: detail ? formFromDetail(detail) : emptyForm(today()) });
+  const form = useForm<FormValues>({ defaultValues: detail ? formFromDetail(detail) : emptyForm(todayIst()) });
   const { register, control, watch, getValues } = form;
   const items = useFieldArray({ control, name: "items" });
   const [error, setError] = useState<string | null>(null);

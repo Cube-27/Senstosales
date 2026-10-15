@@ -174,10 +174,17 @@ describe("Pagination", () => {
     expect(onPageSize.mock.calls).toEqual([[50]]);
   });
 
-  it("is at least as wide as its pixel columns, so a narrow window scrolls it rather than squeezing one", () => {
-    const { container } = table({ columns: [...COLUMNS, { key: "note", header: "Note", width: "30%" }] });
-    expect(container.querySelector("table")?.style.minWidth).toBe("420px");
-  });
+  it.each([
+    ["pixel columns only", [], "420px"],
+    // A percentage column keeps at least 160px.
+    ["a 30% column", [{ key: "note", header: "Note", width: "30%" }], "580px"],
+  ])(
+    "is wide enough for its columns (%s), so a narrow window scrolls it rather than squeezing one",
+    (_, extra, min) => {
+      const { container } = table({ columns: [...COLUMNS, ...extra] });
+      expect(container.querySelector("table")?.style.minWidth).toBe(min);
+    },
+  );
 
   it("runs onRowClick with the clicked row", () => {
     const onRowClick = vi.fn();
@@ -212,6 +219,16 @@ describe("Pagination", () => {
       fireEvent.click(screen.getByRole("checkbox", { name: "Select row 1" }));
       expect(onChange).toHaveBeenLastCalledWith(new Set(["2", "1"]));
       fireEvent.click(screen.getByRole("checkbox", { name: "Select row 2" }));
+      expect(onChange).toHaveBeenLastCalledWith(new Set());
+    });
+
+    it("toggles a row by a click on it, once when the click is on its checkbox", () => {
+      const onChange = vi.fn();
+      selectable(["2"], onChange);
+      fireEvent.click(within(bodyRows()[0] as HTMLElement).getAllByRole("cell")[1] as HTMLElement);
+      expect(onChange).toHaveBeenLastCalledWith(new Set(["2", "1"]));
+      fireEvent.click(screen.getByRole("checkbox", { name: "Select row 2" }));
+      expect(onChange).toHaveBeenCalledTimes(2);
       expect(onChange).toHaveBeenLastCalledWith(new Set());
     });
 

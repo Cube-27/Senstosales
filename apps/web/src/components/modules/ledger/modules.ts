@@ -25,7 +25,3 @@ export const MODULES: Readonly<Record<string, Module>> = {
 
 /** An entity type's module; a type the table does not name shows as itself. */
 export const moduleOf = (entityType: string): Module => MODULES[entityType] ?? { label: entityType, color: "neutral" };
-
-/** `flag.acknowledge` -> `Flag Acknowledge`, as legacy titled an event code. */
-export const eventTitle = (action: string): string =>
-  action.replaceAll(/[._]/g, " ").replaceAll(/\b\w/g, (c) => c.toUpperCase());

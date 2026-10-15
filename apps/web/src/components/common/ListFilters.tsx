@@ -4,6 +4,7 @@ import { Filter } from "../../lib/icons.ts";
 import { Button } from "../ui/button.tsx";
 import { Input } from "../ui/input.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover.tsx";
+import { orNone } from "../../lib/search.ts";
 import { DatePicker } from "./DatePicker.tsx";
 
 /** The legacy filter panel's values: a date range and a value range, the amounts as typed. */
@@ -30,8 +31,6 @@ const CLEARED: Required<{ [K in keyof RangeFilters]: undefined }> = {
 };
 
 const RANGE_KEYS = ["from", "to", "valueMin", "valueMax"] as const satisfies readonly (keyof RangeFilters)[];
-
-const orNone = <T extends string>(v: T | ""): T | undefined => (v === "" ? undefined : v);
 
 /**
  * The lists' Filters button and panel: a date range, a value range and Clear all. The panel opens as a popover over

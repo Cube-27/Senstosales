@@ -4,13 +4,11 @@ import { useState } from "react";
 
 import { api, useInvalidate } from "../../../lib/api.ts";
 import { AlertCircle, CheckCircle } from "../../../lib/icons.ts";
+import { titleCase } from "../../../lib/text.ts";
 import { Badge, Button, useToast } from "../../common/index.ts";
 
 type Detail = RouteOutput<"po.detail">;
 type Flag = Detail["flags"][number];
-
-/** `ord_qty` -> `Ord Qty`, as legacy humanised a field name. */
-const humanize = (key: string): string => key.replaceAll("_", " ").replaceAll(/\b\w/g, (c) => c.toUpperCase());
 
 /** What the flag says, in the legacy section's words. */
 function summary(flag: Flag, itemNo: string | undefined): string {
@@ -18,7 +16,7 @@ function summary(flag: Flag, itemNo: string | undefined): string {
   if (flag.type === "QTY_MISMATCH" && field === "ord_qty") {
     return `${itemNo ? `PO item ${itemNo} ordered qty mismatch` : "Ordered qty mismatch"}: ${actual} vs ${expected ?? "-"} expected`;
   }
-  return `${humanize(field)} mismatch`;
+  return `${titleCase(field)} mismatch`;
 }
 
 const SCOPE: Record<Flag["scopeType"], string> = {
@@ -91,7 +89,7 @@ export function DeviationsSection({ flags, itemNo }: DeviationsSectionProps) {
                     {fmtInstantDate(flag.openedAt)}
                   </p>
                   <p className="mt-2 rounded-md border border-border-subtle bg-surface-sunken/50 p-2 role-helper-text">
-                    Context: {humanize(field)}: {actual} | Expected: {expected ?? "-"}
+                    Context: {titleCase(field)}: {actual} | Expected: {expected ?? "-"}
                   </p>
                 </div>
               </div>

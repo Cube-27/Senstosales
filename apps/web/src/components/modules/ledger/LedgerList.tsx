@@ -1,11 +1,13 @@
 import { fmtInstantDateTime } from "@senstosales/schemas";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { useListSearch } from "../../../hooks/useListSearch.ts";
 import { useSearchText } from "../../../hooks/useSearchText.ts";
 import { apiQuery } from "../../../lib/api.ts";
+import { searchText } from "../../../lib/search.ts";
 import { Eye } from "../../../lib/icons.ts";
+import { titleCase } from "../../../lib/text.ts";
 import {
   Badge,
   Button,
@@ -18,69 +20,59 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  tableQuery,
 } from "../../common/index.ts";
 import { type AuditRow, LogDetailDialog } from "./LogDetailDialog.tsx";
-import { eventTitle, MODULES, moduleOf } from "./modules.ts";
+import { MODULES, moduleOf } from "./modules.ts";
 import type { LedgerSearch } from "./search.ts";
 
 /** The Module select's value for no filter (Radix Select takes no empty value). */
 const ALL = "ALL";
 
-function columns(onView: (row: AuditRow) => void): Column<AuditRow>[] {
-  return [
-    {
-      key: "at",
-      header: "Timestamp",
-      width: "210px",
-      sortable: true,
-      render: (r) => <span className="tabular-nums">{fmtInstantDateTime(r.at)}</span>,
+const COLUMNS: Column<AuditRow>[] = [
+  {
+    key: "at",
+    header: "Timestamp",
+    width: "210px",
+    sortable: true,
+    render: (r) => <span className="tabular-nums">{fmtInstantDateTime(r.at)}</span>,
+  },
+  {
+    key: "entityType",
+    header: "Module",
+    width: "160px",
+    render: (r) => {
+      const module = moduleOf(r.entityType);
+      return <Badge color={module.color}>{module.label}</Badge>;
     },
-    {
-      key: "entityType",
-      header: "Module",
-      width: "160px",
-      render: (r) => {
-        const module = moduleOf(r.entityType);
-        return <Badge color={module.color}>{module.label}</Badge>;
-      },
-    },
-    {
-      key: "action",
-      header: "Event / Summary",
-      width: "40%",
-      sortable: true,
-      title: (r) => eventTitle(r.action),
-      render: (r) => eventTitle(r.action),
-    },
-    {
-      key: "entityId",
-      header: "Entity",
-      width: "260px",
-      title: (r) => r.entityId,
-      render: (r) => <span className="role-reference-number">{r.entityId}</span>,
-    },
-    {
-      key: "view",
-      header: "",
-      width: "60px",
-      align: "right",
-      render: (r) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="View log details"
-          onClick={(e) => {
-            // The row's own click opens the same dialog.
-            e.stopPropagation();
-            onView(r);
-          }}
-        >
-          <Eye className="text-tertiary" aria-hidden />
-        </Button>
-      ),
-    },
-  ];
-}
+  },
+  {
+    key: "action",
+    header: "Event / Summary",
+    width: "40%",
+    sortable: true,
+    title: (r) => titleCase(r.action),
+    render: (r) => titleCase(r.action),
+  },
+  {
+    key: "entityId",
+    header: "Entity",
+    width: "260px",
+    title: (r) => r.entityId,
+    render: (r) => <span className="role-reference-number">{r.entityId}</span>,
+  },
+  {
+    key: "view",
+    header: "",
+    width: "60px",
+    align: "right",
+    render: () => (
+      <Button variant="ghost" size="icon" aria-label="View log details">
+        <Eye className="text-tertiary" aria-hidden />
+      </Button>
+    ),
+  },
+];
 
 /**
  * `/system/ledger` (SPEC-17 §2): the audit log, newest first, filtered by module and search text, each row opening
@@ -94,13 +86,12 @@ export function LedgerList() {
     pageSize: search.pageSize,
     sort: search.sort,
     dir: search.dir,
-    q: search.q?.trim() || undefined,
+    q: searchText(search.q),
     entityType: search.entityType,
   };
   const entries = useQuery(apiQuery("audit.list", { query }));
   const searchBox = useSearchText(search.q, (q) => setFilters({ q }));
   const [viewing, setViewing] = useState<AuditRow | null>(null);
-  const cols = useMemo(() => columns(setViewing), []);
 
   return (
     <div className="flex flex-col gap-4">
@@ -125,12 +116,10 @@ export function LedgerList() {
           </Select>
         </ListToolbar>
         <DataTable
-          columns={cols}
+          columns={COLUMNS}
           rows={entries.data?.items}
-          total={entries.data?.total ?? 0}
+          {...tableQuery(entries)}
           {...list.table}
-          state={entries.isError ? "error" : entries.isFetching ? "loading" : "ready"}
-          error={entries.error?.message}
           emptyText="No audit entries found"
           onRowClick={setViewing}
         />

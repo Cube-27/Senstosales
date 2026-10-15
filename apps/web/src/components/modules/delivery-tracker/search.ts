@@ -3,7 +3,7 @@
 import { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
-import { money, zUrlText } from "../../../lib/search.ts";
+import { money, searchText, zUrlText } from "../../../lib/search.ts";
 
 export const zTrackerSearch = routes["deliveryTracker.list"].query
   .pick({
@@ -21,9 +21,12 @@ export const zTrackerSearch = routes["deliveryTracker.list"].query
 
 export type TrackerSearch = z.output<typeof zTrackerSearch>;
 
+/** A stat card's status filter. */
+export type TrackerStatus = NonNullable<TrackerSearch["status"]>;
+
 /** The tracker's filters as the list, stats and export queries take them. */
 export const trackerFilters = (s: TrackerSearch) => ({
-  q: s.q?.trim() || undefined,
+  q: searchText(s.q),
   status: s.status,
   dueFrom: s.dueFrom,
   dueTo: s.dueTo,

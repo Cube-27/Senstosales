@@ -36,7 +36,10 @@ export interface DataTableProps<Row> {
   readonly rowHighlight?: (row: Row) => boolean;
   /** A click anywhere on a row (a control in the row handles its own click). */
   readonly onRowClick?: (row: Row) => void;
-  /** Selectable rows (the legacy report tabs): a checkbox column first, and a header box for the page's rows. */
+  /**
+   * Selectable rows (the legacy report tabs): a checkbox column first, a header box for the page's rows, and a click
+   * on a row toggles it unless `onRowClick` is given.
+   */
   readonly selection?: Selection<Row>;
 }
 
@@ -48,15 +51,38 @@ export interface Selection<Row> {
 
 const SELECT_WIDTH = 40;
 
+/** The least width of a percentage column. */
+const SHARE_FLOOR = 160;
+
 /**
- * The table's least width, the sum of its pixel column widths: a narrower window scrolls the table sideways instead
- * of squeezing a column.
+ * The table's least width: its pixel columns at their widths and each percentage column at `SHARE_FLOOR`. A narrower
+ * window scrolls the table sideways instead of squeezing a column.
  */
 const minWidth = (columns: readonly Pick<Column<never>, "width">[], selectable: boolean): number =>
   columns.reduce(
-    (sum, c) => sum + (c.width.endsWith("px") ? Number.parseFloat(c.width) : 0),
+    (sum, { width }) => sum + (width.endsWith("%") ? SHARE_FLOOR : Number.parseFloat(width)),
     selectable ? SELECT_WIDTH : 0,
   );
+
+/** The selection with `key` toggled. */
+function toggled(selected: ReadonlySet<string>, key: string): ReadonlySet<string> {
+  const next = new Set(selected);
+  if (!next.delete(key)) next.add(key);
+  return next;
+}
+
+/** A list query's total, state and error as the table takes them. */
+export const tableQuery = (q: {
+  readonly data?: { readonly total: number } | undefined;
+  readonly isError: boolean;
+  readonly isFetching: boolean;
+  readonly error: Error | null;
+}) =>
+  ({
+    total: q.data?.total ?? 0,
+    state: q.isError ? "error" : q.isFetching ? "loading" : "ready",
+    error: q.error?.message,
+  }) as const;
 
 /** Every body row is this tall, so a page's body is `pageSize × ROW_HEIGHT` whatever it holds. */
 const ROW_HEIGHT = 40;
@@ -100,7 +126,7 @@ function Header({ column, sort, onSort }: HeaderProps) {
           type="button"
           onClick={() => onSort(column.key)}
           className={cn(
-            // A button does not inherit the header's uppercase on its own.
+            // A button does not inherit the uppercase of the header on its own.
             "inline-flex max-w-full items-center gap-1 [text-transform:inherit] hover:text-foreground",
             column.align === "right" && "flex-row-reverse",
           )}
@@ -154,18 +180,13 @@ function SelectRow<Row>({
   readonly n: number;
 }) {
   const key = selection.rowKey(row);
-  const toggle = (): void => {
-    const next = new Set(selection.selected);
-    if (!next.delete(key)) next.add(key);
-    selection.onChange(next);
-  };
   return (
     // The row's own click would toggle it a second time.
     <td className="px-3" onClick={(e) => e.stopPropagation()}>
       <Checkbox
         aria-label={`Select row ${n}`}
         checked={selection.selected.has(key)}
-        onCheckedChange={toggle}
+        onCheckedChange={() => selection.onChange(toggled(selection.selected, key))}
         className="size-4 align-middle"
       />
     </td>
@@ -224,6 +245,8 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
   // Rows already on screen stay while the next page loads (keepPreviousData); with none, the body says it loads.
   const showRows = state !== "error" && bodyRows.length > 0;
   const colSpan = columns.length + (selection ? 1 : 0);
+  const rowClick =
+    onRowClick ?? (selection && ((row: Row) => selection.onChange(toggled(selection.selected, selection.rowKey(row)))));
 
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-card">
@@ -255,10 +278,10 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
                     key={row.id}
                     style={{ height: ROW_HEIGHT }}
                     data-highlighted={rowHighlight?.(row.original) || undefined}
-                    onClick={onRowClick && (() => onRowClick(row.original))}
+                    onClick={rowClick && (() => rowClick(row.original))}
                     className={cn(
                       "border-b border-border/50 hover:bg-surface-sunken/65 data-[highlighted]:bg-warning/[0.04] data-[highlighted]:shadow-[inset_2px_0_0_var(--warning)]",
-                      onRowClick && "cursor-pointer",
+                      rowClick && "cursor-pointer",
                     )}
                   >
                     {selection && <SelectRow selection={selection} row={row.original} n={n + 1} />}
