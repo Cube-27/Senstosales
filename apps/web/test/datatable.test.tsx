@@ -173,4 +173,61 @@ describe("Pagination", () => {
     fireEvent.click(screen.getByRole("option", { name: "50" }));
     expect(onPageSize.mock.calls).toEqual([[50]]);
   });
+
+  it("runs onRowClick with the clicked row", () => {
+    const onRowClick = vi.fn();
+    table({ onRowClick });
+    fireEvent.click(within(bodyRows()[1] as HTMLElement).getAllByRole("cell")[0] as HTMLElement);
+    expect(onRowClick).toHaveBeenCalledWith(po(2));
+  });
+
+  describe("selection", () => {
+    const selectable = (selected: string[], onChange = vi.fn()) =>
+      table({ selection: { rowKey: (r) => r.id, selected: new Set(selected), onChange } });
+
+    it("adds a fixed checkbox column first and checks the selected rows", () => {
+      const { container } = selectable(["2"]);
+      expect(Array.from(container.querySelectorAll("col"), (c) => c.style.width)).toEqual([
+        "40px",
+        "120px",
+        "200px",
+        "100px",
+      ]);
+      const boxes = bodyRows().map((r) => within(r).getByRole("checkbox"));
+      expect(boxes.map((b) => [b.getAttribute("aria-label"), b.getAttribute("aria-checked")])).toEqual([
+        ["Select row 1", "false"],
+        ["Select row 2", "true"],
+        ["Select row 3", "false"],
+      ]);
+    });
+
+    it("toggles a row by its checkbox", () => {
+      const onChange = vi.fn();
+      selectable(["2"], onChange);
+      fireEvent.click(screen.getByRole("checkbox", { name: "Select row 1" }));
+      expect(onChange).toHaveBeenLastCalledWith(new Set(["2", "1"]));
+      fireEvent.click(screen.getByRole("checkbox", { name: "Select row 2" }));
+      expect(onChange).toHaveBeenLastCalledWith(new Set());
+    });
+
+    it("selects every row of the page from the header, and clears them when all are selected", () => {
+      const onChange = vi.fn();
+      selectable(["9"], onChange);
+      const all = screen.getByRole("checkbox", { name: "Select all rows on this page" });
+      expect(all.getAttribute("aria-checked")).toBe("false");
+      fireEvent.click(all);
+      expect(onChange).toHaveBeenLastCalledWith(new Set(["9", "1", "2", "3"]));
+      cleanup();
+      selectable(["9", "1", "2", "3"], onChange);
+      fireEvent.click(screen.getByRole("checkbox", { name: "Select all rows on this page" }));
+      expect(onChange).toHaveBeenLastCalledWith(new Set(["9"]));
+    });
+
+    it("marks the header mixed when only some rows of the page are selected", () => {
+      selectable(["1"]);
+      expect(screen.getByRole("checkbox", { name: "Select all rows on this page" }).getAttribute("aria-checked")).toBe(
+        "mixed",
+      );
+    });
+  });
 });
