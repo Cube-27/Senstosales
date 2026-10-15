@@ -1,9 +1,9 @@
 // SPEC-07 PR 2: the system clock's "today" is the IST calendar date (C3).
+import type { Instant } from "@senstosales/db";
 import { describe, expect, it } from "vite-plus/test";
 
 import { createClock } from "../../src/platform/node/clock.ts";
 import { istDateTime } from "../../src/ports/clock.ts";
-import type { Instant } from "@senstosales/db";
 
 const at = (iso: string) => () => Date.parse(iso);
 

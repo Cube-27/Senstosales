@@ -6,7 +6,7 @@ import { and, gte, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import type { Keyset, KeysetPage } from "../src/repositories/keyset.ts";
-import { keysetRows } from "../src/repositories/keyset.ts";
+import { keysetRows, listKey } from "../src/repositories/keyset.ts";
 import { byPoNumber } from "../src/repositories/sql.ts";
 import { d, id, rows } from "./seed-rows.ts";
 import { supplierDb } from "./service-deps.ts";
@@ -130,4 +130,36 @@ it("returns 1,000 rows in pages of 50, each page after the one before", async ()
   expect(all.length).toBe(1000);
   expect([all[0], all[49], all[50], all[999]]).toEqual(["1", "50", "51", "1000"]);
   expect(fetched.length).toBe(21);
+});
+
+describe("listKey", () => {
+  const parts = (key: Keyset<{ a: number; b: number; c: number; id: string }>) => [
+    ...key.parts.map((p) => `${String(p.field)} ${p.dir}`),
+    `${String(key.id.field)} ${key.id.dir}`,
+  ];
+  const defaults = {
+    parts: [
+      { by: po.poDate, field: "a", dir: "desc" },
+      { by: po.poNumber, field: "b", dir: "asc" },
+    ],
+    id: { by: po.id, field: "id", dir: "asc" },
+  } satisfies Keyset<{ a: number; b: number; c: number; id: string }>;
+  const sorts = { b: [{ by: po.poNumber, field: "b" }], c: [{ by: po.amendNo, field: "c" }] } as const;
+
+  it("puts the chosen sort first in its direction, then the defaults, then the id", () => {
+    expect(parts(listKey(sorts, defaults, { sort: "c", dir: "desc" }))).toEqual([
+      "c desc",
+      "a desc",
+      "b asc",
+      "id asc",
+    ]);
+  });
+
+  it("drops a default part the chosen sort already orders by", () => {
+    expect(parts(listKey(sorts, defaults, { sort: "b", dir: "desc" }))).toEqual(["b desc", "a desc", "id asc"]);
+  });
+
+  it("is the defaults without a chosen sort", () => {
+    expect(parts(listKey(sorts, defaults, { dir: "asc" }))).toEqual(["a desc", "b asc", "id asc"]);
+  });
 });

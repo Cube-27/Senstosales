@@ -13,7 +13,6 @@ export type TrackerFilters = z.output<(typeof routes)["deliveryTracker.stats"]["
 
 /** NOT NULL sort values, selected so the keyset cursor holds them (D-0262). */
 const keys = {
-  kDelyDate: orEmpty(poLot.delyDate),
   kEntryDate: orEmpty(poLot.entryAllowDate),
   kPoNumber: PO_NUMBER_KEY,
   kMaterialCode: orEmpty(poItem.materialCode),
@@ -76,17 +75,17 @@ export type TrackerLot = Awaited<ReturnType<typeof trackerLots>>[number];
 
 /** A lot without its sort keys. */
 export const lotColumns = ({
-  kDelyDate: _,
-  kEntryDate: __,
-  kPoNumber: ___,
-  kMaterialCode: ____,
-  kPendingValue: _____,
+  kEntryDate: _,
+  kPoNumber: __,
+  kMaterialCode: ___,
+  kPendingValue: ____,
   ...lot
 }: TrackerLot) => lot;
 
 /** The tracker's sort columns (D-0241): a missing entry date or material code sorts first ascending. */
 export const TRACKER_SORTS = {
-  delyDate: [{ by: keys.kDelyDate, field: "kDelyDate" }],
+  // Never NULL here: the query keeps only scheduled lots.
+  delyDate: [{ by: poLot.delyDate, field: "delyDate" }],
   entryAllowDate: [{ by: keys.kEntryDate, field: "kEntryDate" }],
   poNumber: PO_NUMBER_SORT,
   materialCode: [{ by: keys.kMaterialCode, field: "kMaterialCode" }],
@@ -99,7 +98,7 @@ export const TRACKER_SORTS = {
 /** Latest delivery date first, as the legacy tracker opens; then PO number, item, lot and lot id (D-0241). */
 export const TRACKER_ORDER: Keyset<TrackerLot> = {
   parts: [
-    { by: keys.kDelyDate, field: "kDelyDate", dir: "desc" },
+    { by: poLot.delyDate, field: "delyDate", dir: "desc" },
     ...PO_NUMBER_SORT.map((p) => ({ ...p, dir: "asc" as const })),
     { by: poItem.poItemNo, field: "poItemNo", dir: "asc" },
     { by: poLot.lotNo, field: "lotNo", dir: "asc" },

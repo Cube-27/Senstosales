@@ -41,6 +41,7 @@ type Row = ReturnType<typeof toRow>;
 /** The lot's row if the filters other than status keep it: a scheduled, open lot in the value range. */
 function keptRow(lot: TrackerLot, today: IsoDate, filters: Partial<TrackerFilters>): Row | undefined {
   const { delyDate, ...rest } = lotColumns(lot);
+  // Narrows the type: the query keeps only scheduled lots.
   if (delyDate === null) return undefined;
   const row = toRow({ ...rest, delyDate }, today);
   return row.due.open && inValueRange(row.lotValue, filters) ? row : undefined;
@@ -81,8 +82,7 @@ export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) 
   }
 
   /** The rows the filters keep in the list's order, a keyset page at a time; the list and the export read these. */
-  async function* ordered(query: Query, pageSize?: number) {
-    const today = clock.today();
+  async function* ordered(query: Query, pageSize?: number, today = clock.today()) {
     const key = listKey(TRACKER_SORTS, TRACKER_ORDER, query);
     const inStatus = withStatus(query.status);
     for await (const lot of keysetRows(key, (page) => trackerLots(db, query, page), pageSize)) {
@@ -100,9 +100,11 @@ export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) 
     /** The tracker as the legacy workbook, the list's rows in the list's order, named after the IST minute. */
     export(query: Query) {
       const { deliveryTracker } = EXPORTS;
+      // One reading of the clock names the file and dates the rows.
+      const at = istDateTime(clock.now());
       return {
-        fileName: deliveryTracker.fileName(istDateTime(clock.now())),
-        chunks: xlsxChunks(deliveryTracker.sheet, cells(ordered(query))),
+        fileName: deliveryTracker.fileName(at),
+        chunks: xlsxChunks(deliveryTracker.sheet, cells(ordered(query, undefined, at.date))),
       };
     },
 

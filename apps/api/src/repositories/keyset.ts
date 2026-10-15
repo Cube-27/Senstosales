@@ -78,5 +78,7 @@ export function listKey<Row, S extends string>(
   { sort, dir }: { sort?: S | undefined; dir: "asc" | "desc" },
 ): Keyset<Row> {
   const chosen = sort === undefined ? [] : sorts[sort].map((part) => ({ ...part, dir }));
-  return { parts: [...chosen, ...defaults.parts], id: defaults.id };
+  // A default part the chosen sort already orders by adds nothing but cursor parameters (D1 binds at most 100).
+  const rest = defaults.parts.filter((part) => !chosen.some((c) => c.field === part.field));
+  return { parts: [...chosen, ...rest], id: defaults.id };
 }
