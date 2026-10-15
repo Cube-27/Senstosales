@@ -5,6 +5,7 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { getRequestListener } from "@hono/node-server";
 
@@ -16,7 +17,7 @@ import { resolveDataDir } from "./data-dir.ts";
 import { createFileLogger } from "./logger.ts";
 import { openRuntime } from "./runtime.ts";
 import { spa, type WebFiles } from "./static.ts";
-import { webFiles } from "./web-files.ts";
+import { createFsStorage } from "./storage-fs.ts";
 
 const HOST = "127.0.0.1";
 
@@ -92,22 +93,21 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   };
 }
 
-async function main(): Promise<void> {
-  const server = await startServer({
-    dataDir: resolveDataDir(process.env),
-    web: webFiles(),
-    version: pkg.version,
-  });
+async function serve(web: WebFiles): Promise<void> {
+  const server = await startServer({ dataDir: resolveDataDir(process.env), web, version: pkg.version });
   process.stdout.write(`SENSTO_PORT=${server.port}\n`);
   await server.startDailyBackup();
   process.stdin.on("end", () => void server.close());
   process.stdin.resume();
 }
 
-// No top-level await: the sidecar bundles this file as CommonJS, the format a SEA runs (SPEC-20).
-if (import.meta.main) {
-  main().catch((err: unknown) => {
+/** Runs the process: serves `web` until stdin closes, or reports a failed start on stderr. The sidecar's entry
+ * (`tools/release`) calls it with the SPA embedded in the bundle. No top-level await: a SEA runs CommonJS. */
+export function run(web: WebFiles): void {
+  serve(web).catch((err: unknown) => {
     process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
     process.exitCode = 1;
   });
 }
+
+if (import.meta.main) run(createFsStorage(fileURLToPath(new URL("../../../../web/dist", import.meta.url))));

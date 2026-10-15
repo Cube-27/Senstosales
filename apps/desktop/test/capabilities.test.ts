@@ -11,10 +11,6 @@ interface Capability {
   remote?: { urls: string[] };
   permissions: Array<string | { identifier: string }>;
 }
-interface ExecutePermission {
-  identifier: "shell:allow-execute";
-  allow: Array<{ args: Array<{ validator: string }> }>;
-}
 
 const DIR = join(import.meta.dirname, "../src-tauri/capabilities");
 const capabilities = readdirSync(DIR).map((name) => JSON.parse(readFileSync(join(DIR, name), "utf8")) as Capability);
@@ -23,16 +19,10 @@ const byId = (id: string): Capability => {
   if (!found) throw new Error(`no capability ${id}`);
   return found;
 };
-/** The pattern Explorer's one argument must match in the shell capability. */
-function explorerValidator(): string {
-  const execute = byId("shell").permissions.find(
-    (p): p is ExecutePermission => typeof p !== "string" && p.identifier === "shell:allow-execute",
-  );
-  const validator = execute?.allow[0]?.args[0]?.validator;
-  if (!validator) throw new Error("no Explorer validator");
-  return validator;
-}
 const permissionIds = (c: Capability): string[] => c.permissions.map((p) => (typeof p === "string" ? p : p.identifier));
+
+/** The pattern Explorer's one argument must match: a SenstoSales log folder. */
+const EXPLORER_ARG = String.raw`^[A-Za-z]:\\[^"]*\\SenstoSales\\logs$`;
 
 describe("capabilities", () => {
   it("are the shell page's and the app's, nothing else", () => {
@@ -60,14 +50,14 @@ describe("capabilities", () => {
       { identifier: "shell:allow-spawn", allow: [{ name: "binaries/sensto-sidecar", sidecar: true }] },
       {
         identifier: "shell:allow-execute",
-        allow: [{ name: "explorer", cmd: "explorer", args: [{ validator: expect.any(String) }] }],
+        allow: [{ name: "explorer", cmd: "explorer", args: [{ validator: EXPLORER_ARG }] }],
       },
     ]);
   });
 
   it("let Explorer open a SenstoSales log folder and nothing else", () => {
     // The plugin matches the whole argument with Rust's `regex`, which reads this pattern as JavaScript does.
-    const validator = new RegExp(explorerValidator());
+    const validator = new RegExp(EXPLORER_ARG);
     const paths = [
       "D:\\app data\\SenstoSales\\logs",
       "D:\\app data\\SenstoSales",

@@ -1,7 +1,7 @@
 // Serves the built SPA from the API's own origin (ARCHITECTURE §9: one process, one port). A path that names a file
 // gets that file; any other app path gets `index.html`, so the SPA's router handles it. A placeholder page stands in
 // until `apps/web` is built. On disk the files are read through the Storage adapter, so the same key rule keeps every
-// read inside the SPA folder (INV-96); the sidecar reads them from its bundle (`web-files.ts`).
+// read inside the SPA folder (INV-96); the sidecar serves them from its bundle (`tools/release`).
 import type { Context, MiddlewareHandler } from "hono";
 import { getMimeType } from "hono/utils/mime";
 

@@ -7,15 +7,12 @@ use tauri::Manager;
 use tauri_plugin_log::{log::LevelFilter, Target, TargetKind};
 
 fn main() {
-    // The shell log goes beside the sidecar's logs in the data folder (INV-82).
-    let logs = match std::env::var_os("LOCALAPPDATA") {
-        Some(dir) => TargetKind::Folder {
-            path: PathBuf::from(dir).join("SenstoSales").join("logs"),
-            file_name: Some("shell".into()),
-        },
-        None => TargetKind::LogDir {
-            file_name: Some("shell".into()),
-        },
+    // The shell log goes beside the sidecar's logs in the data folder (INV-82); Windows always sets LOCALAPPDATA.
+    let logs = TargetKind::Folder {
+        path: PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_default())
+            .join("SenstoSales")
+            .join("logs"),
+        file_name: Some("shell".into()),
     };
     tauri::Builder::default()
         // First: a second launch exits here and brings the running app window forward.

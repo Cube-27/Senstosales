@@ -15,8 +15,8 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { waitForHealth } from "./health.ts";
 import { watchSidecar } from "./sidecar.ts";
 
-const COULD_NOT_START = "SenstoSales could not start";
-const STOPPED = "SenstoSales stopped";
+const COULD_NOT_START_TITLE = "SenstoSales could not start";
+const STOPPED_TITLE = "SenstoSales stopped";
 const NOT_ANSWERING = "SenstoSales started but did not answer. Close it and start it again.";
 /** 10 s: the port line already means the server listens, so health normally answers on the first request. */
 const HEALTH = { attempts: 200, intervalMs: 50 };
@@ -51,14 +51,14 @@ async function start(): Promise<void> {
   await sidecar.spawn();
 
   const startup = await watch.startup;
-  if (startup.kind === "exited") return fail(COULD_NOT_START, startup.message);
+  if (startup.kind === "exited") return fail(COULD_NOT_START_TITLE, startup.message);
   const base = `http://127.0.0.1:${startup.port}`;
   const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
   if (!(await waitForHealth({ base, fetch: (url, init) => fetch(url, init), sleep, ...HEALTH }))) {
-    return fail(COULD_NOT_START, NOT_ANSWERING);
+    return fail(COULD_NOT_START_TITLE, NOT_ANSWERING);
   }
   await info(`sidecar ready on port ${startup.port}`);
-  void watch.exit.then((message) => (quitting ? undefined : fail(STOPPED, message)));
+  void watch.exit.then((message) => (quitting ? undefined : fail(STOPPED_TITLE, message)));
 
   const app = new WebviewWindow("main", {
     url: `${base}/`,
@@ -99,4 +99,4 @@ async function addTray(app: WebviewWindow): Promise<void> {
   });
 }
 
-start().catch((err: unknown) => fail(COULD_NOT_START, err instanceof Error ? err.message : String(err)));
+start().catch((err: unknown) => fail(COULD_NOT_START_TITLE, err instanceof Error ? err.message : String(err)));

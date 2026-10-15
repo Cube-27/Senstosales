@@ -6,21 +6,22 @@
 //   --out  the output folder (default apps/desktop/src-tauri/binaries, where Tauri's `externalBin` looks)
 import { execFileSync } from "node:child_process";
 import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import { join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
 
 import { build, type Plugin } from "esbuild";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
-const ENTRY = join(ROOT, "apps/api/src/platform/node/main.ts");
-/** The module that reads the SPA from disk; the bundle gets an embedded copy instead. */
-const WEB_FILES = /[\\/]platform[\\/]node[\\/]web-files\.ts$/;
+/** The API's node entry; it exports `run(web)`. */
+const MAIN = join(ROOT, "apps/api/src/platform/node/main.ts");
+/** A module that exists only in the bundle: the built SPA, embedded. */
+const WEB_MODULE = "senstosales:web";
+const ENTRY = `import { run } from "./main.ts";\nimport { web } from "${WEB_MODULE}";\nrun(web);\n`;
 
 /** Tauri's `externalBin` names each binary with the Rust target triple of the platform it runs on. */
 const TARGET_TRIPLES: Readonly<Record<string, string>> = {
   "win32-x64": "x86_64-pc-windows-msvc",
   "linux-x64": "x86_64-unknown-linux-gnu",
-  "darwin-arm64": "aarch64-apple-darwin",
 };
 
 export type Sidecar =
@@ -39,47 +40,47 @@ export function spawnArgs(sidecar: Sidecar): [string, string[]] {
   return sidecar.kind === "sea" ? [sidecar.exe, []] : [sidecar.node, [sidecar.bundle]];
 }
 
-async function filesUnder(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
-  return entries.filter((e) => e.isFile()).map((e) => join(e.parentPath, e.name));
+/** Every file under `web` as base64, keyed like the Storage port (`assets/app.js`). */
+async function readWeb(web: string): Promise<Record<string, string>> {
+  const entries = await readdir(web, { recursive: true, withFileTypes: true });
+  const paths = entries.filter((e) => e.isFile()).map((e) => join(e.parentPath, e.name));
+  const files = Object.fromEntries(
+    await Promise.all(
+      paths.map(async (path) => [relative(web, path).split(sep).join("/"), (await readFile(path)).toString("base64")]),
+    ),
+  );
+  if (!files["index.html"]) throw new Error(`No index.html in ${web}: build apps/web first.`);
+  return files;
 }
 
-/** Replaces `web-files.ts` with a module serving every file of `web` from the bundle, keyed like the Storage port. */
+/** Serves `senstosales:web`: the SPA's files, decoded once when the sidecar starts. */
 function embedWeb(web: string): Plugin {
   return {
     name: "embed-web",
     setup(b) {
-      b.onLoad({ filter: WEB_FILES }, async () => {
-        const files: Record<string, string> = {};
-        for (const path of await filesUnder(web)) {
-          files[relative(web, path).split(sep).join("/")] = (await readFile(path)).toString("base64");
-        }
-        if (!files["index.html"]) throw new Error(`No index.html in ${web}: build apps/web first.`);
-        return {
-          loader: "js",
-          contents: `const files = new Map(Object.entries(${JSON.stringify(files)}));
-export const webFiles = () => ({
-  async get(key) {
-    const file = files.get(key);
-    return file === undefined ? null : Buffer.from(file, "base64");
-  },
-});`,
-        };
-      });
+      b.onResolve({ filter: /^senstosales:web$/ }, () => ({ path: "web", namespace: "senstosales" }));
+      b.onLoad({ filter: /.*/, namespace: "senstosales" }, async () => ({
+        loader: "js",
+        contents: `const files = new Map(
+  Object.entries(${JSON.stringify(await readWeb(web))}).map(([key, file]) => [key, Buffer.from(file, "base64")]),
+);
+export const web = { get: async (key) => files.get(key) ?? null };`,
+      }));
     },
   };
 }
 
 async function bundle(web: string, outfile: string): Promise<void> {
   await build({
-    entryPoints: [ENTRY],
+    stdin: { contents: ENTRY, resolveDir: dirname(MAIN), sourcefile: "sidecar.ts", loader: "ts" },
     outfile,
     bundle: true,
     platform: "node",
     target: "node26",
-    // A SEA's main script is CommonJS.
+    // A SEA's main script is CommonJS. There `import.meta` is empty, so main.ts's own start (`import.meta.main`) stays
+    // off and the entry above starts it with the embedded SPA.
     format: "cjs",
-    define: { "import.meta.main": "true" },
+    logOverride: { "empty-import-meta": "silent" },
     // unzipper (under exceljs) requires the S3 SDK only inside `Open.s3_v3`, which nothing here calls.
     external: ["@aws-sdk/client-s3"],
     minifyWhitespace: true,
