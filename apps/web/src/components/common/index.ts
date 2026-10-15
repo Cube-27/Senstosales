@@ -3,12 +3,14 @@
 export { AppChrome } from "./AppChrome.tsx";
 export { Autocomplete, type AutocompleteOption, type AutocompleteProps } from "./Autocomplete.tsx";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog.tsx";
+export { type Column, DataTable, type DataTableProps } from "./DataTable.tsx";
 export { DatePicker, type DatePickerProps } from "./DatePicker.tsx";
 export { type DetailTab, DetailTabs, type DetailTabsProps } from "./DetailTabs.tsx";
 export { FileUploadModal, type FileUploadModalProps, type UploadOutcome } from "./FileUploadModal.tsx";
 export { FormField, type FormFieldProps } from "./FormField.tsx";
 export { ListToolbar, type ListToolbarProps } from "./ListToolbar.tsx";
 export { PageHeader, type PageHeaderProps } from "./PageHeader.tsx";
+export { Pagination, type PaginationProps } from "./Pagination.tsx";
 export { QuantityInput, type QuantityInputProps } from "./QuantityInput.tsx";
 export { StatCard, type StatCardProps, StatCardRow, type StatColor } from "./StatCard.tsx";
 export { type Status, StatusBadge, type StatusBadgeProps } from "./StatusBadge.tsx";
