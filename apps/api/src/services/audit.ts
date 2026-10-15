@@ -16,6 +16,8 @@ export interface AuditEntry {
   readonly entityId: string | SQL<string>;
   readonly before?: Record<string, unknown>;
   readonly after?: Record<string, unknown>;
+  /** The job whose document made the change. */
+  readonly jobId?: string;
 }
 
 export const audit = (db: Db, at: Instant, entry: AuditEntry): Statement =>

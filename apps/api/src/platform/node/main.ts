@@ -17,6 +17,7 @@ import { apiRoutes } from "../../routes/index.ts";
 import { folderImportHandlers } from "../../services/folder-import.ts";
 import { createServices } from "../../services/index.ts";
 import { jobWorker } from "../../services/job-worker.ts";
+import { recomputeAllHandlers } from "../../services/recompute.ts";
 import { createClock } from "./clock.ts";
 import { prepareDataDir, resolveDataDir } from "./data-dir.ts";
 import { createJobRunner } from "./job-runner.ts";
@@ -73,10 +74,10 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   // port earlier.
   const server = createServer();
   const address = await listen(server);
-  // The other job types' handlers arrive with their PRs (SPEC-08 PR 6, SPEC-19, SPEC-21); until then a start fails
-  // plainly.
+  // The scrape and backup handlers arrive with their PRs (SPEC-19, SPEC-21); until then a start fails plainly. Jobs
+  // run only when a user starts one, never at startup (C9).
   const storage = createFsStorage(options.dataDir);
-  const handlers = folderImportHandlers({ db, clock, storage });
+  const handlers = { ...folderImportHandlers({ db, clock, storage }), ...recomputeAllHandlers({ db, clock }) };
   const jobs = createJobRunner(jobWorker({ db, clock, logger: stderrLogger, handlers }));
   const services = createServices({ db, clock, jobs, storage });
   const app = createApp(

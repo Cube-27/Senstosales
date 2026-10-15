@@ -1834,3 +1834,27 @@ None.
 - Alternatives: Stamp only when `qty > 0`.
 - Why: SPEC-10 §2 says the endpoint "sets `manual_set_at`" with no condition. INV-57 already ignores it while the quantity is 0.
 - Reversible: yes.
+
+### D-0223 — recompute-all writes one audit row per PO
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 6 (#51) · Status: decided
+- Decision: Each PO's batch carries a `po.recompute` audit row (entity `po`, `job_id` set, no before/after), whether or not any value changed.
+- Alternatives: No audit row, as for job bookkeeping (D-0159); an audit row only for POs whose values changed, with before/after.
+- Why: C4: every write batch carries its audit row, and this batch writes business tables. Diffing every column would add code and work to a rare repair job; `job_id` ties the rows to the job.
+- Reversible: yes.
+
+### D-0224 — In recompute-all a refused PO fails alone and a deleted PO is skipped
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 6 (#51) · Status: decided
+- Decision: A `DbError` on one PO's batch is a failed document ("Could not be recomputed. Its stored values were kept.") and the job goes on. A PO deleted between listing and processing is a skipped document ("This PO was deleted after the job started."). Any other error fails the job.
+- Alternatives: Every error fails the whole job.
+- Why: SPEC-08 §4.3 and INV-50 handle failures per document for the other job types, and a PO deleted mid-job is not an error.
+- Reversible: yes.
+
+### D-0225 — recompute-all works through POs in numeric PO-number order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-08 PR 6 (#51) · Status: decided
+- Decision: The job's documents follow the PO list's `byPoNumber` order (numeric, then text); each is labelled with its PO number.
+- Alternatives: Id order; text order.
+- Why: The progress panel walks the POs in the order the PO list shows them.
+- Reversible: yes.
