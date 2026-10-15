@@ -85,10 +85,19 @@ describe("mounting from the route table", () => {
     });
     const res = await send("/api/invoice/export");
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/octet-stream");
+    expect(res.headers.get("content-type")).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     expect(res.headers.get("content-disposition")).toBe("attachment; filename*=UTF-8''Invoices%202024-25.xlsx");
     const download = await client.request("invoice.export");
     expect(download).toEqual({ fileName: "Invoices 2024-25.xlsx", bytes: new Uint8Array([1, 2, 3]) });
+  });
+
+  it.each([
+    ["DC_7.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+    ["Invoices.csv", "text/csv; charset=utf-8"],
+    ["download", "application/octet-stream"],
+  ])("types a download named %s as %s", async (fileName, contentType) => {
+    const { send } = testApp({ "invoice.export": () => ({ fileName, bytes: new Uint8Array([1]) }) });
+    expect((await send("/api/invoice/export")).headers.get("content-type")).toBe(contentType);
   });
 
   it("streams a download's chunks, pulling each only as the body is read (INV-99)", async () => {
