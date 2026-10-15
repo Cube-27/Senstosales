@@ -105,7 +105,7 @@ const toRows = (lines: readonly ListLine[]): Row[] =>
   });
 
 export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "clock" | "supplierId">) {
-  const { guardedRecompute, otherPos, relink } = docWrites({ db, clock }, "invoice");
+  const { guardedRecompute, otherPos, relink, numberCheck } = docWrites({ db, clock }, "invoice");
 
   /** INV-29: exactly the DC's lines at the DC qty and PO rate, else 400; checked before the PO is read. */
   async function dcSource(body: DcInvoiceCreate): Promise<Source> {
@@ -313,6 +313,8 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
   }
 
   return {
+    numberCheck: async (query: Parameters<typeof numberCheck>[1]) => numberCheck(await supplierId.require(), query),
+
     /**
      * INV-28 to INV-31, INV-41: stores the invoice in its date's FY, or answers 400, 404 or 409 and writes nothing.
      */

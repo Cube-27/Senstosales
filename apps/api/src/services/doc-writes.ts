@@ -3,6 +3,7 @@
 import type { Db, Statement } from "@senstosales/db";
 import { po, updateWithVersion, WriteBatch } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
+import { fyOf } from "@senstosales/domain";
 
 import { poNotFound } from "../errors.ts";
 import type { Clock } from "../ports/clock.ts";
@@ -66,7 +67,14 @@ export function docWrites({ db, clock }: { db: Db; clock: Clock }, kind: keyof t
     return reresolveLinks(db, { supplierId, kind, numbers: unique, docs });
   }
 
-  return { guardedRecompute, otherPos, relink };
+  /** The create form's live check (D-0097): is `number`, trimmed as stored (D-0248), taken in the FY of `date`? */
+  async function numberCheck(supplierId: string, { number, date }: { number: string; date: IsoDate }) {
+    const financialYear = fyOf(date);
+    const stored = await NUMBERED[kind](db, supplierId, [number.trim()]);
+    return { taken: stored.some((d) => fyOf(d.date) === financialYear), financialYear };
+  }
+
+  return { guardedRecompute, otherPos, relink, numberCheck };
 }
 
 export const commit = (db: Db, statements: readonly Statement[]) =>

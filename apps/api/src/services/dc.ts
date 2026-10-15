@@ -117,7 +117,7 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
     return row;
   }
 
-  const { guardedRecompute, otherPos, relink } = docWrites({ db, clock }, "dc");
+  const { guardedRecompute, otherPos, relink, numberCheck } = docWrites({ db, clock }, "dc");
 
   /** One create attempt: reads the PO, then builds and commits the batch. */
   async function createOnce(supplier: string, body: DcCreate, number: string) {
@@ -296,6 +296,8 @@ export function dcService({ db, clock, supplierId }: Pick<SupplierDeps, "db" | "
       await retrying(["po", "dc"], () => deleteOnce(supplier, id));
       return { ok: true as const };
     },
+
+    numberCheck: async (query: Parameters<typeof numberCheck>[1]) => numberCheck(await supplierId.require(), query),
 
     list: async (query: ListQuery) => {
       const { items, total } = page(await rows(query), query, DC_LIST_SORTS, DEFAULT);
