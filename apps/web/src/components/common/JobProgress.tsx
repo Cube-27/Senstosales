@@ -21,11 +21,11 @@ const STATUS_TEXT: Record<Job["status"], { text: string; className: string }> = 
   cancelled: { text: "Cancelled", className: "text-warning" },
 };
 
-/** The issue list: the document in progress while the job runs, then the skipped and failed files with reasons. */
 /** One flag type with its count, as the import summary lists it. */
 const flagCount = ([type, count]: readonly [Parameters<typeof fmtFlagType>[0], number]): string =>
   `${fmtFlagType(type)} ${fmtCount(count)}`;
 
+/** The issue list: the document in progress while the job runs, then the skipped and failed files with reasons. */
 function Details({ job }: { readonly job: Job }) {
   const summary = jobSummary(job);
   if (isActive(job) || summary === null) {
