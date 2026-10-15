@@ -227,9 +227,6 @@
                 "properties": {
                   "confirmation": {
                     "type": "string"
-                  },
-                  "currentPassword": {
-                    "type": "string"
                   }
                 },
                 "required": [
@@ -837,6 +834,7 @@
                         "type": "string",
                         "enum": [
                           "daily",
+                          "manual",
                           "pre-upgrade",
                           "safety"
                         ]
@@ -9015,6 +9013,9 @@
                       "type": {
                         "type": "string",
                         "const": "backup"
+                      },
+                      "manual": {
+                        "type": "boolean"
                       }
                     },
                     "required": [
