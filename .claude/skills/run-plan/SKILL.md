@@ -33,8 +33,10 @@ use an admin bypass, so tracker updates travel inside PRs, and work in flight is
    `MIN_FREE_MB` (default 1500) free. `start_agent.sh` refuses past either limit. Name reviewers `reviewer*`,
    everything else is a worker. Run independent ready rows in parallel; two workers never run rows that edit the
    same migration or generated file. For each assignment:
-   - create the worktree off fresh `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M` on branch
-     `spec-NN/pr-M-<short-name>`;
+   - `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>`: fetches and creates the worktree
+     off `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`. Never a raw `git worktree add`, and
+     never an MSYS drive path (`/c/...`): with path conversion off, git creates it under `C:/c/` (the path guard
+     denies such commands);
    - `tools/orchestrator/start_agent.sh <name> spec-NN-pr-M "<prompt>"` with: "Run `/implement-pr` for SPEC-NN
      PR M. An orchestrator assigned you this row. Own the PR through `/implement-pr` §6 until it merges."
 3. **Review and merge.** The implementor owns its PR and starts one reviewer once the PR is implemented,

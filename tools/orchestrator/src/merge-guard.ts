@@ -7,9 +7,8 @@
 // call and passes. This guards against mistakes, not against an agent set on evading it (aliases, scripts written to
 // disk, a quoted here-document piped to a shell).
 //
-// Reads the hook JSON on stdin. Exits 2 with the reason on stderr to deny, 0 to allow. Input it can't read is denied;
-// any other error exits 1, which the hook command in .claude/settings.json also turns into a deny.
-import { readFileSync } from "node:fs";
+// Hook input and exit codes: hook-input.ts.
+import { guard } from "./hook-input.ts";
 
 const REASON =
   "merge guard: agents don't merge PRs directly. Comment READY <sha7> on the PR and stop; the orchestrator merges" +
@@ -186,31 +185,4 @@ function mergesDirectly(command: string, depth = 0): boolean {
   );
 }
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-/** The hook input's command, or "" for a tool without one. Throws on input that isn't hook JSON. */
-function commandOf(payload: string): string {
-  const data: unknown = JSON.parse(payload);
-  if (!isObject(data)) throw new Error("hook input is not a JSON object");
-  const command = isObject(data["tool_input"]) ? data["tool_input"]["command"] : undefined;
-  return typeof command === "string" ? command : "";
-}
-
-/** The reason to deny the hook input, or undefined to allow it. */
-function denial(payload: string): string | undefined {
-  let command: string;
-  try {
-    command = commandOf(payload);
-  } catch (error) {
-    return `merge guard: unreadable hook input (${(error as Error).message}); denying.`;
-  }
-  return mergesDirectly(command) ? REASON : undefined;
-}
-
-// exitCode, not process.exit(): stderr to a pipe can be asynchronous, and exit() could drop the reason.
-const reason = denial(readFileSync(0, "utf8"));
-if (reason !== undefined) {
-  process.stderr.write(`${reason}\n`);
-  process.exitCode = 2;
-}
+guard("merge guard", (command) => (mergesDirectly(command) ? REASON : undefined));

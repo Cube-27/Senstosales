@@ -7,6 +7,9 @@ main=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
 REPO_NAME=$(basename "$main")
 # Agent worktrees live beside the repo, never inside it: <main>/../<repo>-worktrees/<name>.
 WORKTREE_ROOT=${WORKTREE_ROOT:-"$(dirname "$main")/$REPO_NAME-worktrees"}
+# In mixed form (C:/...) on Windows: native programs read an MSYS drive path as C:\c\..., since the Bash tool turns
+# path conversion off.
+WORKTREE_ROOT=$(cygpath -m "$WORKTREE_ROOT" 2>/dev/null || echo "$WORKTREE_ROOT")
 
 # The first job of the CI workflow. wait_ci.sh treats "no check of this name after WAIT_CI_NO_RUN_S" as "no
 # workflow run" (GitHub starts no pull_request workflow on a PR that conflicts with its base).

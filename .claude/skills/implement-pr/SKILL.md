@@ -13,8 +13,8 @@ You own one row of `docs/plans/ACTIVE.md`, from `todo` to a merged PR. Rules: `C
 1. Read `CLAUDE.md`, then `docs/plans/ACTIVE.md`. Take the assigned row, or the first `todo` row that is ready by
    the per-row rule in `/run-plan` §1.1.
 2. If an orchestrator assigned you the row, your cwd is already its worktree. Otherwise create one off fresh
-   `origin/main` at `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M` on branch `spec-NN/pr-M-<short-name>` (`<main>` is the first
-   entry of `git worktree list`). Never work in the main checkout.
+   `origin/main` with `tools/orchestrator/new_worktree.sh spec-NN-pr-M spec-NN/pr-M-<short-name>` (at
+   `C:/Projects/SenstoSales-worktrees/spec-NN-pr-M`). Never work in the main checkout.
 3. **Shared files have one writer.** With an orchestrator, don't edit `ACTIVE.md` or `DECISIONS.md`: your decisions
    go in the PR body. Working solo, update both yourself in your PR.
 4. Read the spec: the design sections your row touches, its invariants, testing strategy, acceptance criteria and
