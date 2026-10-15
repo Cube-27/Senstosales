@@ -1,7 +1,8 @@
 // Helpers for tests that run the orchestrator tools as Claude Code and the orchestrator run them: through bash, with
 // stub programs on PATH.
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, mkdirSync, mkdtempSync, openSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -41,14 +42,33 @@ export function stubBin(dir: string, stubs: Record<string, string>): string {
 /** A stub body that runs this Node, for a PATH that holds only stubs. */
 export const REAL_NODE = `exec "${process.execPath.replaceAll("\\", "/")}" "$@"`;
 
+/** An open read descriptor for a temp file holding INPUT. */
+function inputFile(input: string): number {
+  const path = join(mkdtempSync(join(tmpdir(), "stdin-")), "stdin");
+  writeFileSync(path, input);
+  return openSync(path, "r");
+}
+
 export function run(
   command: string,
   args: string[],
-  options: { cwd?: string; env?: NodeJS.ProcessEnv; input?: string },
+  { input, ...options }: { cwd?: string; env?: NodeJS.ProcessEnv; input?: string },
 ) {
-  const result = spawnSync(command, args, { ...options, encoding: "utf8", timeout: 120_000 });
-  if (result.error) throw result.error;
-  return result;
+  // INPUT is fed from a file, not spawnSync's `input` pipe: a child that exits without reading stdin (the hook
+  // denying before node runs) races that pipe write, and on Linux the lost race is an EPIPE thrown here.
+  const stdin = input === undefined ? "pipe" : inputFile(input);
+  try {
+    const result = spawnSync(command, args, {
+      ...options,
+      stdio: [stdin, "pipe", "pipe"],
+      encoding: "utf8",
+      timeout: 120_000,
+    });
+    if (result.error) throw result.error;
+    return result;
+  } finally {
+    if (typeof stdin === "number") closeSync(stdin);
+  }
 }
 
 export function git(cwd: string, ...args: string[]): string {
