@@ -12,8 +12,8 @@ import { z } from "zod";
 
 import type { CorpusImport, KindImport } from "./import.ts";
 
-type FlagType = (typeof zFlagType.options)[number];
-type PoStatus = (typeof zPoStatus.options)[number];
+type FlagType = z.infer<typeof zFlagType>;
+type PoStatus = z.infer<typeof zPoStatus>;
 
 /** A page the import skipped or failed, with the reason the job gave. */
 export interface PageIssue {
@@ -32,7 +32,7 @@ export interface KindReport {
   /** Pages over the request cap, never sent, listed so none is dropped silently. */
   readonly tooLarge: readonly string[];
   /** The flags this job opened, by type. */
-  readonly flagsOpened: Readonly<Record<string, number>>;
+  readonly flagsOpened: Readonly<Record<FlagType, number>>;
 }
 
 /** What the imported database holds after both jobs. */
@@ -59,14 +59,17 @@ const zFolderImportSummary = z.object({
   done: z.number(),
   skippedDocuments: z.array(zDocumentIssue),
   failedDocuments: z.array(zDocumentIssue),
-  flags: z.record(z.string(), z.number()).default({}),
+  flags: z.partialRecord(zFlagType, z.number()).default({}),
 });
 
-/** Every value of `keys` at 0, then the counted ones, so the record lists every key. */
-function countsOf<K extends string>(keys: readonly K[], rows: readonly { key: K; count: number }[]) {
-  const counts = Object.fromEntries(keys.map((key) => [key, 0])) as Record<K, number>;
-  for (const row of rows) counts[row.key] = row.count;
-  return counts;
+/** The count of every value of `keys`, 0 where none was counted, so the record lists every key. */
+const countsOf = <K extends string>(keys: readonly K[], counted: Partial<Record<K, number>>) =>
+  Object.fromEntries(keys.map((key) => [key, counted[key] ?? 0])) as Record<K, number>;
+
+function byKey<K extends string>(rows: readonly { key: K; count: number }[]): Partial<Record<K, number>> {
+  const counted: Partial<Record<K, number>> = {};
+  for (const row of rows) counted[row.key] = row.count;
+  return counted;
 }
 
 /** Flags by type, POs by status and SRVs whose PO is not in the system ("PO not found", INV-40). */
@@ -82,8 +85,8 @@ export async function readTotals(db: Db): Promise<CorpusTotals> {
     db.query(db.build.select({ count: count() }).from(srv).where(isNull(srv.poId))),
   ]);
   return {
-    flagsByType: countsOf(zFlagType.options, flags),
-    posByStatus: countsOf(zPoStatus.options, pos),
+    flagsByType: countsOf(zFlagType.options, byKey(flags)),
+    posByStatus: countsOf(zPoStatus.options, byKey(pos)),
     srvsPoNotFound: notFound?.count ?? 0,
   };
 }
@@ -99,7 +102,7 @@ function kindReport({ job, tooLarge }: KindImport): KindReport {
     skipped: issues(summary.skippedDocuments),
     failed: issues(summary.failedDocuments),
     tooLarge,
-    flagsOpened: summary.flags,
+    flagsOpened: countsOf(zFlagType.options, summary.flags),
   };
 }
 
@@ -165,7 +168,7 @@ export function renderMarkdown(report: ImportReport): string {
     "| ---- | ----------------------- | ------------------------ | --------------- |",
     ...zFlagType.options.map(
       (type) =>
-        `| ${type} | ${report.po.flagsOpened[type] ?? 0} | ${report.srv.flagsOpened[type] ?? 0} | ${report.flagsByType[type]} |`,
+        `| ${type} | ${report.po.flagsOpened[type]} | ${report.srv.flagsOpened[type]} | ${report.flagsByType[type]} |`,
     ),
     "",
     "## POs by status",
@@ -201,7 +204,9 @@ export function assertOutsideRepo(dir: string): void {
 export async function writeReport(report: ImportReport, dir: string): Promise<string> {
   await mkdir(dir, { recursive: true });
   const markdown = join(dir, "import-report.md");
-  await writeFile(markdown, renderMarkdown(report));
-  await writeFile(join(dir, "import-report.json"), renderJson(report));
+  await Promise.all([
+    writeFile(markdown, renderMarkdown(report)),
+    writeFile(join(dir, "import-report.json"), renderJson(report)),
+  ]);
   return markdown;
 }

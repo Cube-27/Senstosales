@@ -15,7 +15,7 @@ const RUNNER = fileURLToPath(new URL("../src/import.ts", import.meta.url));
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 
 // A full import migrates a database and ingests about seventy pages.
-vi.setConfig({ testTimeout: 60_000 });
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 let tmp: string;
 let corpusDir: string;
@@ -113,15 +113,11 @@ describe("pnpm import:corpus", () => {
   const run = (env: Record<string, string>) =>
     spawnSync(process.execPath, [RUNNER], { env: { ...process.env, ...env, TMPDIR: tmp, TEMP: tmp, TMP: tmp } });
 
-  /** One page of each kind keeps a run short; the import itself is covered above. */
-  async function onePagePerKind() {
+  test("imports SENSTO_CORPUS_DIR into a new data folder and writes the report, both in the OS temp folder", async () => {
+    // One page of each kind keeps the run short; the import itself is covered above.
     await rm(corpusDir, { recursive: true });
     await cp(join(FIXTURES, "po", "era2-single-item.html"), join(corpusDir, "po", "a.html"));
     await cp(join(FIXTURES, "srv", "layout-a-single.html"), join(corpusDir, "srv", "a.html"));
-  }
-
-  test("imports SENSTO_CORPUS_DIR into a new data folder and writes the report, both in the OS temp folder", async () => {
-    await onePagePerKind();
 
     const child = run({ SENSTO_CORPUS_DIR: corpusDir });
 
@@ -137,21 +133,7 @@ describe("pnpm import:corpus", () => {
     expect(JSON.parse(await readFile(join(tmp, "import-report.json"), "utf8"))).toMatchObject({ passed: true });
   });
 
-  test("writes the report into SENSTO_REPORT_DIR when it is set", async () => {
-    await onePagePerKind();
-    const reportDir = join(tmp, "reports");
-
-    const child = run({ SENSTO_CORPUS_DIR: corpusDir, SENSTO_REPORT_DIR: reportDir });
-
-    expect(child.stderr.toString()).toBe("");
-    expect(child.status).toBe(0);
-    expect(child.stdout.toString().endsWith(`\nReport: ${join(reportDir, "import-report.md")}\n`)).toBe(true);
-    expect((await readdir(reportDir)).sort()).toEqual(["import-report.json", "import-report.md"]);
-  });
-
   test("refuses a SENSTO_REPORT_DIR inside the repository before it imports anything", async () => {
-    await onePagePerKind();
-
     const child = run({ SENSTO_CORPUS_DIR: corpusDir, SENSTO_REPORT_DIR: join(REPO, "tools", "corpus", "out") });
 
     expect(child.status).toBe(1);

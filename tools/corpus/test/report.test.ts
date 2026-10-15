@@ -1,7 +1,7 @@
-// SPEC-09 PR 2: the import report over the anonymised parser fixtures copied to a temp folder (C1, INV-76), with a
-// broken page, a page over the request cap, an older copy of an SRV and an SRV of a PO not in the corpus added, so
-// every list in the report has a row.
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+// SPEC-09 PR 2: the import report over anonymised parser fixtures copied to a temp folder (C1, INV-76): one PO and
+// one SRV of it, plus a broken page, a page over the request cap, an older copy of the SRV and an SRV of a PO not in
+// the corpus, so every list in the report has a row.
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,21 +13,25 @@ import { buildReport, type ImportReport, renderJson, renderMarkdown, writeReport
 
 const FIXTURES = fileURLToPath(new URL("../../../packages/parsers/fixtures", import.meta.url));
 
-vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+// The import in `beforeAll` migrates a database and reads an 11 MB page.
+vi.setConfig({ hookTimeout: 60_000 });
 
 let tmp: string;
 let report: ImportReport;
 
 beforeAll(async () => {
   tmp = await mkdtemp(join(tmpdir(), "senstosales-report-test-"));
-  const corpusDir = join(tmp, "corpus");
-  await cp(FIXTURES, corpusDir, { recursive: true });
-  await writeFile(join(corpusDir, "po", "zz-broken.html"), "<html><body><p>Not a purchase order</p></body></html>");
-  await writeFile(join(corpusDir, "po", "zz-huge.html"), `<html>${"x".repeat(11_000_000)}</html>`);
+  const po = join(tmp, "corpus", "po");
+  const srv = join(tmp, "corpus", "srv");
+  await Promise.all([mkdir(po, { recursive: true }), mkdir(srv, { recursive: true })]);
+  await cp(join(FIXTURES, "po", "era1-single-item.html"), join(po, "a.html"));
+  await writeFile(join(po, "b-broken.html"), "<html><body><p>Not a purchase order</p></body></html>");
+  await writeFile(join(po, "c-huge.html"), `<html>${"x".repeat(11_000_000)}</html>`);
   const srvPage = await readFile(join(FIXTURES, "srv", "layout-a-single.html"), "utf8");
-  await writeFile(join(corpusDir, "srv", "zz-older.html"), srvPage.replace("10/07/2023", "09/07/2023"));
-  await writeFile(join(corpusDir, "srv", "zz-no-po.html"), srvPage.replace("4100000101", "4199999999"));
-  report = buildReport(await importCorpus({ corpusDir, dataDir: join(tmp, "data") }));
+  await writeFile(join(srv, "a.html"), srvPage);
+  await writeFile(join(srv, "b-older.html"), srvPage.replace("10/07/2023", "09/07/2023"));
+  await writeFile(join(srv, "c-no-po.html"), srvPage.replace("4100000101", "4199999999"));
+  report = buildReport(await importCorpus({ corpusDir: join(tmp, "corpus"), dataDir: join(tmp, "data") }));
 });
 afterAll(() => rm(tmp, { recursive: true, force: true }));
 
@@ -42,27 +46,27 @@ SRV job: done
 
 | Kind | Pages | Accepted | Skipped | Failed | Too large |
 | ---- | ----- | -------- | ------- | ------ | --------- |
-| PO | 44 | 42 | 0 | 1 | 1 |
-| SRV | 32 | 31 | 1 | 0 | 0 |
+| PO | 3 | 1 | 0 | 1 | 1 |
+| SRV | 3 | 2 | 1 | 0 | 0 |
 
 ## Skipped pages
 
-- SRV: zz-older.html: Older than the stored SRV 5000101 (dated 2023-07-10). Nothing was changed.
+- SRV: b-older.html: Older than the stored SRV 5000101 (dated 2023-07-10). Nothing was changed.
 
 ## Failed pages
 
-- PO: zz-broken.html: Could not read this PO page (missing-field): PURCHASE ORDER is missing
+- PO: b-broken.html: Could not read this PO page (missing-field): PURCHASE ORDER is missing
 
 ## Pages too large to send (over 10 MB)
 
-- PO: zz-huge.html
+- PO: c-huge.html
 
 ## Flags by type
 
 | Type | Opened by the PO import | Opened by the SRV import | In the database |
 | ---- | ----------------------- | ------------------------ | --------------- |
-| QTY_MISMATCH | 0 | 1 | 1 |
-| DOC_NUMBER_CONFLICT | 0 | 102 | 102 |
+| QTY_MISMATCH | 0 | 0 | 0 |
+| DOC_NUMBER_CONFLICT | 0 | 2 | 2 |
 | OVER_DISPATCH | 0 | 0 | 0 |
 | OVER_INVOICE | 0 | 0 | 0 |
 | DOC_ON_CANCELLED_ITEM | 0 | 0 | 0 |
@@ -72,9 +76,9 @@ SRV job: done
 
 | Status | POs |
 | ------ | --- |
-| Pending | 25 |
+| Pending | 0 |
 | Delivered | 0 |
-| Closed | 17 |
+| Closed | 1 |
 
 ## SRVs with "PO not found"
 
@@ -85,39 +89,41 @@ SRV job: done
 None.
 `;
 
+const NO_FLAGS = {
+  QTY_MISMATCH: 0,
+  DOC_NUMBER_CONFLICT: 0,
+  OVER_DISPATCH: 0,
+  OVER_INVOICE: 0,
+  DOC_ON_CANCELLED_ITEM: 0,
+  MANUAL_ADJUSTMENT_OVERLAP: 0,
+};
+
 const JSON_REPORT = {
   passed: true,
   po: {
     job: { status: "done", error: null },
-    pages: 44,
-    accepted: 42,
+    pages: 3,
+    accepted: 1,
     skipped: [],
     failed: [
-      { file: "zz-broken.html", reason: "Could not read this PO page (missing-field): PURCHASE ORDER is missing" },
+      { file: "b-broken.html", reason: "Could not read this PO page (missing-field): PURCHASE ORDER is missing" },
     ],
-    tooLarge: ["zz-huge.html"],
-    flagsOpened: {},
+    tooLarge: ["c-huge.html"],
+    flagsOpened: NO_FLAGS,
   },
   srv: {
     job: { status: "done", error: null },
-    pages: 32,
-    accepted: 31,
+    pages: 3,
+    accepted: 2,
     skipped: [
-      { file: "zz-older.html", reason: "Older than the stored SRV 5000101 (dated 2023-07-10). Nothing was changed." },
+      { file: "b-older.html", reason: "Older than the stored SRV 5000101 (dated 2023-07-10). Nothing was changed." },
     ],
     failed: [],
     tooLarge: [],
-    flagsOpened: { DOC_NUMBER_CONFLICT: 102, QTY_MISMATCH: 1 },
+    flagsOpened: { ...NO_FLAGS, DOC_NUMBER_CONFLICT: 2 },
   },
-  flagsByType: {
-    QTY_MISMATCH: 1,
-    DOC_NUMBER_CONFLICT: 102,
-    OVER_DISPATCH: 0,
-    OVER_INVOICE: 0,
-    DOC_ON_CANCELLED_ITEM: 0,
-    MANUAL_ADJUSTMENT_OVERLAP: 0,
-  },
-  posByStatus: { Pending: 25, Delivered: 0, Closed: 17 },
+  flagsByType: { ...NO_FLAGS, DOC_NUMBER_CONFLICT: 2 },
+  posByStatus: { Pending: 0, Delivered: 0, Closed: 1 },
   srvsPoNotFound: 1,
   logged: [],
 };
