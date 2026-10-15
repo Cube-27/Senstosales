@@ -116,7 +116,8 @@ export function xlsxChunks<K extends string>(sheet: Sheet<K>, rows: AsyncIterabl
     const formatted = sheet.columns.flatMap(({ key, numFmt }, i) => (numFmt === undefined ? [] : [{ key, numFmt, i }]));
     for await (const row of rowsAfter(first, source)) {
       const added = worksheet.addRow(sheet.columns.map((c) => row[c.key]));
-      for (const { key, numFmt, i } of formatted) if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
+      for (const { key, numFmt, i } of formatted)
+        if (typeof row[key] === "number") added.getCell(i + 1).numFmt = numFmt;
       added.commit();
       if (await pace()) return;
     }

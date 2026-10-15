@@ -94,7 +94,11 @@ describe("over the report dataset", () => {
 
     it("lists the rows the tab lists for the same filters and sort", async () => {
       const query = `${range}&sort=rejQty&dir=desc`;
-      const { rows: cells } = await exported(send, `/api/reports/reconciliation/export?${query}`, "reconciliation.json");
+      const { rows: cells } = await exported(
+        send,
+        `/api/reports/reconciliation/export?${query}`,
+        "reconciliation.json",
+      );
       const res = await send(`/api/reports/reconciliation?${query}&pageSize=100`);
       const { items } = (await res.json()) as { items: { poNumber: string; poItemNo: number }[] };
       expect(cells.slice(1).map((row) => `${row[0]}/${row[1]}`)).toEqual(
@@ -134,8 +138,14 @@ describe("over the report dataset", () => {
       expect(downloadFileName(res)).toBe("GC_101.xlsx");
       const expected = await buildGcWorkbook({
         supplier: {
-          ...{ name: SUPPLIER.name, address: SUPPLIER.address, contact: SUPPLIER.contact },
-          ...{ gstin: null, state: null, stateCode: null, description: null, jurisdiction: null },
+          name: SUPPLIER.name,
+          address: SUPPLIER.address,
+          contact: SUPPLIER.contact,
+          gstin: null,
+          state: null,
+          stateCode: null,
+          description: null,
+          jurisdiction: null,
         },
         dc: {
           number: "101",
