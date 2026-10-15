@@ -2,6 +2,7 @@
 // `validate-imports` fails deep imports past this file and local copies of its exports.
 export { AppChrome } from "./AppChrome.tsx";
 export { Autocomplete, type AutocompleteOption, type AutocompleteProps } from "./Autocomplete.tsx";
+export { ButtonGroup, type ButtonGroupOption, type ButtonGroupProps } from "./ButtonGroup.tsx";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog.tsx";
 export { type Column, DataTable, type DataTableProps } from "./DataTable.tsx";
 export { DatePicker, type DatePickerProps } from "./DatePicker.tsx";
