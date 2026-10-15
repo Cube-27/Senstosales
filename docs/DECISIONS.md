@@ -144,7 +144,7 @@ Cross-cutting, process and owner items.
 
 ### D-0343 — SPEC-00 §4.7 drops the `tools` required check
 
-- Date: 2026-10-15 · Spec/PR: CodeAnt triage · Status: decided
+- Date: 2026-10-15 · Spec/PR: CodeAnt triage · Status: superseded by D-0517
 - Decision: The ruleset's required checks are `check`, `licenses`, `real-data-scan`, then `build`, `audit`, `e2e`, `desktop` as each exists. `tools` is removed from SPEC-00 §4.7; the PR 1 row keeps its historical job list.
 - Alternatives: Leave the spec as written (H1 applied from it would wait forever on a job nobody runs).
 - Why: D-0018 folded the `tools` CI job into `check`; `ci.yml` has no `tools` job (CodeAnt on #10).
@@ -213,3 +213,35 @@ Cross-cutting, process and owner items.
 - Alternatives: Keep full tables.
 - Why: Startup reads drop from about 88k tokens to about 10–15k.
 - Reversible: yes — the rows are in git history.
+
+### D-0515 — No React effects in web code
+
+- Date: 2026-10-15 · Spec/PR: quality batch (#89) · Status: decided
+- Decision: `vp lint` refuses `useEffect` and `useLayoutEffect` everywhere in `apps/web`: named or aliased imports (`no-restricted-imports` `importNames`) and `React.` members (`no-restricted-properties`). `lint-boundaries.test.ts` probes it. The alternatives are in ENGINEERING "No React effects".
+- Alternatives: A text scan in `tools/checks`.
+- Why: Owner rule. The lint rule catches aliases and member access.
+- Reversible: yes.
+
+### D-0516 — How web code replaces effects
+
+- Date: 2026-10-15 · Spec/PR: quality batch (#89) · Status: decided
+- Decision: The handler that picks files starts an upload run (`startUpload`), and `FileUploadModal` reads it with `useSyncExternalStore`. A document listener tied to an element's lifetime lives in that element's ref callback. A query acts on its own result through `meta.onSuccess`/`meta.onError`, which the `QueryCache` calls once per fetch.
+- Alternatives: A module-level store for the search dialog's open state; toasts from a global store.
+- Why: No effects, and no module state that leaks between tests.
+- Reversible: yes.
+
+### D-0517 — One implementor bot pass covers CodeAnt, CodeRabbit and SonarCloud
+
+- Date: 2026-10-15 · Spec/PR: quality batch (#89) · Status: decided
+- Decision: `/implement-pr` §6.1: once CI is green and before the reviewer starts, the implementor reads CodeAnt and CodeRabbit inline findings and SonarCloud's PR issues (public API) once. It fixes the valid ones, replies on each thread and lists the rest under the PR body's `## Bot findings`. `/review-pr` §2.8 judges that list and runs no second pass. Supersedes D-0344.
+- Alternatives: The reviewer keeps CodeAnt and the implementor reads Sonar.
+- Why: Owner direction: one pass, with its fixes in before the single review.
+- Reversible: yes.
+
+### D-0518 — Sonar rules that misread the codebase are excluded by rule and path
+
+- Date: 2026-10-15 · Spec/PR: quality batch (#89) · Status: decided
+- Decision: `.sonarcloud.properties` lists `sonar.issue.ignore.multicriteria` entries, each scoped by rule and path with its reason, and excludes generated files. ENGINEERING "Patterns the analysers flag" gives one do/don't line for each recurring valid pattern. No lint rule mirrors Sonar. Automatic analysis did not apply the multicriteria entries on #89, so the owner copies them into the Sonar UI (H9).
+- Alternatives: Oxlint rules mirroring Sonar (dropped on owner correction).
+- Why: Owner direction: Sonar already checks the patterns, and every PR carried 10+ issues.
+- Reversible: yes.

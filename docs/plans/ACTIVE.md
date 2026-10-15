@@ -23,16 +23,17 @@ Updated: 2026-10-15.
 Agents can't do these (secrets, accounts, purchases, data only a person may see). Rows that depend on them are
 `human` until done; the Notes column of each spec table names the task.
 
-| #   | Task                                                                                                                                  | Needed by                                 | Status           |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------- |
-| H1  | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7). | SPEC-00 PR 4                              | todo             |
-| H2  | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped.                                          | —                                         | dropped (D-0010) |
-| H3  | BHEL portal credentials and OTP mailbox, on the owner's machine only.                                                                 | SPEC-01 PR 2, SPEC-19 PR 6                | todo             |
-| H4  | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine.                                                                | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3  | todo             |
-| H5  | Run the legacy app on synthetic input and produce the golden output, outside the repo.                                                | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1b | todo             |
-| H6  | Tauri updater signing key as a release secret.                                                                                        | SPEC-20 PR 5                              | todo             |
-| H7  | Fresh Windows VM install, upgrade and operations test.                                                                                | SPEC-20 (L8 exit), SPEC-21 PR 5           | todo             |
-| H8  | Owner cutover: fresh import, review and sign-off.                                                                                     | SPEC-22 PR 2–3                            | todo             |
+| #   | Task                                                                                                                                                                                                                      | Needed by                                 | Status           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------- |
+| H1  | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7).                                                                                     | SPEC-00 PR 4                              | todo             |
+| H2  | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped.                                                                                                                              | —                                         | dropped (D-0010) |
+| H3  | BHEL portal credentials and OTP mailbox, on the owner's machine only.                                                                                                                                                     | SPEC-01 PR 2, SPEC-19 PR 6                | todo             |
+| H4  | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine.                                                                                                                                                    | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3  | todo             |
+| H5  | Run the legacy app on synthetic input and produce the golden output, outside the repo.                                                                                                                                    | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1b | todo             |
+| H6  | Tauri updater signing key as a release secret.                                                                                                                                                                            | SPEC-20 PR 5                              | todo             |
+| H7  | Fresh Windows VM install, upgrade and operations test.                                                                                                                                                                    | SPEC-20 (L8 exit), SPEC-21 PR 5           | todo             |
+| H8  | Owner cutover: fresh import, review and sign-off.                                                                                                                                                                         | SPEC-22 PR 2–3                            | todo             |
+| H9  | Copy the `sonar.issue.ignore.multicriteria` entries in `.sonarcloud.properties` into SonarCloud → Project Settings → Analysis scope → Ignore issues on multiple criteria (automatic analysis does not read them, D-0518). | Every PR (Sonar noise)                    | todo             |
 
 ## Current focus
 
@@ -69,6 +70,7 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-16 (#84): light/dark screenshots of the PO and SRV screens (§7); `/po` e2e for paging bounding boxes and the blocked-delete reason once SPEC-18 can create a DC (now ct suite and unit tests).
 - SPEC-16 (#84): PO rows and items show received under Accepted (INV-09) in the UI; the API could return `acceptedQty` as SRV does.
 - SPEC-16 (#84 review): `JobProgress` shows "Waiting to start" while `jobs.detail` keeps failing, and the folder-import dialog stays busy; the by-PO SRV popover shows the first 100 SRVs.
+- Quality (#89): three tests time out only under full-suite load and pass alone: `dashboard.test.tsx` "stat cards" (1 s `waitFor`, cold start), `po-form.test.tsx` "creates a PO" and `apps/api/test/d1-params.test.ts` "DC list at 100 a page" (5 s).
 - SPEC-14/16 (#84): an `authed` e2e fixture for the default-password login the SPEC-16 spec does in its own `beforeEach`.
 - SPEC-17 (#87): `hooks/useSearchText.ts` (from #84, used by every list screen) still has a `useEffect`; the no-effects lint check will flag it.
 - SPEC-17 (#87): `apps/api/test/d1-params.test.ts` "the DC list at 100 a page" creates 100 DCs one after another and timed out once at 5.4 s (5 s limit) in a cold `pnpm verify`; it ran in 1.1-2.9 s on reruns.
