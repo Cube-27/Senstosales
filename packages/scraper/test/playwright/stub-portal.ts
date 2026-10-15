@@ -19,7 +19,9 @@ export async function startStubPortal(reply: (request: StubRequest) => StubReply
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     let body = "";
     req.setEncoding("utf8");
-    req.on("data", (chunk: string) => (body += chunk));
+    req.on("data", (chunk: string) => {
+      body += chunk;
+    });
     req.on("end", () => {
       const request = { method: req.method ?? "", path: req.url ?? "", headers: req.headers, body };
       requests.push(request);

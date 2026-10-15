@@ -25,7 +25,7 @@ type PortalOptions = { skipOtp?: boolean; down?: boolean };
 
 /** The synthetic portal: login (with notices), OTP, then the supplier PO page; anything else is aborted. */
 function portal(options: PortalOptions, offPortal: string[]) {
-  return async (route: Route) => {
+  return (route: Route): Promise<void> => {
     const request = route.request();
     const url = new URL(request.url());
     const form = new URLSearchParams(request.postData() ?? "");
@@ -108,9 +108,9 @@ function routedBrowserType(options: PortalOptions, offPortal: string[]): Pick<Br
 async function harness(options: PortalOptions = {}): Promise<Harness> {
   const offPortal: string[] = [];
   const fetched: Harness["fetched"] = [];
-  const fakeFetch: typeof fetch = async (input, init) => {
+  const fakeFetch: typeof fetch = (input, init) => {
     fetched.push({ url: String(input), cookie: new Headers(init?.headers).get("cookie") });
-    return new Response(PO_LIST_HTML);
+    return Promise.resolve(new Response(PO_LIST_HTML));
   };
   const browserType = routedBrowserType(options, offPortal);
   const session = await createPlaywrightScraper({ browserType, fetch: fakeFetch }).openSession();

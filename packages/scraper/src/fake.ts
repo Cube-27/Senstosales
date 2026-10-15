@@ -35,9 +35,7 @@ function fakeDriver(script: FakeScript): PortalDriver {
   }
 
   return {
-    async openLogin() {
-      return script.captchaPng;
-    },
+    openLogin: () => Promise.resolve(script.captchaPng),
     async submitLogin({ captcha }) {
       if (captcha !== script.captcha) throw new ScraperError("wrong-captcha");
       return "otp";
@@ -45,13 +43,12 @@ function fakeDriver(script: FakeScript): PortalDriver {
     async submitOtp(otp) {
       if (otp !== script.otp) throw new ScraperError("wrong-otp");
     },
-    async loggedIn() {
-      return {
-        listPoIds: async () => script.poIds ?? Object.keys(script.poPages),
-        fetchPoHtml: (poId) => page(script.poPages, poId),
-        fetchSrvHtml: (poId) => page(script.srvPages, poId),
-      };
-    },
-    async close() {},
+    loggedIn: () =>
+      Promise.resolve({
+        listPoIds: () => Promise.resolve(script.poIds ?? Object.keys(script.poPages)),
+        fetchPoHtml: (poId: string) => page(script.poPages, poId),
+        fetchSrvHtml: (poId: string) => page(script.srvPages, poId),
+      }),
+    close: () => Promise.resolve(),
   };
 }

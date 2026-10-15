@@ -5,9 +5,9 @@ import { guardedSession } from "../src/session-guard.ts";
 import { codeOf } from "./code-of.ts";
 
 const PAGES: PortalPages = {
-  listPoIds: async () => ["4500000001", "45-1", "12345678901", "4500000002"],
-  fetchPoHtml: async (poId) => `<html>PO ${poId}</html>`,
-  fetchSrvHtml: async (poId) => `<html>SRV ${poId}</html>`,
+  listPoIds: () => Promise.resolve(["4500000001", "45-1", "12345678901", "4500000002"]),
+  fetchPoHtml: (poId) => Promise.resolve(`<html>PO ${poId}</html>`),
+  fetchSrvHtml: (poId) => Promise.resolve(`<html>SRV ${poId}</html>`),
 };
 
 /** A driver that logs each action and answers as `overrides` say, else as a portal that accepts everything. */
@@ -20,11 +20,11 @@ function driver(overrides: Partial<PortalDriver> = {}): { driver: PortalDriver; 
       return f(...args);
     };
   const base: PortalDriver = {
-    openLogin: async () => Uint8Array.of(1),
-    submitLogin: async () => "otp",
-    submitOtp: async () => {},
-    loggedIn: async () => PAGES,
-    close: async () => {},
+    openLogin: () => Promise.resolve(Uint8Array.of(1)),
+    submitLogin: () => Promise.resolve("otp" as const),
+    submitOtp: () => Promise.resolve(),
+    loggedIn: () => Promise.resolve(PAGES),
+    close: () => Promise.resolve(),
     ...overrides,
   };
   return {
@@ -61,7 +61,7 @@ describe("session guard", () => {
   });
 
   it("when the portal skipped the OTP step, submitOtp only confirms the login (EC-64)", async () => {
-    const { driver: d, calls } = driver({ submitLogin: async () => "po-list" });
+    const { driver: d, calls } = driver({ submitLogin: () => Promise.resolve("po-list" as const) });
     const session = guardedSession(d);
     await session.prepareLogin();
     await session.submitCaptcha("SUP001", "secret-pass", "4821");
@@ -80,7 +80,12 @@ describe("session guard", () => {
 
   it("a step that settles after close answers closed and does not reopen the session", async () => {
     let release: (png: Uint8Array) => void = () => {};
-    const { driver: d, calls } = driver({ openLogin: () => new Promise((resolve) => (release = resolve)) });
+    const { driver: d, calls } = driver({
+      openLogin: () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    });
     const session = guardedSession(d);
     const pending = session.prepareLogin();
     await session.close();

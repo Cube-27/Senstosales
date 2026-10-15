@@ -14,10 +14,11 @@ function fakeBrowserType(fail?: "launch" | "newContext"): { browserType: Pick<Br
     async newContext(options: unknown) {
       calls.newContext.push(options);
       if (fail === "newContext") throw new Error("context failed");
-      return { newPage: async () => page };
+      return { newPage: () => Promise.resolve(page) };
     },
-    async close() {
+    close() {
       calls.closed += 1;
+      return Promise.resolve();
     },
   } as unknown as Browser;
   return {

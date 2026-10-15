@@ -31,8 +31,8 @@ describe("selectors on the synthetic login page", () => {
 
   it("the last captcha table holds the digit images and nothing else", () => {
     const inner = $(CAPTCHA).last();
-    expect(inner.find("img").length).toBe(2);
-    expect(inner.find("input").length).toBe(0);
+    expect(inner.find("img")).toHaveLength(2);
+    expect(inner.find("input")).toHaveLength(0);
   });
 });
 

@@ -28,7 +28,9 @@ export function createPlaywrightScraper({
 
 function edgeDriver({ browser, page }: Edge, fetchFn: typeof fetch): PortalDriver {
   // A portal alert or confirm would block the page until answered; accept it as a person would.
-  page.on("dialog", (dialog) => void dialog.accept().catch(() => {}));
+  page.on("dialog", (dialog) => {
+    dialog.accept().catch(() => {});
+  });
   const closeEdge = () => browser.close().catch(() => {});
   return {
     openLogin: () => openLogin(page),
