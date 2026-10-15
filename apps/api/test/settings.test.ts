@@ -30,7 +30,7 @@ describe("supplier", () => {
     const rows = await audit();
     expect(rows).toHaveLength(2);
     expect(rows[1]).toMatchObject({
-      action: "update-supplier",
+      action: "supplier.update",
       entityType: "supplier",
       entityId: id,
       before: { id, ...SUPPLIER_WIRE },
@@ -66,7 +66,7 @@ describe("settings", () => {
     const rows = await audit();
     expect(rows).toHaveLength(3);
     expect(rows[1]).toMatchObject({
-      action: "update-settings",
+      action: "settings.update",
       entityType: "settings",
       before: { cgstPct: "6", sgstPct: "6", preferences: {} },
       after: next,
@@ -114,10 +114,10 @@ describe("buyers (INV-86)", () => {
 
     const rows = await audit();
     expect(rows.slice(1).map((r) => [r.action, r.entityType, r.entityId])).toEqual([
-      ["create-buyer", "buyer", b.id],
-      ["create-buyer", "buyer", a.id],
-      ["update-buyer", "buyer", b.id],
-      ["delete-buyer", "buyer", a.id],
+      ["buyer.create", "buyer", b.id],
+      ["buyer.create", "buyer", a.id],
+      ["buyer.update", "buyer", b.id],
+      ["buyer.delete", "buyer", a.id],
     ]);
     expect(rows[3]).toMatchObject({ before: { id: b.id, ...UNIT }, after: { id: b.id, ...updated } });
   });
@@ -164,9 +164,9 @@ describe("BHEL password (INV-81)", () => {
 
     const rows = await audit();
     expect(rows.slice(1).map((r) => [r.action, r.entityType, r.before, r.after])).toEqual([
-      ["set-bhel-password", "secret", null, null],
-      ["set-bhel-password", "secret", null, null],
-      ["clear-bhel-password", "secret", null, null],
+      ["secret.set", "secret", null, null],
+      ["secret.set", "secret", null, null],
+      ["secret.clear", "secret", null, null],
     ]);
     const seen = [...bodies, JSON.stringify(logger.lines), JSON.stringify(rows)].join("\n");
     expect(seen).not.toContain(PASSWORD);

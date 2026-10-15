@@ -18,8 +18,8 @@ export function createSecretsService({ db, clock, supplierId }: SupplierDeps): S
       const id = await supplierId.require();
       const [write, action] =
         value === null
-          ? [repo.deleteSecret(db, id, name), `clear-${name}`]
-          : [repo.upsertSecret(db, id, name, value), `set-${name}`];
+          ? [repo.deleteSecret(db, id, name), "secret.clear"]
+          : [repo.upsertSecret(db, id, name, value), "secret.set"];
       await new WriteBatch(db)
         .add(write)
         .add(audit(db, clock.now(), { action, entityType: "secret", entityId: id }))

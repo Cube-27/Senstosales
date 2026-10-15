@@ -22,7 +22,7 @@ export function createOnboardingService({ db, clock, supplierId }: SupplierDeps)
       const after = { ...row, ...ratesForAudit({ cgstPct, sgstPct }) };
       const batch = new WriteBatch(db).add(repo.insertSupplier(db, row)).add(repo.assertOneSupplier(db));
       for (const statement of seedStatements(db, row.id, { cgstPct, sgstPct })) batch.add(statement);
-      batch.add(audit(db, clock.now(), { action: "onboarding", entityType: "supplier", entityId: row.id, after }));
+      batch.add(audit(db, clock.now(), { action: "supplier.create", entityType: "supplier", entityId: row.id, after }));
       try {
         await batch.commit();
       } catch (err) {

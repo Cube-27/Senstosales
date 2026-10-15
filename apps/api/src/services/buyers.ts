@@ -27,7 +27,7 @@ export function createBuyersService({ db, clock, supplierId }: SupplierDeps) {
       const after = { ...body, id: newId() };
       await new WriteBatch(db)
         .add(repo.insertBuyer(db, { ...after, supplierId: await supplierId.require() }))
-        .add(audit(db, clock.now(), { action: "create-buyer", entityType: "buyer", entityId: after.id, after }))
+        .add(audit(db, clock.now(), { action: "buyer.create", entityType: "buyer", entityId: after.id, after }))
         .commit();
       return after;
     },
@@ -37,7 +37,7 @@ export function createBuyersService({ db, clock, supplierId }: SupplierDeps) {
       const after = { ...body, id };
       await new WriteBatch(db)
         .add(repo.updateBuyer(db, await supplierId.require(), after))
-        .add(audit(db, clock.now(), { action: "update-buyer", entityType: "buyer", entityId: id, before, after }))
+        .add(audit(db, clock.now(), { action: "buyer.update", entityType: "buyer", entityId: id, before, after }))
         .commit();
       return after;
     },
@@ -46,7 +46,7 @@ export function createBuyersService({ db, clock, supplierId }: SupplierDeps) {
       const before = await load(id);
       await new WriteBatch(db)
         .add(repo.deleteBuyer(db, await supplierId.require(), id))
-        .add(audit(db, clock.now(), { action: "delete-buyer", entityType: "buyer", entityId: id, before }))
+        .add(audit(db, clock.now(), { action: "buyer.delete", entityType: "buyer", entityId: id, before }))
         .commit();
     },
   };

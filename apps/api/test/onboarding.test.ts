@@ -68,7 +68,7 @@ describe("completing onboarding", () => {
         id: expect.any(String),
         at: "2025-06-01T05:30:00.000Z",
         actor: "admin",
-        action: "onboarding",
+        action: "supplier.create",
         entityType: "supplier",
         entityId: id,
         before: null,

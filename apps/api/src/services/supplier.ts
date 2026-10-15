@@ -45,7 +45,7 @@ export function createSupplierService({ db, clock }: SupplierDeps) {
         .add(repo.updateSupplier(db, after))
         .add(
           audit(db, clock.now(), {
-            action: "update-supplier",
+            action: "supplier.update",
             entityType: "supplier",
             entityId: after.id,
             before,

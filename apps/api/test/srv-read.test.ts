@@ -516,7 +516,7 @@ describe("DELETE /api/srv/:id", () => {
     await del(app, S1);
     const rows = await app.audit();
     expect(rows.at(-1)).toMatchObject({
-      action: "delete-srv",
+      action: "srv.delete",
       entityType: "srv",
       entityId: S1,
       before: { poNumber: "4500001", srvNumber: "9000001", srvDate: "2025-05-01", items: 2 },

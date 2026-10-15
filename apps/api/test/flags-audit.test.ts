@@ -36,7 +36,7 @@ const details = { field: "dsp_qty", expected: "10", actual: "12", docIds: [] };
  * - F1 OVER_DISPATCH on P1, open, opened 2025-05-01.
  * - F2 QTY_MISMATCH on P2, acknowledged with note "checked", opened 2025-05-03.
  * - F3 DOC_NUMBER_CONFLICT on P2, open, opened 2025-05-02.
- * Audit (the onboarding row removed): A1 po.create at 2025-05-01 23:30 IST, A2 delete-srv at 2025-05-02 00:00 IST,
+ * Audit (the onboarding row removed): A1 po.create at 2025-05-01 23:30 IST, A2 srv.delete at 2025-05-02 00:00 IST,
  * A3 flag.acknowledge at 2025-05-03 09:30 IST.
  */
 async function seeded(): Promise<App> {
@@ -100,7 +100,7 @@ async function seeded(): Promise<App> {
       .insert(auditLog)
       .values([
         entry(A1, "2025-05-01T18:00:00.000Z", "po.create", "po", P1),
-        entry(A2, "2025-05-01T18:30:00.000Z", "delete-srv", "srv", SCOPE),
+        entry(A2, "2025-05-01T18:30:00.000Z", "srv.delete", "srv", SCOPE),
         entry(A3, "2025-05-03T04:00:00.000Z", "flag.acknowledge", "reconciliation_issue", F2),
       ]),
   ]);
@@ -336,7 +336,7 @@ describe("GET /api/audit", () => {
       body: {
         items: [
           row(A3, "2025-05-03T04:00:00.000Z", "flag.acknowledge", "reconciliation_issue", F2),
-          row(A2, "2025-05-01T18:30:00.000Z", "delete-srv", "srv", SCOPE),
+          row(A2, "2025-05-01T18:30:00.000Z", "srv.delete", "srv", SCOPE),
           row(A1, "2025-05-01T18:00:00.000Z", "po.create", "po", P1),
         ],
         total: 3,
@@ -346,7 +346,7 @@ describe("GET /api/audit", () => {
 
   it.each([
     ["?entityType=po", [A1], 1],
-    ["?action=delete-srv", [A2], 1],
+    ["?action=srv.delete", [A2], 1],
     // The dates are IST calendar dates: A2 at 18:30 UTC is 2 May in IST, A1 at 18:00 UTC is still 1 May.
     ["?from=2025-05-02", [A3, A2], 2],
     ["?to=2025-05-01", [A1], 1],
@@ -356,7 +356,7 @@ describe("GET /api/audit", () => {
     ["?q=nothing", [], 0],
     ["?sort=at", [A1, A2, A3], 3],
     ["?sort=entityType", [A1, A3, A2], 3],
-    ["?sort=action&dir=desc", [A1, A3, A2], 3],
+    ["?sort=action&dir=desc", [A2, A1, A3], 3],
     ["?page=2", [], 3],
   ])("%s -> %j", async (query, expected, total) => {
     const app = await seeded();

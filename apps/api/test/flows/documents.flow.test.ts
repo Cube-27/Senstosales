@@ -462,10 +462,10 @@ test("one PO through every document and back: links block deletes with a reason 
     "dc.create",
     "invoice.create",
     "srv.ingest",
-    "delete-srv",
+    "srv.delete",
     "invoice.delete",
     "srv.ingest",
-    "delete-srv",
+    "srv.delete",
     "dc.delete",
   ]);
 });

@@ -60,7 +60,7 @@ export function createSettingsService({ db, clock, supplierId }: SupplierDeps) {
       await batch
         .add(
           audit(db, clock.now(), {
-            action: "update-settings",
+            action: "settings.update",
             entityType: "settings",
             entityId: id,
             before: { ...before, ...ratesForAudit(before) },
