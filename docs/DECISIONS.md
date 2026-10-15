@@ -2114,3 +2114,51 @@ None.
 - Alternatives: Drain stdin in the hook command (changes production for a test); catch EPIPE in `run()` (hides failures, in effect a retry); special-case the one test (other callers keep the race).
 - Why: A child that exits without reading stdin races the pipe write, and on Linux the lost race is an EPIPE (23 and 34 of 400 loaded runs failed before, 0 of 1,200 after); a file has no write to race.
 - Reversible: yes.
+
+### D-0258 — The xlsx writer streams through a readable-stream PassThrough
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Decision: The xlsx writer gives exceljs a `readable-stream` PassThrough and yields its chunks as an `AsyncGenerator<Uint8Array>`, so routes can pipe it through `hono/streaming` and `packages/documents/src` imports no `node:*` module (C12).
+- Alternatives: A `node:stream` adapter under `packages/documents/src/platform/node` with an export port injected into the API; a duck-typed sink.
+- Why: exceljs's `WorkbookWriter` needs a Node-style writable; readable-stream is the userland stream library (MIT, browser-capable) that exceljs's own stack uses. A port would add wiring with no second adapter.
+- Reversible: yes — one function.
+
+### D-0259 — The xlsx writer paces itself every 50 rows
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Decision: The xlsx writer yields to the event loop every 50 rows and waits for drain while the reader is not reading.
+- Alternatives: No pacing (measured heap grows linearly with rows); pacing on output progress (can deadlock while deflate waits for input).
+- Why: exceljs hands sheet XML to an asynchronous deflate without backpressure, and node:sqlite resolves at once, so an unpaced export buffers the whole sheet. Measured flat at 50k–400k rows.
+- Reversible: yes — a constant.
+
+### D-0260 — Export cells are string, number or null
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Decision: Cells are `string | number | null`. Strings are text (string cells; CSV prefix rule); numbers stay numeric with the column's number format; dates and quantities arrive already formatted or scaled by the services through the shared formatters (SPEC-13 PR 3).
+- Alternatives: Typed date and quantity cells in the writer.
+- Why: Keeps INV-94 in one place by JS type and leaves layouts and formats to the catalog (SPEC-13 PR 1) and goldens.
+- Reversible: yes.
+
+### D-0261 — CSV form: UTF-8 without BOM, CRLF, RFC 4180 quoting
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Decision: CSV is UTF-8 with no BOM, CRLF line endings and RFC 4180 quoting; headers are quoted by the same rule but never prefixed.
+- Alternatives: LF endings; a BOM.
+- Why: No golden exists yet (H5). This is the conventional CSV form; SPEC-13 PR 3's exact-text goldens confirm or change it in one place (`line`).
+- Reversible: yes.
+
+### D-0262 — Keyset key parts name a selected field
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Decision: Keyset key parts name a selected field (`{ by, dir, field }`) rather than computing their value in JS. A nullable column is keyed as `COALESCE(column, value)`. The last part must be the id.
+- Alternatives: `of: (row) => value` accessors (can drift from the SQL, e.g. CAST vs `Number`); row-value comparisons (cannot mix directions).
+- Why: The cursor then always holds the exact SQL value it is compared with.
+- Reversible: yes.
+
+### D-0263 — unzipper 0.12 for exceljs
+
+- Date: 2026-10-15 · Spec/PR: SPEC-13 PR 2 (#58) · Status: decided
+- Decision: Override `exceljs>unzipper` to `^0.12.3`.
+- Alternatives: Allow-list the unlicensed `buffers@0.1.1` (weakens C13's check); a different Excel library (exceljs is the named library).
+- Why: exceljs 4.4 pins unzipper 0.10, whose `binary` -> `buffers` chain declares no licence, and the licences job denies it. unzipper 0.12 drops the chain and keeps the `Parse` API exceljs's stream reader uses; exceljs loads unzipper eagerly, so `"-"` is not possible.
+- Reversible: yes — remove the override when exceljs updates.
