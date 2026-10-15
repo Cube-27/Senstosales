@@ -92,6 +92,33 @@ describe("lint boundaries (C12, C3)", () => {
     );
   }, 60_000);
 
+  it("rejects React effects anywhere in the web app and allows the other hooks", () => {
+    const named =
+      'import { useEffect, useLayoutEffect, useState } from "react";\nexport const h = [useEffect, useLayoutEffect, useState];\n';
+    const aliased = 'import { useEffect as run } from "react";\nexport const r = run;\n';
+    const member =
+      'import React from "react";\nexport const m = [React.useEffect, React.useLayoutEffect, React.useState];\n';
+    const fine =
+      'import { useState, useSyncExternalStore } from "react";\nexport const f = [useState, useSyncExternalStore];\n';
+    expect(
+      lint({
+        "apps/web/src/components/a.tsx": named,
+        "apps/web/src/platform/b.ts": aliased,
+        "apps/web/test/c.test.tsx": member,
+        "apps/web/ct/d.tsx": named,
+        "apps/web/src/e.tsx": fine,
+      }),
+    ).toEqual([
+      "apps/web/ct/d.tsx no-restricted-imports",
+      "apps/web/ct/d.tsx no-restricted-imports",
+      "apps/web/src/components/a.tsx no-restricted-imports",
+      "apps/web/src/components/a.tsx no-restricted-imports",
+      "apps/web/src/platform/b.ts no-restricted-imports",
+      "apps/web/test/c.test.tsx no-restricted-properties",
+      "apps/web/test/c.test.tsx no-restricted-properties",
+    ]);
+  }, 60_000);
+
   it("rejects Date and parseFloat in the domain only", () => {
     const source = "export const t = (): number => Date.now() + parseFloat('1');\n";
     expect(lint({ "packages/domain/src/t.ts": source, "packages/schemas/src/t.ts": source })).toEqual([

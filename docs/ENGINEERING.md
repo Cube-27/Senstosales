@@ -95,5 +95,11 @@ derived values and flags are recomputed in the same batch.
 **No layout shift.** No interaction moves or resizes anything around it: fixed table layout and widths, reserved page
 height, a pager that stays put, loading/empty/error states with the content's footprint.
 
+**No React effects.** Web code never uses `useEffect` or `useLayoutEffect` (owner rule; `vp lint` refuses both, as
+imports and as `React.` members). Derive the value during render; act in the event handler that caused the change;
+fetch and react to fetch results with TanStack Query (`meta.onError` for a failure toast) or a Router loader; reset
+state with a `key`; read outside state with `useSyncExternalStore`. A DOM listener that lives as long as an element
+goes in that element's ref callback, which returns its cleanup.
+
 **No real data.** The repo is public. Fixtures are synthetic or anonymised; the real corpus is read from
 `SENSTO_CORPUS_DIR` locally and never committed.
