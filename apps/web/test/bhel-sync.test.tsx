@@ -148,6 +148,70 @@ describe("BHEL sync screen (SPEC-19 PR 5)", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
+  it("Reset after a run ends the login the job closed: Login to BHEL again, Start disabled", async () => {
+    const calls = stubApi(
+      syncApi({
+        [`POST /api/bhel/session/${SESSION}/captcha`]: { step: "otp", message: null },
+        [`POST /api/bhel/session/${SESSION}/otp`]: { step: "ready" },
+        "POST /api/jobs": JOB,
+        [`GET /api/jobs/${JOB.id}`]: { job: DONE, events: [] },
+        [`DELETE /api/bhel/session/${SESSION}`]: { ok: true },
+      }),
+    );
+    renderApp("/po/ingest-bhel");
+    await logIn();
+    await userEvent.click(screen.getByRole("button", { name: "Start" }));
+    expect(await screen.findByRole("heading", { name: "Done" })).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(await screen.findByRole("heading", { name: "PO Standby" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Login to BHEL" })).toBeTruthy();
+    expect(screen.queryByText("Authenticated")).toBeNull();
+    expect(screen.getByRole("button", { name: "Start" }).hasAttribute("disabled")).toBe(true);
+    expect(calls.filter((c) => c.route === "POST /api/jobs")).toHaveLength(1);
+  });
+
+  it("Cancel while connecting: the late session is closed and the dialog stays shut", async () => {
+    let open: (value: unknown) => void = () => {};
+    const calls = stubApi(
+      syncApi({
+        "POST /api/bhel/session": () => new Promise((resolve) => (open = resolve)),
+        [`DELETE /api/bhel/session/${SESSION}`]: { ok: true },
+      }),
+    );
+    renderApp("/po/ingest-bhel");
+    await userEvent.click(await screen.findByRole("button", { name: "Login to BHEL" }));
+    await waitFor(async () => expect(await title()).toBe("Connecting to BHEL…"));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    open({ sessionId: SESSION, captchaPng: "iVBORw==" });
+    await waitFor(() => expect(calls.some((c) => c.route === `DELETE /api/bhel/session/${SESSION}`)).toBe(true));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("button", { name: "Login to BHEL" })).toBeTruthy();
+  });
+
+  it("Cancel while a captcha is out: its late answer changes nothing", async () => {
+    let answer: (value: unknown) => void = () => {};
+    stubApi(
+      syncApi({
+        [`POST /api/bhel/session/${SESSION}/captcha`]: () => new Promise((resolve) => (answer = resolve)),
+        [`DELETE /api/bhel/session/${SESSION}`]: { ok: true },
+      }),
+    );
+    renderApp("/po/ingest-bhel");
+    await userEvent.click(await screen.findByRole("button", { name: "Login to BHEL" }));
+    await waitFor(async () => expect(await title()).toBe("Enter CAPTCHA"));
+    await userEvent.type(screen.getByLabelText("CAPTCHA code"), "AB12C");
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    answer({ step: "otp", message: null });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByText("Authenticated")).toBeNull();
+  });
+
   it("Logout closes the portal session", async () => {
     const calls = stubApi(
       syncApi({

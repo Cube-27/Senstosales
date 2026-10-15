@@ -67,7 +67,9 @@ export function BhelSyncScreen() {
 
   const start = useMutation({
     mutationFn: (body: ScrapeBody) => api.request("jobs.start", { body }),
-    onSuccess: (started, body) => setRun({ kind, jobId: started.id, sessionId: body.sessionId }),
+    // The kind the job was started for, even if the user switched tabs while it started.
+    onSuccess: (started, body) =>
+      setRun({ kind: body.type === "po.scrape" ? "PO" : "SRV", jobId: started.id, sessionId: body.sessionId }),
     onError: (error) => toast("Could not start", error instanceof Error ? error.message : "Try again.", "error"),
   });
   const shown = run?.kind === kind ? run : null;
@@ -86,7 +88,7 @@ export function BhelSyncScreen() {
           passwordSaved={password.data?.saved}
           authenticated={authenticated}
           connecting={login.step === "connecting"}
-          running={running}
+          running={running || start.isPending}
           onLogin={wizard.start}
           onLogout={() => {
             wizard.close();
@@ -102,7 +104,11 @@ export function BhelSyncScreen() {
           startBlockedBy={startBlockedBy(state, start.isPending)}
           starting={start.isPending}
           onStart={() => request && "body" in request && start.mutate(request.body)}
-          onReset={() => setRun(null)}
+          onReset={() => {
+            // The run's job closed its session (D-0379): a login on that session ends with it; a newer one stays.
+            if (login.step === "ready" && login.sessionId === run?.sessionId) wizard.close();
+            setRun(null);
+          }}
         />
       </div>
       <PipelineCard
