@@ -10,6 +10,7 @@ import { createAuthService } from "./auth.ts";
 import { createBuyersService } from "./buyers.ts";
 import { dashboardService } from "./dashboard.ts";
 import { deliveryTrackerService } from "./delivery-tracker.ts";
+import { dcService } from "./dc.ts";
 import { flagsService } from "./flags.ts";
 import { folderImportService } from "./folder-import.ts";
 import { jobsService } from "./jobs.ts";
@@ -53,6 +54,7 @@ export function createServices(deps: ServiceDeps) {
     poIngest: poIngestService(deps),
     srvIngest: srvIngestService(deps),
     srv: srvService(deps),
+    dc: dcService(withSupplier),
     flags: flagsService(deps),
     audit: auditService(deps),
     deliveryTracker: tracker,

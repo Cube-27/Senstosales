@@ -2026,3 +2026,51 @@ None.
 - Alternatives: A copy per service.
 - Why: One implementation of the list convention for lists sorted in memory.
 - Reversible: yes.
+
+### D-0247 — DC create guards and retries on the PO version
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 1 (#55) · Status: decided
+- Decision: DC create starts its batch with `updateWithVersion(po, poId, versionRead, {})`, with the version read before the snapshot, as D-0220 does. On a stale PO the service rebuilds and retries the create up to 3 times, then answers 409 `stale-version`.
+- Alternatives: Leave the PO version alone (D-0142), which lets two overlapping creates write `dsp_qty` from stale rows; answer 409 on the first stale read, which would reject a valid DC because of an unrelated concurrent write (C6).
+- Why: A DC changes the PO's quantities, and the retry keeps C6: concurrency is never a reason to reject.
+- Reversible: yes.
+
+### D-0248 — DC and GC numbers stored trimmed
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 1 (#55) · Status: decided
+- Decision: DC and GC numbers are stored trimmed, and a number that is blank after trimming is 400 `number-blank`.
+- Alternatives: Store the number as typed.
+- Why: Lookups and links compare trimmed numbers (INV-24, `docKey`), so " 7 " and "7" must be one number for the `(number, FY)` index to mean what the links mean.
+- Reversible: yes.
+
+### D-0249 — A double collision names the DC number
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 1 (#55) · Status: decided
+- Decision: When the DC number and the GC number both collide, the 409 names the DC number. After the refused batch, the service reads the stored DCs to choose the message, because SQLite reports only one index.
+- Alternatives: Report whichever index SQLite names.
+- Why: A blank GC defaults to the DC number, so both collide whenever a DC number is reused, and "GC 100 already exists" would mislead.
+- Reversible: yes.
+
+### D-0250 — DC line errors at their body paths
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 1 (#55) · Status: decided
+- Decision: The 400 for invalid lines uses the first domain issue's code and lists every issue in `details.fields` at its body path (`lines.N.qty` → `body.items.N.dspQty`).
+- Alternatives: One error per request with no field paths.
+- Why: The form can show each message on its line, and the codes are the ones SPEC-11 §4.3 lists.
+- Reversible: yes.
+
+### D-0251 — Link re-resolution reads a superset, the domain decides
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 1 (#55) · Status: decided
+- Decision: `reresolveLinks` prefilters SRV items with `instr(cited, number) > 0`, a superset of every trimmed match, keeps only items whose cited number matches one of the changed numbers through `docKey`, and leaves the link to `resolveDocLink`.
+- Alternatives: Match with SQL `trim()` (its whitespace set differs from JS `trim`, a second rule, C2); a normalised indexed column (needs a migration).
+- Why: One business rule, in the domain.
+- Reversible: yes.
+
+### D-0252 — Dispatchable defaults carry the supplier snapshot
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 1 (#55) · Status: decided
+- Decision: Dispatchable `defaults` carry the supplier snapshot from the supplier row, and every other header field is blank (EC-36).
+- Alternatives: Legacy's consignee name from a setting, the address from a default buyer, and department no and our ref from PO columns; none of these exist in v1.
+- Why: C18: don't invent inputs.
+- Reversible: yes.

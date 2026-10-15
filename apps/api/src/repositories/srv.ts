@@ -1,7 +1,7 @@
 // SRV rows (ARCHITECTURE §8.2).
 import type { Db } from "@senstosales/db";
 import { srv, srvItem } from "@senstosales/db";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 const lineColumns = {
   id: srvItem.id,
@@ -67,3 +67,25 @@ export const srvItemKeysOf = (db: Db, srvIds: readonly string[]) =>
       .from(srvItem)
       .where(inArray(srvItem.srvId, [...srvIds])),
   );
+
+/** The SRV fields that cite a DC or an invoice by number, and the resolved link kept beside each (INV-38). */
+export const CITATIONS = {
+  dc: { raw: srvItem.challanNo, resolved: srvItem.resolvedDcId, key: "resolvedDcId" },
+  invoice: { raw: srvItem.invoiceNo, resolved: srvItem.resolvedInvoiceId, key: "resolvedInvoiceId" },
+} as const;
+
+/**
+ * The supplier's SRV items whose cited number of `kind` contains one of `numbers`, with the SRV date. Containment is
+ * a superset of every number that trims to one of them; the domain decides the link (INV-24).
+ */
+export function srvItemsCiting(db: Db, supplierId: string, kind: keyof typeof CITATIONS, numbers: readonly string[]) {
+  const { raw, resolved } = CITATIONS[kind];
+  return db.query(
+    db.build
+      .select({ id: srvItem.id, raw, resolved, srvDate: srv.srvDate })
+      .from(srvItem)
+      .innerJoin(srv, eq(srv.id, srvItem.srvId))
+      .where(and(eq(srvItem.supplierId, supplierId), or(...numbers.map((n) => sql`instr(${raw}, ${n}) > 0`))))
+      .orderBy(srvItem.id),
+  );
+}
