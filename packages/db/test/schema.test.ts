@@ -145,6 +145,8 @@ const EXPECTED: Record<string, string[]> = {
     "supplier_contact text",
     "version integer not null default 1",
     "created_at text not null",
+    "invoice_number text",
+    "invoice_date text",
   ],
   dc_item: [
     "id text pk",
@@ -153,6 +155,7 @@ const EXPECTED: Record<string, string[]> = {
     "po_item_id text not null",
     "dsp_qty_m integer not null",
     "created_at text not null",
+    "packets integer",
   ],
   invoice: [
     "id text pk",
@@ -209,6 +212,8 @@ const EXPECTED: Record<string, string[]> = {
     "sgst_u5 integer not null",
     "igst_u5 integer not null",
     "total_u5 integer not null",
+    "hsn text",
+    "packets integer",
   ],
   srv: [
     "id text pk",

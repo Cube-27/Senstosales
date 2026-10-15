@@ -55,4 +55,15 @@ export const MIGRATIONS: readonly [Migration, ...Migration[]] = [
       "CREATE INDEX `srv_item_resolved_invoice_id_idx` ON `srv_item` (`resolved_invoice_id`);",
     ],
   },
+  {
+    version: 3,
+    name: "document_fields",
+    statements: [
+      "ALTER TABLE `dc` ADD `invoice_number` text;",
+      "ALTER TABLE `dc` ADD `invoice_date` text;",
+      "ALTER TABLE `dc_item` ADD `packets` integer;",
+      "ALTER TABLE `invoice_item` ADD `hsn` text;",
+      "ALTER TABLE `invoice_item` ADD `packets` integer;",
+    ],
+  },
 ];
