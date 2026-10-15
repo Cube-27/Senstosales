@@ -2371,3 +2371,59 @@ None.
 - Alternatives: Per row in EDGE_CASES.md.
 - Why: C18. In the synthetic dataset the EC-39 legacy formulas agree with the item balance, so `dc-list.csv` holds under either reading; the other goldens depend on their readings: `invoice-list.csv` on EC-40, `pending.json` on EC-41, `reconciliation-one-po.json` on EC-42, `export-selected.json` on EC-43, `po-register.json` on EC-44, `po-register-empty.json` on EC-45.
 - Reversible: yes.
+
+### D-0290 — PO preview lists every item
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: The PO preview returns every PO item with `qty: null`, including items whose `uninvoicedQty` is 0 or negative.
+- Alternatives: The legacy filter (only items with uninvoiced > 0) with qty prefilled.
+- Why: INV-05 and C6: uninvoiced is shown, never enforced, and the shared schema says `qty` is `null` from a PO; hiding items would be a cap.
+- Reversible: yes.
+
+### D-0291 — Invoice preview header defaults
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: Both previews fill the supplier snapshot from the supplier row, `buyersOrderDate` = PO date and `gemcNumber` from the PO. The PO preview also fills `remarks` from the PO. The DC preview fills the buyer name, GSTIN and address from the DC's consignee, and `vehicleNo`, `lrNo`, `transporter` and `remarks` from the DC. Every other field is blank, including the PO preview's buyer (EC-46).
+- Alternatives: Buyer from `po.buyer_id`, which no flow sets.
+- Why: C16 and C18: match the visible legacy output where v1 stores the field, without inventing.
+- Reversible: yes.
+
+### D-0292 — DC preview of an invoiced DC is a 409
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: The DC preview answers 409 `dc-has-invoice` once the DC has an invoice.
+- Alternatives: Return the preview anyway.
+- Why: Legacy refuses it, and the create would answer 409 (INV-28).
+- Reversible: yes.
+
+### D-0293 — DC preview lines in the DC's order
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: The DC preview lists the lines in the DC's order, as the create stores them (D-0272).
+- Alternatives: PO item order.
+- Why: The form shows what will be saved.
+- Reversible: yes.
+
+### D-0294 — PO-direct create: 404 for the PO before 400 for the lines
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: The lines are checked against the PO's items, read after the PO version (D-0220), so an unknown PO is a 404 and malformed lines on a known PO are a 400.
+- Alternatives: Check line shape before reading the PO.
+- Why: Membership needs the items, and one check order is simpler.
+- Reversible: yes.
+
+### D-0295 — Invoice audit lines carry both line ids
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: Audit `after.lines` carries `poItemId` and `dcItemId` for both invoice kinds.
+- Alternatives: A per-kind shape.
+- Why: One shape; a PO-direct line has no DC line.
+- Reversible: yes.
+
+### D-0296 — EC-13 and SPEC-11 §6 clarified
+
+- Date: 2026-10-15 · Spec/PR: SPEC-11 PR 4 (#63) · Status: decided
+- Decision: Both now read: dsp 20, `OVER_DISPATCH`; `OVER_INVOICE` only once the DC is invoiced too (invoiced 20 > ord 10, INV-55). No code change; tests cover both cases with literal values.
+- Alternatives: Leave the text and test only the invoiced case.
+- Why: The old text contradicted INV-55.
+- Reversible: yes.
