@@ -109,3 +109,9 @@ export const fmtDateMonthName = (d: IsoDate | null): string =>
 
 /** `2024-25` -> `"FY 2024-25"`. */
 export const fmtFy = (fy: Fy): string => `FY ${fy}`;
+
+/** Days to a delivery date as the tracker export words them: `-12` -> `"12 days overdue"`, `0` -> `"Due Today"`. */
+export function fmtDaysToDue(days: number): string {
+  if (days < 0) return `${-days} days overdue`;
+  return days === 0 ? "Due Today" : `Due in ${days} days`;
+}

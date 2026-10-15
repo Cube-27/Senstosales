@@ -6,6 +6,7 @@ import {
   fmtCount,
   fmtDate,
   fmtDateMonthName,
+  fmtDaysToDue,
   fmtFixed,
   fmtFy,
   fmtMoney,
@@ -215,5 +216,17 @@ describe("fmtFy", () => {
     ["2000-03-31", "FY 1999-00"],
   ])("FY of %s -> %s", (d, expected) => {
     expect(fmtFy(fyOf(date(d)))).toBe(expected);
+  });
+});
+
+describe("fmtDaysToDue: the tracker export's Days Overdue, as legacy (no singular)", () => {
+  it.each([
+    [-12, "12 days overdue"],
+    [-1, "1 days overdue"],
+    [0, "Due Today"],
+    [1, "Due in 1 days"],
+    [14, "Due in 14 days"],
+  ])("%i -> %s", (days, expected) => {
+    expect(fmtDaysToDue(days)).toBe(expected);
   });
 });
