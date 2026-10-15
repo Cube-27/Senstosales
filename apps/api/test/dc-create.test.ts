@@ -374,6 +374,22 @@ describe("POST /api/dc", () => {
       { challanNo: "7", resolvedDcId: null },
     ]);
   });
+
+  test("an SRV item citing 17 stays linked to DC 17 when DC 7 is created, and gets no DOC_NUMBER_CONFLICT", async () => {
+    const { app, storedPo, createDc, flags } = await ready();
+    const { poId, item10 } = await storedPo();
+    const lines = [{ poItemId: item10, dspQty: "1" }];
+    const dc17 = await createDc({ poId, number: "17", dcDate: "2025-04-01", items: lines });
+    const page = srvPage("4500001", [{ srv: "S-1", date: "20/04/2025", item: 10, code: "M-10", challan: "17" }]);
+    await app.client.request("srv.upload", { body: { files: [{ name: "srv.html", html: page }] } });
+    const linked = () => app.db.query(app.db.build.select({ resolvedDcId: srvItem.resolvedDcId }).from(srvItem));
+    expect(await linked()).toEqual([{ resolvedDcId: dc17.body.id }]);
+
+    const res = await createDc({ poId, number: "7", dcDate: "2025-04-02", items: lines });
+    expect(res.status).toBe(200);
+    expect(await linked()).toEqual([{ resolvedDcId: dc17.body.id }]);
+    expect((await flags()).filter((f) => f.type === "DOC_NUMBER_CONFLICT")).toEqual([]);
+  });
 });
 
 type Ids = { item10: string; other: string };

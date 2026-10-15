@@ -4,7 +4,7 @@
 import type { Db, Statement } from "@senstosales/db";
 import { srvItem } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
-import { resolveDocLink } from "@senstosales/domain";
+import { docKey, fyOf, resolveDocLink } from "@senstosales/domain";
 import { eq } from "drizzle-orm";
 
 import { CITATIONS, srvItemsCiting } from "../repositories/srv.ts";
@@ -22,6 +22,11 @@ interface Relink {
 export async function reresolveLinks(db: Db, { supplierId, kind, numbers, docs }: Relink) {
   const changes = new Map<string, string | null>();
   for (const item of await srvItemsCiting(db, supplierId, kind, numbers)) {
+    // The read is a superset ("17" contains "7"): only an item citing one of `numbers` is ours to re-resolve, compared
+    // through `docKey` as links are (INV-24).
+    const fy = fyOf(item.srvDate);
+    const cited = item.raw === null ? undefined : docKey(item.raw, fy);
+    if (!numbers.some((n) => docKey(n, fy) === cited)) continue;
     const next = resolveDocLink(item.raw, item.srvDate, docs);
     if (next !== item.resolved) changes.set(item.id, next);
   }
