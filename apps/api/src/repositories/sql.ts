@@ -25,7 +25,17 @@ export const startsWith = (column: SQLWrapper, text: string) => like(column, `${
 const { fingerprint: _, ...flagApiColumns } = apiColumns(reconciliationIssue);
 export const flagColumns = flagApiColumns;
 
-/** A document number as a number: PO, DC, invoice and SRV numbers are digit strings and sort as numbers (as legacy). */
+/** D1 binds at most 100 parameters to a statement, so the reads by id take the ids 100 at a time. */
+const ID_BATCH = 100;
+
+/** `read` over `ids` in batches of at most 100, the rows in batch order. */
+export async function inBatches<T>(ids: readonly string[], read: (batch: string[]) => Promise<T[]>): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += ID_BATCH) out.push(...(await read(ids.slice(i, i + ID_BATCH))));
+  return out;
+}
+
+/** A document number as a number:PO, DC, invoice and SRV numbers are digit strings and sort as numbers (as legacy). */
 export const asNumber = (column: SQLWrapper) => sql<number>`CAST(${column} AS INTEGER)`;
 
 /** PO numbers sort as numbers; the text breaks ties for any that are not digits. */

@@ -93,6 +93,12 @@ describe("parsePoHeader", () => {
       "NET PO VAL",
     ],
     ["a fractional amendment number", page("<tr><td>AMEND NO</td><td>1.5</td></tr>"), "bad-number", "AMEND NO"],
+    [
+      "an amendment number past 2^53",
+      page("<tr><td>AMEND NO</td><td>9007199254740993</td></tr>"),
+      "bad-number",
+      "AMEND NO",
+    ],
   ])("fails on %s", (_, html, code, location) => {
     const r = header(html);
     expect(r.ok ? undefined : { code: r.error.code, location: r.error.location }).toEqual({ code, location });

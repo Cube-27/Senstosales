@@ -252,3 +252,37 @@ describe("GET /api/search", () => {
     expect((await get("/api/search?q=45", false)).status).toBe(401);
   });
 });
+
+// C4: D1 binds at most 100 parameters to a statement. A value bound reads every matching SRV to total it, so the
+// line read takes the SRVs 100 at a time (CodeAnt on #53).
+describe("a value bound over 150 SRVs", () => {
+  test("binds at most 100 parameters per statement and keeps five hits", async () => {
+    const r = rows(db);
+    const tag = (n: number) => String(n).padStart(4, "0");
+    await db.batch([
+      r.po({ id: PA, poNumber: "4500001", poDate: "2025-04-10" }),
+      r.item({ id: id("A1"), poId: PA, poItemNo: 10, ordQty: 1_000_000 }),
+      ...Array.from({ length: 150 }, (_, i) => {
+        const srvId = `01J9Z8Q4S5T6V7W8X9Y0R0${tag(i)}`;
+        return [
+          r.srv({ id: srvId, poNumber: "4500001", poId: PA, srvNumber: `77${tag(i)}`, srvDate: "2025-05-01" }),
+          r.srvItem({ id: `01J9Z8Q4S5T6V7W8X9Y0S0${tag(i)}`, srvId, poItemId: id("A1"), rcdQty: 1_000 }),
+        ];
+      }).flat(),
+    ]);
+    let most = 0;
+    const query = db.query.bind(db);
+    db.query = ((statement: Parameters<typeof query>[0]) => {
+      const { params } = (statement as unknown as { toSQL(): { params: unknown[] } }).toSQL();
+      most = Math.max(most, params.length);
+      return query(statement);
+    }) as typeof db.query;
+    try {
+      const hits = await search("q=77&types=srv&valueMin=0");
+      expect(hits.map((h) => h.type)).toEqual(["srv", "srv", "srv", "srv", "srv"]);
+    } finally {
+      db.query = query;
+    }
+    expect(most).toBeLessThanOrEqual(100);
+  });
+});

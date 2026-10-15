@@ -144,7 +144,7 @@ token parity (SPEC-14), bundle budget (SPEC-14), OpenAPI freshness (SPEC-04).
 
 ### 4.7 Rulesets and repo settings (human task H1)
 
-Ruleset on `main`: PR required, required checks (`check`, `licenses`, `tools`, `real-data-scan`, then `build`,
+Ruleset on `main`: PR required, required checks (`check`, `licenses`, `real-data-scan`, then `build`,
 `audit`, `e2e`, `desktop` as each exists), linear history, no force-push or deletion, no bypass actors. Secret
 scanning and push protection on. The applied `gh api` commands are recorded in `docs/DECISIONS.md`.
 

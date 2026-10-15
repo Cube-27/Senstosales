@@ -9,7 +9,7 @@ import { and, desc, eq, exists, inArray, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { dcRefs, invoiceRefs, srvRefs, srvsResolvedTo } from "./po-list.ts";
-import { asNumber, contains, inRange, startsWith } from "./sql.ts";
+import { asNumber, contains, inBatches, inRange, startsWith } from "./sql.ts";
 
 export type SearchQuery = z.output<(typeof routes)["search.query"]["query"]>;
 
@@ -234,20 +234,22 @@ export const invoiceExtras = (db: Db, invoiceId: string, dcId: string | null) =>
     srvRefs(db, srvsResolvedTo(db, srvItem.resolvedInvoiceId, invoiceId)),
   ]);
 
-/** The lines of `srvIds` with their matched PO item, for the domain totals, in one query. */
+/** The lines of `srvIds` with their matched PO item, for the domain totals, 100 SRVs per query (D1). */
 export const srvLinesOf = (db: Db, srvIds: readonly string[]) =>
-  db.query(
-    db.build
-      .select({
-        srvId: srvItem.srvId,
-        rcdQty: srvItem.rcdQty,
-        acceptedQty: srvItem.acceptedQty,
-        rejQty: srvItem.rejQty,
-        poItem: { id: poItem.id, ordQty: poItem.ordQty, rate: poItem.rate },
-      })
-      .from(srvItem)
-      .leftJoin(poItem, eq(poItem.id, srvItem.poItemId))
-      .where(inArray(srvItem.srvId, [...srvIds])),
+  inBatches(srvIds, (ids) =>
+    db.query(
+      db.build
+        .select({
+          srvId: srvItem.srvId,
+          rcdQty: srvItem.rcdQty,
+          acceptedQty: srvItem.acceptedQty,
+          rejQty: srvItem.rejQty,
+          poItem: { id: poItem.id, ordQty: poItem.ordQty, rate: poItem.rate },
+        })
+        .from(srvItem)
+        .leftJoin(poItem, eq(poItem.id, srvItem.poItemId))
+        .where(inArray(srvItem.srvId, ids)),
+    ),
   );
 
 /** The DCs and invoices an SRV's lines resolved to (INV-37). */

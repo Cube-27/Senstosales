@@ -111,6 +111,7 @@ describe("parseSrv", () => {
     ["an empty PO item number", page({ 3: "" }), "missing-field", "row 2, PO ITM"],
     ["a fractional lot number", page({ 4: "1.5" }), "bad-number", "row 2, LOT NO"],
     ["a zero SRV item number", page({ 5: "0" }), "bad-number", "row 2, SRV ITM"],
+    ["a PO item number past 2^53", page({ 3: "9007199254740993" }), "bad-number", "row 2, PO ITM"],
     ["a received quantity that is not a number", page({ 6: "N/A" }), "bad-quantity", "row 2, RECVD QTY"],
     ["a rejected quantity with four decimals", page({ 8: "0.0005" }), "bad-quantity", "row 2, REJ QTY"],
   ])("fails on %s", (_, html, code, location) => {

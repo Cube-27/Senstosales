@@ -1,7 +1,7 @@
 // SPEC-09 PR 1: the corpus import runner over the anonymised parser fixtures copied to a temp folder (C1, INV-76),
 // imported through the folder-import jobs into a temp data folder. The owner's corpus is never read here.
 import { spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -142,6 +142,19 @@ describe("pnpm import:corpus", () => {
     );
     await expect(readdir(join(REPO, "tools", "corpus", "out"))).rejects.toThrow("ENOENT");
     expect((await readdir(tmp)).filter((name) => name.startsWith("senstosales-corpus-"))).toEqual([]);
+  });
+
+  // CodeAnt on #56: the check compared paths as text, so a link outside the repo led into it.
+  test("refuses a SENSTO_REPORT_DIR that leads into the repository through a link", async () => {
+    const link = join(tmp, "linked");
+    await symlink(join(REPO, "tools", "corpus"), link, "junction");
+    const child = run({ SENSTO_CORPUS_DIR: corpusDir, SENSTO_REPORT_DIR: join(link, "out") });
+
+    expect(child.status).toBe(1);
+    expect(child.stderr.toString()).toBe(
+      "Corpus import failed: SENSTO_REPORT_DIR is inside the repository. Choose a folder outside it.\n",
+    );
+    await expect(readdir(join(REPO, "tools", "corpus", "out"))).rejects.toThrow("ENOENT");
   });
 
   test("exits 1 with a plain message when SENSTO_CORPUS_DIR is unset", () => {

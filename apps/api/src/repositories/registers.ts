@@ -12,16 +12,7 @@ import { dcListWhere } from "./dc.ts";
 import type { InvoiceFilters } from "./invoice.ts";
 import { invoiceListWhere } from "./invoice.ts";
 import type { Keyset, KeysetPage, PrimaryKey } from "./keyset.ts";
-import { asNumber, inRange, orEmpty } from "./sql.ts";
-
-/** D1 binds at most 100 parameters to a statement, so the reads by id take the ids 100 at a time. */
-const ID_BATCH = 100;
-
-async function inBatches<T>(ids: readonly string[], read: (batch: string[]) => Promise<T[]>): Promise<T[]> {
-  const out: T[] = [];
-  for (let i = 0; i < ids.length; i += ID_BATCH) out.push(...(await read(ids.slice(i, i + ID_BATCH))));
-  return out;
-}
+import { asNumber, inBatches, inRange, orEmpty } from "./sql.ts";
 
 /** A register's date range. */
 export type Range = z.output<(typeof routes)["reports.poRegisterExport"]["query"]>;

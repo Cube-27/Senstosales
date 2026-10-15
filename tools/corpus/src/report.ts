@@ -1,8 +1,9 @@
 // The corpus import report (SPEC-09 §2): what happened to every page, from the two folder-import job summaries and
 // the pages too large to send, plus totals read from the imported database. It holds real identifiers and counts, so
 // it is written only outside the repo and never pasted into a PR, issue or log (§4.2, C1).
+import { existsSync, realpathSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { type Db, po, reconciliationIssue, srv } from "@senstosales/db";
@@ -192,9 +193,13 @@ export const renderJson = (report: ImportReport): string => `${JSON.stringify(re
 
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 
-/** Refuses a report folder inside the repo: the report holds real data (C1). */
+/** The real path of `path`, through its nearest existing ancestor when it does not exist yet. */
+const realPath = (path: string): string =>
+  existsSync(path) ? realpathSync(path) : join(realPath(dirname(resolve(path))), basename(path));
+
+/** Refuses a report folder inside the repo, also through a link: the report holds real data (C1). */
 export function assertOutsideRepo(dir: string): void {
-  const path = relative(REPO, resolve(dir));
+  const path = relative(realPath(REPO), realPath(dir));
   if (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path)) {
     throw new Error("SENSTO_REPORT_DIR is inside the repository. Choose a folder outside it.");
   }

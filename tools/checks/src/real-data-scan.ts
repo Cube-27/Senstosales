@@ -125,11 +125,20 @@ export function selectFiles(staged: boolean): Array<{ path: string; read: () => 
     .map((path) => ({ path, read: () => (staged ? git(["show", `:${path}`]) : readFileSync(path)) }));
 }
 
+/** The allowlist the commit or checkout holds: staged, the index copy (an unstaged edit must not excuse a staged file),
+ * empty when the index has none. */
+function readAllowlist(staged: boolean): string {
+  if (!staged) return readFileSync(ALLOWLIST_PATH, "utf8");
+  const inIndex = git(["ls-files", "-z", "--", ALLOWLIST_PATH]).length > 0;
+  return inIndex ? git(["show", `:${ALLOWLIST_PATH}`]).toString("utf8") : "";
+}
+
 function main(argv: string[]): number {
-  const allow = parseAllowlist(readFileSync(ALLOWLIST_PATH, "utf8"));
+  const staged = argv.includes("--staged");
+  const allow = parseAllowlist(readAllowlist(staged));
   const companyDetails = readCompanyDetails(".");
   const findings = applyAllowlist(
-    selectFiles(argv.includes("--staged")).flatMap((f) => scanFile(f.path, f.read(), companyDetails)),
+    selectFiles(staged).flatMap((f) => scanFile(f.path, f.read(), companyDetails)),
     allow,
   );
   for (const f of findings) console.error(`${f.path}:${f.line} ${f.rule}`);

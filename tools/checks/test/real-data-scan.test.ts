@@ -219,14 +219,15 @@ describe("real-data-scan --staged (the pre-commit hook)", () => {
   const SCRIPT = fileURLToPath(new URL("../src/real-data-scan.ts", import.meta.url));
   const VALUE = cat("Example ", "Traders");
 
-  /** Stages `files` in a fresh repo with an empty allowlist and runs the scan there as the hook does. */
-  function hook(files: Record<string, string>, companyDetails?: string) {
+  /** Stages `files` in a fresh repo and runs the scan there as the hook does. The allowlist on disk is `allow` (empty by
+   * default), left unstaged unless it is one of `files`. */
+  function hook(files: Record<string, string>, companyDetails?: string, allow = "# none\n") {
     const { repo, run } = gitRepo();
     const write = (path: string, content: string) => {
       mkdirSync(dirname(join(repo, path)), { recursive: true });
       writeFileSync(join(repo, path), content);
     };
-    write("tools/checks/real-data-allow.txt", "# none\n");
+    write("tools/checks/real-data-allow.txt", allow);
     if (companyDetails !== undefined) write("tools/checks/company-details.local.txt", companyDetails);
     for (const [path, content] of Object.entries(files)) write(path, content);
     run("add", "--", ...Object.keys(files));
@@ -262,6 +263,18 @@ describe("real-data-scan --staged (the pre-commit hook)", () => {
       stdout: "real-data-scan: 1 finding(s)\n",
       stderr: "a.txt:1 mobile\n",
     });
+  });
+
+  // CodeAnt on #3: the allowlist was read from the working tree, so an unstaged entry excused a staged file.
+  it("ignores an allowlist entry that is not staged", () => {
+    const result = hook({ "a.txt": `call ${MOBILE}\n` }, undefined, "a.txt:mobile  # synthetic\n");
+    expect(result).toEqual({ status: 1, stdout: "real-data-scan: 1 finding(s)\n", stderr: "a.txt:1 mobile\n" });
+  });
+
+  it("honours a staged allowlist entry", () => {
+    const allow = "a.txt:mobile  # synthetic\n";
+    const result = hook({ "a.txt": `call ${MOBILE}\n`, "tools/checks/real-data-allow.txt": allow }, undefined, allow);
+    expect(result).toEqual({ status: 0, stdout: "real-data-scan: 0 finding(s)\n", stderr: "" });
   });
 
   it("passes silently when the company-details file is absent", () => {

@@ -31,6 +31,8 @@ async function passwordMatches(user: repo.User | null, password: string): Promis
   return user === null ? password === DEFAULT_PASSWORD : verifyPassword(password, user.passwordHash);
 }
 
+const wrongPassword = () => new AuthError("wrong-password", "The password is not correct.");
+
 const wrongCurrentPassword = () =>
   fieldError("wrong-password", "currentPassword", "The current password is not correct.");
 
@@ -56,9 +58,7 @@ export function createAuthService({ db, clock }: ServiceDeps) {
     /** Starts a session and returns its token for the cookie. The first login creates the user row. */
     async login(password: string): Promise<{ token: string; session: Session }> {
       const user = await repo.findUser(db, USERNAME);
-      if (!(await passwordMatches(user, password))) {
-        throw new AuthError("wrong-password", "The password is not correct.");
-      }
+      if (!(await passwordMatches(user, password))) throw wrongPassword();
       const now = clock.now();
       const batch = new WriteBatch(db);
       if (user === null) {
@@ -71,13 +71,20 @@ export function createAuthService({ db, clock }: ServiceDeps) {
       const userId = user?.id ?? repo.userIdOf(USERNAME);
       const token = newToken();
       const expiresAt = addSeconds(now, SESSION_SECONDS);
-      await batch
+      batch
+        // A password changed since the check above ended every session; this login must not start one after it.
+        .add(repo.assertPasswordUnchanged(db, USERNAME, user?.passwordHash ?? null))
         .add(repo.deleteExpiredSessions(db, now))
         .add(
           repo.insertSession(db, { id: newId(), userId, tokenHash: await hashToken(token), createdAt: now, expiresAt }),
         )
-        .add(audit("login", userId, now))
-        .commit();
+        .add(audit("login", userId, now));
+      try {
+        await batch.commit();
+      } catch (err) {
+        if (repo.isPasswordChanged(err)) throw wrongPassword();
+        throw err;
+      }
       return { token, session: { authenticated: true, isDefaultPassword: isDefault(user) } };
     },
 
