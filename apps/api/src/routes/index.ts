@@ -1,6 +1,7 @@
 // The handlers of every route backed by `createServices`; health takes its own deps.
 import type { Handlers } from "../app.ts";
 import type { Services } from "../services/index.ts";
+import { auditRoutes } from "./audit.ts";
 import { authRoutes } from "./auth.ts";
 import { buyersRoutes } from "./buyers.ts";
 import { flagsRoutes } from "./flags.ts";
@@ -27,6 +28,7 @@ export function apiRoutes(services: Services): Handlers {
     ...poUploadRoutes(services.poIngest),
     ...srvUploadRoutes(services.srvIngest),
     ...srvRoutes(services.srv),
-    ...flagsRoutes(services.flags, services.audit),
+    ...flagsRoutes(services.flags),
+    ...auditRoutes(services.audit),
   };
 }
