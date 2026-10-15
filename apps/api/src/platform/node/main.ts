@@ -11,9 +11,7 @@ import { getRequestListener } from "@hono/node-server";
 
 import pkg from "../../../package.json" with { type: "json" };
 import { createApp } from "../../app.ts";
-import { healthRoutes } from "../../routes/health.ts";
-import { apiRoutes } from "../../routes/index.ts";
-import { restoreRoutes } from "../../routes/restore.ts";
+import { allRoutes } from "../../routes/index.ts";
 import { createClock } from "./clock.ts";
 import { resolveDataDir } from "./data-dir.ts";
 import { createFileLogger } from "./logger.ts";
@@ -68,11 +66,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   const address = await listen(server);
   const app = createApp(
     { port: address.port, logger, signedIn: services.auth.signedIn, onboarded: services.onboarding.done },
-    {
-      ...healthRoutes({ version: options.version, db }),
-      ...apiRoutes(services),
-      ...restoreRoutes(restore),
-    },
+    allRoutes(services, { health: { version: options.version, db }, restore }),
   );
   app.get("*", spa(options.webRoot));
   server.on("request", getRequestListener(app.fetch));
