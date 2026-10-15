@@ -1,0 +1,81 @@
+{
+  "fileName": "Delivery_Tracker_20250601_1100.xlsx",
+  "sheet": "Report",
+  "widths": [12, 15, 60, 12, 12, 12, 12, 12, 12, 12, 12, 12, 15, 17],
+  "pageSetup": {
+    "paperSize": 9,
+    "orientation": "landscape",
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "printTitlesRow": "1:1",
+    "margins": { "left": 0.4, "right": 0.4, "top": 0.5, "bottom": 0.5, "header": 0.2, "footer": 0.3 }
+  },
+  "oddFooter": "&CPage &P of &N",
+  "styles": {
+    "header": {
+      "font": { "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "fill": { "type": "pattern", "pattern": "solid", "fgColor": { "argb": "FFD7E4BC" } }
+    }
+  },
+  "merges": [],
+  "rows": [
+    [
+      { "v": "PO Number", "s": "header" },
+      { "v": "Material Code", "s": "header" },
+      { "v": "Material Desc", "s": "header" },
+      { "v": "Lot", "s": "header" },
+      { "v": "Unit", "s": "header" },
+      { "v": "Due Date", "s": "header" },
+      { "v": "Entry Date", "s": "header" },
+      { "v": "Ord", "s": "header" },
+      { "v": "Dsp", "s": "header" },
+      { "v": "Rcd", "s": "header" },
+      { "v": "Bal", "s": "header" },
+      { "v": "Unit Rate", "s": "header" },
+      { "v": "Pending Value", "s": "header" },
+      { "v": "Days Overdue", "s": "header" }
+    ],
+    [
+      "4500102",
+      "M-210",
+      "Gasket set\nGasket set\nSize 50",
+      "L1",
+      "SET",
+      "2025-06-15",
+      "2025-06-12",
+      2.5,
+      1.25,
+      0,
+      1.25,
+      400,
+      500,
+      "Due in 14 days"
+    ],
+    ["4500101", "M-110", "Hex bolt M10", "L2", "NOS", "2025-06-10", null, 10, 9, 6, 1, 100, 100, "Due in 9 days"],
+    ["4500101", "M-120", "Plain washer", "L1", "NOS", "2025-05-25", "2025-05-20", 5, 5, 4, 0, 20, 0, "7 days overdue"],
+    [
+      "4500101",
+      "M-110",
+      "Hex bolt M10",
+      "L1",
+      "NOS",
+      "2025-05-20",
+      "2025-05-15",
+      10,
+      9,
+      6,
+      1,
+      100,
+      100,
+      "12 days overdue"
+    ],
+    ["4500103", "M-310", "Spring pin", "L1", "NOS", "2025-04-10", null, 4, 4, 4, 0, 12.5, 0, "52 days overdue"]
+  ]
+}

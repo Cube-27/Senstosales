@@ -1,3 +1,5 @@
+export { EXPORTS, fileSafe, TABLE } from "./reports/catalog.ts";
+export type { ExportName } from "./reports/catalog.ts";
 export { csvChunks } from "./stream/csv.ts";
 export type { Cell, Column, Row } from "./stream/sheet.ts";
 export { xlsxChunks } from "./stream/xlsx.ts";

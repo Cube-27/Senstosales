@@ -1,0 +1,41 @@
+{
+  "fileName": "Invoice_Register.xlsx",
+  "sheet": "Report",
+  "widths": [16, 14, 12, 12, 14, 16, 12],
+  "pageSetup": {
+    "paperSize": 9,
+    "orientation": "landscape",
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "printTitlesRow": "1:1",
+    "margins": { "left": 0.4, "right": 0.4, "top": 0.5, "bottom": 0.5, "header": 0.2, "footer": 0.3 }
+  },
+  "oddFooter": "&CPage &P of &N",
+  "styles": {
+    "header": {
+      "font": { "bold": true },
+      "border": {
+        "top": { "style": "thin" },
+        "left": { "style": "thin" },
+        "bottom": { "style": "thin" },
+        "right": { "style": "thin" }
+      },
+      "fill": { "type": "pattern", "pattern": "solid", "fgColor": { "argb": "FFD7E4BC" } }
+    }
+  },
+  "merges": [],
+  "rows": [
+    [
+      { "v": "invoice_number", "s": "header" },
+      { "v": "invoice_date", "s": "header" },
+      { "v": "po_number", "s": "header" },
+      { "v": "dc_number", "s": "header" },
+      { "v": "total_amount", "s": "header" },
+      { "v": "taxable_amount", "s": "header" },
+      { "v": "total_tax", "s": "header" }
+    ],
+    ["202", "2025-05-30", "4500103", null, 59, 50, 9],
+    ["201", "2025-04-26", "4500101", "101", 826, 700, 126]
+  ]
+}
