@@ -1,0 +1,256 @@
+{
+  "fileName": "GC_21.xlsx",
+  "pageSetup": {
+    "printArea": "B1:J47",
+    "printTitlesRow": null,
+    "printTitlesColumn": null,
+    "orientation": "portrait",
+    "paperSize": 9,
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "scale": 100,
+    "horizontalCentered": true,
+    "verticalCentered": false,
+    "margins": {
+      "left": 0.3,
+      "right": 0.3,
+      "top": 0.35,
+      "bottom": 0.35,
+      "header": 0.2,
+      "footer": 0.2
+    }
+  },
+  "styleRows": [
+    [1, 24, 1, 24],
+    [25, 37, 24, 24],
+    [38, 47, 25, 34]
+  ],
+  "merges": [
+    "B40:J44",
+    "B9:G11",
+    "C16:I16",
+    "C17:I17",
+    "C18:I18",
+    "C19:I19",
+    "C20:I20",
+    "C21:I21",
+    "C22:I22",
+    "C23:I23",
+    "C24:I24",
+    "C25:I25",
+    "C26:I26",
+    "C27:I27",
+    "C28:I28",
+    "C29:I29",
+    "C30:I30",
+    "C31:I31",
+    "C32:I32",
+    "C33:I33",
+    "C34:I34",
+    "C35:I35",
+    "C36:I36",
+    "C37:I37",
+    "C38:I38",
+    "C39:H39",
+    "C45:J45",
+    "I10:J10",
+    "I11:J11",
+    "I39:J39",
+    "I9:J9"
+  ],
+  "rows": {
+    "1": {
+      "size": 15
+    },
+    "2": {
+      "size": 15
+    },
+    "3": {
+      "size": 24
+    },
+    "4": {
+      "size": 13.5
+    },
+    "5": {
+      "size": 13.5
+    },
+    "6": {
+      "size": 6.75
+    },
+    "7": {
+      "size": 18
+    },
+    "8": {
+      "size": 6.75
+    },
+    "9": {
+      "size": 15
+    },
+    "10": {
+      "size": 15
+    },
+    "11": {
+      "size": 14.25
+    },
+    "12": {
+      "hidden": true
+    },
+    "13": {
+      "size": 6
+    },
+    "14": {
+      "size": 0.75
+    },
+    "15": {
+      "hidden": true
+    },
+    "16": {
+      "size": 36
+    },
+    "17": {
+      "size": 50.1
+    },
+    "18": {
+      "size": 50.1
+    },
+    "19": {
+      "size": 50.1
+    },
+    "20": {
+      "size": 50.1
+    },
+    "21": {
+      "size": 50.1
+    },
+    "22": {
+      "size": 50.1
+    },
+    "23": {
+      "size": 85
+    },
+    "24": {
+      "size": 50.1
+    },
+    "25": {
+      "size": 50.1
+    },
+    "26": {
+      "size": 50.1
+    },
+    "27": {
+      "size": 50.1
+    },
+    "28": {
+      "size": 50.1
+    },
+    "29": {
+      "size": 50.1
+    },
+    "30": {
+      "size": 50.1
+    },
+    "31": {
+      "size": 50.1
+    },
+    "32": {
+      "size": 50.1
+    },
+    "33": {
+      "size": 50.1
+    },
+    "34": {
+      "size": 50.1
+    },
+    "35": {
+      "size": 50.1
+    },
+    "36": {
+      "size": 85
+    },
+    "37": {
+      "size": 50.1
+    }
+  },
+  "values": {
+    "B1": "Tel. No. 0000-000000",
+    "F3": "EXAMPLE PRECISION WORKS",
+    "F4": "Manufacturers of Example Machined Components",
+    "F5": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "F7": "GUARANTEE  CERTIFICATE",
+    "B9": "The Example Manager (Stores)",
+    "H9": "GC No. & Dt.: ",
+    "I9": "21  dt. 28/02/2026",
+    "H10": " PO No. & Dt.: ",
+    "I10": "4500000003  dt. 01/11/2025",
+    "H11": " DC No. & Dt: ",
+    "I11": "21  dt. 28/02/2026",
+    "B16": "P.O.Sl. No.",
+    "C16": "Description",
+    "J16": "Quantity",
+    "B17": 10,
+    "C17": "Bracket, mild steel, 10 x 5 mm, drawing EX-1000",
+    "J17": "1  NOS",
+    "B18": 20,
+    "C18": "Flange, brass, 11 x 6 mm, drawing EX-1001",
+    "J18": "2  NOS",
+    "B19": 30,
+    "C19": "Bush, stainless steel, 12 x 7 mm, drawing EX-1002",
+    "J19": "3  KG",
+    "B20": 40,
+    "C20": "Spacer, aluminium, 13 x 8 mm, drawing EX-1003",
+    "J20": "4  NO",
+    "B21": 50,
+    "C21": "Shaft, copper, 14 x 9 mm, drawing EX-1004; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "J21": "5  SET",
+    "B22": 60,
+    "C22": "Plate, mild steel, 15 x 10 mm, drawing EX-1005",
+    "J22": "6  MTR",
+    "B23": 70,
+    "C23": "Gasket, brass, 16 x 11 mm, drawing EX-1006; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+    "J23": "7  NOS",
+    "B24": 80,
+    "C24": "Pin, stainless steel, 17 x 5 mm, drawing EX-1007",
+    "J24": "8  NOS",
+    "B25": 90,
+    "C25": "Bracket, aluminium, 18 x 6 mm, drawing EX-1008",
+    "J25": "9  KG",
+    "B26": 100,
+    "C26": "Flange, copper, 19 x 7 mm, drawing EX-1009",
+    "J26": "10  NO",
+    "B27": 110,
+    "J27": "11  SET",
+    "B28": 120,
+    "C28": "Spacer, brass, 21 x 9 mm, drawing EX-1011",
+    "J28": "12  MTR",
+    "B29": 130,
+    "C29": "Shaft, stainless steel, 22 x 10 mm, drawing EX-1012",
+    "J29": "13  NOS",
+    "B30": 140,
+    "C30": "Plate, aluminium, 23 x 11 mm, drawing EX-1013; machined to example tolerance class, deburred and cleaned; machined to example tolerance class, deburred and cleaned; packed in example crate",
+    "J30": "14  NOS",
+    "B31": 150,
+    "C31": "Gasket, copper, 24 x 5 mm, drawing EX-1014",
+    "J31": "15  KG",
+    "B32": 160,
+    "C32": "Pin, mild steel, 25 x 6 mm, drawing EX-1015",
+    "J32": "16  NO",
+    "B33": 170,
+    "C33": "Bracket, brass, 26 x 7 mm, drawing EX-1016",
+    "J33": "17  SET",
+    "B34": 180,
+    "C34": "Flange, stainless steel, 27 x 8 mm, drawing EX-1017",
+    "J34": "18  MTR",
+    "B35": 190,
+    "C35": "Bush, aluminium, 28 x 9 mm, drawing EX-1018",
+    "J35": "19  NOS",
+    "B36": 200,
+    "C36": "Spacer, copper, 29 x 10 mm, drawing EX-1019; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan; machined to example tolerance class, deburred, cleaned and inspected per example plan;",
+    "J36": "20  NOS",
+    "B37": 210,
+    "C37": "Shaft, mild steel, 30 x 11 mm, drawing EX-1020",
+    "J37": "21  KG",
+    "B40": "The goods supplied as above are guaranteed against manufacturing defects for 24 Months from delivery date. We undertake to replace or rectify the materials free of cost if any defects occur during this period.",
+    "H47": "                 For EXAMPLE PRECISION WORKS"
+  }
+}

@@ -48,7 +48,11 @@ function departmentCell(departmentNo: string | null): Value {
   return Number.isSafeInteger(number) ? number : departmentNo;
 }
 
-function consignee({ consigneeName, consigneeAddress }: DcDocument["dc"]): string {
+/** The consignee block the DC and GC print: name, then the address lines, blanks dropped. */
+export function consignee({
+  consigneeName,
+  consigneeAddress,
+}: Pick<DcDocument["dc"], "consigneeName" | "consigneeAddress">): string {
   const address = (consigneeAddress ?? "").split(/\r?\n/).map((line) => line.trim());
   const lines = [(consigneeName ?? "").trim(), ...address].filter((line) => line !== "");
   return lines.length > 0 ? lines.join("\n") : "Consignee";

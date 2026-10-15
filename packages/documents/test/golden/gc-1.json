@@ -1,0 +1,171 @@
+{
+  "fileName": "GC_7.xlsx",
+  "pageSetup": {
+    "printArea": "B1:J34",
+    "printTitlesRow": null,
+    "printTitlesColumn": null,
+    "orientation": "portrait",
+    "paperSize": 9,
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 0,
+    "scale": 100,
+    "horizontalCentered": true,
+    "verticalCentered": false,
+    "margins": {
+      "left": 0.3,
+      "right": 0.3,
+      "top": 0.35,
+      "bottom": 0.35,
+      "header": 0.2,
+      "footer": 0.2
+    }
+  },
+  "styleRows": [[1, 34, 1, 34]],
+  "merges": [
+    "B27:J31",
+    "B9:G11",
+    "C16:I16",
+    "C17:I17",
+    "C18:I18",
+    "C19:I19",
+    "C20:I20",
+    "C21:I21",
+    "C22:I22",
+    "C23:I23",
+    "C24:I24",
+    "C25:I25",
+    "C26:H26",
+    "C32:J32",
+    "I10:J10",
+    "I11:J11",
+    "I26:J26",
+    "I9:J9"
+  ],
+  "rows": {
+    "1": {
+      "size": 15
+    },
+    "2": {
+      "size": 15
+    },
+    "3": {
+      "size": 24
+    },
+    "4": {
+      "size": 13.5
+    },
+    "5": {
+      "size": 13.5
+    },
+    "6": {
+      "size": 6.75
+    },
+    "7": {
+      "size": 18
+    },
+    "8": {
+      "size": 6.75
+    },
+    "9": {
+      "size": 15
+    },
+    "10": {
+      "size": 15
+    },
+    "11": {
+      "size": 14.25
+    },
+    "12": {
+      "hidden": true
+    },
+    "13": {
+      "size": 6
+    },
+    "14": {
+      "size": 0.75
+    },
+    "15": {
+      "hidden": true
+    },
+    "16": {
+      "size": 36
+    },
+    "17": {
+      "size": 50.1
+    },
+    "18": {
+      "size": 50.1
+    },
+    "19": {
+      "size": 50.1
+    },
+    "20": {
+      "size": 50.1
+    },
+    "21": {
+      "size": 50.1
+    },
+    "22": {
+      "size": 50.1
+    },
+    "23": {
+      "size": 50.1
+    },
+    "24": {
+      "size": 50.1
+    },
+    "25": {
+      "size": 27
+    },
+    "26": {
+      "size": 3.75
+    },
+    "27": {
+      "size": 12.75
+    },
+    "28": {
+      "size": 12.75
+    },
+    "29": {
+      "size": 12.75
+    },
+    "30": {
+      "size": 12.75
+    },
+    "31": {
+      "size": 5.25
+    },
+    "32": {
+      "size": 15
+    },
+    "33": {
+      "size": 15.75
+    },
+    "34": {
+      "size": 15.75
+    }
+  },
+  "values": {
+    "B1": "Tel. No. 0000-000000",
+    "F3": "EXAMPLE PRECISION WORKS",
+    "F4": "Manufacturers of Example Machined Components",
+    "F5": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "F7": "GUARANTEE  CERTIFICATE",
+    "B9": "The Example Manager (Stores)\nExample Unit\nExample Road\nExample City - 000000",
+    "H9": "GC No. & Dt.: ",
+    "I9": "7  dt. 03/06/2025",
+    "H10": " PO No. & Dt.: ",
+    "I10": "4500000001  dt. 15/04/2025",
+    "H11": " DC No. & Dt: ",
+    "I11": "7  dt. 03/06/2025",
+    "B16": "P.O.Sl. No.",
+    "C16": "Description",
+    "J16": "Quantity",
+    "B17": 10,
+    "C17": "Bracket, mild steel, 10 x 5 mm, drawing EX-1000",
+    "J17": "1  NOS",
+    "B27": "The goods supplied as above are guaranteed against manufacturing defects for 24 Months from delivery date. We undertake to replace or rectify the materials free of cost if any defects occur during this period.",
+    "H34": "                 For EXAMPLE PRECISION WORKS"
+  }
+}

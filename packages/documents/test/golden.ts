@@ -61,24 +61,29 @@ function expectedStyles(template: SheetSnapshot, golden: Golden): Record<string,
 const styles = (sheet: SheetSnapshot): Record<string, Style> =>
   Object.fromEntries(Object.entries(sheet.cells).map(([at, cell]) => [at, cell.style]));
 
-/** One `describe` per golden: the workbook built from `inputs/<name>.json` against `golden/<name>.json`. */
+/**
+ * One `describe` per golden: the workbook built from `inputs/<input(name)>.json` (by default `inputs/<name>.json`) against
+ * `golden/<name>.json`.
+ */
 export function describeGoldens<Doc>({
   template,
   names,
   build,
   fileName,
+  input = (name) => name,
 }: {
   template: TemplateName;
   names: readonly string[];
   build: (doc: Doc) => Promise<Uint8Array>;
   fileName: (doc: Doc) => string;
+  input?: (name: string) => string;
 }): void {
   describe(`${template} workbook goldens`, async () => {
     const [templateSheet, ...otherSheets] = await xlsxSnapshot(templateBytes(template));
 
     describe.each(names)("%s", async (name) => {
       const golden = readJson<Golden>(`./golden/${name}.json`);
-      const doc = readInput<Doc>(name);
+      const doc = readInput<Doc>(input(name));
       const [sheet, ...rest] = await xlsxSnapshot(await build(doc));
 
       it("has the golden's values", () => expect(values(sheet!)).toEqual(golden.values));
