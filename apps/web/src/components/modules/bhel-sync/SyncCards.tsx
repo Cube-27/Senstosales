@@ -69,7 +69,7 @@ export function AuthCard(props: AuthCardProps) {
             {passwordSaved === undefined ? "" : passwordSaved ? "Saved" : "Not saved"}
           </span>
         </div>
-        <Link to="/settings" className="flex h-8 items-center role-helper-text text-accent hover:underline">
+        <Link to="/settings" className="flex h-8 items-center role-reference-link">
           Change in Settings
         </Link>
         <div className="flex-1" />

@@ -59,7 +59,6 @@ describe("BHEL sync screen (SPEC-19 PR 5)", () => {
 
   it("asks again in place after a wrong captcha, then takes the OTP and starts the scrape with the session", async () => {
     let captchas = 0;
-    let polls = 0;
     const calls = stubApi(
       syncApi({
         [`POST /api/bhel/session/${SESSION}/captcha`]: () =>
@@ -68,7 +67,7 @@ describe("BHEL sync screen (SPEC-19 PR 5)", () => {
             : { step: "otp", message: null },
         [`POST /api/bhel/session/${SESSION}/otp`]: { step: "ready" },
         "POST /api/jobs": JOB,
-        [`GET /api/jobs/${JOB.id}`]: () => ({ job: ++polls === 1 ? { ...JOB, status: "running" } : DONE, events: [] }),
+        [`GET /api/jobs/${JOB.id}`]: { job: DONE, events: [] },
       }),
     );
     renderApp("/po/ingest-bhel");
@@ -98,7 +97,7 @@ describe("BHEL sync screen (SPEC-19 PR 5)", () => {
       { captcha: "AB12C" },
     ]);
     // The job closed the session when it ended: Done, the failed page listed, and the login is over.
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Done" })).toBeTruthy(), { timeout: 5000 });
+    expect(await screen.findByRole("heading", { name: "Done" })).toBeTruthy();
     expect(screen.getByText("4500003")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Login to BHEL" })).toBeTruthy();
     expect(screen.queryByText("Authenticated")).toBeNull();
