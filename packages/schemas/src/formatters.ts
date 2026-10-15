@@ -1,7 +1,7 @@
 // Display formatters shared by screens and exports, so the two never disagree (ARCHITECTURE §11.2). Output matches
 // the legacy frontend's visible strings (SPEC-04 §4.4, A-2); all arithmetic stays on the branded integers (C3).
 import type { Fy, IsoDate, Money, Qty } from "@senstosales/domain";
-import { MONEY_DP, QTY_DP, moneyToString, qtyToString, roundMoney } from "@senstosales/domain";
+import { MONEY_DP, QTY_DP, moneyToString, parseIsoDate, parseQty, qtyToString, roundMoney } from "@senstosales/domain";
 
 const RUPEE = "₹";
 const ONE_UNIT = 10 ** QTY_DP;
@@ -183,4 +183,74 @@ export const fmtFy = (fy: Fy): string => `FY ${fy}`;
 export function fmtDaysToDue(days: number): string {
   if (days < 0) return `${-days} days overdue`;
   return days === 0 ? "Due Today" : `Due in ${days} days`;
+}
+
+// ---- input controls: what a field shows, and what it reads back from typed text ----
+
+/** A quantity as a quantity field shows it, exact: `2500` -> `"2.5"`. */
+export const fmtQtyInput = (q: Qty): string => qtyToString(q);
+
+/**
+ * Typed quantity text as milli-units: `"2.5"` -> `2500`; empty or negative -> `0`, as the legacy field read them; text
+ * that is no quantity -> `null`.
+ */
+export function parseQtyInput(text: string): Qty | null {
+  const trimmed = text.trim();
+  if (trimmed === "") return 0 as Qty;
+  const r = parseQty(trimmed);
+  if (!r.ok) return null;
+  return r.value < 0 ? (0 as Qty) : r.value;
+}
+
+/** The date picker's field: `2019-12-22` -> `"Dec 22, 2019"`. */
+export const fmtDateInput = (d: IsoDate): string =>
+  `${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(8, 10)}, ${d.slice(0, 4)}`;
+
+const MONTH_NAMES = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
+const pad2 = (n: string): string => n.padStart(2, "0");
+const isoOf = (y: string, m: number, d: string): IsoDate | null => {
+  const r = parseIsoDate(`${y}-${pad2(String(m))}-${pad2(d)}`);
+  return r.ok ? r.value : null;
+};
+const named = (name: string, day: string, y: string): IsoDate | null => {
+  const month = MONTH_NAMES.findIndex((full) => full.startsWith(name.toLowerCase())) + 1;
+  return month > 0 ? isoOf(y, month, day) : null;
+};
+
+// The typed forms, tried in order: each pattern and how its groups make a date.
+const DATE_INPUTS: ReadonlyArray<[RegExp, (g: string[]) => IsoDate | null]> = [
+  [/^(\d{4})-(\d{1,2})-(\d{1,2})$/, ([, y = "", m = "", d = ""]) => isoOf(y, Number(m), d)],
+  [/^([a-z]{3,9}) (\d{1,2}),? (\d{4})$/i, ([, name = "", d = "", y = ""]) => named(name, d, y)],
+  [/^(\d{1,2}) ([a-z]{3,9}),? (\d{4})$/i, ([, d = "", name = "", y = ""]) => named(name, d, y)],
+  [
+    /^(\d{1,2})([/.-])(\d{1,2})\2(\d{4})$/,
+    ([, a = "", , b = "", y = ""]) => isoOf(y, Number(b), a) ?? isoOf(y, Number(a), b),
+  ],
+];
+
+/**
+ * A date typed into the date picker, as the legacy picker read it: `YYYY-MM-DD`, `Dec 22, 2019`, `22 Dec 2019`,
+ * `22 December 2019`, or day-first numbers split by `/`, `-` or `.` (`22/12/2019`), read month-first only when
+ * day-first is no date (`12/22/2019`). Anything else, or no such calendar date, is `null`.
+ */
+export function parseDateInput(text: string): IsoDate | null {
+  const s = text.trim().replaceAll(/\s+/g, " ");
+  for (const [pattern, read] of DATE_INPUTS) {
+    const m = pattern.exec(s);
+    if (m) return read(m);
+  }
+  return null;
 }

@@ -2,7 +2,7 @@
 # wait_ci.sh PR SHA7 [TIMEOUT_MIN] — waits until every check run on commit SHA7 of the PR has finished, then prints
 # them. SHA7 is a 7-40 hex-digit prefix of the head commit, matched as a prefix (as merge_pr.sh does). Waiting on
 # the head SHA avoids reading the previous commit's results. Exits 0 only when every check passed (SUCCESS, NEUTRAL
-# or SKIPPED; $CI_FIRST_JOB and $CI_GATE_CHECK only SUCCESS); 1 on a failed check, a moved head, or TIMEOUT_MIN
+# or SKIPPED, so a job the `changes` job gated off passes; $CI_FIRST_JOB and $CI_GATE_CHECK only SUCCESS); 1 on a failed check, a moved head, or TIMEOUT_MIN
 # (default 45). Right after a push GitHub may still report the old head, so a different head is an error once it is
 # neither SHA7 nor the head seen first, or after 3 minutes.
 # GitHub starts no pull_request workflow on a PR that conflicts with its base, so a conflicting PR is an error at

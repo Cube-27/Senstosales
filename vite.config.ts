@@ -68,13 +68,14 @@ export default defineConfig({
     },
     overrides: [
       {
-        // C12: core packages and the API depend on ports. apps/web and apps/desktop are not covered.
-        files: ["packages/*/src/**", "apps/api/src/**"],
+        // C12: core packages, the API and the web app depend on ports; apps/desktop is the shell and not covered.
+        files: ["packages/*/src/**", "apps/api/src/**", "apps/web/src/**"],
         rules: { "no-restricted-imports": NO_RUNTIME_IMPORTS },
       },
       {
-        // C12: port adapters (node:sqlite for Db, Playwright for Scraper, the API's node entry) live in src/platform/.
-        files: ["packages/*/src/platform/**", "apps/api/src/platform/**"],
+        // C12: port adapters (node:sqlite for Db, Playwright for Scraper, the API's node entry, the web app's Tauri
+        // calls) live in src/platform/.
+        files: ["packages/*/src/platform/**", "apps/api/src/platform/**", "apps/web/src/platform/**"],
         rules: { "no-restricted-imports": "off" },
       },
       { files: ["apps/api/src/services/**"], rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES) } },

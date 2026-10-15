@@ -11,6 +11,6 @@
     "jsx": "react-jsx",
     "types": ["vite-plus/client"]
   },
-  "include": ["src", "test", "vite.config.ts"],
+  "include": ["src", "test", "e2e", "ct", "vite.config.ts", "playwright.config.ts"],
   "references": [{ "path": "../../packages/schemas" }]
 }

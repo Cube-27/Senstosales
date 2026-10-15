@@ -3168,3 +3168,83 @@ None.
 - Alternatives: Cap CI too.
 - Why: Several agents test at once on one machine (owner priority); CI time stays as it was.
 - Reversible: yes.
+
+### D-0405 — shadcn primitives through the CLI, restyled to tokens
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: `components/ui/*` are generated with the shadcn CLI on the `radix-ui` umbrella package and `class-variance-authority`, then every colour is replaced by a `globals.css` token or role class.
+- Alternatives: Port the legacy primitives; per-component `@radix-ui/*` packages.
+- Why: ARCHITECTURE §12.3 and D-0015; one Radix package keeps the primitives on one version.
+- Reversible: yes.
+
+### D-0406 — DataTable body rows are a fixed 40 px
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: Every body row (data, filler, loading/empty/error) is 40 px with a 1 px bottom border (transparent on filler and state rows), so a page's body is `pageSize × 40` whatever it holds.
+- Alternatives: Measure the first row at runtime.
+- Why: C8/INV-71 need the footprint before data arrives; the CT bounding-box tests found a 0.5 px pager shift when filler rows had no border.
+- Reversible: yes.
+
+### D-0407 — Rows stay on screen while the next page loads
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: While `loading`, rows already shown stay (dimmed, `aria-busy`); the in-body "Loading..." shows only when there are none.
+- Alternatives: Always replace the rows with the loading state.
+- Why: Matches keepPreviousData and avoids a flash; the footprint is the same either way (C8).
+- Reversible: yes.
+
+### D-0408 — List paging in the URL keeps the first row on a page-size change
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: `useListSearch` replaces the history entry on every change; a page-size change goes to `floor((page-1)·from/to)+1`; a sort or filter change goes to page 1; a new sort column starts ascending. The page size is per list URL (EC-58).
+- Alternatives: Always reset to page 1; remember one global page size as legacy did.
+- Why: Legacy table behaviour (visible behaviour only, C16); SPEC-14 §2 binds paging to the URL.
+- Reversible: yes.
+
+### D-0409 — Tauri saves through the webview's Save-as picker
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: `tauri.ts` saves with `showSaveFilePicker` (a cancel is `"cancelled"`, any other failure falls back to a blob download); files never cross IPC. The web build never asks for notification permission and notifies only when already granted.
+- Alternatives: `@tauri-apps/plugin-dialog` plus an fs write.
+- Why: No fs capability needed (C12, SPEC-20's capability set); no prompt in a plain browser (C11).
+- Reversible: yes.
+
+### D-0410 — Component tests on a Vite-built static page
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: `apps/web/ct/` builds a story page; the specs serve `ct/dist` from disk through `page.route`, with no server process.
+- Alternatives: `@playwright/experimental-ct-react`.
+- Why: It stops at Playwright 1.62 and would pull in a second Playwright.
+- Reversible: yes.
+
+### D-0411 — Playwright on system Edge, headless, one worker
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: Playwright runs on the `msedge` channel, headless, one worker, list reporter, traces off; no report server.
+- Alternatives: Download the bundled Chromium.
+- Why: Every Windows machine and the `windows-2025` runner have Edge; owner rule that nothing opens a window.
+- Reversible: yes.
+
+### D-0412 — `sideEffects` allowlist in apps/web
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: `apps/web/package.json` declares `"sideEffects": ["*.css", "./src/main.tsx"]`; a future module with import-time effects must be added to it.
+- Alternatives: Deep imports instead of the registry barrel.
+- Why: Keeps the INV-104 budget (shell 180 → 163.7 kB gzip) while screens import from one registry (C7).
+- Reversible: yes.
+
+### D-0413 — Typed date input formats
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: `parseDateInput` accepts the legacy typed formats from a table, trying day-first before month-first for numeric dates.
+- Alternatives: ISO input only.
+- Why: Frozen legacy input behaviour (C7); day-first matches Indian dates.
+- Reversible: yes.
+
+### D-0414 — Docs-only changes skip the code jobs
+
+- Date: 2026-10-15 · Spec/PR: SPEC-14 PRs 5-8 (#82) · Status: decided
+- Decision: A pull request whose changed paths all match `docs/**`, `*.md` or `.claude/skills/**` skips check, licenses, build, audit and e2e through a first `changes` job and job-level `if:`; the `changes` job runs `vp fmt --check` on those files; an empty or failed diff and every push to main run everything. `CI_FIRST_JOB` is `changes`.
+- Alternatives: Workflow-level `paths-ignore`.
+- Why: Owner direction; failing open keeps a skipped `check` from hiding code changes.
+- Reversible: yes.

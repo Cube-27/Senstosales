@@ -3,10 +3,8 @@
 import { z } from "zod";
 
 import { zPo, zPoItem } from "../entities/po.ts";
+import { PAGE_SIZES } from "../paging.ts";
 import { zCount, zFy, zId, zIsoDate, zMoney } from "../primitives.ts";
-
-/** The legacy pager's page sizes; 10 is its default. */
-const PAGE_SIZES = [10, 25, 50, 100] as const;
 
 /**
  * A list's query string. `sortKeys` is that list's allowlist, so an unknown sort column is a 400 (SPEC-10 §4.2).
