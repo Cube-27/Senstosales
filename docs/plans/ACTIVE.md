@@ -75,6 +75,7 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-14/16 (#84): an `authed` e2e fixture for the default-password login the SPEC-16 spec does in its own `beforeEach`.
 - SPEC-17 (#87): `hooks/useSearchText.ts` (from #84, used by every list screen) still has a `useEffect`; the no-effects lint check will flag it.
 - SPEC-17 (#87): `apps/api/test/d1-params.test.ts` "the DC list at 100 a page" creates 100 DCs one after another and timed out once at 5.4 s (5 s limit) in a cold `pnpm verify`; it ran in 1.1-2.9 s on reruns.
+- SPEC-19/20 (#90, D-0537): ship playwright-core beside the sidecar (Tauri resources, installer, desktop smoke test) and pass `createPlaywrightScraper()` in `run()`; until then the packaged app offers no BHEL sync. playwright-core reads its own `package.json`, `browsers.json` and `lib/` at run time, so it cannot live inside the SEA bundle. SPEC-19 PR 6 waits on it (or on a dev run of `main.ts` with the adapter).
 - SPEC-17 (#87): `validate-colors` reads an apostrophe in a comment inside `cn(...)` as a string start and flags the next class string.
 - SPEC-18 (#88): static.ts treats a last path segment containing a dot as a file; revisit if a web route can carry a dot (#36 review).
 - SPEC-18 (#88 review): `LineTable` clips its right-hand columns in a narrow window (`overflow-x-auto`); DC and invoice list values format every row as non-GEMC (list rows carry no `isGemc`).
@@ -142,14 +143,14 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 
 ## [SPEC-19 — BHEL scraper and sync](../specs/SPEC-19-bhel-scraper-sync.md)
 
-| PR  | Scope                                | Status     | Notes |
-| --- | ------------------------------------ | ---------- | ----- |
-| 1   | Scraper port, fake and sessions      | done (#77) |       |
-| 2   | Playwright adapter: launch and login | todo       |       |
-| 3   | HTTP session listing and fetch       | todo       |       |
-| 4   | Scrape jobs and wizard API           | done (#77) |       |
-| 5   | Sync wizard UI and tray status       | done (#86) |       |
-| 6   | Live sync acceptance (human)         | todo       | H3    |
+| PR  | Scope                                | Status     | Notes                                          |
+| --- | ------------------------------------ | ---------- | ---------------------------------------------- |
+| 1   | Scraper port, fake and sessions      | done (#77) |                                                |
+| 2   | Playwright adapter: launch and login | done (#90) |                                                |
+| 3   | HTTP session listing and fetch       | done (#90) |                                                |
+| 4   | Scrape jobs and wizard API           | done (#77) |                                                |
+| 5   | Sync wizard UI and tray status       | done (#86) |                                                |
+| 6   | Live sync acceptance (human)         | todo       | H3; needs the sidecar follow-up below (D-0537) |
 
 ## [SPEC-20 — Desktop packaging and release](../specs/SPEC-20-desktop-packaging-release.md)
 

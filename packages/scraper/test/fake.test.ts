@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { createFakeScraper, type FakeScript } from "../src/fake.ts";
 import { ScraperError, type ScraperSession } from "../src/port.ts";
+import { codeOf } from "./code-of.ts";
 
 const CAPTCHA_PNG = Uint8Array.of(0x89, 0x50, 0x4e, 0x47);
 
@@ -22,15 +23,6 @@ async function loggedIn(overrides: Partial<FakeScript> = {}): Promise<ScraperSes
   await session.submitCaptcha("SUP001", "secret-pass", "AB12C");
   await session.submitOtp("123456");
   return session;
-}
-
-/** The error code a call rejects with. */
-async function codeOf(call: Promise<unknown>): Promise<string> {
-  const error: unknown = await call.then(
-    () => undefined,
-    (e: unknown) => e,
-  );
-  return error instanceof ScraperError ? error.code : `not a ScraperError: ${String(error)}`;
 }
 
 describe("fake scraper: the full flow", () => {
