@@ -39,8 +39,10 @@ const SORTS: Record<NonNullable<FlagListQuery["sort"]>, readonly (AnyColumn | SQ
 };
 
 /** A value of the flag's details JSON (D1 runs `json_extract`). */
-const detail = (key: "field" | "expected" | "actual") =>
-  sql`json_extract(${reconciliationIssue.details}, ${`$.${key}`})`;
+const detail = (key: "field" | "expected" | "actual") => {
+  const path = "$." + key;
+  return sql`json_extract(${reconciliationIssue.details}, ${path})`;
+};
 
 /**
  * The search box, as legacy matched it: the PO number, the SRV number, the type and scope codes, and the details'
