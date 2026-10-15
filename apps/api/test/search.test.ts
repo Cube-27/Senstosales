@@ -224,6 +224,8 @@ describe("GET /api/search", () => {
     ["q=bolt", "BOLT-77"],
     ["q=drg", "DRG-5"],
     ["q=hex", "Hex bolt"],
+    // Both items of 4500001 match by description; the lower item number decides.
+    ["q=o", "Hex bolt"],
     ["q=example%20w", "Example Works"],
   ])("%s shows what matched: %s", async (query, match) => {
     expect((await search(query))[0]?.match).toBe(match);

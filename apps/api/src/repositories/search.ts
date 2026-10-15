@@ -29,7 +29,7 @@ const itemFieldMatches = (q: string) =>
 const anyItemMatches = (t: Terms, items: ItemSet) =>
   t.items ? exists(items(sql`1`, itemFieldMatches(t.q))) : undefined;
 
-/** The first matching item field, to show what matched: code, then drawing number, then description. */
+/** The lowest-numbered matching item's field, to show what matched: code, then drawing number, then description. */
 const matchedItemText = (t: Terms, items: ItemSet) => {
   const text = sql`CASE WHEN ${startsWith(poItem.materialCode, t.q)} THEN ${poItem.materialCode}
     WHEN ${startsWith(poItem.drawingNo, t.q)} THEN ${poItem.drawingNo} ELSE ${poItem.description} END`;
@@ -72,7 +72,8 @@ export function searchPos(db: Db, t: Terms, f: SearchQuery, limit: number) {
     db.build
       .select({ field })
       .from(poItem)
-      .where(and(eq(poItem.poId, po.id), match));
+      .where(and(eq(poItem.poId, po.id), match))
+      .orderBy(poItem.poItemNo);
   return db.query(
     db.build
       .select({
@@ -101,7 +102,8 @@ export function searchDcs(db: Db, t: Terms, f: SearchQuery, limit: number) {
       .select({ field })
       .from(dcItem)
       .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
-      .where(and(eq(dcItem.dcId, dc.id), match));
+      .where(and(eq(dcItem.dcId, dc.id), match))
+      .orderBy(poItem.poItemNo);
   const lineIds = db.build.select({ id: dcItem.id }).from(dcItem).where(eq(dcItem.dcId, dc.id));
   return db.query(
     db.build
@@ -138,7 +140,8 @@ export function searchInvoices(db: Db, t: Terms, f: SearchQuery, limit: number) 
       .select({ field })
       .from(invoiceItem)
       .innerJoin(poItem, eq(poItem.id, invoiceItem.poItemId))
-      .where(and(eq(invoiceItem.invoiceId, invoice.id), match));
+      .where(and(eq(invoiceItem.invoiceId, invoice.id), match))
+      .orderBy(poItem.poItemNo);
   const lineIds = db.build
     .select({ id: invoiceItem.id })
     .from(invoiceItem)
@@ -182,7 +185,8 @@ export function searchSrvs(db: Db, t: Terms, f: SearchQuery, limit: number | und
       .select({ field })
       .from(srvItem)
       .innerJoin(poItem, eq(poItem.id, srvItem.poItemId))
-      .where(and(eq(srvItem.srvId, srv.id), match));
+      .where(and(eq(srvItem.srvId, srv.id), match))
+      .orderBy(poItem.poItemNo);
   const lineIds = db.build.select({ id: srvItem.id }).from(srvItem).where(eq(srvItem.srvId, srv.id));
   const query = db.build
     .select({
@@ -237,11 +241,12 @@ export const invoiceExtras = (db: Db, invoiceId: string, dcId: string | null) =>
     srvRefs(db, srvsResolvedTo(db, srvItem.resolvedInvoiceId, invoiceId)),
   ]);
 
-/** An SRV's lines with their matched PO item, for the domain totals. */
-export const srvLines = (db: Db, srvId: string) =>
+/** The lines of `srvIds` with their matched PO item, for the domain totals, in one query. */
+export const srvLinesOf = (db: Db, srvIds: readonly string[]) =>
   db.query(
     db.build
       .select({
+        srvId: srvItem.srvId,
         rcdQty: srvItem.rcdQty,
         acceptedQty: srvItem.acceptedQty,
         rejQty: srvItem.rejQty,
@@ -249,7 +254,7 @@ export const srvLines = (db: Db, srvId: string) =>
       })
       .from(srvItem)
       .leftJoin(poItem, eq(poItem.id, srvItem.poItemId))
-      .where(eq(srvItem.srvId, srvId)),
+      .where(inArray(srvItem.srvId, [...srvIds])),
   );
 
 /** The DCs and invoices an SRV's lines resolved to (INV-37). */

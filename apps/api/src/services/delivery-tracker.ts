@@ -2,7 +2,7 @@
 // stored quantities (INV-06); the due buckets, days to due and values come from the domain (C2, D-0101).
 import type { Db } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
-import { compareIsoDate, deliveryDue, pendingValueOfItems, qtyValue } from "@senstosales/domain";
+import { addDays, compareIsoDate, deliveryDue, pendingValueOfItems, qtyValue } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import type { z } from "zod";
 
@@ -95,7 +95,8 @@ export function deliveryTrackerService({ db, clock }: { db: Db; clock: Clock }) 
     },
 
     /** The dashboard's overdue card: overdue lots without filters. */
-    overdueCount: async () => (await rows({})).filter((r) => r.due.overdue).length,
+    /** Only lots due before today can be overdue, so the query reads no others. */
+    overdueCount: async () => (await rows({ dueTo: addDays(clock.today(), -1) })).filter((r) => r.due.overdue).length,
   };
 }
 

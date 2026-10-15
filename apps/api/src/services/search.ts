@@ -18,7 +18,10 @@ type DocType = Hit["type"];
 const PER_TYPE = 5;
 const TYPES: readonly DocType[] = ["po", "dc", "invoice", "srv"];
 
-/** Legacy: `*` searches for everything; digits alone skip party names, and a single digit skips items too. */
+/**
+ * Legacy: `*` is no text, so it lists everything a filter keeps (and nothing without one); digits alone skip party
+ * names, and a single digit skips items too.
+ */
 function terms(text: string): Terms {
   const trimmed = text.trim();
   const q = trimmed === "*" ? "" : trimmed;
@@ -99,9 +102,14 @@ export function searchService({ db }: { db: Db }) {
   async function srvs(t: Terms, f: SearchQuery): Promise<Hit[]> {
     const ranged = f.valueMin !== undefined || f.valueMax !== undefined;
     const rows = await repo.searchSrvs(db, t, f, ranged ? undefined : PER_TYPE);
-    const totalled = await Promise.all(
-      rows.map(async (row) => ({ row, totals: srvTotals(await repo.srvLines(db, row.id)) })),
+    const lines = Map.groupBy(
+      await repo.srvLinesOf(
+        db,
+        rows.map((r) => r.id),
+      ),
+      (line) => line.srvId,
     );
+    const totalled = rows.map((row) => ({ row, totals: srvTotals(lines.get(row.id) ?? []) }));
     const kept = totalled.filter(({ totals }) => inRange(totals.value, f)).slice(0, PER_TYPE);
     return Promise.all(
       kept.map(async ({ row: { itemMatch, po, poNumber, ...row }, totals }) => {
