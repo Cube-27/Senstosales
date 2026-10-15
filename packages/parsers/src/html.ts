@@ -45,7 +45,7 @@ export function findByLabel(page: Page, label: RegExp, isLabel: (text: string) =
     for (const [r, row] of rows.entries()) {
       for (const [c, text] of row.entries()) {
         if (!label.test(text)) continue;
-        const value = valueBeside(rows, r, c, isLabel);
+        const value = valueBeside(row, rows[r + 1], c, isLabel);
         if (value !== "") return { label: text, value };
         empty ??= { label: text, value };
       }
@@ -54,10 +54,15 @@ export function findByLabel(page: Page, label: RegExp, isLabel: (text: string) =
   return empty;
 }
 
-/** The value of the label at row `r`, cell `c`: the cell to its right unless that is a label, else the cell below. */
-function valueBeside(rows: Page[number], r: number, c: number, isLabel: (text: string) => boolean): string {
-  const right = rows[r]?.[c + 1];
-  return right !== undefined && !isLabel(right) ? right : (rows[r + 1]?.[c] ?? "");
+/** The value of the label in cell `c` of `row`: the cell to its right unless that is a label, else the one below. */
+function valueBeside(
+  row: string[],
+  below: string[] | undefined,
+  c: number,
+  isLabel: (text: string) => boolean,
+): string {
+  const right = row[c + 1];
+  return right !== undefined && !isLabel(right) ? right : (below?.[c] ?? "");
 }
 
 /** Each column's index: the first header cell its pattern matches; a column the header lacks is left out. */

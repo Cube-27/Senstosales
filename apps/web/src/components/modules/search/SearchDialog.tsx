@@ -5,16 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type KeyboardEvent, useRef, useState } from "react";
 
-import { api, apiQuery } from "../../../lib/api.ts";
+import { SEARCH_DELAY_MS } from "../../../hooks/useSearchText.ts";
+import { apiQuery } from "../../../lib/api.ts";
 import { GlobalSearchDialog } from "../../common/index.ts";
 import { DOC } from "../documents.ts";
 import { type Filters, hasActiveFilters, isSearchable, NO_FILTERS, searchQuery } from "./filters.ts";
 import { type RecentSearch, type SavedSearch, useSearchHistory } from "./history.ts";
 import { FiltersPanel, SavedPanel, SaveSearchBox } from "./SearchPanels.tsx";
 import { Preview, ResultList, type Target } from "./SearchParts.tsx";
-
-/** The legacy waits this long after the last keystroke. */
-const DEBOUNCE_MS = 300;
 
 interface Typed {
   readonly q: string;
@@ -28,7 +26,7 @@ function useDebounced<T>(initial: T, ms: number) {
   const set = (update: (typed: T) => T): void => {
     clearTimeout(timer.current);
     setState((s) => ({ ...s, typed: update(s.typed) }));
-    timer.current = setTimeout(() => setState((s) => ({ ...s, settled: s.typed })), ms);
+    timer.current = setTimeout(() => setState((s) => (s.settled === s.typed ? s : { ...s, settled: s.typed })), ms);
   };
   return [state, set] as const;
 }
@@ -45,21 +43,16 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const history = useSearchHistory();
 
   // Typed text and typed amounts both wait for the debounce; one request per pause.
-  const [{ typed, settled }, setTyped] = useDebounced<Typed>({ q: "", filters: NO_FILTERS }, DEBOUNCE_MS);
+  const [{ typed, settled }, setTyped] = useDebounced<Typed>({ q: "", filters: NO_FILTERS }, SEARCH_DELAY_MS);
   const { q: query, filters } = typed;
   const setQuery = (q: string): void => setTyped((t) => ({ ...t, q }));
   const setFilters = (next: Filters): void => setTyped((t) => ({ ...t, filters: next }));
   const { q } = settled;
   const searchable = isSearchable(q, settled.filters);
-  const args = { query: searchQuery(q, settled.filters) };
   const search = useQuery({
-    ...apiQuery("search.query", args),
+    ...apiQuery("search.query", { query: searchQuery(q, settled.filters) }),
     // A search that answered with text is remembered (legacy recent searches).
-    queryFn: async () => {
-      const found = await api.request("search.query", args);
-      if (q.trim() !== "") history.addRecent(q.trim(), settled.filters);
-      return found;
-    },
+    meta: { onSuccess: () => q.trim() !== "" && history.addRecent(q.trim(), settled.filters) },
     enabled: open && searchable,
   });
   const searching = query.trim() !== "" || hasActiveFilters(filters);

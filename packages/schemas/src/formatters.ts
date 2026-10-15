@@ -144,8 +144,8 @@ export function fmtAmountWords(m: Money): string {
   const rem = m % ONE_RUPEE;
   const paise = roundDiv(rem, ONE_RUPEE / 100);
   const words = `Rupees ${rupeeWords((m - rem) / ONE_RUPEE)}`;
-  const paiseWords = paise > 0 ? `and Paise ${rupeeWords(paise)}` : "";
-  return [words, paiseWords, "Only"].filter(Boolean).join(" ");
+  const paiseWords = paise > 0 ? ` and Paise ${rupeeWords(paise)}` : "";
+  return `${words}${paiseWords} Only`;
 }
 
 /** `2025-01-05` -> `"05/01/2025"`; no date -> `"—"`. */

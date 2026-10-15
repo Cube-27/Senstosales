@@ -1,12 +1,13 @@
 // The one query client (ARCHITECTURE §12.1): the previous page stays on screen while the next loads, and an API error
-// that means "not signed in" or "not set up" sends the user to that screen (SPEC-14 §4.3). A query that tells the user
-// about its own failure (a toast) does it through `meta.onError`, called once per failed fetch.
+// that means "not signed in" or "not set up" sends the user to that screen (SPEC-14 §4.3). A query that acts on its own
+// answer does it through `meta.onSuccess` or `meta.onError` (a failure toast), called once per fetch.
 import { ApiError } from "@senstosales/schemas/errors";
 import { keepPreviousData, MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 
 export type AuthRedirect = "/auth/login" | "/onboarding";
 
 interface QueryMeta extends Record<string, unknown> {
+  onSuccess?: (data: unknown) => void;
   onError?: (error: Error) => void;
 }
 
@@ -31,6 +32,7 @@ export function createQueryClient(redirect: (to: AuthRedirect) => void): QueryCl
   };
   return new QueryClient({
     queryCache: new QueryCache({
+      onSuccess: (data, query) => query.meta?.onSuccess?.(data),
       onError: (error, query) => {
         onError(error);
         query.meta?.onError?.(error);

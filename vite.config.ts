@@ -34,10 +34,13 @@ const NO_RUNTIME_IMPORTS: RestrictedImports = [
   },
 ];
 
-/** `no-restricted-imports` with C12's ban plus `patterns`, each group refused with its message. */
-function restrictImports(...extra: Array<{ group: string[]; message: string }>): RestrictedImports {
+/** `no-restricted-imports` with C12's ban plus `extra` paths and patterns, each refused with its message. */
+function restrictImports(extra: Partial<RestrictedImports[1]>): RestrictedImports {
   const [level, options] = NO_RUNTIME_IMPORTS;
-  return [level, { paths: options.paths, patterns: [...options.patterns, ...extra] }];
+  return [
+    level,
+    { paths: [...options.paths, ...(extra.paths ?? [])], patterns: [...options.patterns, ...(extra.patterns ?? [])] },
+  ];
 }
 
 // ARCHITECTURE §4 layering in apps/api: routes -> services -> repositories. Services never import Hono or routes;
@@ -54,6 +57,7 @@ const NO_EFFECTS =
   "No useEffect or useLayoutEffect: derive the value, act in the event handler, use TanStack Query or a Router loader, reset with a key, or use useSyncExternalStore.";
 const EFFECT_HOOKS = ["useEffect", "useLayoutEffect"];
 const NO_EFFECT_IMPORTS = { name: "react", importNames: EFFECT_HOOKS, message: NO_EFFECTS };
+const NO_EFFECT_IMPORTS_ONLY: RestrictedImports = ["error", { paths: [NO_EFFECT_IMPORTS], patterns: [] }];
 const NO_EFFECT_MEMBERS: ["error", ...Array<{ object: string; property: string; message: string }>] = [
   "error",
   ...EFFECT_HOOKS.map((property) => ({ object: "React", property, message: NO_EFFECTS })),
@@ -85,33 +89,27 @@ export default defineConfig({
         rules: { "no-restricted-imports": NO_RUNTIME_IMPORTS },
       },
       {
-        // C12: port adapters (node:sqlite for Db, Playwright for Scraper, the API's node entry, the web app's Tauri
-        // calls) live in src/platform/.
+        // C12: port adapters (node:sqlite for Db, Playwright for Scraper, the API's node entry) live in src/platform/.
         files: ["packages/*/src/platform/**", "apps/api/src/platform/**"],
         rules: { "no-restricted-imports": "off" },
       },
       {
         files: ["apps/web/**"],
-        rules: {
-          "no-restricted-imports": ["error", { paths: [NO_EFFECT_IMPORTS], patterns: [] }],
-          "no-restricted-properties": NO_EFFECT_MEMBERS,
-        },
+        rules: { "no-restricted-imports": NO_EFFECT_IMPORTS_ONLY, "no-restricted-properties": NO_EFFECT_MEMBERS },
       },
+      // The web app's source adds C12; its Tauri calls live in src/platform/, where only the effect ban holds.
       {
-        // The web app's C12 ban beside the effect ban; its Tauri calls live in src/platform/ (above).
         files: ["apps/web/src/**"],
-        excludeFiles: ["apps/web/src/platform/**"],
-        rules: {
-          "no-restricted-imports": [
-            "error",
-            { paths: [...NO_RUNTIME_IMPORTS[1].paths, NO_EFFECT_IMPORTS], patterns: NO_RUNTIME_IMPORTS[1].patterns },
-          ],
-        },
+        rules: { "no-restricted-imports": restrictImports({ paths: [NO_EFFECT_IMPORTS] }) },
       },
-      { files: ["apps/api/src/services/**"], rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES) } },
+      { files: ["apps/web/src/platform/**"], rules: { "no-restricted-imports": NO_EFFECT_IMPORTS_ONLY } },
+      {
+        files: ["apps/api/src/services/**"],
+        rules: { "no-restricted-imports": restrictImports({ patterns: [NO_HONO, NO_ROUTES] }) },
+      },
       {
         files: ["apps/api/src/repositories/**"],
-        rules: { "no-restricted-imports": restrictImports(NO_HONO, NO_ROUTES, NO_SERVICES) },
+        rules: { "no-restricted-imports": restrictImports({ patterns: [NO_HONO, NO_ROUTES, NO_SERVICES] }) },
       },
       {
         // C3: integer milli-units and 1e-5 money, YYYY-MM-DD strings; no floats or Date in the domain.

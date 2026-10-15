@@ -18,11 +18,14 @@ export function parseIsoDate(s: string): Result<IsoDate> {
   return { ok: true, value: s as IsoDate };
 }
 
-/** Fixed-width `YYYY-MM-DD` strings order chronologically. */
-export function compareIsoDate(a: IsoDate, b: IsoDate): -1 | 0 | 1 {
+/** Code-unit order, not locale order: the same on every machine. */
+export function byCodeUnit(a: string, b: string): -1 | 0 | 1 {
   if (a === b) return 0;
   return a < b ? -1 : 1;
 }
+
+/** Fixed-width `YYYY-MM-DD` strings order chronologically. */
+export const compareIsoDate: (a: IsoDate, b: IsoDate) => -1 | 0 | 1 = byCodeUnit;
 
 // Days since 1970-01-01 and back, by the proleptic Gregorian calendar in whole-number arithmetic (no `Date`, C3).
 // Years run March to February, so the leap day ends a year.

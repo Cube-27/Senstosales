@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 /** The legacy lists searched 300 ms after the last keystroke. */
-const SEARCH_DELAY_MS = 300;
+export const SEARCH_DELAY_MS = 300;
 
 /**
  * A list's search box: the text shows as typed and reaches `commit` once typing pauses. A new value from outside

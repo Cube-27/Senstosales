@@ -51,12 +51,14 @@ const SORTS: Record<SortKey, readonly (AnyColumn | SQLWrapper)[]> = {
 };
 
 /** The Flagged filter: POs with open flags, or POs without. */
-const flaggedIs = (flagged: boolean, hasOpenFlags: SQL): SQL => (flagged ? hasOpenFlags : sql`NOT ${hasOpenFlags}`);
+function flaggedIs(flagged: boolean): SQL {
+  const hasOpenFlags = sql`EXISTS (SELECT 1 FROM ${openFlagsOf})`;
+  return flagged ? hasOpenFlags : sql`NOT ${hasOpenFlags}`;
+}
 
 /** The legacy filter panel: text in the PO or GEMC number, PO date range, value range (no value = 0). */
 function where(f: PoFilters): SQL | undefined {
   const value = sql`COALESCE(${po.poValue}, 0)`;
-  const hasOpenFlags = sql`EXISTS (SELECT 1 FROM ${openFlagsOf})`;
   return and(
     f.q ? or(contains(po.poNumber, f.q), contains(po.gemcNumber, f.q)) : undefined,
     f.from === undefined ? undefined : gte(po.poDate, f.from),
@@ -64,7 +66,7 @@ function where(f: PoFilters): SQL | undefined {
     f.valueMin === undefined ? undefined : sql`${value} >= ${f.valueMin}`,
     f.valueMax === undefined ? undefined : sql`${value} <= ${f.valueMax}`,
     f.status === undefined ? undefined : eq(po.status, f.status),
-    f.flagged === undefined ? undefined : flaggedIs(f.flagged, hasOpenFlags),
+    f.flagged === undefined ? undefined : flaggedIs(f.flagged),
     f.gemc === undefined ? undefined : eq(po.isGemc, f.gemc),
   );
 }

@@ -97,7 +97,7 @@ height, a pager that stays put, loading/empty/error states with the content's fo
 
 **No React effects.** Web code never uses `useEffect` or `useLayoutEffect` (owner rule; `vp lint` refuses both, as
 imports and as `React.` members). Derive the value during render; act in the event handler that caused the change;
-fetch and react to fetch results with TanStack Query (`meta.onError` for a failure toast) or a Router loader; reset
+fetch and react to fetch results with TanStack Query (`meta.onSuccess`, or `meta.onError` for a failure toast) or a Router loader; reset
 state with a `key`; read outside state with `useSyncExternalStore`. A DOM listener that lives as long as an element
 goes in that element's ref callback, which returns its cleanup.
 

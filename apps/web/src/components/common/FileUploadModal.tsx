@@ -57,7 +57,7 @@ async function uploadOne(onUpload: Upload, file: File): Promise<Result> {
  * or closing the screen that shows the run, stops it after the file in flight.
  */
 export function startUpload(files: readonly File[], onUpload: Upload): UploadRun {
-  let state: UploadState = { phase: files.length === 0 ? "complete" : "uploading", results: [] };
+  let state: UploadState = { phase: "uploading", results: [] };
   let cancelled = false;
   let shown = false;
   const listeners = new Set<() => void>();
@@ -74,7 +74,7 @@ export function startUpload(files: readonly File[], onUpload: Upload): UploadRun
       const result = await uploadOne(onUpload, file);
       update({ results: [...state.results, result] });
     }
-    if (files.length > 0) update({ phase: cancelled ? "cancelled" : "complete" });
+    update({ phase: cancelled ? "cancelled" : "complete" });
   })();
   return {
     files,
