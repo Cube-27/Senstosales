@@ -1,0 +1,54 @@
+{
+  "supplier": {
+    "name": "EXAMPLE PRECISION WORKS",
+    "description": "Manufacturers of Example Machined Components",
+    "address": "Plot 0, Example Industrial Estate, Example City - 000000",
+    "gstin": "TESTGSTIN0000X1",
+    "contact": "0000-000000",
+    "state": "Example State",
+    "stateCode": "00",
+    "jurisdiction": "EXAMPLE CITY"
+  },
+  "invoice": {
+    "number": "INV-7",
+    "invoiceDate": "2025-06-05",
+    "buyerName": "The Example Manager (Stores)",
+    "buyerAddress": "Example Unit\nExample Road\nExample City - 000000",
+    "buyerGstin": "TESTGSTIN0000B1",
+    "buyerState": "Example State",
+    "placeOfSupply": "Example City",
+    "buyersOrderDate": "2025-04-15",
+    "gemcNumber": null,
+    "gemcDate": null,
+    "paymentTerms": "45 Days",
+    "despatchDocNo": "DD-0001",
+    "srvNo": "SRV-0001",
+    "srvDate": "2025-06-20",
+    "destination": "Example City",
+    "cgstPct": 900000,
+    "sgstPct": 900000
+  },
+  "po": {
+    "poNumber": "4500000001",
+    "poDate": "2025-04-15",
+    "isGemc": false
+  },
+  "dc": {
+    "number": "7",
+    "dcDate": "2025-06-03"
+  },
+  "items": [
+    {
+      "poItemNo": 10,
+      "description": "Bracket, mild steel, 5 x 2 mm, drawing EX-1000",
+      "unit": "NOS",
+      "qty": 1000,
+      "rate": 10000000,
+      "taxable": 10000000,
+      "cgst": 900000,
+      "sgst": 900000,
+      "igst": 0,
+      "total": 11800000
+    }
+  ]
+}

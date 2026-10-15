@@ -99,6 +99,51 @@ export function fmtMoneyCompactSpaced(m: Money): string {
   return compact(m < 0 && abs >= ONE_RUPEE / 2, abs, " ");
 }
 
+/** The words for 0..19, by index. */
+const BELOW_20 = [
+  "",
+  ..."One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen".split(
+    " ",
+  ),
+];
+const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+/** 1..999 in words, `""` for 0: `118` -> `"One Hundred and Eighteen"`. */
+function hundredsWords(n: number): string {
+  const below100 = n % 100;
+  const tens =
+    below100 < 20 ? BELOW_20[below100]! : `${TENS[Math.floor(below100 / 10)]} ${BELOW_20[below100 % 10]}`.trimEnd();
+  if (n < 100) return tens;
+  const hundreds = `${BELOW_20[Math.floor(n / 100)]} Hundred`;
+  return below100 === 0 ? hundreds : `${hundreds} and ${tens}`;
+}
+
+/** Whole rupees in Indian words: `12345678` -> `"One Crore Twenty Three Lakh Forty Five Thousand Six Hundred and …"`. */
+function rupeeWords(n: number): string {
+  if (n === 0) return "Zero";
+  const crore = Math.floor(n / 10_000_000);
+  if (crore >= 1000) throw new RangeError("Amount too large to write in words");
+  const parts: Array<[number, string]> = [
+    [crore, " Crore"],
+    [Math.floor(n / 100_000) % 100, " Lakh"],
+    [Math.floor(n / 1000) % 100, " Thousand"],
+    [n % 1000, ""],
+  ];
+  return parts.flatMap(([count, scale]) => (count > 0 ? [hundredsWords(count) + scale] : [])).join(" ");
+}
+
+/**
+ * The legacy invoice's amount in words: `1180.5` -> `"Rupees One Thousand One Hundred and Eighty and Paise Fifty
+ * Only"`. Paise are rounded half up and can reach a hundred (`5.996` -> `"… and Paise One Hundred Only"`); legacy
+ * could not write a thousand crore or more (EC-49).
+ */
+export function fmtAmountWords(m: Money): string {
+  const rem = m % ONE_RUPEE;
+  const paise = roundDiv(rem, ONE_RUPEE / 100);
+  const words = `Rupees ${rupeeWords((m - rem) / ONE_RUPEE)}`;
+  return `${words}${paise > 0 ? ` and Paise ${rupeeWords(paise)}` : ""} Only`;
+}
+
 /** `2025-01-05` -> `"05/01/2025"`; no date -> `"—"`. */
 export const fmtDate = (d: IsoDate | null): string =>
   d === null ? "—" : `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;

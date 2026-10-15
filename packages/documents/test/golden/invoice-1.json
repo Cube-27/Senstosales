@@ -1,0 +1,285 @@
+{
+  "fileName": "Invoice_INV-7.xlsx",
+  "pageSetup": {
+    "printArea": "A1:S32",
+    "printTitlesRow": null,
+    "printTitlesColumn": null,
+    "orientation": "landscape",
+    "paperSize": 9,
+    "fitToPage": true,
+    "fitToWidth": 1,
+    "fitToHeight": 1,
+    "scale": 100,
+    "horizontalCentered": true,
+    "verticalCentered": false,
+    "margins": {
+      "left": 0.2,
+      "right": 0.2,
+      "top": 0.3,
+      "bottom": 0.25,
+      "header": 0.2,
+      "footer": 0.2
+    }
+  },
+  "styleRows": [[1, 32, 1, 32]],
+  "numFmts": [
+    [17, 17, "LNPRS", "#,##0.00"],
+    [20, 20, "LNPRS", "#,##0.00"],
+    [24, 24, "LNPRS", "#,##0.00"]
+  ],
+  "fontFrom": {
+    "A3": "A4"
+  },
+  "merges": [
+    "A1:S1",
+    "A21:M22",
+    "A23:M25",
+    "A26:S26",
+    "A27:S27",
+    "A28:M28",
+    "A29:P29",
+    "A3:F3",
+    "A31:S31",
+    "A32:S32",
+    "B15:H15",
+    "B16:H16",
+    "B17:H17",
+    "B18:H18",
+    "B19:H19",
+    "B20:I20",
+    "I10:K11",
+    "I14:S14",
+    "I3:J3",
+    "I4:M5",
+    "I6:J7",
+    "I8:J9",
+    "K3:M3",
+    "K6:M7",
+    "K8:M9",
+    "L10:M11",
+    "N10:N11",
+    "N4:O5",
+    "N6:N7",
+    "N8:N9",
+    "O10:O11",
+    "O15:P15",
+    "O2:S2",
+    "O22:P22",
+    "O3:S3",
+    "O6:S7",
+    "O8:S9",
+    "P10:P11",
+    "Q10:S11",
+    "Q15:R15",
+    "Q22:R22",
+    "Q30:S30",
+    "Q4:S5"
+  ],
+  "rows": {
+    "1": {
+      "size": 36.75
+    },
+    "2": {
+      "size": 30
+    },
+    "3": {
+      "size": 33
+    },
+    "4": {
+      "size": 12.75
+    },
+    "5": {
+      "size": 12.75
+    },
+    "6": {
+      "size": 12.75
+    },
+    "7": {
+      "size": 12.75
+    },
+    "8": {
+      "size": 12.75
+    },
+    "9": {
+      "size": 12.75
+    },
+    "10": {
+      "size": 12.75
+    },
+    "11": {
+      "size": 12.75
+    },
+    "12": {
+      "size": 12.75
+    },
+    "13": {
+      "size": 12.75
+    },
+    "14": {
+      "size": 12.75
+    },
+    "15": {
+      "size": 25.5
+    },
+    "16": {
+      "size": 12.75
+    },
+    "17": {
+      "size": 57.75
+    },
+    "18": {
+      "size": 60.75
+    },
+    "19": {
+      "size": 60,
+      "hidden": true
+    },
+    "20": {
+      "size": 12.75
+    },
+    "21": {
+      "size": 12.75
+    },
+    "22": {
+      "size": 15.95
+    },
+    "23": {
+      "size": 12.75
+    },
+    "24": {
+      "size": 12.75
+    },
+    "25": {
+      "size": 12.75
+    },
+    "26": {
+      "size": 12.75
+    },
+    "27": {
+      "size": 12.75
+    },
+    "28": {
+      "size": 14.25
+    },
+    "29": {
+      "size": 29.1
+    },
+    "30": {
+      "size": 20.45
+    },
+    "31": {
+      "size": 12.75
+    },
+    "32": {
+      "size": 12.75
+    }
+  },
+  "values": {
+    "A1": "TAX INVOICE",
+    "O2": "Extra Copy",
+    "A3": "EXAMPLE PRECISION WORKS\nPlot 0, Example Industrial Estate, Example City - 000000",
+    "I3": "Invoice No.",
+    "K3": "INV-7",
+    "N3": "Dated",
+    "O3": "05/06/2025",
+    "A4": "GSTIN/UIN: TESTGSTIN0000X1",
+    "I4": "GEMC:-  Dt:-",
+    "N4": "Mode/Terms of Payment",
+    "Q4": "45 Days",
+    "A5": "State Name :  Example State, Code : 00",
+    "A6": "Contact : 0000-000000",
+    "I6": "Challan No",
+    "K6": "7",
+    "N6": "Dated ",
+    "O6": "03/06/2025",
+    "A7": "Buyer",
+    "A8": "The Example Manager (Stores)",
+    "I8": "Buyer's Order No.",
+    "K8": "4500000001",
+    "N8": "Dated",
+    "O8": "15/04/2025",
+    "A9": "Example Unit\nExample Road\nExample City - 000000",
+    "A10": "GSTIN/UIN:",
+    "C10": "TESTGSTIN0000B1",
+    "I10": "Despatch Document No.",
+    "L10": "DD-0001",
+    "N10": "SRV No",
+    "O10": "SRV-0001",
+    "P10": "SRV Dt.",
+    "Q10": "20/06/2025",
+    "A11": "State Name :",
+    "C11": "Example State",
+    "A12": "Place of Supply :",
+    "C12": "Example City",
+    "I12": "Despatched through",
+    "N12": "Destination",
+    "P12": "Example City",
+    "I13": "By Loading Vehicle",
+    "I14": "Terms of Delivery",
+    "A15": "PO\nSL",
+    "B15": "Description of Goods",
+    "I15": "HSN/SAC",
+    "J15": "No of Pckt",
+    "K15": "Quantity",
+    "L15": "Rate",
+    "M15": "Qty",
+    "N15": "Taxable",
+    "O15": "Central Tax",
+    "Q15": "State Tax",
+    "S15": "Total",
+    "A16": "No.",
+    "M16": "Unit",
+    "N16": "Value",
+    "O16": "Rate",
+    "P16": "Amount",
+    "Q16": "Rate",
+    "R16": "Amount",
+    "S16": "Amount",
+    "A17": 10,
+    "B17": "Bracket, mild steel, 5 x 2 mm, drawing EX-1000",
+    "J17": 1,
+    "K17": 1,
+    "L17": 100,
+    "M17": "NOS",
+    "N17": 100,
+    "O17": 9,
+    "P17": 9,
+    "Q17": 9,
+    "R17": 9,
+    "S17": 118,
+    "B20": "Total",
+    "J20": 1,
+    "K20": 1,
+    "N20": 100,
+    "P20": 9,
+    "R20": 9,
+    "S20": 118,
+    "A21": "Total Amount (In Words) :- Rupees One Hundred and Eighteen Only",
+    "S21": "E. & O.E",
+    "N22": "Taxable",
+    "O22": "Central Tax",
+    "Q22": "State Tax",
+    "S22": "Total",
+    "A23": "Total:",
+    "N23": "Value",
+    "O23": "Rate",
+    "P23": "Amount",
+    "Q23": "Rate",
+    "R23": "Amount",
+    "S23": "Tax Amount",
+    "N24": 100,
+    "O24": 9,
+    "P24": 9,
+    "Q24": 9,
+    "R24": 9,
+    "S24": 18,
+    "A26": "CGST (in words)  : Rupees Nine Only",
+    "A27": "SGST (in words)  : Rupees Nine Only",
+    "A28": "Declaration",
+    "Q28": "For EXAMPLE PRECISION WORKS",
+    "A29": "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
+    "Q30": "Authorised Signatory",
+    "A31": "SUBJECT TO EXAMPLE CITY JURISDICTION",
+    "A32": "This is a Computer Generated Invoice"
+  }
+}

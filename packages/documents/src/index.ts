@@ -6,4 +6,5 @@ export { xlsxChunks } from "./stream/xlsx.ts";
 export { templateBytes, type TemplateName } from "./templates.ts";
 export type { Sheet } from "./stream/xlsx.ts";
 export { buildDcWorkbook, dcFileName, type DcDocument } from "./dc.ts";
+export { buildInvoiceWorkbook, invoiceFileName, type InvoiceDocument } from "./invoice.ts";
 export { documentSupplier, type DocumentSupplier } from "./supplier.ts";
