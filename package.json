@@ -9,6 +9,7 @@
     "gen:routes": "node tools/gen/src/routes.ts",
     "gen:templates": "node tools/gen/src/templates.ts",
     "import:corpus": "node tools/corpus/src/import.ts",
+    "start": "pnpm --filter @senstosales/web build && node tools/start/src/start.ts",
     "hooks": "vp config --hooks --no-agent",
     "format": "vp fmt --write",
     "test": "vp test run",

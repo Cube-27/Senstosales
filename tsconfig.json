@@ -15,6 +15,7 @@
     { "path": "tools/corpus" },
     { "path": "tools/gen" },
     { "path": "tools/orchestrator" },
-    { "path": "tools/release" }
+    { "path": "tools/release" },
+    { "path": "tools/start" }
   ]
 }
