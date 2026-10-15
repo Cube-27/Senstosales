@@ -29,7 +29,7 @@ every row in the batch `done (#n)`. One `/simplify` pass and one review per PR, 
 ## 1. Frame
 
 Write the exit predicate as a checklist in the PR draft: each row's acceptance criteria quoted from the spec, and
-`pnpm verify` green (or the checks that exist so far).
+CI green.
 
 Name the data shape first: the types, results and state machine the code is organized around. If the spec leaves a
 shape open, choose the most conservative one and record it as a decision.
@@ -61,7 +61,10 @@ second pass.
 
 ## 3. Verify
 
-- Run the full local gate. Read the output; don't infer it.
+- Never run the full suite locally (owner rule): no `pnpm verify`, `pnpm check:code`, unfiltered `vp test run`,
+  repo-wide `tsc -b` or the full e2e. Locally, run only the tests for the files you changed (`pnpm test <paths>`, one
+  Playwright spec with `-g`) and fmt/lint on changed files. Push and let CI run everything
+  (`tools/orchestrator/wait_ci.sh`). Read the CI output; don't infer it.
 - Map each acceptance criterion to the test or command that proves it.
 - A check failing twice for the same reason: "attack the premise" (ENGINEERING). After three honest attempts,
   escalate (`CLAUDE.md` §5).

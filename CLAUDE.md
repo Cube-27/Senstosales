@@ -130,10 +130,10 @@ Needs: Node 26+, pnpm 11 (`corepack enable`), Git Bash on Windows. Run from the 
 ```sh
 pnpm install         # dependencies
 pnpm hooks           # once per clone: the `vp staged` pre-commit hook (fmt, lint, real-data scan --staged)
-pnpm verify          # everything CI runs, in CI's order; stops at the first failure
+pnpm verify          # CI only, never run locally: everything CI runs, in CI's order; stops at the first failure
 pnpm start           # builds apps/web, then runs the app on 127.0.0.1 and prints its address; Ctrl+C stops it
 pnpm format          # vp fmt --write (Oxfmt)
-pnpm test [files]    # vp test run (Vitest); locally at most two workers. Run tools through pnpm, never npx
+pnpm test <files>    # only the files you changed; locally at most two workers. Run tools through pnpm, never npx
 ```
 
 The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:
