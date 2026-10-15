@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./catalog": "./src/reports/catalog.ts",
     "./test/reports/dataset": "./test/reports/dataset.ts"
   },
   "dependencies": {

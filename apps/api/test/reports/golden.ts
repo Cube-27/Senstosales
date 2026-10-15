@@ -1,15 +1,9 @@
 // Export tests against the SPEC-13 goldens (`packages/documents/test/reports/golden`, D-0284): read a golden, project
-// an exported workbook onto the golden's shape, and call the export routes over the report dataset.
+// an exported workbook onto the golden's shape.
 import { readFileSync } from "node:fs";
 
-import type { NodeDb } from "@senstosales/db/node";
 import ExcelJS from "exceljs";
 import { isDeepStrictEqual } from "node:util";
-
-import { apiRoutes } from "../../src/routes/index.ts";
-import { createServices } from "../../src/services/index.ts";
-import { testApp } from "../helpers.ts";
-import { fixedClock, memoryStorage } from "../service-deps.ts";
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 type Style = Record<string, Json>;
@@ -113,21 +107,4 @@ export async function workbookGolden(
     merges: [...(ws.model.merges ?? [])].toSorted(byAddress),
     rows,
   };
-}
-
-/** The file name a download's `Content-Disposition` names. */
-export function fileNameOf(res: Response): string {
-  const header = res.headers.get("content-disposition") ?? "";
-  return decodeURIComponent(/filename\*=UTF-8''(.+)$/.exec(header)?.[1] ?? "");
-}
-
-/** Every route over `db`, signed in, with today 2025-06-01. */
-export function exportApp(db: NodeDb) {
-  const services = createServices({
-    db,
-    clock: fixedClock,
-    jobs: { enqueue: () => {}, holds: () => false },
-    storage: memoryStorage(),
-  });
-  return testApp(apiRoutes(services)).send;
 }

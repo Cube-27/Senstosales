@@ -72,7 +72,11 @@ const DELETE_BLOCKED: Partial<Record<DeleteBlockReason, string>> = {
 type ListLine = Awaited<ReturnType<typeof invoiceListLines>>[number];
 type Row = Omit<ListLine, "qty" | "cgst" | "sgst" | "igst"> & { itemCount: number; qty: Qty; tax: Money };
 
-const SORTS: Record<NonNullable<ListQuery["sort"]>, Comparator<Row>> = {
+/** The invoice list's sorts, which its CSV export keeps. */
+export const INVOICE_LIST_SORTS: Record<
+  NonNullable<ListQuery["sort"]>,
+  Comparator<Pick<Row, "number" | "invoiceDate" | "poNumber" | "itemCount" | "qty" | "total">>
+> = {
   number: on((r) => r.number, byNumber),
   invoiceDate: on((r) => r.invoiceDate, compareIsoDate),
   poNumber: on((r) => r.poNumber, byNumber),
@@ -82,7 +86,11 @@ const SORTS: Record<NonNullable<ListQuery["sort"]>, Comparator<Row>> = {
 };
 
 /** Newest first, as the DC list opens; also the tie-break of every sort, so pages are stable. */
-const DEFAULT = [desc(SORTS.invoiceDate), desc(SORTS.number), desc(on<Row, string>((r) => r.id, byText))];
+const DEFAULT = [
+  desc(INVOICE_LIST_SORTS.invoiceDate),
+  desc(INVOICE_LIST_SORTS.number),
+  desc(on<Row, string>((r) => r.id, byText)),
+];
 
 /** One row per invoice: its line count, Σ line qty, and the tax as the legacy KPI card sums it (CGST + SGST + IGST). */
 const toRows = (lines: readonly ListLine[]): Row[] =>
@@ -330,7 +338,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     },
 
     async list(query: ListQuery) {
-      return page(await rows(query), query, SORTS, DEFAULT);
+      return page(await rows(query), query, INVOICE_LIST_SORTS, DEFAULT);
     },
 
     /** The legacy KPI cards over the invoices the list filters keep. */

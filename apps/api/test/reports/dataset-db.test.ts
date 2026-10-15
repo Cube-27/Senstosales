@@ -2,15 +2,15 @@
 import { po, poItem } from "@senstosales/db";
 import type { NodeDb } from "@senstosales/db/node";
 import { eq } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
 import { reportDb } from "./dataset-db.ts";
 
 let db: NodeDb;
-beforeEach(async () => {
+beforeAll(async () => {
   db = await reportDb();
 });
-afterEach(() => db.close());
+afterAll(() => db.close());
 
 describe("report dataset", () => {
   it("recomputes each item to the dataset's worked values", async () => {

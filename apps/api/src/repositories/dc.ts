@@ -76,7 +76,7 @@ export const isNumberCollision = (err: unknown): boolean =>
   );
 
 /** The legacy filter panel: text in the DC number, PO number or consignee, DC date range. */
-const where = (f: DcFilters) =>
+export const dcListWhere = (f: DcFilters) =>
   and(
     f.q ? or(contains(dc.number, f.q), contains(po.poNumber, f.q), contains(dc.consigneeName, f.q)) : undefined,
     f.from === undefined ? undefined : gte(dc.dcDate, f.from),
@@ -103,7 +103,7 @@ export const dcListLines = (db: Db, filters: DcFilters) =>
       .innerJoin(po, eq(po.id, dc.poId))
       .innerJoin(dcItem, eq(dcItem.dcId, dc.id))
       .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
-      .where(where(filters)),
+      .where(dcListWhere(filters)),
   );
 
 /** The invoice of each of these DCs that has one (INV-28), by DC. */

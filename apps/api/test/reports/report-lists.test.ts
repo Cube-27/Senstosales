@@ -8,13 +8,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import { reportsService } from "../../src/services/reports.ts";
 import { fixedClock } from "../service-deps.ts";
 import { reportDb, reportIds } from "./dataset-db.ts";
-import { exportApp, workbookGoldenFile } from "./golden.ts";
+import { routesOver } from "../seed-rows.ts";
+import { workbookGoldenFile } from "./golden.ts";
 
 let db: NodeDb;
-let send: ReturnType<typeof exportApp>;
+let send: ReturnType<typeof routesOver>;
 beforeEach(async () => {
   db = await reportDb();
-  send = exportApp(db);
+  send = routesOver(db);
 });
 afterEach(() => db.close());
 
