@@ -4,7 +4,7 @@
 // them in the SRV date's FY (INV-37) → recompute the PO and its new flags (INV-52, INV-53) → audit. An SRV whose PO is
 // not stored is kept unattached and changes nothing (INV-40).
 import type { Statement } from "@senstosales/db";
-import { chunk, DbError, rowsPerInsert, srv, srvItem, WriteBatch } from "@senstosales/db";
+import { DbError, insertRows, srv, srvItem, WriteBatch } from "@senstosales/db";
 import type { IsoDate, Qty } from "@senstosales/domain";
 import { acceptIncoming, compareIsoDate, fyOf, matchSrvItem, resolveDocLink } from "@senstosales/domain";
 import type { SrvDocument } from "@senstosales/parsers";
@@ -145,10 +145,11 @@ async function ingestStatements(
         .insert(srv)
         .values({ ...header, id: srvId, supplierId: ctx.supplierId, poNumber: doc.poNumber, srvNumber: doc.srvNumber })
         .onConflictDoUpdate({ target: [srv.supplierId, srv.poNumber, srv.srvNumber], set: header }),
-      ...chunk(
+      ...insertRows(
+        db,
+        srvItem,
         items.map(({ row }) => ({ ...row, supplierId: ctx.supplierId })),
-        rowsPerInsert(srvItem),
-      ).map((rows) => db.build.insert(srvItem).values(rows)),
+      ),
       insertAudit(db, {
         id: newId(),
         at: now,

@@ -5,13 +5,12 @@
 import type { Db, Instant, Statement } from "@senstosales/db";
 import {
   auditLog,
-  chunk,
   DbError,
-  MAX_BOUND_PARAMS,
+  idRuns,
+  insertRows,
   po,
   poItem,
   poLot,
-  rowsPerInsert,
   srv,
   srvItem,
   updateWithVersion,
@@ -303,22 +302,20 @@ function itemStatements(
           .values({ ...values, ...DERIVED_PLACEHOLDER, uninvoicedQty: ZERO, id: item.id, poId, supplierId });
   });
   const statements: Statement[] = [...upserts];
+  const cancelled = plan.cancelled.map((item) => item.id);
   // `cancelledAt` binds one parameter besides the ids.
-  for (const ids of chunk(
-    plan.cancelled.map((item) => item.id),
-    MAX_BOUND_PARAMS - 1,
-  )) {
+  for (const ids of idRuns(cancelled, 1)) {
     statements.push(db.build.update(poItem).set({ cancelledAt: now }).where(inArray(poItem.id, ids)));
   }
   // The page's lots replace those of its items; a cancelled item keeps its last lots.
   const replaced = plan.fromPage.filter((p) => p.stored).map((p) => p.item.id);
-  for (const ids of chunk(replaced, MAX_BOUND_PARAMS)) {
+  for (const ids of idRuns(replaced)) {
     statements.push(db.build.delete(poLot).where(inArray(poLot.poItemId, ids)));
   }
   const lots = plan.fromPage.flatMap(({ docItem, item }) =>
     docItem.lots.map((lot) => ({ ...lot, id: newId(), supplierId, poItemId: item.id })),
   );
-  for (const rows of chunk(lots, rowsPerInsert(poLot))) statements.push(db.build.insert(poLot).values(rows));
+  statements.push(...insertRows(db, poLot, lots));
   return statements;
 }
 
@@ -328,7 +325,7 @@ function matchStatements(db: Db, poId: string, lines: readonly MatchedLine[]): S
   const srvIds = [...new Set(lines.map((line) => line.srvId))];
   return [
     // `poId` binds one parameter besides the ids.
-    ...chunk(srvIds, MAX_BOUND_PARAMS - 1).map((ids) => db.build.update(srv).set({ poId }).where(inArray(srv.id, ids))),
+    ...idRuns(srvIds, 1).map((ids) => db.build.update(srv).set({ poId }).where(inArray(srv.id, ids))),
     ...lines
       .filter((line) => line.poItemId !== null)
       .map((line) => db.build.update(srvItem).set({ poItemId: line.poItemId }).where(eq(srvItem.id, line.id))),

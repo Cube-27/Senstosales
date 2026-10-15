@@ -56,7 +56,8 @@ describe("route conformance (INV-101)", () => {
   });
 
   test("without a scraper, only the BHEL wizard is missing (D-0380)", () => {
-    const missing = table.filter((r) => !mounted(handlers(false)).includes(r));
+    const plain = new Set(mounted(handlers(false)));
+    const missing = table.filter((r) => !plain.has(r));
     expect(missing).toEqual([
       "POST /api/bhel/session",
       "POST /api/bhel/session/:sessionId/captcha",

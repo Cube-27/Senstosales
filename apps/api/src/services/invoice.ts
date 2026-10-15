@@ -5,7 +5,7 @@
 // its number, the PO recompute with its flags, and the audit row (C4). An edit changes header fields only (INV-33) and
 // moves the invoice to its date's FY (INV-25); a delete is refused while an SRV item links the invoice (INV-35).
 import type { Statement } from "@senstosales/db";
-import { chunk, invoice, invoiceItem, rowsPerInsert, updateWithVersion } from "@senstosales/db";
+import { insertRows, invoice, invoiceItem, updateWithVersion } from "@senstosales/db";
 import type { DeleteBlockReason, Money, Qty } from "@senstosales/domain";
 import {
   compareIsoDate,
@@ -182,7 +182,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
 
     const statements: Statement[] = [
       db.build.insert(invoice).values(invoiceRow),
-      ...chunk(itemRows, rowsPerInsert(invoiceItem)).map((rows) => db.build.insert(invoiceItem).values(rows)),
+      ...insertRows(db, invoiceItem, itemRows),
       ...links.statements,
       // An invoice changes the PO's quantities: an edit or create built from the PO before it fails (D-0220).
       ...guardedRecompute(

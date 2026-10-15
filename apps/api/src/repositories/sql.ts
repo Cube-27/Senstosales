@@ -1,5 +1,5 @@
 // SQL pieces the list repositories share.
-import { chunk, MAX_BOUND_PARAMS, po, reconciliationIssue } from "@senstosales/db";
+import { idRuns, po, reconciliationIssue } from "@senstosales/db";
 import type { IsoDate } from "@senstosales/domain";
 import type { SQLWrapper, Table } from "drizzle-orm";
 import { and, getTableColumns, gte, lte, sql } from "drizzle-orm";
@@ -26,16 +26,12 @@ const { fingerprint: _, ...flagApiColumns } = apiColumns(reconciliationIssue);
 export const flagColumns = flagApiColumns;
 
 /**
- * `read` over `ids` in batches of at most `size`, the rows in batch order. D1 binds at most 100 parameters to a
- * statement, so a read that binds others besides the ids takes fewer at a time.
+ * `read` over `ids` in batches, the rows in batch order. D1 binds at most 100 parameters to a statement, so a read
+ * that binds `others` parameters besides the ids takes that many fewer at a time.
  */
-export async function inBatches<T>(
-  ids: readonly string[],
-  read: (batch: string[]) => Promise<T[]>,
-  size = MAX_BOUND_PARAMS,
-): Promise<T[]> {
+export async function inBatches<T>(ids: readonly string[], read: (batch: string[]) => Promise<T[]>, others = 0) {
   const out: T[] = [];
-  for (const batch of chunk(ids, size)) out.push(...(await read(batch)));
+  for (const batch of idRuns(ids, others)) out.push(...(await read(batch)));
   return out;
 }
 

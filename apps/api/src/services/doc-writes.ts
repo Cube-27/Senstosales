@@ -71,7 +71,7 @@ export function docWrites({ db, clock }: { db: Db; clock: Clock }, kind: keyof t
   async function numberCheck(supplierId: string, { number, date }: { number: string; date: IsoDate }) {
     const financialYear = fyOf(date);
     const stored = await NUMBERED[kind](db, supplierId, [number.trim()]);
-    return { taken: stored.some((d) => fyOf(d.date) === financialYear), financialYear };
+    return { taken: stored.some((d) => d.financialYear === financialYear), financialYear };
   }
 
   return { guardedRecompute, otherPos, relink, numberCheck };

@@ -1,17 +1,7 @@
 // DC rows (ARCHITECTURE §8.2) and the DC list, detail and delete reads (SPEC-11 §2). Plain rows: the filters that
 // need no business value run in SQL; the list totals come from the domain in the service (C2).
 import type { Db, Statement } from "@senstosales/db";
-import {
-  dc,
-  dcItem,
-  invoice,
-  MAX_BOUND_PARAMS,
-  po,
-  poItem,
-  reconciliationIssue,
-  srvItem,
-  UniqueViolation,
-} from "@senstosales/db";
+import { dc, dcItem, invoice, po, poItem, reconciliationIssue, srvItem, UniqueViolation } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import { and, count, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
@@ -49,7 +39,7 @@ export const dcNumbersOf = (db: Db, supplierId: string) =>
 export const dcsNumbered = (db: Db, supplierId: string, numbers: readonly string[]) =>
   db.query(
     db.build
-      .select({ id: dc.id, number: dc.number, date: dc.dcDate })
+      .select({ id: dc.id, number: dc.number, date: dc.dcDate, financialYear: dc.financialYear })
       .from(dc)
       .where(and(eq(dc.supplierId, supplierId), inArray(dc.number, [...numbers]))),
   );
@@ -152,8 +142,8 @@ export async function openFlagCountsOfDcs(db: Db, dcIds: readonly string[]) {
           )
           .groupBy(dcItem.dcId),
       ),
-    // The scope type and status bind two more.
-    MAX_BOUND_PARAMS - 2,
+    // The scope type and status.
+    2,
   );
   return new Map(counts.map((row) => [row.dcId, row.count]));
 }

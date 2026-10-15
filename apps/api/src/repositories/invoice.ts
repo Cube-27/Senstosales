@@ -52,7 +52,12 @@ export const invoiceNumbersOf = (db: Db, supplierId: string) =>
 export const invoicesNumbered = (db: Db, supplierId: string, numbers: readonly string[]) =>
   db.query(
     db.build
-      .select({ id: invoice.id, number: invoice.number, date: invoice.invoiceDate })
+      .select({
+        id: invoice.id,
+        number: invoice.number,
+        date: invoice.invoiceDate,
+        financialYear: invoice.financialYear,
+      })
       .from(invoice)
       .where(and(eq(invoice.supplierId, supplierId), inArray(invoice.number, [...numbers]))),
   );
