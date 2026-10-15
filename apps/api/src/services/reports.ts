@@ -132,6 +132,31 @@ const dispatchColumns = (r: DispatchLine) => ({
   departmentNo: r.departmentNo,
 });
 
+/** The DC lines as summary cells, adding up each unit's quantity and the packets for the TOTAL row as they pass. */
+function dispatchSummaryRows(lines: AsyncIterable<DispatchLine>) {
+  const byUnit = new Map<string, Qty>();
+  let packets = 0;
+  let serial = 0;
+  const rows = mapped(lines, (r) => {
+    const unit = r.unit?.trim() ?? "";
+    byUnit.set(unit, sumQty([byUnit.get(unit) ?? (0 as Qty), r.dspQty]));
+    packets += r.packets ?? 0;
+    serial += 1;
+    return {
+      serial,
+      description: summaryDescription(r),
+      qty: qtyWithUnit(r.dspQty, unit),
+      packets: r.packets ?? "",
+      poNumber: r.poNumber,
+      gemcNumber: dispatchGemc(r) ?? "",
+      invoiceNumbers: dispatchInvoice(r) ?? "",
+      dcNumbers: r.dcNumber,
+      delivered: r.departmentNo ?? "",
+    };
+  });
+  return { rows, total: () => ({ qty: dispatchTotal(byUnit), packets }) };
+}
+
 export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
   /** Every item `where` keeps, in the query's sort, then `defaults`. */
   const items = (
@@ -226,31 +251,6 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     return keysetRows(listKey(DISPATCH_SORTS, BY_DISPATCH, query), (page) => dispatchLines(db, where, page), pageSize);
   };
 
-  /** The DC lines as summary cells, adding up each unit's quantity and the packets for the TOTAL row as they pass. */
-  function dispatchSummaryRows(lines: AsyncIterable<DispatchLine>) {
-    const byUnit = new Map<string, Qty>();
-    let packets = 0;
-    let serial = 0;
-    const rows = mapped(lines, (r) => {
-      const unit = r.unit?.trim() ?? "";
-      byUnit.set(unit, sumQty([byUnit.get(unit) ?? (0 as Qty), r.dspQty]));
-      packets += r.packets ?? 0;
-      serial += 1;
-      return {
-        serial,
-        description: summaryDescription(r),
-        qty: qtyWithUnit(r.dspQty, unit),
-        packets: r.packets ?? "",
-        poNumber: r.poNumber,
-        gemcNumber: dispatchGemc(r) ?? "",
-        invoiceNumbers: dispatchInvoice(r) ?? "",
-        dcNumbers: r.dcNumber,
-        delivered: r.departmentNo ?? "",
-      };
-    });
-    return { rows, total: () => ({ qty: dispatchTotal(byUnit), packets }) };
-  }
-
   /** The selected POs' items, PO number then item number; an id selected twice counts once, an unknown one not at all. */
   async function* selectedRows({ poIds }: ExportSelectedBody) {
     const pos = await inBatches([...new Set(poIds)], (batch) => poNumbersOf(db, batch));
@@ -273,7 +273,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     /** The daily dispatch summary for the range, today without one; the heading's date is the range's. */
     async dispatchExport(query: DispatchQuery) {
       const range = dispatchRange(query, clock.today());
-      const dates = [...new Set([range.from, range.to])].map(fmtDateDashed).join(" to ");
+      const dates = [...new Set([range.from, range.to])].map((date) => fmtDateDashed(date)).join(" to ");
       const { rows, total } = dispatchSummaryRows(dispatchRows(query, range));
       return summaryFile(EXPORTS.dispatch.fileName(range), await summaryHeading(dates), rows, total);
     },

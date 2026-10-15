@@ -85,7 +85,8 @@ function useReportRows(search: ReportsSearch, tab: Tab, range: Range) {
   });
   const active = { pending, reconciliation, dispatch }[tab];
   // Only the item tabs' rows are selectable: export-selected takes their POs.
-  const selectable = tab === "dispatch" ? undefined : (tab === "pending" ? pending : reconciliation).data?.items;
+  const itemTab = { pending, reconciliation, dispatch: undefined }[tab];
+  const selectable = itemTab?.data?.items;
   return { pending, reconciliation, dispatch, active, selectable };
 }
 
