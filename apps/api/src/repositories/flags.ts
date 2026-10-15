@@ -1,7 +1,7 @@
 // Reconciliation issue rows (ARCHITECTURE §6.9, §8.2) and the deviations screen reads (SPEC-10 PR 5). Plain rows;
 // filters and sorts run in SQL over stored columns.
 import type { Db, Instant } from "@senstosales/db";
-import { po, reconciliationIssue } from "@senstosales/db";
+import { po, reconciliationIssue, srv, srvItem } from "@senstosales/db";
 import type { routes } from "@senstosales/schemas";
 import type { AnyColumn, SQLWrapper } from "drizzle-orm";
 import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
@@ -47,7 +47,10 @@ const where = (f: FlagListQuery) =>
     f.poId === undefined ? undefined : eq(reconciliationIssue.poId, f.poId),
   );
 
-/** One page with each flag's PO number; newest first unless a sort is given, then newest first. */
+/**
+ * One page with each flag's PO number, and for a flag on an SRV line its SRV (the deviations screen links both);
+ * newest first unless a sort is given, then newest first.
+ */
 export async function listFlags(db: Db, query: FlagListQuery) {
   const filter = where(query);
   const dir = query.dir === "desc" ? desc : asc;
@@ -55,9 +58,14 @@ export async function listFlags(db: Db, query: FlagListQuery) {
   const [items, totals] = await Promise.all([
     db.query(
       db.build
-        .select({ ...flagColumns, poNumber: po.poNumber })
+        .select({ ...flagColumns, poNumber: po.poNumber, srvId: srv.id, srvNumber: srv.srvNumber })
         .from(reconciliationIssue)
         .innerJoin(po, eq(po.id, reconciliationIssue.poId))
+        .leftJoin(
+          srvItem,
+          and(eq(reconciliationIssue.scopeType, "srv_item"), eq(srvItem.id, reconciliationIssue.scopeId)),
+        )
+        .leftJoin(srv, eq(srv.id, srvItem.srvId))
         .where(filter)
         .orderBy(...chosen, desc(reconciliationIssue.openedAt), desc(reconciliationIssue.id))
         .limit(query.pageSize)

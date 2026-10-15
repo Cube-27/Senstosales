@@ -2,8 +2,8 @@
 // seeded rows below. Synthetic values only (C1).
 import type { Db, Instant } from "@senstosales/db";
 import * as tables from "@senstosales/db";
-import { auditLog, po, reconciliationIssue, supplier } from "@senstosales/db";
-import type { FlagType, IsoDate, Qty } from "@senstosales/domain";
+import { auditLog, po, reconciliationIssue, srv, srvItem, supplier } from "@senstosales/db";
+import type { FlagType, Fy, IsoDate, Qty } from "@senstosales/domain";
 import { is } from "drizzle-orm";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { afterEach, describe, expect, it } from "vite-plus/test";
@@ -125,6 +125,8 @@ const wire = (id: string, type: FlagType, poId: string, poNumber: string, opened
   scopeId: SCOPE,
   poId,
   poNumber,
+  srvId: null,
+  srvNumber: null,
   details,
   status: ack ? "acknowledged" : "open",
   note: ack ? "checked" : null,
@@ -164,6 +166,57 @@ describe("GET /api/flags", () => {
   ])("%s -> %j", async (query, expected, total) => {
     const app = await seeded();
     expect(await ids(app, `/api/flags${query}`)).toEqual({ status: 200, ids: expected, total });
+  });
+
+  it("carries the SRV of a flag on an SRV line, for the deviations screen's link", async () => {
+    const app = await seeded();
+    const { db } = app;
+    const [row] = await db.query(db.build.select({ id: supplier.id }).from(supplier));
+    const supplierId = row?.id ?? "";
+    const [S1, SI1, F4] = ["01J9Z8Q4S5T6V7W8X9Y0S10000", "01J9Z8Q4S5T6V7W8X9Y0S20000", "01J9Z8Q4S5T6V7W8X9Y0F40000"];
+    await db.batch([
+      db.build.insert(srv).values({
+        id: S1,
+        supplierId,
+        poNumber: "4500002",
+        poId: P2,
+        srvNumber: "7000001",
+        srvDate: "2025-05-05" as IsoDate,
+        financialYear: "2025-26" as Fy,
+        rawHeader: {},
+      }),
+      db.build.insert(srvItem).values({
+        id: SI1,
+        supplierId,
+        srvId: S1,
+        poItemNo: 10,
+        lotNo: 1,
+        srvItemNo: 1,
+        ordQty: 5000 as Qty,
+      }),
+      db.build.insert(reconciliationIssue).values({
+        supplierId,
+        id: F4,
+        type: "QTY_MISMATCH",
+        scopeType: "srv_item",
+        scopeId: SI1,
+        poId: P2,
+        fingerprint: F4,
+        details: { field: "ord_qty", expected: "10", actual: "5", docIds: [] },
+        status: "open",
+        note: null,
+        openedAt: "2025-05-06T00:00:00.000Z" as Instant,
+        acknowledgedAt: null,
+      }),
+    ]);
+    const { body } = await get(app, "/api/flags?pageSize=10");
+    const { items } = body as { items: { id: string; srvId: string | null; srvNumber: string | null }[] };
+    expect(items.map(({ id, srvId, srvNumber }) => ({ id, srvId, srvNumber }))).toEqual([
+      { id: F4, srvId: S1, srvNumber: "7000001" },
+      { id: F2, srvId: null, srvNumber: null },
+      { id: F3, srvId: null, srvNumber: null },
+      { id: F1, srvId: null, srvNumber: null },
+    ]);
   });
 
   it.each(["?sort=note", "?type=STALE_DOCUMENT_SKIPPED", "?status=closed", "?pageSize=7"])(
@@ -222,6 +275,8 @@ describe("POST /api/flags/:id/acknowledge", () => {
     expect(await res.json()).toEqual({
       ...wire(F1, "OVER_DISPATCH", P1, "4500001", "2025-05-01T00:00:00.000Z", false),
       poNumber: undefined,
+      srvId: undefined,
+      srvNumber: undefined,
       status: "acknowledged",
       note: "seen on site",
       acknowledgedAt: NOW,
