@@ -1,0 +1,14 @@
+{
+  "name": "@senstosales/documents",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "readable-stream": "^4.8.0"
+  },
+  "devDependencies": {
+    "@types/readable-stream": "^4.0.25"
+  }
+}
