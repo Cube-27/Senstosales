@@ -8,7 +8,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
 import { loadPage } from "../src/html.ts";
-import { parsePo, parseSrv, zPoDocument, zSrvList } from "../src/index.ts";
+import { parsePo, parseSrv, zPoDocument } from "../src/index.ts";
+import { zSrvList } from "../src/types.ts";
 import type { ParseResult } from "../src/types.ts";
 
 const FIXTURES = new URL("../fixtures/", import.meta.url);

@@ -133,9 +133,8 @@ async function ingestStatements(
   for (const doc of accepted) {
     const before = stored.get(doc.srvNumber);
     const srvId = before?.id ?? newId();
-    const keys = occurrenceKeys(srvId, doc.items);
-    const items = doc.items.map((item, i) =>
-      srvItemRow(item, { id: refs.idOf.get(keys[i] ?? ""), srvId, srvDate: doc.srvDate, refs }),
+    const items = occurrenceKeys(doc.items.map((item) => ({ ...item, srvId }))).map(([item, key]) =>
+      srvItemRow(item, { id: refs.idOf.get(key), srvId, srvDate: doc.srvDate, refs }),
     );
     newLines.push(...items.map(({ line }) => line));
     const header = {
@@ -180,28 +179,22 @@ type DocItem = SrvDocument["items"][number];
 type ItemKey = Pick<DocItem, "poItemNo" | "lotNo" | "srvItemNo">;
 
 /**
- * Each item's key within its SRV: the page's own key, and its occurrence among the rows that repeat it (A2-10), so
- * a re-uploaded SRV's rows keep the ids their flags cite (INV-59). `items` are in row order.
+ * Each row with its key: its SRV, the page's own key, and its occurrence among the SRV's rows that repeat that key
+ * (A2-10), so a re-uploaded SRV's rows keep the ids their flags cite (INV-59). `rows` are in row order.
  */
-function occurrenceKeys(srvId: string, items: readonly ItemKey[]): string[] {
+function occurrenceKeys<R extends ItemKey & { srvId: string }>(rows: readonly R[]): [R, string][] {
   const seen = new Map<string, number>();
-  return items.map(({ poItemNo, lotNo, srvItemNo }) => {
-    const key = `${srvId}/${poItemNo}/${lotNo ?? ""}/${srvItemNo}`;
+  return rows.map((row) => {
+    const key = `${row.srvId}/${row.poItemNo}/${row.lotNo ?? ""}/${row.srvItemNo}`;
     const n = (seen.get(key) ?? 0) + 1;
     seen.set(key, n);
-    return `${key}#${n}`;
+    return [row, `${key}#${n}`];
   });
 }
 
-/** The stored items' ids by `occurrenceKeys`; `rows` are in row order. */
-function idsByKey(rows: readonly (ItemKey & { id: string; srvId: string })[]): Map<string, string> {
-  const ids = new Map<string, string>();
-  for (const srvId of new Set(rows.map((row) => row.srvId))) {
-    const ofSrv = rows.filter((row) => row.srvId === srvId);
-    occurrenceKeys(srvId, ofSrv).forEach((key, i) => ids.set(key, ofSrv[i]?.id ?? ""));
-  }
-  return ids;
-}
+/** The stored items' ids by `occurrenceKeys`; `rows` are in row order within each SRV. */
+const idsByKey = (rows: readonly (ItemKey & { id: string; srvId: string })[]): Map<string, string> =>
+  new Map(occurrenceKeys(rows).map(([row, key]) => [key, row.id]));
 
 interface ItemRefs {
   readonly dcs: Awaited<ReturnType<typeof dcNumbersOf>>;

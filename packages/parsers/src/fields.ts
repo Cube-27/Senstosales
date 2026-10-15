@@ -10,6 +10,10 @@ export const fail = (code: ParseError["code"], message: string, location?: strin
   error: location === undefined ? { code, message } : { code, message, location },
 });
 
+/** An item, lot or SRV item number as printed: whole, 0 included (A2-10). One past 2^53 would be read rounded and
+ * could match another number, so it is not one. */
+export const isItemNumber = (text: string): boolean => /^\d+$/.test(text) && Number.isSafeInteger(Number(text));
+
 /** `where` names the cell in the message; `location` defaults to it. */
 export function readQty(text: string, where: string, location = where): ParseResult<Qty> {
   const qty = parseQty(text.replaceAll(",", ""));

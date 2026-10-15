@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { z } from "zod";
 
-import { zPoDocument, zSrvDocument, zSrvList } from "../src/index.ts";
+import { zPoDocument, zSrvDocument } from "../src/index.ts";
+import { zSrvList } from "../src/types.ts";
 
 /** A valid PO document on the wire, overridden per case. */
 const PO = {

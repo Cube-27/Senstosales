@@ -7,7 +7,8 @@ import { parseQty } from "@senstosales/domain";
 import { zPoId } from "@senstosales/schemas";
 
 import { parsePageDate } from "../dates.ts";
-import { mapColumnsByHeader } from "../html.ts";
+import { isItemNumber } from "../fields.ts";
+import { mapColumnsByHeader, rowByHeader } from "../html.ts";
 import type { Page } from "../html.ts";
 import type { ParseError, ParseResult, SrvDocument } from "../types.ts";
 
@@ -98,12 +99,12 @@ const cellsOf = (table: SrvTable, row: string[], rowNo: number) => ({
 });
 type Cells = ReturnType<typeof cellsOf>;
 
+/** The SRV number cell of a row. */
+export const srvNumberOf = (table: SrvTable, row: string[]): string => row[table.columns.srvNumber ?? -1] ?? "";
+
 /** Legacy skips rows with fewer than 5 cells and rows whose SRV number has no digit (totals, notes). */
 export const isDataRow = (table: SrvTable, row: string[]): boolean =>
-  row.length >= 5 && /\d/.test(row[table.columns.srvNumber ?? -1] ?? "");
-
-/** The SRV number of a data row. */
-export const srvNumberOf = (table: SrvTable, row: string[]): string => row[table.columns.srvNumber ?? -1] ?? "";
+  row.length >= 5 && /\d/.test(srvNumberOf(table, row));
 
 /** One data row; `filePo` is the PO number of the file's earlier rows, which this row must share. */
 export function readRow(table: SrvTable, row: string[], rowNo: number, filePo?: string): ParseResult<SrvRow> {
@@ -116,12 +117,10 @@ export function readRow(table: SrvTable, row: string[], rowNo: number, filePo?: 
   if (!quantities.ok) return quantities;
   const dates = readEach(cells, DATE_COLUMNS, optionalDate);
   if (!dates.ok) return dates;
-  const text = Object.fromEntries(TEXT_COLUMNS.map((column) => [column, cells.text(column) || null])) as Record<
-    (typeof TEXT_COLUMNS)[number],
-    string | null
-  >;
-  const rawRow = Object.fromEntries(table.header.map((label, i) => [label, row[i] ?? ""]));
-  const item: SrvRowItem = { ...keys.value, ...text, ...quantities.value, ...dates.value, rawRow };
+  const text = readEach(cells, TEXT_COLUMNS, (c, column) => ({ ok: true, value: c.text(column) || null }));
+  if (!text.ok) return text;
+  const rawRow = rowByHeader(table.header, row);
+  const item: SrvRowItem = { ...keys.value, ...text.value, ...quantities.value, ...dates.value, rawRow };
   return { ok: true, value: { ...ids.value, item } };
 }
 
@@ -156,8 +155,7 @@ function readKeys(cells: Cells): ParseResult<Pick<SrvItem, "poItemNo" | "lotNo" 
 function itemNo(cells: Cells, column: "poItemNo" | "lotNo" | "srvItemNo"): ParseResult<number> {
   const text = cells.text(column);
   if (text === "") return cells.fail("missing-field", column, `is empty`);
-  // A number past 2^53 would be read rounded and could match another item.
-  return /^\d+$/.test(text) && Number.isSafeInteger(Number(text))
+  return isItemNumber(text)
     ? { ok: true, value: Number(text) }
     : cells.fail("bad-number", column, `is not an item number: "${text}"`);
 }
