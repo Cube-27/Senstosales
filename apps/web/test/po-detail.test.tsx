@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { entryAllow } from "../src/components/modules/po/PODetailItems.tsx";
-import { renderApp, stubApi } from "./app.tsx";
+import { renderApp, stubApi } from "./screens.tsx";
 import { detail, flag, item, ITEM_A, PO_ID } from "./po-fixtures.ts";
 
 afterEach(() => {

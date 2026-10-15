@@ -44,3 +44,6 @@ export const rangeQuery = ({ q, from, to, valueMin, valueMax }: RangeSearch) => 
   valueMin: money(valueMin),
   valueMax: money(valueMax),
 });
+
+/** A list's default paging and sort, left out of its URL so a plain `/po` stays `/po`. */
+export const LIST_DEFAULTS = { page: 1, pageSize: 10, dir: "asc" } as const;

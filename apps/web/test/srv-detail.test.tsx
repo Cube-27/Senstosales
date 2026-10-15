@@ -2,7 +2,7 @@
 import { cleanup, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { renderApp, stubApi } from "./app.tsx";
+import { renderApp, stubApi } from "./screens.tsx";
 import { detail, flag, ITEM_A, item, PO_ID } from "./po-fixtures.ts";
 
 afterEach(() => {

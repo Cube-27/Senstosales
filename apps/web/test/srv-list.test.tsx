@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { fail, renderApp, stubApi } from "./app.tsx";
+import { fail, renderApp, stubApi } from "./screens.tsx";
 
 vi.mock("../src/platform/index.ts", () => ({
   getPlatform: async () => ({ pickFiles: async () => null, pickFolder: async () => null }),

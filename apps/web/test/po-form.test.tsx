@@ -12,7 +12,7 @@ import {
   newItem,
   nextItemNo,
 } from "../src/components/modules/po/po-form.ts";
-import { renderApp, stubApi } from "./app.tsx";
+import { renderApp, stubApi } from "./screens.tsx";
 import { detail, item, ITEM_B, po, PO_ID } from "./po-fixtures.ts";
 
 afterEach(() => {

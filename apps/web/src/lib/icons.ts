@@ -56,9 +56,7 @@ export {
   Link2,
   MoreHorizontal,
   Pencil as Edit,
-  Plus,
   Receipt,
   Save,
-  ShieldCheck,
   Trash2 as Delete,
 } from "lucide-react";

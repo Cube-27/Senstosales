@@ -111,7 +111,7 @@ describe("/po (SPEC-16 PR 1)", () => {
     const { router } = renderApp("/po");
     await screen.findByRole("link", { name: "4100000101" });
     fireEvent.click(screen.getByRole("button", { name: "Delivered" }));
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ status: "Delivered", page: 1 }));
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ status: "Delivered" }));
     await waitFor(() =>
       expect(calls.filter((c) => c.path === "/api/po").at(-1)?.query).toMatchObject({ status: "Delivered" }),
     );
