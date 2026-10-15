@@ -50,7 +50,7 @@ export async function stageFolder(kind: "po" | "srv", files: readonly File[]): P
     const split = splitUpload(round);
     tooLarge.push(...split.tooLarge.map((file) => file.name));
     for (const batch of split.requests) {
-      const staged = await api.request("jobs.stage", {
+      const staged: { stagingId: string } = await api.request("jobs.stage", {
         body: { kind, files: batch, ...(stagingId === null ? {} : { stagingId }) },
       });
       stagingId = staged.stagingId;
