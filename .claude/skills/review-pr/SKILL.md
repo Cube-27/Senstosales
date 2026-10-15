@@ -27,6 +27,13 @@ tests yourself; CI did.
    output executed, a denied-licence dependency, real data or a secret in the repo, a weakened check.
 2. **Correctness.** Trace real call paths, not hypotheticals: a "what if X is null" finding counts only if a caller
    can pass null. Check idempotence for jobs, migrations and scripts.
+
+   **Concurrent batches.** Every write use case states what happens when two requests build their batch from the
+   same read before either commits. Each insert that can collide is idempotent (`ON CONFLICT DO NOTHING`) or the
+   batch fails as a whole through a guarded statement (D-0124: `CASE … ELSE NULL` into a NOT NULL column); a guard on
+   the UPDATE alone beside an unconditional insert is a defect. A test builds both batches before committing
+   either. A missing statement, guard or test is an Act-on item.
+
 3. **Proof.** Every acceptance criterion maps to a test or command that ran green. A test that would still pass if
    the function returned a wrong value proves nothing.
 4. **Scope and simplicity.** Code outside the row, speculative options, single-caller wrappers, compatibility shims.

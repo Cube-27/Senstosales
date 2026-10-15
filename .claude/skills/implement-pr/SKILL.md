@@ -66,6 +66,10 @@ Review your diff as a hostile reviewer, then fix what you find:
 - **Scope:** remove anything outside the row.
 - **Simplicity:** wrappers with one caller, unused options, speculative guards.
 - **Comments:** remove ones that restate the code; keep the _why_.
+- **Concurrent batches:** for each write use case, state in the PR body what happens when two requests build their
+  batch from the same read before either commits. Make each insert that can collide idempotent
+  (`ON CONFLICT DO NOTHING`) or fail the whole batch through a guarded statement
+  (D-0124: `CASE … ELSE NULL` into a NOT NULL column), and add a test that builds both batches before committing either.
 - **Recurring findings:** go through `docs/plans/RECURRING.md`; don't repeat a listed mistake.
 
 ## 5. Open the PR
