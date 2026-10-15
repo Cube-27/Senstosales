@@ -11,11 +11,14 @@ const FLAG_TYPES = [
   "OVER_INVOICE",
   "DOC_ON_CANCELLED_ITEM",
   "MANUAL_ADJUSTMENT_OVERLAP",
+  "SRV_PO_ITEM_ZERO",
+  "SRV_DUPLICATE_ITEM",
+  "SRV_UNKNOWN_PO_ITEM",
 ];
 
 describe("enums", () => {
   it.each([
-    ["FlagType (six v1 types, INV-58)", zFlagType, FLAG_TYPES],
+    ["FlagType (nine v1 types, INV-58)", zFlagType, FLAG_TYPES],
     ["ItemStatus", zItemStatus, ["Pending", "Delivered", "Closed", "Cancelled"]],
     ["PoStatus", zPoStatus, ["Pending", "Delivered", "Closed"]],
     ["FlagStatus", zFlagStatus, ["open", "acknowledged"]],
