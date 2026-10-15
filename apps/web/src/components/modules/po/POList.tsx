@@ -191,7 +191,7 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     {
       key: "poValue",
       header: "Value",
-      width: "128px",
+      width: "136px",
       align: "right",
       sortable: true,
       render: (row) => (row.poValue === null ? "—" : fmtMoney(row.poValue, { gemc: row.isGemc })),
@@ -199,7 +199,7 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
     {
       key: "status",
       header: "Status",
-      width: "96px",
+      width: "104px",
       sortable: true,
       render: (row) => <StatusCell status={row.status} />,
     },

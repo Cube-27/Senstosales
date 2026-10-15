@@ -73,7 +73,7 @@ function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Colu
       render: (item) => <MaterialCell code={item.materialCode} description={item.description} />,
     },
     { key: "unit", header: "Unit", width: "56px", render: (item) => item.unit ?? "—" },
-    { key: "rate", header: "Rate", width: "84px", align: "right", render: (item) => fmtRate(item.rate, { gemc }) },
+    { key: "rate", header: "Rate", width: "104px", align: "right", render: (item) => fmtRate(item.rate, { gemc }) },
     qty("ordQty", "Ordered"),
     qty("balanceQty", "Pending"),
     {
@@ -93,7 +93,7 @@ function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Colu
     // Accepted is shown as received (INV-09).
     qty("rcdQty", "Accepted", "acceptedQty"),
     qty("rejQty", "Rejected"),
-    { key: "status", header: "Status", width: "88px", render: (item) => <StatusCell status={item.status} /> },
+    { key: "status", header: "Status", width: "104px", render: (item) => <StatusCell status={item.status} /> },
     {
       key: "flags",
       header: "Flags",

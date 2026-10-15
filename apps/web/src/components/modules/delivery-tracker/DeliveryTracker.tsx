@@ -82,11 +82,11 @@ const COLUMNS: Column<Lot>[] = [
   qtyColumn<Lot>("dspQty", "Dsp", (l) => l.dspQty, { sortable: true, width: "76px" }),
   qtyColumn<Lot>("rcdQty", "Rcd", (l) => l.rcdQty, { sortable: true, width: "76px" }),
   qtyColumn<Lot>("balanceQty", "Bal", (l) => l.balanceQty, { width: "76px" }),
-  { key: "rate", header: "Unit Price", width: "104px", align: "right", render: (l) => money(l.rate) },
+  { key: "rate", header: "Unit Price", width: "128px", align: "right", render: (l) => money(l.rate) },
   {
     key: "pendingValue",
     header: "Pending Value",
-    width: "124px",
+    width: "128px",
     align: "right",
     sortable: true,
     render: (l) => money(l.pendingValue),
