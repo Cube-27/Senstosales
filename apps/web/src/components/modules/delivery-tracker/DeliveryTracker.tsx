@@ -40,7 +40,7 @@ const COLUMNS: Column<Lot>[] = [
   {
     key: "poNumber",
     header: "PO / Material",
-    width: "26%",
+    width: "220px",
     sortable: true,
     title: (l) => `${l.poNumber} · ${l.materialCode ?? ""} · ${l.description}`,
     render: (l) => (
@@ -65,31 +65,31 @@ const COLUMNS: Column<Lot>[] = [
   {
     key: "lotNo",
     header: "Lot",
-    width: "64px",
+    width: "72px",
     render: (l) => <span className="rounded-md bg-surface-sunken px-2 py-1 role-metadata">L{l.lotNo}</span>,
   },
-  { key: "delyDate", header: "Due Date", width: "104px", sortable: true, render: (l) => fmtDate(l.delyDate) },
+  { key: "delyDate", header: "Due Date", width: "124px", sortable: true, render: (l) => fmtDate(l.delyDate) },
   {
     key: "entryAllowDate",
     header: "Entry Date",
-    width: "104px",
+    width: "124px",
     sortable: true,
     render: (l) => fmtDate(l.entryAllowDate),
   },
-  qtyColumn<Lot>("ordQty", "Ord", (l) => l.ordQty, { sortable: true, width: "76px" }),
-  qtyColumn<Lot>("dspQty", "Dsp", (l) => l.dspQty, { sortable: true, width: "76px" }),
-  qtyColumn<Lot>("rcdQty", "Rcd", (l) => l.rcdQty, { sortable: true, width: "76px" }),
-  qtyColumn<Lot>("balanceQty", "Bal", (l) => l.balanceQty, { width: "76px" }),
-  { key: "rate", header: "Unit Price", width: "104px", align: "right", render: (l) => money(l.rate) },
+  qtyColumn<Lot>("ordQty", "Ord", (l) => l.ordQty, { sortable: true, width: "84px" }),
+  qtyColumn<Lot>("dspQty", "Dsp", (l) => l.dspQty, { sortable: true, width: "84px" }),
+  qtyColumn<Lot>("rcdQty", "Rcd", (l) => l.rcdQty, { sortable: true, width: "84px" }),
+  qtyColumn<Lot>("balanceQty", "Bal", (l) => l.balanceQty, { width: "90px" }),
+  { key: "rate", header: "Unit Price", width: "96px", align: "right", render: (l) => money(l.rate) },
   {
     key: "pendingValue",
     header: "Pending Value",
-    width: "128px",
+    width: "132px",
     align: "right",
     sortable: true,
     render: (l) => money(l.pendingValue),
   },
-  { key: "daysToDue", header: "Days Overdue", width: "120px", render: (l) => <DaysToDue days={l.daysToDue} /> },
+  { key: "daysToDue", header: "Days Overdue", width: "132px", render: (l) => <DaysToDue days={l.daysToDue} /> },
 ];
 
 /** The stat cards; the three counts double as status toggles (D-0240). */

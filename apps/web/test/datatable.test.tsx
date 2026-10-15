@@ -174,6 +174,11 @@ describe("Pagination", () => {
     expect(onPageSize.mock.calls).toEqual([[50]]);
   });
 
+  it("is at least as wide as its pixel columns, so a narrow window scrolls it rather than squeezing one", () => {
+    const { container } = table({ columns: [...COLUMNS, { key: "note", header: "Note", width: "30%" }] });
+    expect(container.querySelector("table")?.style.minWidth).toBe("420px");
+  });
+
   it("runs onRowClick with the clicked row", () => {
     const onRowClick = vi.fn();
     table({ onRowClick });

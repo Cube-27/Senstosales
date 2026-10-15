@@ -46,7 +46,17 @@ export interface Selection<Row> {
   onChange(selected: ReadonlySet<string>): void;
 }
 
-const SELECT_WIDTH = "40px";
+const SELECT_WIDTH = 40;
+
+/**
+ * The table's least width, the sum of its pixel column widths: a narrower window scrolls the table sideways instead
+ * of squeezing a column.
+ */
+const minWidth = (columns: readonly Pick<Column<never>, "width">[], selectable: boolean): number =>
+  columns.reduce(
+    (sum, c) => sum + (c.width.endsWith("px") ? Number.parseFloat(c.width) : 0),
+    selectable ? SELECT_WIDTH : 0,
+  );
 
 /** Every body row is this tall, so a page's body is `pageSize × ROW_HEIGHT` whatever it holds. */
 const ROW_HEIGHT = 40;
@@ -90,7 +100,8 @@ function Header({ column, sort, onSort }: HeaderProps) {
           type="button"
           onClick={() => onSort(column.key)}
           className={cn(
-            "inline-flex max-w-full items-center gap-1 hover:text-foreground",
+            // A button does not inherit the header's uppercase on its own.
+            "inline-flex max-w-full items-center gap-1 [text-transform:inherit] hover:text-foreground",
             column.align === "right" && "flex-row-reverse",
           )}
         >
@@ -217,7 +228,11 @@ export function DataTable<Row extends RowData>(props: DataTableProps<Row>) {
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-card">
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed border-collapse text-left" aria-busy={state === "loading"}>
+        <table
+          className="w-full table-fixed border-collapse text-left"
+          style={{ minWidth: minWidth(columns, selection !== undefined) }}
+          aria-busy={state === "loading"}
+        >
           <colgroup>
             {selection && <col style={{ width: SELECT_WIDTH }} />}
             {columns.map((column) => (

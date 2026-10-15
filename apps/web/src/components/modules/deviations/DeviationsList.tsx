@@ -20,13 +20,13 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "type",
       header: "Type",
-      width: "190px",
+      width: "150px",
       render: (f) => <Badge color={f.type === "QTY_MISMATCH" ? "error" : "warning"}>{fmtFlagType(f.type)}</Badge>,
     },
     {
       key: "poNumber",
       header: "PO",
-      width: "130px",
+      width: "160px",
       title: (f) => f.poNumber,
       render: (f) => (
         <Link to="/po/$id" params={{ id: f.poId }} className={refLink}>
@@ -38,7 +38,7 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "document",
       header: "Document",
-      width: "150px",
+      width: "156px",
       render: (f) =>
         f.srvId === null ? (
           <span className="role-helper-text">{SCOPE_LABEL[f.scopeType]}</span>
@@ -49,7 +49,7 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
           </Link>
         ),
     },
-    { key: "issue", header: "Issue", width: "34%", title: issueText, render: issueText },
+    { key: "issue", header: "Issue", width: "380px", title: issueText, render: issueText },
     {
       key: "expected",
       header: "Expected",
@@ -67,20 +67,20 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "openedAt",
       header: "Detected",
-      width: "200px",
+      width: "168px",
       render: (f) => <span className="role-helper-text">{fmtInstantDateTime(f.openedAt)}</span>,
     },
     {
       key: "status",
       header: "Status",
-      width: "100px",
+      width: "96px",
       render: (f) =>
         f.status === "open" ? <Badge color="warning">Open</Badge> : <Badge color="success">Resolved</Badge>,
     },
     {
       key: "resolve",
       header: "",
-      width: "120px",
+      width: "140px",
       align: "right",
       render: (f) =>
         f.status === "open" && (
