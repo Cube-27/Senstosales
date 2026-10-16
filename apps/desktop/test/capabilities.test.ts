@@ -55,6 +55,17 @@ describe("capabilities", () => {
     ]);
   });
 
+  it("let only the shell page update the app and stop the sidecar for it", () => {
+    const updates = (c: Capability) => permissionIds(c).filter((id) => /^updater:|^shell:allow-kill$/.test(id));
+    expect(updates(byId("shell"))).toEqual([
+      "updater:allow-check",
+      "updater:allow-download",
+      "updater:allow-install",
+      "shell:allow-kill",
+    ]);
+    expect(updates(byId("app"))).toEqual([]);
+  });
+
   it("let Explorer open a SenstoSales log folder and nothing else", () => {
     // The plugin matches the whole argument with Rust's `regex`, which reads this pattern as JavaScript does.
     const validator = new RegExp(EXPLORER_ARG);

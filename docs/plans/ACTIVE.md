@@ -23,21 +23,22 @@ Updated: 2026-10-16.
 Agents can't do these (secrets, accounts, purchases, data only a person may see). Rows that depend on them are
 `human` until done; the Notes column of each spec table names the task.
 
-| #   | Task                                                                                                                                                                                                                      | Needed by                                 | Status           |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------- |
-| H1  | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7).                                                                                     | SPEC-00 PR 4                              | todo             |
-| H2  | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped.                                                                                                                              | —                                         | dropped (D-0010) |
-| H3  | BHEL portal credentials and OTP mailbox, on the owner's machine only.                                                                                                                                                     | SPEC-01 PR 2, SPEC-19 PR 6                | todo             |
-| H4  | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine.                                                                                                                                                    | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3  | todo             |
-| H5  | Run the legacy app on synthetic input and produce the golden output, outside the repo.                                                                                                                                    | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1b | todo             |
-| H6  | Tauri updater signing key as a release secret.                                                                                                                                                                            | SPEC-20 PR 5                              | todo             |
-| H7  | Fresh Windows VM install, upgrade and operations test.                                                                                                                                                                    | SPEC-20 (L8 exit), SPEC-21 PR 5           | todo             |
-| H8  | Owner cutover: fresh import, review and sign-off.                                                                                                                                                                         | SPEC-22 PR 2–3                            | todo             |
-| H9  | Copy the `sonar.issue.ignore.multicriteria` entries in `.sonarcloud.properties` into SonarCloud → Project Settings → Analysis scope → Ignore issues on multiple criteria (automatic analysis does not read them, D-0518). | Every PR (Sonar noise)                    | todo             |
+| #   | Task                                                                                                                                                                                                                                                                    | Needed by                                 | Status           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------- |
+| H1  | Apply the `main` ruleset (required checks, linear history, no bypass) and turn on secret scanning and push protection (SPEC-00 §4.7).                                                                                                                                   | SPEC-00 PR 4                              | todo             |
+| H2  | ~~Owner adds the GitHub Actions secret `SENSTO_DENYLIST`.~~ The hashed denylist was dropped.                                                                                                                                                                            | —                                         | dropped (D-0010) |
+| H3  | BHEL portal credentials and OTP mailbox, on the owner's machine only.                                                                                                                                                                                                   | SPEC-01 PR 2, SPEC-19 PR 6                | todo             |
+| H4  | `SENSTO_CORPUS_DIR` set to the local BHEL corpus on the build machine.                                                                                                                                                                                                  | SPEC-01 PR 5, SPEC-06 PR 6, SPEC-09 PR 3  | todo             |
+| H5  | Run the legacy app on synthetic input and produce the golden output, outside the repo.                                                                                                                                                                                  | SPEC-01 PR 4, SPEC-12 PR 2, SPEC-13 PR 1b | todo             |
+| H6  | Tauri updater signing key as a release secret.                                                                                                                                                                                                                          | SPEC-20 PR 5                              | done (#98)       |
+| H7  | Fresh Windows VM install, upgrade and operations test.                                                                                                                                                                                                                  | SPEC-20 (L8 exit), SPEC-21 PR 5           | todo             |
+| H8  | Owner cutover: fresh import, review and sign-off.                                                                                                                                                                                                                       | SPEC-22 PR 2–3                            | todo             |
+| H9  | Copy the `sonar.issue.ignore.multicriteria` entries in `.sonarcloud.properties` into SonarCloud → Project Settings → Analysis scope → Ignore issues on multiple criteria (automatic analysis does not read them, D-0518).                                               | Every PR (Sonar noise)                    | todo             |
+| H10 | Release hardening: a ruleset that restricts creating `v*` tags, and the two `TAURI_SIGNING_*` secrets moved from repo secrets into the `release` environment with a `v*` tag deployment rule (D-0659). Until then anyone who can push a `v*` tag can publish a release. | SPEC-20: before the first `v*` tag        | todo             |
 
 ## Current focus
 
-In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 after #74, then SPEC-07 PR 6 once every route is mounted. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5).
+In flight: SPEC-13 PR 4, SPEC-12 PR 6, path-guard fix (#74). Next: SPEC-14 PR 1 after #74, then SPEC-07 PR 6 once every route is mounted. Waiting on owner: SPEC-00 PR 4 (H1), SPEC-01 PR 2 (H3), PR 4 (H5), PR 5 (H4), SPEC-06 PR 6 (H4), SPEC-09 PR 3 (H4), SPEC-12 PR 2 (H5), SPEC-13 PR 1b (H5). No release tag (`v0.1.0`) until H10 is done (SPEC-20 PR 5, #98).
 
 ## Done specs
 
@@ -56,11 +57,14 @@ Full rows are in git history.
 - [SPEC-16 — Web: PO and SRV screens, uploads and folder import](../specs/SPEC-16-web-po-srv-import.md): PRs 1–5 (#84)
 - [SPEC-17 — Web: deviations, ledger, delivery tracker and reports](../specs/SPEC-17-web-deviations-ledger-tracker-reports.md): PRs 1–4 (#87)
 - [SPEC-18 — Web: DC and invoice screens](../specs/SPEC-18-web-dc-invoice.md): PRs 1–5 (#88)
+- [SPEC-20 — Desktop packaging and release](../specs/SPEC-20-desktop-packaging-release.md): PRs 1–5 (#81, #98)
 
 ## Follow-ups
 
 Open notes, not yet rows. Notes on rows not done stay on those rows.
 
+- SPEC-20 (#98): tag the first release only after H10; the fresh-VM install and upgrade test is H7 (L8 exit, with SPEC-21 PR 5, which also adds the SmartScreen screenshots to `docs/OPERATIONS.md`).
+- SPEC-20 (#98 review): `release.yml` shares the `desktop-cargo-<Cargo.lock>` cache with `ci.yml`, so a tag build restores a `target/` from a main CI run; give the release build its own key prefix or no cache to remove that surface from the job that holds the signing key.
 - SPEC-10: INV rows for the delivery-tracker and dashboard rules.
 - SPEC-10 (#53 review): SRV search with a value range reads all candidate SRVs.
 - SPEC-08/SPEC-11 (#55): SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links.
@@ -195,16 +199,6 @@ Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE r
 | 4   | Scrape jobs and wizard API           | done (#77) |                                                |
 | 5   | Sync wizard UI and tray status       | done (#86) |                                                |
 | 6   | Live sync acceptance (human)         | todo       | H3; needs the sidecar follow-up below (D-0537) |
-
-## [SPEC-20 — Desktop packaging and release](../specs/SPEC-20-desktop-packaging-release.md)
-
-| PR  | Scope                                    | Status     | Notes  |
-| --- | ---------------------------------------- | ---------- | ------ |
-| 1   | Sidecar build                            | done (#81) |        |
-| 2   | Tauri shell and sidecar lifecycle        | done (#81) |        |
-| 3   | Plugin capabilities and tray             | done (#81) |        |
-| 4   | NSIS installer and `desktop` job         | done (#81) |        |
-| 5   | Versioning, updater and release workflow | todo       | H6, H7 |
 
 ## [SPEC-21 — Operations: backups, restore, logs and the operations guide](../specs/SPEC-21-operations-backup-logs.md)
 

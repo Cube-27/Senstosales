@@ -182,12 +182,14 @@ jobs:
         with:
           node-version: "26"
           cache: pnpm
+      # Not the bundle folder: an installer from an earlier VERSION would come back beside the new one.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             apps/desktop/src-tauri/target
+            !apps/desktop/src-tauri/target/release/bundle
           key: desktop-cargo-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:desktop
