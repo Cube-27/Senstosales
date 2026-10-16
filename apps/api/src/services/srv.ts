@@ -134,10 +134,13 @@ export function srvService({ db, clock }: { db: Db; clock: Clock }) {
       };
     },
 
-    /** Items as the SRV screens show them; the raw numbers stay beside the resolved links (INV-38). */
+    /**
+     * Items as the SRV screens show them, RECVD as printed beside the received it counts as; the raw numbers stay
+     * beside the resolved links (INV-38).
+     */
     async detail(id: string) {
       const [row, items, flags] = await Promise.all([load(id), itemsOfSrv(db, id), openFlagsOfSrv(db, id)]);
-      return { srv: row, items: items.map((item) => ({ ...item, ...srvLineShown(item) })), flags };
+      return { srv: row, items: items.map((item) => ({ ...item, rawRcdQty: item.rcdQty, ...srvLineShown(item) })), flags };
     },
 
     /** Removes the SRV and its items; its flags stay until acknowledged (INV-59). */
