@@ -66,3 +66,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Send every item back; number from the form's items only.
 - Why: `po.update` matches items by number: a cancelled item sent back is restored (INV-48, INV-63), and a reused number takes over the old item's id and documents (#84 review).
 - Reversible: yes.
+
+### D-0634 — The SRV Received column is as printed
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: The SRV detail's Received column shows `rawRcdQty`, empty when RECVD was empty; totals and every computed received keep `srvLineShown`/`srvTotals`. Quantity cells carry their value as the title.
+- Alternatives: Show the computed received.
+- Why: N-SRV-RCD; shape agreed with R2-A (D-0610).
+- Reversible: yes.

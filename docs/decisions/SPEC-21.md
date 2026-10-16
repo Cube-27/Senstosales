@@ -98,3 +98,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Overwrite the day's daily copy.
 - Why: Backup now replaced the daily copy (UI-SET-10); rev 1.9.
 - Reversible: yes.
+
+### D-0632 — The supplier id is read per call
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: `supplierRef.find` queries the supplier id every time instead of keeping it.
+- Alternatives: Keep the cache and forget it on restore.
+- Why: A restore can bring back a backup made before onboarding; the onboarding gate must see that at once, or every route answers onboarding-required while the status says done (N-RESTORE). One indexed read of a one-row table.
+- Reversible: yes.
