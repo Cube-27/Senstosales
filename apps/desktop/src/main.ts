@@ -11,12 +11,16 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { error, info } from "@tauri-apps/plugin-log";
 import { Command } from "@tauri-apps/plugin-shell";
+import { check } from "@tauri-apps/plugin-updater";
 
 import { waitForHealth } from "./health.ts";
 import { watchSidecar } from "./sidecar.ts";
+import { offerUpdate } from "./update.ts";
 
 const COULD_NOT_START_TITLE = "SenstoSales could not start";
 const STOPPED_TITLE = "SenstoSales stopped";
+const UPDATE_FAILED_TITLE = "SenstoSales could not update";
+const UPDATE_FAILED = "The update could not be installed. Start SenstoSales again; it will offer the update again.";
 const NOT_ANSWERING = "SenstoSales started but did not answer. Close it and start it again.";
 /** 10 s: the port line already means the server listens, so health normally answers on the first request. */
 const HEALTH = { attempts: 200, intervalMs: 50 };
@@ -55,7 +59,7 @@ async function start(): Promise<void> {
   const sidecar = Command.sidecar("binaries/sensto-sidecar");
   sidecar.stderr.on("data", (line) => void error(`sidecar: ${line.trimEnd()}`));
   const watch = watchSidecar(sidecar);
-  await sidecar.spawn();
+  const child = await sidecar.spawn();
 
   const startup = await watch.startup;
   if (startup.kind === "exited") return fail(COULD_NOT_START_TITLE, startup.message);
@@ -83,6 +87,19 @@ async function start(): Promise<void> {
   });
   await app.once("tauri://destroyed", () => void quit());
   await addTray(app);
+
+  // Quitting first, so the sidecar stopping for the installer is not reported as a crash.
+  const stopSidecar = async () => {
+    quitting = true;
+    await child.kill();
+  };
+  const askInstall = (message: string) =>
+    ask(message, { title: "SenstoSales update", okLabel: "Install now", cancelLabel: "Later" });
+  void offerUpdate({ check, ask: askInstall, stopSidecar, log: info }).catch((err: unknown) => {
+    quitting = false;
+    void error(`update install failed: ${err instanceof Error ? err.message : String(err)}`);
+    return fail(UPDATE_FAILED_TITLE, UPDATE_FAILED);
+  });
 }
 
 /** The tray icon `main`: platform/tauri.ts sets its tooltip as the status (SPEC-14); its menu opens or quits the app. */

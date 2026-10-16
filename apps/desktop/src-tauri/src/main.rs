@@ -33,6 +33,8 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        // Endpoint and public key are in tauri.conf.json; the shell page drives check, download and install.
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .run(tauri::generate_context!())
         .expect("SenstoSales could not open its window");
 }
