@@ -95,7 +95,7 @@ describe("reports (SPEC-17 PR 4)", () => {
   it("opens on Items Summary for the current FY to today, with the legacy columns", async () => {
     const calls = reportsApi();
     renderApp("/reports");
-    expect(await screen.findByRole("heading", { level: 1, name: "Operations Insights" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: "Daily Reports" })).toBeTruthy();
     expect(
       within(screen.getByRole("group", { name: "Report" }))
         .getAllByRole("button")

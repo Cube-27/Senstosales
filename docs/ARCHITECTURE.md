@@ -602,7 +602,7 @@ All layouts are frozen (A-2): the output matches the legacy output cell for cell
 - Shell, sidebar, page header, stat cards, detail tabs, list toolbars, linked-document counts and popovers, and the
   supply progress ring (spec §3) keep their legacy elements and behaviour. (INV-73)
 - Owner-approved changes (2026-10-15, E2E real-data test): the dashboard's period buttons gain "This FY", the
-  default; without a range, the dashboard, the reconciliation tab and Operations Insights show the current FY to today.
+  default; without a range, the dashboard, the reconciliation tab and Daily Reports show the current FY to today.
 
 ### 12.3 Consistency and usability fixes
 
