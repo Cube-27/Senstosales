@@ -73,20 +73,28 @@ describe("DC workbook", () => {
     ]);
   });
 
-  it("INV-18: prints a GEMC consignment value at 5 dp, others at 2", async () => {
+  it("prints the consignment value at 2 dp on a GEMC PO too, as the owner's DCs show it", async () => {
     const one = input("dc-1");
     const item = { ...one.items[0]!, dspQty: unwrap(parseQty("3")), rate: unwrap(parseMoney("719.27966")) };
     const value = async (isGemc: boolean) =>
       (await build({ ...one, po: { ...one.po, isGemc }, items: [item] }))[0]!.cells["C38"]?.value;
     expect([await value(false), await value(true)]).toEqual([
       "Consignment Value of BHEL PO 2157.84",
-      "Consignment Value of BHEL PO 2157.83898",
+      "Consignment Value of BHEL PO 2157.84",
     ]);
     // No trailing zeros: 1 × 123900 prints `123900`.
     const whole = { ...item, dspQty: unwrap(parseQty("1")), rate: unwrap(parseMoney("123900")) };
     expect((await build({ ...one, items: [whole] }))[0]!.cells["C38"]?.value).toBe(
       "Consignment Value of BHEL PO 123900",
     );
+  });
+
+  it("leaves the consignee, Dimension Report and TC lines blank when they are not filled in", async () => {
+    const one = input("dc-1");
+    const empty = { ...one.dc, consigneeName: null, consigneeAddress: null, ourRef: " ", remarks: null };
+    const [sheet] = await build({ ...one, dc: empty });
+    const cells = ["B9", "B10", "B11", "B33", "C33", "B34", "C34", "C37"].map((at) => sheet!.cells[at]?.value ?? null);
+    expect(cells).toEqual([null, null, null, null, null, null, null, "Lot No."]);
   });
 
   it.each([

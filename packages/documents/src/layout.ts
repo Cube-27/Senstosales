@@ -9,6 +9,9 @@ export function put(ws: ExcelJS.Worksheet, address: string, value: Value): void 
   ws.getCell(address).value = value === "" ? null : value;
 }
 
+/** Digits alone print as a number, as the owner's documents show them; `075` keeps its zero as text. */
+export const numberCell = (text: string): string | number => (/^(0|[1-9]\d{0,14})$/.test(text) ? Number(text) : text);
+
 /**
  * Sets style fields on one cell. Cells can share a style object (a template merge's cells do), and exceljs setters
  * mutate it in place, so the cell gets its own deep copy first.
@@ -96,11 +99,11 @@ export function consignee(dc: Consignee): string {
 }
 
 /**
- * The consignee over the DC's three rows, as the owner's DCs print it: the first line (`Consignee` when empty), the
- * second, then the rest joined by `, `.
+ * The consignee over the DC's three rows, as the owner's DCs print it: the first line, the second, then the rest joined
+ * by `, `; blank without a consignee.
  */
 export function consigneeLines(dc: Consignee): [string, string, string] {
-  const [first = "Consignee", second = "", ...rest] = consigneeParts(dc);
+  const [first = "", second = "", ...rest] = consigneeParts(dc);
   return [first, second, rest.join(", ")];
 }
 
