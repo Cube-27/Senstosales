@@ -188,6 +188,8 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     const dcId = dc?.id ?? null;
     const invoiceRow = {
       ...header,
+      // A blank GEMC number takes the PO's, which the create form starts from (SCN-GEMC-04).
+      gemcNumber: header.gemcNumber?.trim() ? header.gemcNumber : row.gemcNumber,
       ...totals,
       id,
       supplierId: supplier,
