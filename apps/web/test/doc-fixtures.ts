@@ -34,6 +34,7 @@ const DC_HEADER = {
   remarks: "First note\n\nSecond note",
   invoiceNumber: null,
   invoiceDate: null,
+  lotNo: null,
   ...SUPPLIER,
 };
 

@@ -37,6 +37,8 @@ export interface DcDocument {
     /** The invoice the user filled in for the sheet to cite (EC-47). */
     invoiceNumber: string | null;
     invoiceDate: IsoDate | null;
+    /** The lot line's text, typed by the user; not a PO lot. */
+    lotNo: string | null;
   };
   po: { poNumber: string; poDate: IsoDate | null };
   /** The invoice made from this DC, cited where the user filled in none. */
@@ -98,6 +100,7 @@ function noteLines(remarks: string | null): string[] {
 function writeFooter(ws: ExcelJS.Worksheet, { dc, items }: DcDocument, invoice: Cited, at: number): number {
   const total = sumMoney(items.map((item) => qtyValue(item.dspQty, item.rate)));
   const ourRef = (dc.ourRef ?? "").trim();
+  const lotNo = (dc.lotNo ?? "").trim();
   const dimension: Array<[number, string, Value]> =
     ourRef === ""
       ? []
@@ -116,8 +119,8 @@ function writeFooter(ws: ExcelJS.Worksheet, { dc, items }: DcDocument, invoice: 
     [1, "C", `Guarantee Certificate No. ${dc.gcNumber}   Dt. ${fmtDate(dc.gcDate)}`],
     ...dimension,
     ...notes,
-    // Legacy's DC had no lot number, so it printed the label alone (dc_excel.py); the owner writes the lot in.
-    [6, "C", "Lot No."],
+    // Legacy's lot line: the label alone when no lot is typed.
+    [6, "C", lotNo === "" ? "Lot No." : `Lot No. ${lotNo}`],
     // 2 dp with no trailing zeros (`123900`, `2157.84`), a GEMC PO's net value too, as the owner's DCs print it.
     [7, "C", `Consignment Value of BHEL PO ${fmtPlain(total, { gemc: false })}`],
   ];

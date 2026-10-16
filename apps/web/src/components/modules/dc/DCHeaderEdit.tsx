@@ -18,6 +18,7 @@ interface Values {
   readonly consigneeAddress: string;
   readonly invoiceNumber: string;
   readonly invoiceDate: IsoDate | "";
+  readonly lotNo: string;
 }
 
 const valuesOf = (dc: Dc): Values => ({
@@ -29,6 +30,7 @@ const valuesOf = (dc: Dc): Values => ({
   consigneeAddress: dc.consigneeAddress ?? "",
   invoiceNumber: dc.invoiceNumber ?? "",
   invoiceDate: dc.invoiceDate ?? "",
+  lotNo: dc.lotNo ?? "",
 });
 
 /** The update body: the stored header with the edited fields, the DC's own number and date, and its version. */
@@ -47,6 +49,7 @@ function updateBody(dc: Dc, v: Values) {
     gcDate: v.gcDate === "" ? null : v.gcDate,
     invoiceNumber: blankToNull(v.invoiceNumber),
     invoiceDate: v.invoiceDate === "" ? null : v.invoiceDate,
+    lotNo: blankToNull(v.lotNo),
   };
 }
 
@@ -135,6 +138,10 @@ export function DCHeaderEdit({ dc, open, onClose }: Readonly<DCHeaderEditProps>)
             </FormField>
           )}
         />
+        {/* The DC sheet's lot line, typed by the user; not a PO lot. */}
+        <FormField label="Lot No." className="col-span-2">
+          <Input {...register("lotNo")} />
+        </FormField>
       </div>
     </FormDialog>
   );

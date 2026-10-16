@@ -83,6 +83,15 @@ describe("DC workbook", () => {
     ]);
   });
 
+  it("prints the lot the user typed on the lot line, the label alone without one (owner, 2026-10-16)", async () => {
+    const one = input("dc-1");
+    const lotLine = async (lotNo: string | null) =>
+      (await build({ ...one, dc: { ...one.dc, lotNo } }))[0]!.cells["C37"]?.value;
+    expect(await lotLine(" 12345 - Example Agency ")).toBe("Lot No. 12345 - Example Agency");
+    expect(await lotLine("  ")).toBe("Lot No.");
+    expect(await lotLine(null)).toBe("Lot No.");
+  });
+
   it("prints the consignment value at 2 dp, a GEMC PO's net value too, as the owner's DCs show it", async () => {
     const one = input("dc-1");
     // A GEMC PO's net rate: 3 × 719.27966 = 2157.83898.

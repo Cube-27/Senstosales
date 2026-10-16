@@ -3494,6 +3494,13 @@
                       }
                     ]
                   },
+                  "lotNo": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
                   "supplierName": {
                     "type": [
                       "string",
@@ -3966,6 +3973,12 @@
                             }
                           ]
                         },
+                        "lotNo": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "supplierName": {
                           "type": [
                             "string",
@@ -4006,6 +4019,7 @@
                         "remarks",
                         "invoiceNumber",
                         "invoiceDate",
+                        "lotNo",
                         "supplierName",
                         "supplierAddress",
                         "supplierGstin",
@@ -4449,6 +4463,13 @@
                       {
                         "type": "null"
                       }
+                    ]
+                  },
+                  "lotNo": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "supplierName": {
@@ -10403,6 +10424,12 @@
               }
             ]
           },
+          "lotNo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "supplierName": {
             "type": [
               "string",
@@ -10458,6 +10485,7 @@
           "remarks",
           "invoiceNumber",
           "invoiceDate",
+          "lotNo",
           "supplierName",
           "supplierAddress",
           "supplierGstin",

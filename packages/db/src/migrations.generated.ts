@@ -84,4 +84,11 @@ export const MIGRATIONS: readonly [Migration, ...Migration[]] = [
       "CREATE INDEX `reconciliation_issue_scope_idx` ON `reconciliation_issue` (`scope_type`,`scope_id`);",
     ],
   },
+  {
+    version: 5,
+    name: "dc_lot_no",
+    statements: [
+      "ALTER TABLE `dc` ADD `lot_no` text;",
+    ],
+  },
 ];

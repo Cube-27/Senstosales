@@ -45,6 +45,7 @@ const DC_7: DcDocument = {
     remarks: null,
     invoiceNumber: null,
     invoiceDate: null,
+    lotNo: null,
   },
   po: PO,
   invoice: { number: "INV/31", invoiceDate: d("2025-04-03") },

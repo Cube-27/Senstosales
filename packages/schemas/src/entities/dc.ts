@@ -24,6 +24,8 @@ export const zDcHeader = z.object({
   /** The invoice the DC sheet cites, as the user fills it in (EC-47); blank prints the DC's own invoice. */
   invoiceNumber: text,
   invoiceDate: zIsoDate.nullable(),
+  /** The DC sheet's lot line, typed by the user; not a PO lot (owner, 2026-10-16). */
+  lotNo: text,
   ...zSupplierSnapshot.shape,
 });
 

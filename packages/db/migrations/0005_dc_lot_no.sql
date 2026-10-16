@@ -1,0 +1,1 @@
+ALTER TABLE `dc` ADD `lot_no` text;

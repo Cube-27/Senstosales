@@ -40,6 +40,8 @@ interface DcFormValues {
   readonly gcDate: IsoDate | "" | null;
   readonly consigneeName: string;
   readonly ourRef: string;
+  /** The lot line the DC sheet prints, as typed; not a PO lot. */
+  readonly lotNo: string;
   /** Dispatch quantity per dispatchable item, in its order. */
   readonly qty: readonly Qty[];
   /** Packets per dispatchable item, as typed; blank is none. */
@@ -66,6 +68,7 @@ function dcCreateBody(data: Dispatchable, v: DcFormValues) {
     gcDate: v.gcDate === "" ? null : v.gcDate,
     consigneeName: blankToNull(v.consigneeName),
     ourRef: blankToNull(v.ourRef),
+    lotNo: blankToNull(v.lotNo),
     remarks: remarks.length === 0 ? null : remarks.join("\n\n"),
     items: data.items.flatMap((item, i) => {
       const dspQty = v.qty[i] ?? sumQty([]);
@@ -129,6 +132,9 @@ function ChallanFields({ duplicate }: Readonly<{ duplicate: boolean }>) {
         </FormField>
         <FormField label="Our Ref" className="col-span-2">
           <Input {...register("ourRef")} />
+        </FormField>
+        <FormField label="Lot No." className="col-span-2">
+          <Input {...register("lotNo")} />
         </FormField>
       </div>
     </section>
@@ -256,6 +262,7 @@ const defaultsOf = (data: Dispatchable | null): DcFormValues => ({
   gcDate: null,
   consigneeName: data?.defaults.consigneeName ?? "",
   ourRef: data?.defaults.ourRef ?? "",
+  lotNo: data?.defaults.lotNo ?? "",
   qty: (data?.items ?? []).map(() => sumQty([])),
   packets: (data?.items ?? []).map(() => ""),
   notes: [],
