@@ -149,26 +149,19 @@ const SUMMARY = {
 type SummaryKey = (typeof SUMMARY.columns)[number]["key"];
 
 /** What one summary workbook adds to the shared layout. */
-interface SummaryExtras {
-  /** Columns whose digit-only text is written as a number; `075` keeps its zero as text. */
+export interface SummaryExtras {
+  /** Columns of document numbers whose digit-only text is written as a number; `075` keeps its zero as text. */
   numberColumns: readonly SummaryKey[];
+  /** The column of department codes, written as the DC writes its department. */
+  departmentColumn: SummaryKey | null;
   /** A line under the TOTAL row, in `column`; `<…>` names a heading text, as in the heading. */
   footer: { column: SummaryKey; text: string; style: keyof typeof SUMMARY.styles } | null;
 }
 
-const PENDING_EXTRAS: SummaryExtras = { numberColumns: [], footer: null };
-
-/** The owner's summaries print numbers as numbers and sign off under the GEMC column, spaced as legacy's DC footer. */
-const DISPATCH_EXTRAS: SummaryExtras = {
-  numberColumns: ["poNumber", "invoiceNumbers", "dcNumbers", "delivered"],
-  // Bold, as the date line.
-  footer: { column: "gemcNumber", text: "                 For <supplier name>", style: "dateValue" },
-};
-
 /** The pending-items workbook (legacy "Items Summary"): each PO item with a balance, PO number then item number. */
 const PENDING = {
   ...SUMMARY,
-  ...PENDING_EXTRAS,
+  extras: { numberColumns: [], departmentColumn: null, footer: null } satisfies SummaryExtras,
   fileName: (range?: { from: string; to: string }) =>
     range === undefined ? "Items_Summary.xlsx" : `Items_Summary_${range.from}_to_${range.to}.xlsx`,
 } as const;
@@ -179,7 +172,12 @@ const PENDING = {
  */
 const DISPATCH = {
   ...SUMMARY,
-  ...DISPATCH_EXTRAS,
+  // Numbers as numbers, and a sign-off under the GEMC column spaced as legacy's DC footer, bold as the date line.
+  extras: {
+    numberColumns: ["poNumber", "invoiceNumbers", "dcNumbers"],
+    departmentColumn: "delivered",
+    footer: { column: "gemcNumber", text: "                 For <supplier name>", style: "dateValue" },
+  } satisfies SummaryExtras,
   fileName: ({ from, to }: { from: string; to: string }) =>
     from === to ? `Daily_Dispatch_${from}.xlsx` : `Daily_Dispatch_${from}_to_${to}.xlsx`,
 } as const;

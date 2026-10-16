@@ -6,8 +6,8 @@ import type {
   GcDocument,
   Row,
   Sheet,
+  SummaryExtras,
   SummaryHeading,
-  SummaryLayout,
   SummaryTotal,
 } from "@senstosales/documents";
 
@@ -45,14 +45,14 @@ export const csvFile = (
   rows: AsyncIterable<Row<string>>,
 ) => streamed(entry.fileName(), (w) => w.csvChunks(entry.columns, rows));
 
-/** A summary workbook in `layout`, named `fileName`; `total` is read after the last row. */
+/** A summary workbook with `extras`, named `fileName`; `total` is read after the last row. */
 export const summaryFile = (
-  layout: SummaryLayout,
+  extras: SummaryExtras,
   fileName: string,
   heading: SummaryHeading,
   rows: AsyncIterable<Row<string>>,
   total: () => SummaryTotal,
-) => streamed(fileName, (w) => w.summaryChunks(layout, heading, rows, total));
+) => streamed(fileName, (w) => w.summaryChunks(extras, heading, rows, total));
 
 type SupplierArgs = Parameters<Writers["documentSupplier"]>;
 

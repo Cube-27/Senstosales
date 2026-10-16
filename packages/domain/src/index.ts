@@ -38,7 +38,7 @@ export { matchSrvItem, resolveDocLink } from "./links.ts";
 export type { LineTax, LineTaxInput } from "./tax.ts";
 export { invoiceLineTax, invoiceTotals } from "./tax.ts";
 export type { GemcSourceRate } from "./gemc.ts";
-export { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate } from "./gemc.ts";
+export { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate, invoiceGemcNumber } from "./gemc.ts";
 export type { DeleteBlockReason, DeleteLinks, Issue, IssueCode } from "./guards.ts";
 export {
   acceptIncoming,

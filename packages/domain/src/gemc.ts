@@ -26,6 +26,13 @@ export function gemcNumberOf(entered: string | null, remarks: string | null): st
 }
 
 /**
+ * An invoice's GEMC number: the one entered as typed, else its PO's, which the create form starts from (E2E round 2,
+ * SCN-GEMC-04). `(" ", "5116") -> "5116"`.
+ */
+export const invoiceGemcNumber = (entered: string | null, poGemc: string | null): string | null =>
+  entered?.trim() ? entered : poGemc;
+
+/**
  * INV-16: `round5(source / 1.18)` = `source × 50 / 59` on 1e-5 units: `848.75 -> 719.27966`, `118 -> 100`.
  * Split as `source = 59q + r` so the product stays a safe integer; 59 is odd, so there is never an exact tie.
  */

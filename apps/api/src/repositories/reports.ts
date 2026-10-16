@@ -147,7 +147,7 @@ export const dispatchLines = (db: Db, where: SQL | undefined, page: KeysetPage) 
       .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
       .innerJoin(po, eq(po.id, poItem.poId))
       .leftJoin(invoice, eq(invoice.dcId, dc.id))
-      .leftJoin(invoiceItem, eq(invoiceItem.dcItemId, dcItem.id))
+      .leftJoin(invoiceItem, and(eq(invoiceItem.invoiceId, invoice.id), eq(invoiceItem.dcItemId, dcItem.id)))
       .where(and(where, page.after))
       .orderBy(...page.orderBy)
       .limit(page.limit),

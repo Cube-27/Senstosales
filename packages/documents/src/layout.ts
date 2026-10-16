@@ -9,8 +9,14 @@ export function put(ws: ExcelJS.Worksheet, address: string, value: Value): void 
   ws.getCell(address).value = value === "" ? null : value;
 }
 
-/** Digits alone print as a number, as the owner's documents show them; `075` keeps its zero as text. */
+/** A document number of digits alone prints as a number, as the owner's documents show it; `075` keeps its zero. */
 export const numberCell = (text: string): string | number => (/^(0|[1-9]\d{0,14})$/.test(text) ? Number(text) : text);
+
+/** Legacy's department column held integers, so a number-only department prints as a number (`0456` -> 456). */
+export function departmentCell<T extends string | null>(departmentNo: T): T | number {
+  const number = departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : Number.NaN;
+  return Number.isSafeInteger(number) ? number : departmentNo;
+}
 
 /**
  * Sets style fields on one cell. Cells can share a style object (a template merge's cells do), and exceljs setters

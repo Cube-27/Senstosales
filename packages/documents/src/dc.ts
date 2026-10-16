@@ -8,6 +8,7 @@ import ExcelJS from "exceljs";
 
 import {
   consigneeLines,
+  departmentCell,
   documentFileName,
   insertRows,
   numberCell,
@@ -37,7 +38,7 @@ export interface DcDocument {
     invoiceNumber: string | null;
     invoiceDate: IsoDate | null;
   };
-  po: { poNumber: string; poDate: IsoDate | null; isGemc: boolean };
+  po: { poNumber: string; poDate: IsoDate | null };
   /** The invoice made from this DC, cited where the user filled in none. */
   invoice: { number: string; invoiceDate: IsoDate } | null;
   items: ReadonlyArray<ItemRow & { rate: Money }>;
@@ -52,12 +53,6 @@ const REMARKS_ROW = 31;
 const NOTE_SLOTS = 3;
 /** Legacy grows an item row by 18 points for each 95 characters of description. */
 const LINE_HEIGHT = 18;
-
-/** Legacy's department column held integers, so a number-only value prints as a number (`0456` -> 456). */
-function departmentCell(departmentNo: string | null): Value {
-  const number = departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : Number.NaN;
-  return Number.isSafeInteger(number) ? number : departmentNo;
-}
 
 type Cited = { number: string; date: string };
 

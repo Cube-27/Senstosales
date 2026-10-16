@@ -267,7 +267,13 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
       const { from, to } = query;
       const fileName = EXPORTS.pending.fileName(from !== undefined && to !== undefined ? { from, to } : undefined);
       const { rows, total } = summaryRows(query);
-      return summaryFile(EXPORTS.pending, fileName, await summaryHeading(fmtDateDashed(clock.today())), rows, total);
+      return summaryFile(
+        EXPORTS.pending.extras,
+        fileName,
+        await summaryHeading(fmtDateDashed(clock.today())),
+        rows,
+        total,
+      );
     },
 
     /** The daily dispatch summary for the range, today without one; the heading's date is the range's. */
@@ -276,7 +282,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
       const dates = [...new Set([range.from, range.to])].map((date) => fmtDateDashed(date)).join(" to ");
       const { rows, total } = dispatchSummaryRows(dispatchRows(query, range));
       const fileName = EXPORTS.dispatch.fileName(range);
-      return summaryFile(EXPORTS.dispatch, fileName, await summaryHeading(dates), rows, total);
+      return summaryFile(EXPORTS.dispatch.extras, fileName, await summaryHeading(dates), rows, total);
     },
 
     /** The reconciliation workbook for the tab's filters and sort; one PO's is named after it (EC-42). */

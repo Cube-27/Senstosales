@@ -73,15 +73,13 @@ describe("DC workbook", () => {
     ]);
   });
 
-  it("prints the consignment value at 2 dp on a GEMC PO too, as the owner's DCs show it", async () => {
+  it("prints the consignment value at 2 dp, a GEMC PO's net value too, as the owner's DCs show it", async () => {
     const one = input("dc-1");
+    // A GEMC PO's net rate: 3 × 719.27966 = 2157.83898.
     const item = { ...one.items[0]!, dspQty: unwrap(parseQty("3")), rate: unwrap(parseMoney("719.27966")) };
-    const value = async (isGemc: boolean) =>
-      (await build({ ...one, po: { ...one.po, isGemc }, items: [item] }))[0]!.cells["C38"]?.value;
-    expect([await value(false), await value(true)]).toEqual([
+    expect((await build({ ...one, items: [item] }))[0]!.cells["C38"]?.value).toBe(
       "Consignment Value of BHEL PO 2157.84",
-      "Consignment Value of BHEL PO 2157.84",
-    ]);
+    );
     // No trailing zeros: 1 × 123900 prints `123900`.
     const whole = { ...item, dspQty: unwrap(parseQty("1")), rate: unwrap(parseMoney("123900")) };
     expect((await build({ ...one, items: [whole] }))[0]!.cells["C38"]?.value).toBe(

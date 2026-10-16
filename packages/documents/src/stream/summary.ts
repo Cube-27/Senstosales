@@ -3,17 +3,14 @@
 // TOTAL row, the summary's footer line if it has one, and a print area ending at the last row.
 import type ExcelJS from "exceljs";
 
-import { numberCell } from "../layout.ts";
-import { EXPORTS } from "../reports/catalog.ts";
+import { departmentCell, numberCell } from "../layout.ts";
+import { EXPORTS, type SummaryExtras } from "../reports/catalog.ts";
 import type { Row } from "./sheet.ts";
 import { addStreamedSheet, workbookChunks } from "./xlsx.ts";
 
 const SUMMARY = EXPORTS.pending;
 type Key = (typeof SUMMARY.columns)[number]["key"];
 type Style = keyof typeof SUMMARY.styles;
-
-/** One summary workbook's layout. */
-export type SummaryLayout = typeof EXPORTS.pending | typeof EXPORTS.dispatch;
 
 /** The texts the catalog's heading names in `<…>`, keyed by that name. */
 export type SummaryHeading = Record<string, string>;
@@ -59,9 +56,11 @@ function writeTotal(ws: ExcelJS.Worksheet, r: number, { qty, packets }: SummaryT
   row.commit();
 }
 
-/** A row's cell value: digit-only text in the layout's number columns as a number. */
-function cellValue(layout: SummaryLayout, key: Key, value: string | number): string | number {
-  return typeof value === "string" && layout.numberColumns.includes(key) ? numberCell(value) : value;
+/** A row's cell value: digit-only text in the number and department columns as a number. */
+function cellValue(extras: SummaryExtras, key: Key, value: string | number): string | number {
+  if (typeof value !== "string") return value;
+  if (key === extras.departmentColumn) return departmentCell(value);
+  return extras.numberColumns.includes(key) ? numberCell(value) : value;
 }
 
 /**
@@ -69,7 +68,7 @@ function cellValue(layout: SummaryLayout, key: Key, value: string | number): str
  * cell of a row is written, an empty string for a missing value, as legacy did.
  */
 export function summaryChunks(
-  layout: SummaryLayout,
+  extras: SummaryExtras,
   heading: SummaryHeading,
   rows: AsyncIterable<Row<Key>>,
   total: () => SummaryTotal,
@@ -85,7 +84,7 @@ export function summaryChunks(
       SUMMARY.columns.forEach((c, i) =>
         put(
           row.getCell(i + 1),
-          cellValue(layout, c.key, values[c.key] ?? ""),
+          cellValue(extras, c.key, values[c.key] ?? ""),
           c.key === SUMMARY.leftColumn ? "cellLeft" : "cell",
         ),
       );
@@ -94,7 +93,7 @@ export function summaryChunks(
     }
     r += 1;
     writeTotal(ws, r, total());
-    const { footer } = layout;
+    const { footer } = extras;
     if (footer !== null) {
       r += 1;
       const row = ws.getRow(r);
