@@ -1,5 +1,5 @@
-// SPEC-20 PR 5, INV-105: one VERSION stamped into every package.json, tauri.conf.json and the Rust crate. `--check`
-// lists the files that differ without writing them.
+// SPEC-20 PR 5, INV-105: one VERSION stamped into every package.json and tauri.conf.json. `--check` lists the
+// files that differ without writing them.
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -23,39 +23,23 @@ describe("parseVersion", () => {
 describe("stamp", () => {
   it("replaces a package.json version", () => {
     const text = '{\n  "name": "@x/a",\n  "version": "0.1.0",\n  "private": true\n}\n';
-    expect(stamp(text, "json", "2.0.1")).toBe('{\n  "name": "@x/a",\n  "version": "2.0.1",\n  "private": true\n}\n');
+    expect(stamp(text, "2.0.1")).toBe('{\n  "name": "@x/a",\n  "version": "2.0.1",\n  "private": true\n}\n');
   });
 
   it("adds a version after the name when a package.json has none", () => {
     const text = '{\n  "name": "@x/a",\n  "private": true\n}\n';
-    expect(stamp(text, "json", "2.0.1")).toBe('{\n  "name": "@x/a",\n  "version": "2.0.1",\n  "private": true\n}\n');
+    expect(stamp(text, "2.0.1")).toBe('{\n  "name": "@x/a",\n  "version": "2.0.1",\n  "private": true\n}\n');
   });
 
   it("changes only the top-level version in tauri.conf.json", () => {
     const text = '{\n  "productName": "S",\n  "version": "0.1.0",\n  "plugins": { "x": { "version": "9" } }\n}\n';
-    expect(stamp(text, "json", "1.0.0")).toBe(
+    expect(stamp(text, "1.0.0")).toBe(
       '{\n  "productName": "S",\n  "version": "1.0.0",\n  "plugins": { "x": { "version": "9" } }\n}\n',
     );
   });
 
-  it("changes the [package] version in Cargo.toml, not a dependency's", () => {
-    const text = '[package]\nname = "senstosales"\nversion = "0.1.0"\n\n[dependencies]\ntauri = { version = "2" }\n';
-    expect(stamp(text, "cargo-toml", "1.0.0")).toBe(
-      '[package]\nname = "senstosales"\nversion = "1.0.0"\n\n[dependencies]\ntauri = { version = "2" }\n',
-    );
-  });
-
-  it("changes only the app crate in Cargo.lock", () => {
-    const text =
-      '[[package]]\nname = "sendfd"\nversion = "0.1.0"\n\n[[package]]\nname = "senstosales"\nversion = "0.1.0"\n';
-    expect(stamp(text, "cargo-lock", "1.0.0")).toBe(
-      '[[package]]\nname = "sendfd"\nversion = "0.1.0"\n\n[[package]]\nname = "senstosales"\nversion = "1.0.0"\n',
-    );
-  });
-
   it("fails loudly when there is nothing to stamp", () => {
-    expect(() => stamp("{}\n", "json", "1.0.0")).toThrow("no version or name field");
-    expect(() => stamp("[workspace]\n", "cargo-toml", "1.0.0")).toThrow("no version field");
+    expect(() => stamp("{}\n", "1.0.0")).toThrow("no version or name field");
   });
 });
 
@@ -65,7 +49,7 @@ describe("stampAll", () => {
     if (root) await rm(root, { recursive: true, force: true });
   });
 
-  /** A repo with VERSION 1.0.0 whose only out-of-date files are apps/web/package.json and Cargo.lock. */
+  /** A repo with VERSION 1.0.0 whose only out-of-date files are apps/web/package.json and tauri.conf.json. */
   async function repo(): Promise<string> {
     root = await mkdtemp(join(tmpdir(), "senstosales-stamp-"));
     const files: Record<string, string> = {
@@ -74,9 +58,7 @@ describe("stampAll", () => {
       "apps/web/package.json": '{\n  "name": "@x/web",\n  "version": "0.1.0"\n}\n',
       "packages/domain/package.json": '{\n  "name": "@x/domain",\n  "version": "1.0.0"\n}\n',
       "tools/release/package.json": '{\n  "name": "@x/release",\n  "version": "1.0.0"\n}\n',
-      "apps/desktop/src-tauri/tauri.conf.json": '{\n  "version": "1.0.0"\n}\n',
-      "apps/desktop/src-tauri/Cargo.toml": '[package]\nversion = "1.0.0"\n',
-      "apps/desktop/src-tauri/Cargo.lock": '[[package]]\nname = "senstosales"\nversion = "0.9.0"\n',
+      "apps/desktop/src-tauri/tauri.conf.json": '{\n  "version": "0.9.0"\n}\n',
     };
     for (const [path, text] of Object.entries(files)) {
       await mkdir(join(root, path, ".."), { recursive: true });
@@ -89,7 +71,7 @@ describe("stampAll", () => {
     const dir = await repo();
     expect(await stampAll(dir, { check: true })).toEqual({
       version: "1.0.0",
-      stale: ["apps/desktop/src-tauri/Cargo.lock", "apps/web/package.json"],
+      stale: ["apps/desktop/src-tauri/tauri.conf.json", "apps/web/package.json"],
     });
     expect(await readFile(join(dir, "apps/web/package.json"), "utf8")).toBe(
       '{\n  "name": "@x/web",\n  "version": "0.1.0"\n}\n',

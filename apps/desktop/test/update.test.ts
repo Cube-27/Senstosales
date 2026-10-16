@@ -33,31 +33,31 @@ function harness({ found = true, answer = true, fail }: { found?: boolean; answe
 describe("offerUpdate", () => {
   it("downloads first, asks, then stops the sidecar and installs", async () => {
     const { steps, deps } = harness();
-    expect(await offerUpdate(deps)).toBe("installing");
+    await offerUpdate(deps);
     expect(steps).toEqual(["check", "download", `ask: ${QUESTION}`, "stop sidecar", "install"]);
   });
 
   it("does nothing more when this is the latest version", async () => {
     const { steps, deps } = harness({ found: false });
-    expect(await offerUpdate(deps)).toBe("current");
+    await offerUpdate(deps);
     expect(steps).toEqual(["check"]);
   });
 
   it("keeps the app running when the user says no", async () => {
     const { steps, deps } = harness({ answer: false });
-    expect(await offerUpdate(deps)).toBe("declined");
+    await offerUpdate(deps);
     expect(steps).toEqual(["check", "download", `ask: ${QUESTION}`]);
   });
 
   it("only logs a failed check, without asking", async () => {
     const { steps, deps } = harness({ fail: "check" });
-    expect(await offerUpdate(deps)).toBe("unavailable");
+    await offerUpdate(deps);
     expect(steps).toEqual(["check", "log: update check failed: check broke"]);
   });
 
   it("only logs a failed download, without asking", async () => {
     const { steps, deps } = harness({ fail: "download" });
-    expect(await offerUpdate(deps)).toBe("unavailable");
+    await offerUpdate(deps);
     expect(steps).toEqual(["check", "download", "log: update check failed: download broke"]);
   });
 

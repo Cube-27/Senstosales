@@ -1,22 +1,22 @@
 // SPEC-20 PR 5, INV-93: writes latest.json beside the signed installer. The release workflow publishes both in the
 // `v<VERSION>` release; the updater endpoint (tauri.conf.json) is the newest release's latest.json, and the app checks
 // the signature against the committed public key before it installs anything.
-//   node tools/release/src/updater-manifest.ts <bundle/nsis dir>
+//   node tools/release/src/updater-manifest.ts <bundle/nsis dir> https://github.com/<owner>/<repo>/releases/download
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { parseVersion } from "./stamp-version.ts";
+import { readVersion, ROOT } from "./stamp-version.ts";
 
-const RELEASES = "https://github.com/Cube-27/Senstosales/releases";
-const ROOT = join(import.meta.dirname, "../../..");
-
-/** Writes `dir/latest.json` for the `version` installer in `dir` and returns its path. */
+/** Writes `dir/latest.json` for the `version` installer in `dir`, downloaded from the `v<version>` release under
+ * `downloadBase`, and returns its path. */
 export async function writeManifest({
   dir,
+  downloadBase,
   version,
   pubDate,
 }: {
   dir: string;
+  downloadBase: string;
   version: string;
   pubDate: string;
 }): Promise<string> {
@@ -33,7 +33,7 @@ export async function writeManifest({
     platforms: {
       "windows-x86_64": {
         signature: signature.trim(),
-        url: `${RELEASES}/download/v${version}/${encodeURIComponent(installer)}`,
+        url: `${downloadBase}/v${version}/${encodeURIComponent(installer)}`,
       },
     },
   };
@@ -43,10 +43,12 @@ export async function writeManifest({
 }
 
 async function main(): Promise<void> {
-  const dir = process.argv[2];
-  if (dir === undefined) throw new Error("Usage: updater-manifest.ts <bundle/nsis dir>");
-  const version = parseVersion(await readFile(join(ROOT, "VERSION"), "utf8"));
-  console.log(await writeManifest({ dir, version, pubDate: new Date().toISOString() }));
+  const [dir, downloadBase] = process.argv.slice(2);
+  if (dir === undefined || downloadBase === undefined) {
+    throw new Error("Usage: updater-manifest.ts <bundle/nsis dir> <release download base>");
+  }
+  const version = await readVersion(ROOT);
+  console.log(await writeManifest({ dir, downloadBase, version, pubDate: new Date().toISOString() }));
 }
 
 if (import.meta.main) await main();

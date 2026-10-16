@@ -16,26 +16,23 @@ export interface UpdateDeps {
   log(line: string): Promise<void>;
 }
 
-export type UpdateOutcome = "current" | "unavailable" | "declined" | "installing";
-
 const question = (version: string) =>
   `SenstoSales ${version} is ready to install. Install it now?\n\n` +
   "SenstoSales will close while it installs. Your data stays where it is.";
 
 /** Offers a newer release once per start. A failed check or download (offline, no release yet) is only logged; an
  * install failure, after the sidecar has stopped, is thrown for the caller to report. */
-export async function offerUpdate({ check, ask, stopSidecar, log }: UpdateDeps): Promise<UpdateOutcome> {
+export async function offerUpdate({ check, ask, stopSidecar, log }: UpdateDeps): Promise<void> {
   let update: Update | null;
   try {
     update = await check();
-    if (update === null) return "current";
+    if (update === null) return;
     await update.download();
   } catch (err) {
     await log(`update check failed: ${err instanceof Error ? err.message : String(err)}`);
-    return "unavailable";
+    return;
   }
-  if (!(await ask(question(update.version)))) return "declined";
+  if (!(await ask(question(update.version)))) return;
   await stopSidecar();
   await update.install();
-  return "installing";
 }

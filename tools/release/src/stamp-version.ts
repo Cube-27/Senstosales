@@ -1,23 +1,17 @@
 // SPEC-20 §4.1, INV-105: the root `VERSION` file is the one version. This stamps it into every workspace
-// package.json, tauri.conf.json (the installer and the updater compare it) and the Rust crate. The SEA and
-// `/api/health` read apps/api/package.json, so stamping that covers both. `--check` (in `check`) fails on drift.
+// package.json and tauri.conf.json, where the installer and the updater read it (Tauri ignores the Rust crate's
+// version when the config has one). The SEA and `/api/health` read apps/api/package.json, so stamping that covers
+// both. `--check` (in `check`) fails on drift.
 //   node tools/release/src/stamp-version.ts [--check]
+import { existsSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 
-export type Format = "json" | "cargo-toml" | "cargo-lock";
-
-const ROOT = join(import.meta.dirname, "../../..");
+export const ROOT = join(import.meta.dirname, "../../..");
 /** The pnpm-workspace.yaml globs, each `<dir>/*`. */
 const WORKSPACE_DIRS = ["apps", "packages", "tools"];
-const TAURI = "apps/desktop/src-tauri";
-const FIXED_TARGETS: ReadonlyArray<{ path: string; format: Format }> = [
-  { path: "package.json", format: "json" },
-  { path: `${TAURI}/tauri.conf.json`, format: "json" },
-  { path: `${TAURI}/Cargo.toml`, format: "cargo-toml" },
-  { path: `${TAURI}/Cargo.lock`, format: "cargo-lock" },
-];
+const FIXED_TARGETS = ["package.json", "apps/desktop/src-tauri/tauri.conf.json"];
 
 /** Tauri and the NSIS updater compare plain major.minor.patch; nothing else is accepted. */
 export function parseVersion(text: string): string {
@@ -28,35 +22,28 @@ export function parseVersion(text: string): string {
   return version;
 }
 
-/** The first match of each pattern is the file's own version: the top-level key, [package], the app crate. */
-const VERSION_FIELD: Record<Format, RegExp> = {
-  json: /^(\s*"version":\s*")[^"]*(")/m,
-  "cargo-toml": /^(version = ")[^"]*(")/m,
-  "cargo-lock": /^(name = "senstosales"\nversion = ")[^"]*(")/m,
-};
-const JSON_NAME = /^(\s*)"name":\s*"[^"]*",\n/m;
+export const readVersion = async (root: string): Promise<string> =>
+  parseVersion(await readFile(join(root, "VERSION"), "utf8"));
+
+// Text edits, not JSON.stringify, so each file keeps its formatting. The first match is the top-level key: neither
+// package.json nor tauri.conf.json has a nested "version" before it.
+const VERSION_FIELD = /^(\s*"version":\s*")[^"]*(")/m;
+const NAME_FIELD = /^(\s*)"name":\s*"[^"]*",\n/m;
 
 /** `text` with its version set to `version`; a package.json without one gets it after its name. */
-export function stamp(text: string, format: Format, version: string): string {
-  const field = VERSION_FIELD[format];
-  if (field.test(text)) return text.replace(field, `$1${version}$2`);
-  if (format === "json" && JSON_NAME.test(text)) {
-    return text.replace(JSON_NAME, (line, indent: string) => `${line}${indent}"version": "${version}",\n`);
-  }
-  throw new Error(format === "json" ? "no version or name field" : "no version field");
+export function stamp(text: string, version: string): string {
+  if (VERSION_FIELD.test(text)) return text.replace(VERSION_FIELD, `$1${version}$2`);
+  if (NAME_FIELD.test(text))
+    return text.replace(NAME_FIELD, (line, indent: string) => `${line}${indent}"version": "${version}",\n`);
+  throw new Error("no version or name field");
 }
 
-async function targets(root: string): Promise<Array<{ path: string; format: Format }>> {
-  const packages: Array<{ path: string; format: Format }> = [];
+async function targets(root: string): Promise<string[]> {
+  const packages: string[] = [];
   for (const dir of WORKSPACE_DIRS) {
     for (const entry of await readdir(join(root, dir), { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
       const path = `${dir}/${entry.name}/package.json`;
-      const exists = await readFile(join(root, path)).then(
-        () => true,
-        () => false,
-      );
-      if (exists) packages.push({ path, format: "json" });
+      if (entry.isDirectory() && existsSync(join(root, path))) packages.push(path);
     }
   }
   return [...FIXED_TARGETS, ...packages];
@@ -67,13 +54,13 @@ export async function stampAll(
   root: string,
   { check }: { check: boolean },
 ): Promise<{ version: string; stale: string[] }> {
-  const version = parseVersion(await readFile(join(root, "VERSION"), "utf8"));
+  const version = await readVersion(root);
   const stale: string[] = [];
-  for (const { path, format } of await targets(root)) {
+  for (const path of await targets(root)) {
     const text = await readFile(join(root, path), "utf8");
     let next: string;
     try {
-      next = stamp(text, format, version);
+      next = stamp(text, version);
     } catch (err) {
       throw new Error(`${path}: ${err instanceof Error ? err.message : String(err)}`);
     }
