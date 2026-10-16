@@ -140,13 +140,14 @@ function dispatchSummaryRows(lines: AsyncIterable<DispatchLine>) {
   const rows = mapped(lines, (r) => {
     const unit = r.unit?.trim() ?? "";
     byUnit.set(unit, sumQty([byUnit.get(unit) ?? (0 as Qty), r.dspQty]));
-    packets += linePackets(r.packets);
+    const linePacketCount = linePackets(r.packets);
+    packets += linePacketCount;
     serial += 1;
     return {
       serial,
       description: summaryDescription(r),
       qty: qtyWithUnit(r.dspQty, unit),
-      packets: linePackets(r.packets),
+      packets: linePacketCount,
       poNumber: r.poNumber,
       gemcNumber: dispatchGemc(r) ?? "",
       invoiceNumbers: dispatchInvoice(r) ?? "",

@@ -141,6 +141,8 @@ async function readJson(c: Context): Promise<unknown> {
  */
 const BODY_CHUNK = 64 * 1024;
 
+const encoder = new TextEncoder();
+
 /** The source's next pieces joined until {@link BODY_CHUNK} bytes or its end; null once it is done. */
 async function nextChunk(source: AsyncIterator<Uint8Array | string>): Promise<Uint8Array | null> {
   const parts: Uint8Array[] = [];
@@ -148,7 +150,7 @@ async function nextChunk(source: AsyncIterator<Uint8Array | string>): Promise<Ui
   while (size < BODY_CHUNK) {
     const next = await source.next();
     if (next.done) break;
-    const part = typeof next.value === "string" ? new TextEncoder().encode(next.value) : next.value;
+    const part = typeof next.value === "string" ? encoder.encode(next.value) : next.value;
     parts.push(part);
     size += part.length;
   }

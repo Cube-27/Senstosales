@@ -39,9 +39,7 @@
       "indexes": {
         "app_user_username_unique": {
           "name": "app_user_username_unique",
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "isUnique": true
         }
       },
@@ -175,12 +173,8 @@
           "name": "buyer_supplier_id_supplier_id_fk",
           "tableFrom": "buyer",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -400,27 +394,17 @@
       "indexes": {
         "dc_supplier_number_fy_uq": {
           "name": "dc_supplier_number_fy_uq",
-          "columns": [
-            "supplier_id",
-            "number",
-            "financial_year"
-          ],
+          "columns": ["supplier_id", "number", "financial_year"],
           "isUnique": true
         },
         "dc_supplier_gc_number_fy_uq": {
           "name": "dc_supplier_gc_number_fy_uq",
-          "columns": [
-            "supplier_id",
-            "gc_number",
-            "financial_year"
-          ],
+          "columns": ["supplier_id", "gc_number", "financial_year"],
           "isUnique": true
         },
         "dc_po_id_idx": {
           "name": "dc_po_id_idx",
-          "columns": [
-            "po_id"
-          ],
+          "columns": ["po_id"],
           "isUnique": false
         }
       },
@@ -429,12 +413,8 @@
           "name": "dc_supplier_id_supplier_id_fk",
           "tableFrom": "dc",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -442,12 +422,8 @@
           "name": "dc_po_id_po_id_fk",
           "tableFrom": "dc",
           "tableTo": "po",
-          "columnsFrom": [
-            "po_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["po_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -512,16 +488,12 @@
       "indexes": {
         "dc_item_dc_id_idx": {
           "name": "dc_item_dc_id_idx",
-          "columns": [
-            "dc_id"
-          ],
+          "columns": ["dc_id"],
           "isUnique": false
         },
         "dc_item_po_item_id_idx": {
           "name": "dc_item_po_item_id_idx",
-          "columns": [
-            "po_item_id"
-          ],
+          "columns": ["po_item_id"],
           "isUnique": false
         }
       },
@@ -530,12 +502,8 @@
           "name": "dc_item_supplier_id_supplier_id_fk",
           "tableFrom": "dc_item",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -543,12 +511,8 @@
           "name": "dc_item_dc_id_dc_id_fk",
           "tableFrom": "dc_item",
           "tableTo": "dc",
-          "columnsFrom": [
-            "dc_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["dc_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -556,12 +520,8 @@
           "name": "dc_item_po_item_id_po_item_id_fk",
           "tableFrom": "dc_item",
           "tableTo": "po_item",
-          "columnsFrom": [
-            "po_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["po_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -858,25 +818,17 @@
       "indexes": {
         "invoice_supplier_number_fy_uq": {
           "name": "invoice_supplier_number_fy_uq",
-          "columns": [
-            "supplier_id",
-            "number",
-            "financial_year"
-          ],
+          "columns": ["supplier_id", "number", "financial_year"],
           "isUnique": true
         },
         "invoice_dc_id_uq": {
           "name": "invoice_dc_id_uq",
-          "columns": [
-            "dc_id"
-          ],
+          "columns": ["dc_id"],
           "isUnique": true
         },
         "invoice_po_id_idx": {
           "name": "invoice_po_id_idx",
-          "columns": [
-            "po_id"
-          ],
+          "columns": ["po_id"],
           "isUnique": false
         }
       },
@@ -885,12 +837,8 @@
           "name": "invoice_supplier_id_supplier_id_fk",
           "tableFrom": "invoice",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -898,12 +846,8 @@
           "name": "invoice_po_id_po_id_fk",
           "tableFrom": "invoice",
           "tableTo": "po",
-          "columnsFrom": [
-            "po_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["po_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -911,12 +855,8 @@
           "name": "invoice_dc_id_dc_id_fk",
           "tableFrom": "invoice",
           "tableTo": "dc",
-          "columnsFrom": [
-            "dc_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["dc_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1030,9 +970,7 @@
       "indexes": {
         "invoice_item_invoice_id_idx": {
           "name": "invoice_item_invoice_id_idx",
-          "columns": [
-            "invoice_id"
-          ],
+          "columns": ["invoice_id"],
           "isUnique": false
         }
       },
@@ -1041,12 +979,8 @@
           "name": "invoice_item_supplier_id_supplier_id_fk",
           "tableFrom": "invoice_item",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1054,12 +988,8 @@
           "name": "invoice_item_invoice_id_invoice_id_fk",
           "tableFrom": "invoice_item",
           "tableTo": "invoice",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invoice_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1067,12 +997,8 @@
           "name": "invoice_item_po_item_id_po_item_id_fk",
           "tableFrom": "invoice_item",
           "tableTo": "po_item",
-          "columnsFrom": [
-            "po_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["po_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1080,12 +1006,8 @@
           "name": "invoice_item_dc_item_id_dc_item_id_fk",
           "tableFrom": "invoice_item",
           "tableTo": "dc_item",
-          "columnsFrom": [
-            "dc_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["dc_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1172,9 +1094,7 @@
       "indexes": {
         "job_one_running_uq": {
           "name": "job_one_running_uq",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": true,
           "where": "status = 'running'"
         }
@@ -1236,12 +1156,8 @@
           "name": "job_event_job_id_job_id_fk",
           "tableFrom": "job_event",
           "tableTo": "job",
-          "columnsFrom": [
-            "job_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["job_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1419,10 +1335,7 @@
       "indexes": {
         "po_supplier_po_number_uq": {
           "name": "po_supplier_po_number_uq",
-          "columns": [
-            "supplier_id",
-            "po_number"
-          ],
+          "columns": ["supplier_id", "po_number"],
           "isUnique": true
         }
       },
@@ -1431,12 +1344,8 @@
           "name": "po_supplier_id_supplier_id_fk",
           "tableFrom": "po",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1628,10 +1537,7 @@
       "indexes": {
         "po_item_po_item_no_uq": {
           "name": "po_item_po_item_no_uq",
-          "columns": [
-            "po_id",
-            "po_item_no"
-          ],
+          "columns": ["po_id", "po_item_no"],
           "isUnique": true
         }
       },
@@ -1640,12 +1546,8 @@
           "name": "po_item_supplier_id_supplier_id_fk",
           "tableFrom": "po_item",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1653,12 +1555,8 @@
           "name": "po_item_po_id_po_id_fk",
           "tableFrom": "po_item",
           "tableTo": "po",
-          "columnsFrom": [
-            "po_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["po_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1752,12 +1650,8 @@
           "name": "po_lot_supplier_id_supplier_id_fk",
           "tableFrom": "po_lot",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1765,12 +1659,8 @@
           "name": "po_lot_po_item_id_po_item_id_fk",
           "tableFrom": "po_lot",
           "tableTo": "po_item",
-          "columnsFrom": [
-            "po_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["po_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1870,24 +1760,17 @@
       "indexes": {
         "reconciliation_issue_fingerprint_uq": {
           "name": "reconciliation_issue_fingerprint_uq",
-          "columns": [
-            "fingerprint"
-          ],
+          "columns": ["fingerprint"],
           "isUnique": true
         },
         "reconciliation_issue_po_id_idx": {
           "name": "reconciliation_issue_po_id_idx",
-          "columns": [
-            "po_id"
-          ],
+          "columns": ["po_id"],
           "isUnique": false
         },
         "reconciliation_issue_scope_idx": {
           "name": "reconciliation_issue_scope_idx",
-          "columns": [
-            "scope_type",
-            "scope_id"
-          ],
+          "columns": ["scope_type", "scope_id"],
           "isUnique": false
         }
       },
@@ -1896,12 +1779,8 @@
           "name": "reconciliation_issue_supplier_id_supplier_id_fk",
           "tableFrom": "reconciliation_issue",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1979,22 +1858,15 @@
           "name": "secret_supplier_id_supplier_id_fk",
           "tableFrom": "secret",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "secret_supplier_id_name_pk": {
-          "columns": [
-            "supplier_id",
-            "name"
-          ],
+          "columns": ["supplier_id", "name"],
           "name": "secret_supplier_id_name_pk"
         }
       },
@@ -2043,9 +1915,7 @@
       "indexes": {
         "session_token_hash_unique": {
           "name": "session_token_hash_unique",
-          "columns": [
-            "token_hash"
-          ],
+          "columns": ["token_hash"],
           "isUnique": true
         }
       },
@@ -2054,12 +1924,8 @@
           "name": "session_user_id_app_user_id_fk",
           "tableFrom": "session",
           "tableTo": "app_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2099,22 +1965,15 @@
           "name": "settings_supplier_id_supplier_id_fk",
           "tableFrom": "settings",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "settings_supplier_id_key_pk": {
-          "columns": [
-            "supplier_id",
-            "key"
-          ],
+          "columns": ["supplier_id", "key"],
           "name": "settings_supplier_id_key_pk"
         }
       },
@@ -2194,12 +2053,8 @@
           "name": "source_document_supplier_id_supplier_id_fk",
           "tableFrom": "source_document",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2271,18 +2126,12 @@
       "indexes": {
         "srv_supplier_po_number_srv_number_uq": {
           "name": "srv_supplier_po_number_srv_number_uq",
-          "columns": [
-            "supplier_id",
-            "po_number",
-            "srv_number"
-          ],
+          "columns": ["supplier_id", "po_number", "srv_number"],
           "isUnique": true
         },
         "srv_po_id_idx": {
           "name": "srv_po_id_idx",
-          "columns": [
-            "po_id"
-          ],
+          "columns": ["po_id"],
           "isUnique": false
         }
       },
@@ -2291,12 +2140,8 @@
           "name": "srv_supplier_id_supplier_id_fk",
           "tableFrom": "srv",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2515,30 +2360,22 @@
       "indexes": {
         "srv_item_srv_id_idx": {
           "name": "srv_item_srv_id_idx",
-          "columns": [
-            "srv_id"
-          ],
+          "columns": ["srv_id"],
           "isUnique": false
         },
         "srv_item_po_item_id_idx": {
           "name": "srv_item_po_item_id_idx",
-          "columns": [
-            "po_item_id"
-          ],
+          "columns": ["po_item_id"],
           "isUnique": false
         },
         "srv_item_resolved_dc_id_idx": {
           "name": "srv_item_resolved_dc_id_idx",
-          "columns": [
-            "resolved_dc_id"
-          ],
+          "columns": ["resolved_dc_id"],
           "isUnique": false
         },
         "srv_item_resolved_invoice_id_idx": {
           "name": "srv_item_resolved_invoice_id_idx",
-          "columns": [
-            "resolved_invoice_id"
-          ],
+          "columns": ["resolved_invoice_id"],
           "isUnique": false
         }
       },
@@ -2547,12 +2384,8 @@
           "name": "srv_item_supplier_id_supplier_id_fk",
           "tableFrom": "srv_item",
           "tableTo": "supplier",
-          "columnsFrom": [
-            "supplier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["supplier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2560,12 +2393,8 @@
           "name": "srv_item_srv_id_srv_id_fk",
           "tableFrom": "srv_item",
           "tableTo": "srv",
-          "columnsFrom": [
-            "srv_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["srv_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

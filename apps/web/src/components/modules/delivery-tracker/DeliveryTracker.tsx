@@ -37,9 +37,11 @@ function DaysToDue({ days }: { readonly days: number | null }) {
 
 const money = (m: Lot["rate"]) => fmtMoney(m, { gemc: false });
 
+/** The shared date width less 4px, so the largest pending value shows whole at 1366 (N-TRK-VAL). */
+const TRACKER_DATE_WIDTH = "112px";
+
 /**
- * Widths from the measured content (D-0630): at 1366 the other columns leave PO / Material its header's width. The
- * dates give up 4px each so the largest pending value shows whole (N-TRK-VAL).
+ * Widths from the measured content (D-0630): at 1366 the other columns leave PO / Material its header's width.
  */
 const COLUMNS: Column<Lot>[] = [
   {
@@ -74,11 +76,17 @@ const COLUMNS: Column<Lot>[] = [
     width: "60px",
     render: (l) => <span className="rounded-md bg-surface-sunken px-2 py-1 role-metadata">L{l.lotNo}</span>,
   },
-  { key: "delyDate", header: "Due Date", width: "112px", sortable: true, render: (l) => fmtDate(l.delyDate) },
+  {
+    key: "delyDate",
+    header: "Due Date",
+    width: TRACKER_DATE_WIDTH,
+    sortable: true,
+    render: (l) => fmtDate(l.delyDate),
+  },
   {
     key: "entryAllowDate",
     header: "Entry Date",
-    width: "112px",
+    width: TRACKER_DATE_WIDTH,
     sortable: true,
     render: (l) => fmtDate(l.entryAllowDate),
   },

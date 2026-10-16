@@ -48,12 +48,14 @@ function get(port: number, path: string, host = `127.0.0.1:${port}`): Promise<Re
       let body = "";
       res.setEncoding("utf8");
       res.on("data", (chunk: string) => (body += chunk));
-      res.on("end", () => resolve({
+      res.on("end", () =>
+        resolve({
           status: res.statusCode ?? 0,
           type: res.headers["content-type"],
           cache: res.headers["cache-control"],
           body,
-        }),);
+        }),
+      );
     });
     req.on("error", reject);
     req.end();

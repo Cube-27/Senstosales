@@ -21,9 +21,9 @@ const PLACEHOLDER = new TextEncoder().encode(
  */
 const cacheControl = (key: string) => (key.startsWith("assets/") ? "public, max-age=31536000, immutable" : "no-cache");
 
-const send = (c: Context, bytes: Uint8Array, key: string): Response =>
+const send = (c: Context, bytes: Uint8Array, key: string, name: string): Response =>
   c.body(new Uint8Array(bytes), 200, {
-    "content-type": getMimeType(key.slice(key.lastIndexOf("/") + 1)) ?? "application/octet-stream",
+    "content-type": getMimeType(name) ?? "application/octet-stream",
     "cache-control": cacheControl(key),
   });
 
@@ -42,8 +42,8 @@ export function spa(files: WebFiles): MiddlewareHandler {
     if (name.includes(".")) {
       // A refused key (`..`, backslashes, drive letters) is answered like a missing file.
       const file = await files.get(key).catch(() => null);
-      return file ? send(c, file, key) : next();
+      return file ? send(c, file, key, name) : next();
     }
-    return send(c, (await files.get("index.html")) ?? PLACEHOLDER, "index.html");
+    return send(c, (await files.get("index.html")) ?? PLACEHOLDER, "index.html", "index.html");
   };
 }
