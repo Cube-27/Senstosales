@@ -2,8 +2,9 @@
 // and value range come from the domain in the service (C2).
 import type { Db } from "@senstosales/db";
 import { po, poItem, poLot } from "@senstosales/db";
+import { TRACKED_STATUSES } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
-import { and, eq, gte, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import type { Keyset, KeysetPage, SortParts } from "./keyset.ts";
@@ -24,8 +25,8 @@ const keys = {
 };
 
 /**
- * Every scheduled lot (one with a delivery date, as legacy) the text and date filters keep, with its item and PO;
- * with `page`, one keyset page of them.
+ * Every scheduled lot (one with a delivery date, as legacy) of a tracked item the text and date filters keep, with its
+ * item and PO; with `page`, one keyset page of them. Lots of closed items are never read: most lots are (N-PERF).
  */
 export const trackerLots = (db: Db, f: Partial<TrackerFilters> = {}, page?: KeysetPage) => {
   const query = db.build
@@ -58,6 +59,7 @@ export const trackerLots = (db: Db, f: Partial<TrackerFilters> = {}, page?: Keys
     .where(
       and(
         isNotNull(poLot.delyDate),
+        inArray(poItem.status, [...TRACKED_STATUSES]),
         f.q
           ? or(contains(po.poNumber, f.q), contains(poItem.materialCode, f.q), contains(poItem.description, f.q))
           : undefined,

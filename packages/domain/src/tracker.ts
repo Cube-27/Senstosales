@@ -6,6 +6,9 @@ import type { ItemStatus } from "./status.ts";
 import type { Money, Qty } from "./units.ts";
 import { qtyValue, sumMoney } from "./units.ts";
 
+/** The item statuses whose lots are on the tracker: not yet received in full. */
+export const TRACKED_STATUSES = ["Pending", "Delivered"] as const satisfies readonly ItemStatus[];
+
 /** "Due soon" runs from today to this many days ahead, both ends included. */
 const DUE_SOON_DAYS = 7;
 
@@ -26,7 +29,7 @@ export type DeliveryDue = {
 export function deliveryDue(delyDate: IsoDate, today: IsoDate, status: ItemStatus): DeliveryDue {
   const daysToDue = daysBetween(today, delyDate);
   const pending = status === "Pending";
-  const open = pending || status === "Delivered";
+  const open = TRACKED_STATUSES.some((s) => s === status);
   return {
     daysToDue,
     open,
