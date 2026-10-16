@@ -50,9 +50,9 @@ export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-
 
 /** A decimal string with its whole part in Indian grouping: `"-123456.05"` -> `"-1,23,456.05"`. */
 function groupDecimal(text: string): string {
-  const [int = "", frac] = text.split(".");
+  const [int = "", ...frac] = text.split(".");
   const sign = int.startsWith("-") ? "-" : "";
-  return `${sign}${groupIndian(int.slice(sign.length))}${frac === undefined ? "" : `.${frac}`}`;
+  return [sign + groupIndian(int.slice(sign.length)), ...frac].join(".");
 }
 
 /** A quantity exactly, to its 3 dp without trailing zeros, so a fractional quantity is never rounded away on screen:

@@ -108,6 +108,8 @@ describe("/srv/:id (SPEC-16 PR 4)", () => {
     const headers = screen.getAllByRole("columnheader").map((th) => th.textContent);
     expect(cells[headers.indexOf("Received")]).toBe("");
     expect(cells[headers.indexOf("Accepted")]).toBe("5");
+    // A quantity cell carries its value as the title, for when the column cuts it.
+    expect(within(row).getAllByRole("cell")[headers.indexOf("Accepted")]?.getAttribute("title")).toBe("5");
     const totals = screen.getByRole("region", { name: "Line items" });
     expect(within(totals).getByText(/^Received/, { selector: "span.role-metadata" }).textContent).toBe("Received 5");
   });

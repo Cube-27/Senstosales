@@ -39,6 +39,8 @@ function columns(gemc: boolean, sn: (line: Line) => number): Column<Line>[] {
     header,
     width,
     align: "right",
+    // A larger amount than the widths fit is cut; the title holds it in full.
+    title: (line) => fmtMoney(line[key], { gemc }),
     render: (line) => <span className="tabular-nums">{fmtMoney(line[key], { gemc })}</span>,
   });
   return [

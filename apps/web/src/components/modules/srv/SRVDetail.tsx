@@ -70,8 +70,10 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
     {
       key: "rate",
       header: "Unit Rate",
-      width: "104px",
+      // A GEMC rate up to 99,999.12345; a longer one is in the title.
+      width: "120px",
       align: "right",
+      title: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : ""),
       render: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : "—"),
     },
     // The SRV's own UNIT as printed; a row stored without one shows the PO item's.
