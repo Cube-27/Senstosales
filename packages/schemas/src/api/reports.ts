@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { zPoItem, zPoLot } from "../entities/po.ts";
-import { zCount, zId, zIsoDate, zMoney, zPackets, zQty } from "../primitives.ts";
+import { zCount, zId, zIsoDate, zMoney, zQty } from "../primitives.ts";
 import { zDateRange, zFyDocRef, zItemInfo, zListQuery, zRangeFilters } from "./common.ts";
 
 /** The PO item columns both tabs and their exports show. */
@@ -50,7 +50,8 @@ export const zDispatchRow = zPoItem.pick({ poId: true, poItemNo: true, descripti
   dcDate: zIsoDate,
   poNumber: z.string(),
   dspQty: zQty,
-  packets: zPackets,
+  /** The invoice line's, else the DC line's; none entered counts as 1 (INV-117). */
+  packets: zCount,
   gemcNumber: z.string().nullable(),
   invoiceNumber: z.string().nullable(),
   departmentNo: z.string().nullable(),

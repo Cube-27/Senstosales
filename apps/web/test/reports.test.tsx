@@ -67,7 +67,7 @@ const DISPATCH = [
     description: "Item 3",
     unit: null,
     dspQty: "1",
-    packets: null,
+    packets: 1,
     gemcNumber: null,
     invoiceNumber: null,
     departmentNo: null,
@@ -173,7 +173,7 @@ describe("reports (SPEC-17 PR 4)", () => {
       ),
     ).toEqual([
       ["Item 1", "40 Nos", "2", "4500001", "GEMC-1", "201", "101", "456"],
-      ["Item 3", "1", "-", "4500002", "-", "-", "102", "-"],
+      ["Item 3", "1", "1", "4500002", "-", "-", "102", "-"],
     ]);
     expect(
       within(bodyRows()[0] as HTMLElement)

@@ -6,7 +6,7 @@ import type { Db } from "@senstosales/db";
 import { dc, po, poItem } from "@senstosales/db";
 import { EXPORTS } from "@senstosales/documents/catalog";
 import type { IsoDate, Qty } from "@senstosales/domain";
-import { defaultReportRange, qtyToString, sumQty, TOL } from "@senstosales/domain";
+import { defaultReportRange, linePackets, qtyToString, sumQty, TOL } from "@senstosales/domain";
 import type { routes } from "@senstosales/schemas";
 import { fmtDateDashed, foldRepeatedLines, qtyNumber } from "@senstosales/schemas";
 import type { SQL } from "drizzle-orm";
@@ -126,7 +126,7 @@ const dispatchColumns = (r: DispatchLine) => ({
   description: r.description,
   unit: r.unit,
   dspQty: r.dspQty,
-  packets: r.packets,
+  packets: linePackets(r.packets),
   gemcNumber: dispatchGemc(r),
   invoiceNumber: dispatchInvoice(r),
   departmentNo: r.departmentNo,
@@ -140,13 +140,13 @@ function dispatchSummaryRows(lines: AsyncIterable<DispatchLine>) {
   const rows = mapped(lines, (r) => {
     const unit = r.unit?.trim() ?? "";
     byUnit.set(unit, sumQty([byUnit.get(unit) ?? (0 as Qty), r.dspQty]));
-    packets += r.packets ?? 0;
+    packets += linePackets(r.packets);
     serial += 1;
     return {
       serial,
       description: summaryDescription(r),
       qty: qtyWithUnit(r.dspQty, unit),
-      packets: r.packets ?? "",
+      packets: linePackets(r.packets),
       poNumber: r.poNumber,
       gemcNumber: dispatchGemc(r) ?? "",
       invoiceNumbers: dispatchInvoice(r) ?? "",

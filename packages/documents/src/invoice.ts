@@ -1,7 +1,7 @@
 // The invoice workbook (SPEC-12 §4.1): the de-branded template filled as the legacy invoice download fills it, for any
 // number of items (A-2, INV-69). Three item rows fit the template; more are inserted above its Total row.
 import type { GstPct, IsoDate, LineTax, Money, Qty } from "@senstosales/domain";
-import { invoiceTotals, moneyToString, pctToString, sumMoney, sumQty } from "@senstosales/domain";
+import { invoiceTotals, linePackets, moneyToString, pctToString, sumMoney, sumQty } from "@senstosales/domain";
 import { fmtAmountWords, fmtDate, fmtDateDashed, qtyNumber } from "@senstosales/schemas";
 import ExcelJS from "exceljs";
 
@@ -57,8 +57,6 @@ const AMOUNT_COLUMNS = ["L", "N", "P", "R", "S"];
 
 /** Quantities show every decimal they have and none when whole (`12.345`, `16`), so a fraction is never hidden. */
 const QTY_FORMAT = "General";
-/** A line with no packets entered prints legacy's 1. */
-const packetsOf = (item: { packets: number | null }): number => item.packets ?? 1;
 
 /** Number cells hold the exact decimal; formats do the rounding on screen, as legacy's float cells did. */
 const amount = (m: Money): number => Number(moneyToString(m));
@@ -122,7 +120,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
       ["A", item.poItemNo],
       ["B", item.description || "No Description"],
       ["I", item.hsn],
-      ["J", packetsOf(item)],
+      ["J", linePackets(item.packets)],
       ["K", qtyNumber(item.qty)],
       ["L", amount(item.rate)],
       ["M", item.unit || "NO"],
@@ -142,7 +140,7 @@ function writeItems(ws: ExcelJS.Worksheet, { invoice, po, items }: InvoiceDocume
   const taxRow = totalRow + 4;
   const cells: Array<[string, number, Value]> = [
     ["B", totalRow, "Total"],
-    ["J", totalRow, items.reduce((sum, item) => sum + packetsOf(item), 0)],
+    ["J", totalRow, items.reduce((sum, item) => sum + linePackets(item.packets), 0)],
     ["K", totalRow, qtyNumber(sumQty(items.map((item) => item.qty)))],
     ["N", totalRow, amount(taxable)],
     ["P", totalRow, amount(cgst)],

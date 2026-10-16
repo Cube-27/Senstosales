@@ -4,6 +4,7 @@ import type { ItemQuantityInput, PoTotalsItem, Qty } from "../src/index.ts";
 import {
   computeItemQuantities,
   computePoTotals,
+  linePackets,
   manualPoValue,
   poUninvoicedQty,
   supplyProgressPct,
@@ -166,5 +167,16 @@ describe("manualPoValue (INV-115)", () => {
     ["a line rounded to 5 dp", [line("0.333", "719.27966")], 239_52013],
   ])("%s -> %i", (_, lines, expected) => {
     expect(manualPoValue(lines)).toBe(expected);
+  });
+});
+
+describe("linePackets (INV-117)", () => {
+  it.each([
+    [null, 1],
+    [0, 0],
+    [1, 1],
+    [7, 7],
+  ])("%s entered counts as %s", (entered, counted) => {
+    expect(linePackets(entered)).toBe(counted);
   });
 });

@@ -75,3 +75,6 @@ export function supplyProgressPct({ ordQty, dspQty, rcdQty }: { ordQty: Qty; dsp
  */
 export const manualPoValue = (lines: readonly { ordQty: Qty; rate: Money }[]): Money =>
   sumMoney(lines.map((line) => qtyValue(line.ordQty, line.rate)));
+
+/** INV-117, INV-120: a line with no packets entered counts as one packet, on the invoice and the daily summary. */
+export const linePackets = (packets: number | null): number => packets ?? 1;

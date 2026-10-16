@@ -100,10 +100,10 @@ describe("the daily dispatch summary", () => {
     expect(got.rows.slice(9).map(values)).toEqual([
       [1, "Hex bolt", "40 Nos", 5, 4500001, "GEMC-INV", 401, 301, 456],
       [2, "Gasket kit", "1 Set", 1, 4500001, "GEMC-INV", 401, 301, 456],
-      // No packets entered: blank. No invoice made from the DC: the one the user filled in on it (EC-47). No
+      // No packets entered: 1, as on the invoice (INV-117). No invoice made from the DC: the one the user filled in on it (EC-47). No
       // department on the DC: the item's lot destination code.
-      [3, "Washer", "2.5 Nos", null, 4500002, null, 77, 302, 205],
-      ["TOTAL", null, "42.5 Nos + 1 Set", 6, null, null, null, null, null],
+      [3, "Washer", "2.5 Nos", 1, 4500002, null, 77, 302, 205],
+      ["TOTAL", null, "42.5 Nos + 1 Set", 7, null, null, null, null, null],
       [null, null, null, null, null, "                 For Example Supplier"],
     ]);
   });
@@ -143,7 +143,7 @@ describe("the daily dispatch summary", () => {
     ).toEqual([
       ["301", 10, 5, "GEMC-INV", "401", "456"],
       ["301", 20, 1, "GEMC-INV", "401", "456"],
-      ["302", 10, null, null, "77", "205"],
+      ["302", 10, 1, null, "77", "205"],
     ]);
   });
 
