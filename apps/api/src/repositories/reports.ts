@@ -1,9 +1,9 @@
 // Report reads (SPEC-13 §4.1): PO item rows for the pending and reconciliation tabs and their exports, one keyset
 // page at a time (INV-99), with the stored quantities as they stand (INV-61).
 import type { Db } from "@senstosales/db";
-import { dc, dcItem, invoice, invoiceItem, po, poItem } from "@senstosales/db";
+import { dc, dcItem, invoice, invoiceItem, po, poItem, poLot } from "@senstosales/db";
 import type { SQL } from "drizzle-orm";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type { Keyset, KeysetPage, SortParts } from "./keyset.ts";
 import { DC_REF_ORDER, dcRefColumns, INVOICE_REF_ORDER, invoiceRefColumns } from "./po-list.ts";
@@ -109,9 +109,15 @@ export const poNumbersOf = (db: Db, poIds: readonly string[]) =>
       .where(inArray(po.id, [...poIds])),
   );
 
+/** The destination codes of a PO item's lots, distinct and joined by `,`; null when none has one. */
+const lotDestCodes = sql<
+  string | null
+>`(select group_concat(distinct ${poLot.destCode}) from ${poLot} where ${poLot.poItemId} = ${poItem.id} and trim(${poLot.destCode}) <> '')`;
+
 /**
- * One page of DC lines with their DC, PO item and PO, and the invoice made from the DC (at most one, INV-30), in
- * `page`'s order, among those `where` keeps.
+ * One page of DC lines with their DC, PO item and PO, and the invoice made from the DC (at most one, INV-30) with its
+ * line for the DC line, in `page`'s order, among those `where` keeps. Packets are the invoice line's, else the DC
+ * line's; the department is the DC's, else the item's lot destination codes (owner 2026-10-16).
  */
 export const dispatchLines = (db: Db, where: SQL | undefined, page: KeysetPage) =>
   db.query(
@@ -122,7 +128,7 @@ export const dispatchLines = (db: Db, where: SQL | undefined, page: KeysetPage) 
         dcNumber: dc.number,
         dcDate: dc.dcDate,
         createdAt: dc.createdAt,
-        departmentNo: dc.departmentNo,
+        departmentNo: sql<string | null>`coalesce(nullif(trim(${dc.departmentNo}), ''), ${lotDestCodes})`,
         dcInvoiceNumber: dc.invoiceNumber,
         poId: po.id,
         poNumber: po.poNumber,
@@ -132,7 +138,7 @@ export const dispatchLines = (db: Db, where: SQL | undefined, page: KeysetPage) 
         materialCode: poItem.materialCode,
         unit: poItem.unit,
         dspQty: dcItem.dspQty,
-        packets: dcItem.packets,
+        packets: sql<number | null>`coalesce(${invoiceItem.packets}, ${dcItem.packets})`,
         invoiceNumber: invoice.number,
         invoiceGemcNumber: invoice.gemcNumber,
       })
@@ -141,6 +147,7 @@ export const dispatchLines = (db: Db, where: SQL | undefined, page: KeysetPage) 
       .innerJoin(poItem, eq(poItem.id, dcItem.poItemId))
       .innerJoin(po, eq(po.id, poItem.poId))
       .leftJoin(invoice, eq(invoice.dcId, dc.id))
+      .leftJoin(invoiceItem, eq(invoiceItem.dcItemId, dcItem.id))
       .where(and(where, page.after))
       .orderBy(...page.orderBy)
       .limit(page.limit),

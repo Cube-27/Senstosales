@@ -173,7 +173,14 @@ export function rows(db: NodeDb) {
         createdAt: at(row.createdAt),
       }),
 
-    invoiceItem: (row: { id: string; invoiceId: string; poItemId: string; dcItemId?: string; qty: number }) =>
+    invoiceItem: (row: {
+      id: string;
+      invoiceId: string;
+      poItemId: string;
+      dcItemId?: string;
+      qty: number;
+      packets?: number;
+    }) =>
       b.insert(invoiceItem).values({
         ...S,
         ...row,

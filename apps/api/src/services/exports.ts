@@ -1,7 +1,15 @@
 // What the export services share (SPEC-13 §4.2): a download's file name and chunks, written by the documents
 // package's writers from rows pulled as the client reads (INV-99).
 import type * as Documents from "@senstosales/documents";
-import type { Column, GcDocument, Row, Sheet, SummaryHeading, SummaryTotal } from "@senstosales/documents";
+import type {
+  Column,
+  GcDocument,
+  Row,
+  Sheet,
+  SummaryHeading,
+  SummaryLayout,
+  SummaryTotal,
+} from "@senstosales/documents";
 
 type Writers = typeof Documents;
 
@@ -37,13 +45,14 @@ export const csvFile = (
   rows: AsyncIterable<Row<string>>,
 ) => streamed(entry.fileName(), (w) => w.csvChunks(entry.columns, rows));
 
-/** The pending-items workbook, named `fileName`; `total` is read after the last row. */
+/** A summary workbook in `layout`, named `fileName`; `total` is read after the last row. */
 export const summaryFile = (
+  layout: SummaryLayout,
   fileName: string,
   heading: SummaryHeading,
   rows: AsyncIterable<Row<string>>,
   total: () => SummaryTotal,
-) => streamed(fileName, (w) => w.summaryChunks(heading, rows, total));
+) => streamed(fileName, (w) => w.summaryChunks(layout, heading, rows, total));
 
 type SupplierArgs = Parameters<Writers["documentSupplier"]>;
 

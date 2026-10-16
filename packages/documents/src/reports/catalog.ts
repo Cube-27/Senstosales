@@ -97,7 +97,7 @@ const SUMMARY = {
   heading: [
     { cell: "A1", text: "Tel. No. <supplier contact>", style: "tel" },
     { cell: "A3", merge: "A3:I3", text: "<supplier name>", style: "company" },
-    // No v1 column (EC-41): written empty.
+    // The letterhead description from Settings (D-0298); empty when none is set (EC-41).
     { cell: "A4", merge: "A4:I4", text: "<supplier description>", style: "address" },
     { cell: "A5", merge: "A5:I5", text: "<supplier address>", style: "address" },
     { cell: "A6", merge: "A6:I6", text: "SUMMARY", style: "title" },
@@ -146,9 +146,29 @@ const SUMMARY = {
   } satisfies Partial<ExcelJS.PageSetup>,
 } as const;
 
+type SummaryKey = (typeof SUMMARY.columns)[number]["key"];
+
+/** What one summary workbook adds to the shared layout. */
+interface SummaryExtras {
+  /** Columns whose digit-only text is written as a number; `075` keeps its zero as text. */
+  numberColumns: readonly SummaryKey[];
+  /** A line under the TOTAL row, in `column`; `<…>` names a heading text, as in the heading. */
+  footer: { column: SummaryKey; text: string; style: keyof typeof SUMMARY.styles } | null;
+}
+
+const PENDING_EXTRAS: SummaryExtras = { numberColumns: [], footer: null };
+
+/** The owner's summaries print numbers as numbers and sign off under the GEMC column, spaced as legacy's DC footer. */
+const DISPATCH_EXTRAS: SummaryExtras = {
+  numberColumns: ["poNumber", "invoiceNumbers", "dcNumbers", "delivered"],
+  // Bold, as the date line.
+  footer: { column: "gemcNumber", text: "                 For <supplier name>", style: "dateValue" },
+};
+
 /** The pending-items workbook (legacy "Items Summary"): each PO item with a balance, PO number then item number. */
 const PENDING = {
   ...SUMMARY,
+  ...PENDING_EXTRAS,
   fileName: (range?: { from: string; to: string }) =>
     range === undefined ? "Items_Summary.xlsx" : `Items_Summary_${range.from}_to_${range.to}.xlsx`,
 } as const;
@@ -159,6 +179,7 @@ const PENDING = {
  */
 const DISPATCH = {
   ...SUMMARY,
+  ...DISPATCH_EXTRAS,
   fileName: ({ from, to }: { from: string; to: string }) =>
     from === to ? `Daily_Dispatch_${from}.xlsx` : `Daily_Dispatch_${from}_to_${to}.xlsx`,
 } as const;

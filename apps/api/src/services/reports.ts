@@ -212,8 +212,8 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
     return {
       "supplier contact": supplier?.contact ?? "",
       "supplier name": supplier?.name ?? "",
-      // No v1 column (EC-41).
-      "supplier description": "",
+      // The letterhead description (D-0298), as legacy's summaries printed its tagline setting.
+      "supplier description": supplier?.invoiceDefaults["description"] ?? "",
       "supplier address": supplier?.address ?? "",
       "date DD-MM-YYYY": date,
     };
@@ -267,7 +267,7 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
       const { from, to } = query;
       const fileName = EXPORTS.pending.fileName(from !== undefined && to !== undefined ? { from, to } : undefined);
       const { rows, total } = summaryRows(query);
-      return summaryFile(fileName, await summaryHeading(fmtDateDashed(clock.today())), rows, total);
+      return summaryFile(EXPORTS.pending, fileName, await summaryHeading(fmtDateDashed(clock.today())), rows, total);
     },
 
     /** The daily dispatch summary for the range, today without one; the heading's date is the range's. */
@@ -275,7 +275,8 @@ export function reportsService({ db, clock }: { db: Db; clock: Clock }) {
       const range = dispatchRange(query, clock.today());
       const dates = [...new Set([range.from, range.to])].map((date) => fmtDateDashed(date)).join(" to ");
       const { rows, total } = dispatchSummaryRows(dispatchRows(query, range));
-      return summaryFile(EXPORTS.dispatch.fileName(range), await summaryHeading(dates), rows, total);
+      const fileName = EXPORTS.dispatch.fileName(range);
+      return summaryFile(EXPORTS.dispatch, fileName, await summaryHeading(dates), rows, total);
     },
 
     /** The reconciliation workbook for the tab's filters and sort; one PO's is named after it (EC-42). */
