@@ -111,7 +111,7 @@ const SUMMARY = {
     col("description", "Description", 39),
     // Quantity and unit as text: `10 NOS`; the item's ordered quantity, or the DC line's dispatched one.
     col("qty", "Quantity\nSet/Nos.", 11),
-    // The DC line's packets; 0 on the pending summary, which has no DC line (EC-41).
+    // The invoice line's packets, else the DC line's; 0 on the pending summary, which has no DC line (EC-41).
     col("packets", "No of\npackets", 8),
     col("poNumber", "PO NO", 13),
     // The invoices' GEMC numbers, else the PO's. Lists are joined with `,`.
@@ -138,7 +138,7 @@ const SUMMARY = {
     totalLabel: { font: bold, border: box, alignment: { horizontal: "right", vertical: "middle" } },
     totalCell: { font: bold, border: box, alignment: { horizontal: "center", vertical: "middle" } },
   } satisfies Record<string, Style>,
-  /** Centred; the print area ends at the TOTAL row. */
+  /** Centred; the print area ends at the last row: the TOTAL row, or the footer line after it. */
   pageSetup: {
     ...A4_FIT_WIDTH,
     horizontalCentered: true,
