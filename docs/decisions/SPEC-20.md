@@ -74,3 +74,59 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: none material.
 - Why: Changing the identifier later loses WebView storage.
 - Reversible: costly for the identifier.
+
+### D-0655 — VERSION format and stamp targets
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: `VERSION` is plain `major.minor.patch`. `tools/release/src/stamp-version.ts` writes it by text edit into the root and every workspace `package.json` (adding the field where missing) and into `tauri.conf.json`; `--check` runs in `check:code`. The Rust crate version is not stamped: Tauri uses the config's version for the installer and the updater.
+- Alternatives: also stamp Cargo.toml/Cargo.lock (two more formats, a layout-dependent lockfile regex); `"version": "../package.json"` in tauri.conf.json.
+- Why: INV-105's targets with the fewest formats; text edits keep each file's formatting.
+- Reversible: yes.
+
+### D-0656 — Update flow in the shell
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: once per start, after the app window opens, the shell checks for an update and downloads it in the background, then asks once ("Install now" / "Later"). On yes it kills the sidecar (flagged so the exit is not reported as a crash), runs `install()` (passive NSIS), and quits if that returns. A failed check or download is only logged; a failed install shows the plain error dialog.
+- Alternatives: `downloadAndInstall` straight after the prompt (the app could close mid-work, and the running sidecar exe would block the installer); closing the sidecar's stdin (plugin-shell's `Child` cannot).
+- Why: one prompt for low-tech users (C11), no surprise closing, sidecar exe released before the installer writes.
+- Reversible: yes.
+
+### D-0657 — Updater permissions
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: only the `shell` capability gets `updater:allow-check`, `updater:allow-download`, `updater:allow-install` and `shell:allow-kill`; the loopback app gets none (ADR 0001).
+- Alternatives: `updater:default` (adds download-and-install).
+- Why: least privilege.
+- Reversible: yes.
+
+### D-0658 — Updater endpoint and manifest
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: the endpoint is the newest GitHub release's `latest.json` (`releases/latest/download/latest.json`). `tools/release/src/updater-manifest.ts` writes it with the `windows-x86_64` key, the installer URL under the download base the workflow passes, and the `.sig`; it refuses a signature whose minisign key id differs from the trusted pubkey.
+- Alternatives: `tauri-apps/tauri-action` (another third-party action with release write access).
+- Why: a small tested script; a wrong signing secret fails the release instead of breaking every installed copy's updates.
+- Reversible: yes.
+
+### D-0659 — Release workflow: tag publishes, dry runs use a throwaway key
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: a `v*` tag must equal `v<VERSION>`; only tag runs enter the `release` environment and sign with `TAURI_SIGNING_PRIVATE_KEY(_PASSWORD)`; a separate publish job holds `contents: write`. Pull requests that touch the workflow, the release scripts, `tauri.conf.json` or `VERSION`, and manual runs, are dry runs signed with a key generated in the job, uploaded as a 7-day artifact, never published. `createUpdaterArtifacts` is passed with `tauri build --config` in this workflow only (the CLI ignores `TAURI_CONFIG`).
+- Alternatives: the real key in dry runs (branch code could exfiltrate it); `createUpdaterArtifacts` in tauri.conf.json (every build would need the key).
+- Why: least privilege; proof before a tag (#98's dry run signed and wrote the manifest).
+- Reversible: yes.
+
+### D-0660 — Cargo cache leaves out the bundle folder
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: the `desktop` and `release` cargo caches exclude `apps/desktop/src-tauri/target/release/bundle`.
+- Alternatives: keying the cache on VERSION (a cold Rust build per version bump).
+- Why: after a VERSION bump without a Cargo.lock change, a restored old installer would sit beside the new one and fail the one-installer smoke test.
+- Reversible: yes.
+
+### D-0661 — SmartScreen text now, screenshots with the operations guide
+
+- Date: 2026-10-16 · Spec/PR: SPEC-20 PR 5 (#98) · Status: decided
+- Decision: `docs/OPERATIONS.md` gets the Install section (More info → Run anyway) and an Updates section in words; screenshots come with SPEC-21 PR 5 from the H7 VM.
+- Alternatives: none (screenshots need a real Windows screen with a synthetic install).
+- Why: agents launch no GUI.
+- Reversible: yes.
