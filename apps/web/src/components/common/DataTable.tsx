@@ -71,8 +71,8 @@ const AUTO_FLOOR = 48;
 const minWidth = (columns: readonly Pick<Column<never>, "width" | "minWidth">[], selectable: boolean): number =>
   columns.reduce((sum, column) => sum + leastWidth(column), selectable ? SELECT_WIDTH : 0);
 
-function leastWidth({ width, minWidth = AUTO_FLOOR }: Pick<Column<never>, "width" | "minWidth">): number {
-  if (width === "auto") return minWidth;
+function leastWidth({ width, minWidth: floor = AUTO_FLOOR }: Pick<Column<never>, "width" | "minWidth">): number {
+  if (width === "auto") return floor;
   return width.endsWith("%") ? SHARE_FLOOR : Number.parseFloat(width);
 }
 

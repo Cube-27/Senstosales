@@ -27,7 +27,7 @@ function roundDiv(n: number, unit: number): number {
   return up * 2 >= unit ? floor + 1 : floor;
 }
 
-/** GEMC amounts and rates show up to 5 dp, others 2 (A-12). */
+/** GEMC amounts and rates use 5 dp, others 2 (A-12). */
 interface Precision {
   readonly gemc: boolean;
 }
@@ -65,7 +65,7 @@ export const fmtQty = (q: Qty): string => groupDecimal(qtyToString(q));
  */
 export function fmtRate(m: Money, precision: Precision): string {
   const [int = "", frac = ""] = fmtPlain(m, precision).split(".");
-  return `${groupDecimal(int)}.${frac.padEnd(precision.gemc ? MONEY_DP : 2, "0")}`;
+  return groupDecimal(`${int}.${frac.padEnd(precision.gemc ? MONEY_DP : 2, "0")}`);
 }
 
 /**

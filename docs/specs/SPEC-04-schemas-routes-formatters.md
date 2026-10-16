@@ -71,7 +71,7 @@ bhel session (start, captcha, otp; SPEC-19), search, dashboard (summary, activit
 Behaviour matches the legacy frontend's visible formatting (A-2), rebuilt from scratch (C16): Indian digit
 grouping, currency sign, rate and value precision (5 dp for GEMC, 2 dp otherwise; A-12), legacy date display
 format. On screen, amounts and rates always show at least two decimals (`₹500.00`, GEMC `₹719.20`), so a column's
-amounts line up; legacy dropped trailing zeros (owner-approved E2E fix UI-MISC, 2026-10-15). Inputs are branded integers; outputs strings. The same functions feed the screens and the exports.
+amounts line up; legacy dropped trailing zeros (owner-approved E2E fix UI-MISC, 2026-10-15). A GEMC amount shows all five decimals, and a list column that holds GEMC and other amounts shows 2 dp for every row (D-0626). Quantities show exactly, to 3 dp without trailing zeros (`12.345`, `1,234`), not rounded to whole units as legacy did (E2E round 2, D-0625; EC-21). Inputs are branded integers; outputs strings. The same functions feed the screens and the exports.
 
 ## 5. Invariants
 

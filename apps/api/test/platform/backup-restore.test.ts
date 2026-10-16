@@ -24,7 +24,7 @@ import { createOnboardingService } from "../../src/services/onboarding.ts";
 import { restoreService } from "../../src/services/restore.ts";
 import { supplierRef } from "../../src/services/supplier.ts";
 import { gate, json, memoryLogger, testApp } from "../helpers.ts";
-import { fixedClock, NOW, SUPPLIER, supplierDb } from "../service-deps.ts";
+import { fixedClock, memoryStorage, NOW, SUPPLIER, supplierDb } from "../service-deps.ts";
 
 const TODAY = "daily-2025-06-01.db";
 const SAFETY = "safety-20250601T053000Z.db";
@@ -58,8 +58,14 @@ function harness(wrap: (files: BackupFiles) => BackupFiles = (files) => files) {
   );
   const jobs = jobsService({ db, clock: fixedClock, jobs: runner });
   const supplierId = supplierRef(db);
-  const onboarding = createOnboardingService({ db, clock: fixedClock, supplierId });
-  const restore = restoreService({ db, clock: fixedClock, backups, logger, supplierId });
+  const onboarding = createOnboardingService({
+    db,
+    clock: fixedClock,
+    jobs: runner,
+    storage: memoryStorage(),
+    supplierId,
+  });
+  const restore = restoreService({ db, clock: fixedClock, backups, logger });
   const { send } = testApp({ ...jobsRoutes(jobs), ...restoreRoutes(restore) });
   const daily = () => startDailyBackup({ clock: fixedClock, backups, jobs, logger });
   return { send, daily, logger, onboarding };

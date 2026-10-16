@@ -10,17 +10,13 @@ export type Supplier = repo.Supplier;
 export type SupplierBody = Omit<Supplier, "id">;
 
 /**
- * The supplier id, which every other write belongs to. Once found it is kept: no route deletes the supplier, so the
- * onboarding gate and the services read it without a query. A restore replaces the data, so it `forget`s the id.
+ * The supplier id, which every other write belongs to. Read on every call, never kept: a restore can replace the data
+ * with a backup that holds another supplier or none, and the onboarding gate must see that at once (N-RESTORE).
  */
 export function supplierRef(db: Db) {
-  let known: string | undefined;
-  const find = async (): Promise<string | undefined> => (known ??= (await repo.findSupplierId(db)) ?? undefined);
+  const find = async (): Promise<string | undefined> => (await repo.findSupplierId(db)) ?? undefined;
   return {
     find,
-    forget(): void {
-      known = undefined;
-    },
     async require(): Promise<string> {
       const id = await find();
       if (id === undefined) throw onboardingRequired();
