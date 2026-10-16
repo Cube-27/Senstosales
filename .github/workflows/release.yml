@@ -1,9 +1,11 @@
 # Release (SPEC-20 PR 5, INV-93, INV-105). A `v<VERSION>` tag builds the per-user NSIS installer (unsigned in v1,
-# A-25), signs it for the updater with the Tauri key (repo secrets TAURI_SIGNING_PRIVATE_KEY and
-# TAURI_SIGNING_PRIVATE_KEY_PASSWORD, H6), smoke-tests it, writes latest.json and publishes the three files as the
-# GitHub release `v<VERSION>`. The app's updater reads the newest release's latest.json (tauri.conf.json).
+# A-25), signs it for the updater with the Tauri key (secrets TAURI_SIGNING_PRIVATE_KEY and
+# TAURI_SIGNING_PRIVATE_KEY_PASSWORD, H6; H10 moves them into the `release` environment, which only tag runs enter), smoke-tests it, writes latest.json
+# and publishes the three files as the GitHub release `v<VERSION>`. The app's updater reads the newest release's
+# latest.json (tauri.conf.json).
 # A pull request that changes the release files, or a manual run, is a dry run: the same build, signing and manifest,
-# kept as a workflow artifact for 7 days. Only a tag publishes.
+# kept as a workflow artifact for 7 days, but signed with a key made for the run, so branch code never gets the release
+# key. Only a tag publishes.
 # To release: set VERSION, run `node tools/release/src/stamp-version.ts`, merge, then tag main:
 #   git tag v<VERSION> origin/main && git push origin v<VERSION>
 # Every action is pinned to a full commit SHA with its version in a comment, as in ci.yml.
@@ -17,6 +19,8 @@ on:
       - .github/workflows/release.yml
       - tools/release/src/stamp-version.ts
       - tools/release/src/updater-manifest.ts
+      - apps/desktop/src-tauri/tauri.conf.json
+      - VERSION
   workflow_dispatch:
 
 permissions:
@@ -28,8 +32,8 @@ concurrency:
 
 jobs:
   build:
-    # Pull requests from forks get no secrets, so they cannot sign.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Only a tag run enters `release`, the environment that holds the signing secrets.
+    environment: ${{ github.ref_type == 'tag' && 'release' || '' }}
     runs-on: windows-2025
     defaults:
       run:
@@ -64,16 +68,31 @@ jobs:
             echo "::error::Tag $TAG does not match VERSION $version."
             exit 1
           fi
+      - name: Throwaway signing key (dry run)
+        if: github.ref_type != 'tag'
+        working-directory: apps/desktop
+        run: |
+          pnpm exec tauri signer generate --ci --password dry-run --write-keys dry-run.key
+          {
+            echo "DRY_RUN_KEY=$(cat dry-run.key)"
+            echo "DRY_RUN_PASSWORD=dry-run"
+            echo "DRY_RUN_PUBKEY=$(cat dry-run.key.pub)"
+          } >> "$GITHUB_ENV"
+          rm dry-run.key dry-run.key.pub
       - name: Build and sign the installer
         env:
           TAURI_CONFIG: '{"bundle":{"createUpdaterArtifacts":true}}'
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ github.ref_type == 'tag' && secrets.TAURI_SIGNING_PRIVATE_KEY || env.DRY_RUN_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ github.ref_type == 'tag' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || env.DRY_RUN_PASSWORD }}
         run: pnpm build:desktop
       - run: node apps/desktop/test/smoke.ts
-      - run: >-
-          node tools/release/src/updater-manifest.ts apps/desktop/src-tauri/target/release/bundle/nsis
-          "${{ github.server_url }}/${{ github.repository }}/releases/download"
+      # A tag run checks the signature against the committed pubkey; a dry run against its throwaway key.
+      - name: Write latest.json
+        env:
+          DOWNLOAD_BASE: ${{ github.server_url }}/${{ github.repository }}/releases/download
+        run: |
+          pubkey="${DRY_RUN_PUBKEY:-$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').plugins.updater.pubkey")}"
+          node tools/release/src/updater-manifest.ts apps/desktop/src-tauri/target/release/bundle/nsis "$DOWNLOAD_BASE" "$pubkey"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release

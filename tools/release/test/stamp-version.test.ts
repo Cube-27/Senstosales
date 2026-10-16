@@ -31,6 +31,10 @@ describe("stamp", () => {
     expect(stamp(text, "2.0.1")).toBe('{\n  "name": "@x/a",\n  "version": "2.0.1",\n  "private": true\n}\n');
   });
 
+  it("adds a version after a name that is the last field", () => {
+    expect(stamp('{\n  "name": "@x/a"\n}\n', "2.0.1")).toBe('{\n  "name": "@x/a",\n  "version": "2.0.1"\n}\n');
+  });
+
   it("changes only the top-level version in tauri.conf.json", () => {
     const text = '{\n  "productName": "S",\n  "version": "0.1.0",\n  "plugins": { "x": { "version": "9" } }\n}\n';
     expect(stamp(text, "1.0.0")).toBe(

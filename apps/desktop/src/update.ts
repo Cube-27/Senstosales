@@ -13,6 +13,7 @@ export interface UpdateDeps {
   check(): Promise<Update | null>;
   ask(message: string): Promise<boolean>;
   stopSidecar(): Promise<void>;
+  quit(): Promise<void>;
   log(line: string): Promise<void>;
 }
 
@@ -22,7 +23,7 @@ const question = (version: string) =>
 
 /** Offers a newer release once per start. A failed check or download (offline, no release yet) is only logged; an
  * install failure, after the sidecar has stopped, is thrown for the caller to report. */
-export async function offerUpdate({ check, ask, stopSidecar, log }: UpdateDeps): Promise<void> {
+export async function offerUpdate({ check, ask, stopSidecar, quit, log }: UpdateDeps): Promise<void> {
   let update: Update | null;
   try {
     update = await check();
@@ -35,4 +36,6 @@ export async function offerUpdate({ check, ask, stopSidecar, log }: UpdateDeps):
   if (!(await ask(question(update.version)))) return;
   await stopSidecar();
   await update.install();
+  // On Windows the installer start already ends the app; this covers an install that returns.
+  await quit();
 }

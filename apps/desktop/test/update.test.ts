@@ -25,16 +25,17 @@ function harness({ found = true, answer = true, fail }: { found?: boolean; answe
       return answer;
     },
     stopSidecar: () => step("stop sidecar"),
+    quit: () => step("quit"),
     log: async (line: string) => void steps.push(`log: ${line}`),
   };
   return { steps, deps };
 }
 
 describe("offerUpdate", () => {
-  it("downloads first, asks, then stops the sidecar and installs", async () => {
+  it("downloads first, asks, then stops the sidecar, installs and quits", async () => {
     const { steps, deps } = harness();
     await offerUpdate(deps);
-    expect(steps).toEqual(["check", "download", `ask: ${QUESTION}`, "stop sidecar", "install"]);
+    expect(steps).toEqual(["check", "download", `ask: ${QUESTION}`, "stop sidecar", "install", "quit"]);
   });
 
   it("does nothing more when this is the latest version", async () => {

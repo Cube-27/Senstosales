@@ -26,6 +26,8 @@ const NOT_ANSWERING = "SenstoSales started but did not answer. Close it and star
 const HEALTH = { attempts: 200, intervalMs: 50 };
 
 let quitting = false;
+/** Set when the sidecar is stopped for the installer, so its exit is not reported as a crash. */
+let updating = false;
 
 /** Closes the app window, if open, then this one; with no window left the app exits. Runs once: destroying `main`
  * calls it again. */
@@ -74,7 +76,7 @@ async function start(): Promise<void> {
   ]);
   if (problem !== null) return fail(COULD_NOT_START_TITLE, problem);
   await info(`sidecar ready on port ${startup.port}`);
-  void watch.exit.then((message) => (quitting ? undefined : fail(STOPPED_TITLE, message)));
+  void watch.exit.then((message) => (quitting || updating ? undefined : fail(STOPPED_TITLE, message)));
 
   const app = new WebviewWindow("main", {
     url: `${base}/`,
@@ -88,15 +90,13 @@ async function start(): Promise<void> {
   await app.once("tauri://destroyed", () => void quit());
   await addTray(app);
 
-  // Quitting first, so the sidecar stopping for the installer is not reported as a crash.
   const stopSidecar = async () => {
-    quitting = true;
+    updating = true;
     await child.kill();
   };
   const askInstall = (message: string) =>
     ask(message, { title: "SenstoSales update", okLabel: "Install now", cancelLabel: "Later" });
-  void offerUpdate({ check, ask: askInstall, stopSidecar, log: info }).catch((err: unknown) => {
-    quitting = false;
+  void offerUpdate({ check, ask: askInstall, stopSidecar, quit, log: info }).catch((err: unknown) => {
     void error(`update install failed: ${err instanceof Error ? err.message : String(err)}`);
     return fail(UPDATE_FAILED_TITLE, UPDATE_FAILED);
   });
