@@ -121,6 +121,9 @@ Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE r
 | R2-B  | UI-SHIFT: ten-row window kept (§12.3), check measures the scroll box                                     | done (#97) | D-0631; 0 shifts.                                                                    |
 | R2-B  | A pre-onboarding restore leads to onboarding (N-RESTORE)                                                 | done (#97) | D-0632.                                                                              |
 | R2-B  | SRV detail shows an empty RECVD as empty; labels kept (C7); PERF-02 met with #96                         | done (#97) | D-0633, D-0634.                                                                      |
+| R3    | DC Lot No. typed on the header and printed on the lot line (N-DOC-LOT); TC lines stay notes              | done (#99) | D-0640, D-0641; migration 0005; EC-67 admitted.                                      |
+| R3    | "Daily Reports" title (N-LABEL); blank packets count 1 in the daily summary (N-DISP-PK)                  | done (#99) | D-0642, D-0643; rev 1.13; INV-116, INV-120.                                          |
+| R3    | Tracker pending value whole at 1366 (N-TRK-VAL); exports and screens under 1 s (N-PERF-REC, N-PERF-UI)   | done (#99) | D-0644..D-0646; tracked `__pycache__` removed.                                       |
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 

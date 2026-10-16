@@ -253,3 +253,11 @@ Cross-cutting, process and owner items.
 - Alternatives: a detached child plus signal forwarding in the script (only `pnpm start` would stop cleanly); putting the script in `tools/release` (that package is about releases).
 - Why: Owner asked for one command to run the app. Handling the signals in the entry gives a clean stop however it is run.
 - Reversible: yes.
+
+### D-0646 — Built assets are cached for good; index.html is checked on each load
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: The SPA server sends `Cache-Control: public, max-age=31536000, immutable` for `assets/*` (content-hashed names) and `no-cache` for `index.html` and other files.
+- Alternatives: No cache headers (every load fetched every script and font again).
+- Why: N-PERF-UI: the dashboard and SRV screens settled over 1 s, with fonts queued behind API work.
+- Reversible: yes.
