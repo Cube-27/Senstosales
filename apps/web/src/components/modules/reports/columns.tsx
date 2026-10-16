@@ -104,7 +104,7 @@ export const DISPATCH_COLUMNS: Column<DispatchRow>[] = [
     align: "right",
     render: (r) => <span className="tabular-nums">{`${fmtQty(r.dspQty)} ${r.unit ?? ""}`.trim()}</span>,
   },
-  { key: "packets", header: "Packets", width: "80px", align: "right", render: (r) => r.packets ?? "-" },
+  { key: "packets", header: "Packets", width: "80px", align: "right", render: (r) => r.packets },
   { key: "poNumber", header: "PO #", width: "120px", title: (r) => r.poNumber, render: poLink },
   {
     key: "gemcNumber",

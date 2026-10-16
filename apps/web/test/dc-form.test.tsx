@@ -25,6 +25,7 @@ const DEFAULTS = {
   remarks: null,
   invoiceNumber: null,
   invoiceDate: null,
+  lotNo: null,
   supplierName: "Example Supplier",
   supplierAddress: "1 Example Road",
   supplierGstin: "TESTGSTIN0001",
@@ -106,6 +107,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
     // 12 against a balance of 6: no cap; the flag comes back after save (A-7).
     fireEvent.change(screen.getByLabelText("Dispatch qty of item 10"), { target: { value: "12" } });
     fireEvent.change(screen.getByLabelText("Packets of item 10"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Lot No."), { target: { value: " 12345 - Example Agency " } });
     expect(screen.getByText("Guarantee Certificate No. 17 Dt. 02/05/2025")).toBeTruthy();
     expect(screen.getByText("Consignment value of BHEL PO: ₹1,200.00")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Add Note" }));
@@ -123,6 +125,7 @@ describe("/dc/create (SPEC-18 PR 2)", () => {
       dcDate: "2025-05-02",
       gcNumber: null,
       gcDate: null,
+      lotNo: "12345 - Example Agency",
       remarks: "Packed in two cases",
       items: [{ poItemId: ITEM_A, dspQty: "12", packets: 3 }],
     });

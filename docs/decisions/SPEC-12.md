@@ -316,3 +316,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: 5 dp on a GEMC PO.
 - Why: The owner's DCs; the value is net (owner 2026-10-16). INV-18 covers invoice amounts.
 - Reversible: yes.
+
+### D-0640 — The DC's Lot No. is a typed header field
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: Migration 0005 adds `dc.lot_no`, free text on the create form and the edit dialog; the DC sheet prints `Lot No. <text>`, or `Lot No.` alone when blank. A create without it stores none; an edit without it keeps the stored one. Replaces D-0613.
+- Alternatives: Derive it from the PO lots; keep the label alone.
+- Why: Owner 2026-10-16: the DC's lot is not the PO lot, and the owner's DCs carry it (EC-67 admitted, rev 1.13).
+- Reversible: yes.
+
+### D-0641 — The TC lines stay as the DC's notes
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: No TC number, date or "of" fields; the user types each TC line as a note (remarks 4 to 6), and the Dimension Report line still follows Our Ref.
+- Alternatives: One structured TC field set, as legacy's writer read (its DB had no such columns, so legacy printed a blank `TC No  dt.  Of`).
+- Why: The owner's DCs carry two TC lines in different wording; notes print them as typed, one field set cannot.
+- Reversible: yes.

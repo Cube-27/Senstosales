@@ -371,3 +371,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: The lot's code only.
 - Why: Owner 2026-10-16: packets from the invoice line, the department from the PO lot's destination code; the DC's own department when the user filled it in.
 - Reversible: yes.
+
+### D-0643 — A line with no packets counts as 1 in the daily summary
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: One domain rule, `linePackets` (INV-117, INV-120), gives the invoice workbook and the daily dispatch summary (list, rows and TOTAL) 1 packet for a line without any.
+- Alternatives: Blank in the summary, 1 on the invoice (round 2).
+- Why: N-DISP-PK: the two documents disagreed.
+- Reversible: yes.
+
+### D-0644 — Exports read 2000-row pages and send 64 KB chunks
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: `keysetRows` reads 2000 rows a page (was 500); the HTTP body joins the writers' pieces into chunks of at least 64 KB. A cancelled download reads at most two pages.
+- Alternatives: An index on the sort key (an expression over the PO join); a page size per caller.
+- Why: N-PERF-REC: each page sorted every remaining row again, and each small piece cost a socket write; the all-dates reconciliation export took 1.2 s on the owner's data.
+- Reversible: yes.

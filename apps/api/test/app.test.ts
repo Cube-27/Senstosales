@@ -116,6 +116,16 @@ describe("mounting from the route table", () => {
     expect(await res.text()).toBe("a,b\r\n1,2\r\n3");
   });
 
+  it("joins a download's small pieces into chunks of at least 64 KB, the last one shorter (N-PERF-REC)", async () => {
+    async function* chunks() {
+      for (let i = 0; i < 100; i++) yield "x".repeat(1000);
+    }
+    const { send } = testApp({ "invoice.export": () => ({ fileName: "List.csv", chunks: chunks() }) });
+    const sizes: number[] = [];
+    for await (const chunk of (await send("/api/invoice/export")).body!) sizes.push(chunk.length);
+    expect(sizes).toEqual([66_000, 34_000]);
+  });
+
   // SPEC-13 §4.3: an error mid-stream fails the download instead of ending it as a short file.
   it("fails the body when the source fails mid-stream", async () => {
     async function* chunks() {

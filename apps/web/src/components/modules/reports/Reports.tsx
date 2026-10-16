@@ -146,7 +146,7 @@ function ReportActions(p: Readonly<ReportActionsProps>) {
 }
 
 /**
- * `/reports` (SPEC-17 §2): the legacy Operations Insights screen. Three tabs over the report lists, a search box, the
+ * `/reports` (SPEC-17 §2): the Daily Reports screen. Three tabs over the report lists, a search box, the
  * date range with Reset, and Download: the tab's workbook for the range, or the selected rows' POs (export-selected).
  * The daily dispatch tab (A-16 reversed) shares the range: one day picked as both ends gives that day's summary.
  */
@@ -189,7 +189,7 @@ export function Reports() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Operations Insights"
+        title="Daily Reports"
         subtitle="Historical analysis and reconciliation registers"
         action={
           <ReportActions

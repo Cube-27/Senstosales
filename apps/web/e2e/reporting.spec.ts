@@ -168,7 +168,7 @@ test("reports: tabs move nothing; Download saves the tab's workbook and a select
   await expect(page.getByRole("button", { name: "Daily Dispatch" })).toHaveCount(0);
   await expect(page.getByRole("cell", { name: "Synthetic part 20" })).toBeVisible();
   const around = {
-    header: page.getByRole("heading", { level: 1, name: "Operations Insights" }),
+    header: page.getByRole("heading", { level: 1, name: "Daily Reports" }),
     tabs: page.getByRole("group", { name: "Report" }),
     table: page.locator("table"),
     pager: page.getByRole("navigation", { name: "Pagination" }),
@@ -200,7 +200,7 @@ const SCREENS = [
   { name: "deviations", path: "/deviations?resolved=true", heading: "Deviations" },
   { name: "ledger", path: "/system/ledger", heading: "System Audit Ledger" },
   { name: "delivery-tracker", path: "/delivery-tracker", heading: "Delivery Tracker" },
-  { name: "reports", path: "/reports", heading: "Operations Insights" },
+  { name: "reports", path: "/reports", heading: "Daily Reports" },
 ] as const;
 
 for (const theme of ["light", "dark"] as const) {

@@ -43,6 +43,7 @@ const DC_HEADER = {
   remarks: null,
   invoiceNumber: null,
   invoiceDate: null,
+  lotNo: null,
   supplierName: null,
   supplierAddress: null,
   supplierGstin: null,

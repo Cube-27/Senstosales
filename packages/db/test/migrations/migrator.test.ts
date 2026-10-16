@@ -38,33 +38,34 @@ async function migrated(): Promise<NodeDb> {
 }
 
 describe("MIGRATIONS", () => {
-  test("0004 keeps source rows verbatim and is the latest version", () => {
+  test("0005 adds the DC lot line and is the latest version", () => {
     expect(MIGRATIONS.map((m) => [m.version, m.name])).toEqual([
       [1, "init"],
       [2, "lookup_indexes"],
       [3, "document_fields"],
       [4, "verbatim_source_rows"],
+      [5, "dc_lot_no"],
     ]);
-    expect(LATEST_VERSION).toBe(4);
+    expect(LATEST_VERSION).toBe(5);
   });
 });
 
 describe("planMigrations", () => {
   test("an empty DB plans every migration", () => {
-    expect(planMigrations(0).map((m) => m.version)).toEqual([1, 2, 3, 4]);
+    expect(planMigrations(0).map((m) => m.version)).toEqual([1, 2, 3, 4, 5]);
   });
 
   test("a version-1 DB plans 0002 onwards", () => {
-    expect(planMigrations(1).map((m) => m.version)).toEqual([2, 3, 4]);
+    expect(planMigrations(1).map((m) => m.version)).toEqual([2, 3, 4, 5]);
   });
 
   test("an up-to-date DB plans nothing", () => {
-    expect(planMigrations(4)).toEqual([]);
+    expect(planMigrations(5)).toEqual([]);
   });
 
   test("a DB newer than the app is refused in plain words", () => {
-    expect(() => planMigrations(5)).toThrow(NewerDatabaseError);
-    expect(() => planMigrations(5)).toThrow("This data was saved by a newer version of SenstoSales.");
+    expect(() => planMigrations(6)).toThrow(NewerDatabaseError);
+    expect(() => planMigrations(6)).toThrow("This data was saved by a newer version of SenstoSales.");
   });
 
   test("only migrations above the current version are planned", () => {
@@ -83,13 +84,14 @@ describe("applyMigrations", () => {
 
   test("an empty DB migrates to the latest version and records it", async () => {
     const db = await migrated();
-    expect(await readSchemaVersion(db)).toBe(4);
+    expect(await readSchemaVersion(db)).toBe(5);
     const rows = await db.query(db.build.select().from(schema.schemaMigration));
     expect(rows).toEqual([
       { version: 1, name: "init", appliedAt: AT, appVersion: "0.1.0" },
       { version: 2, name: "lookup_indexes", appliedAt: AT, appVersion: "0.1.0" },
       { version: 3, name: "document_fields", appliedAt: AT, appVersion: "0.1.0" },
       { version: 4, name: "verbatim_source_rows", appliedAt: AT, appVersion: "0.1.0" },
+      { version: 5, name: "dc_lot_no", appliedAt: AT, appVersion: "0.1.0" },
     ]);
   });
 
@@ -97,13 +99,14 @@ describe("applyMigrations", () => {
     const db = open();
     await applyMigrations(db, planMigrations(0).slice(0, 1), { appVersion: "0.1.0", appliedAt: AT });
     await applyMigrations(db, planMigrations(await readSchemaVersion(db)), { appVersion: "0.2.0", appliedAt: AT });
-    expect(await readSchemaVersion(db)).toBe(4);
+    expect(await readSchemaVersion(db)).toBe(5);
     const rows = await db.query(db.build.select().from(schema.schemaMigration));
     expect(rows.map((r) => [r.version, r.appVersion])).toEqual([
       [1, "0.1.0"],
       [2, "0.2.0"],
       [3, "0.2.0"],
       [4, "0.2.0"],
+      [5, "0.2.0"],
     ]);
   });
 
@@ -162,7 +165,7 @@ describe("applyMigrations", () => {
     expect(plan).toEqual([]);
     await applyMigrations(db, plan, { appVersion: "0.2.0", appliedAt: AT });
     expect(await totalChanges(db)).toBe(before);
-    expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(4);
+    expect(await db.query(db.build.select().from(schema.schemaMigration))).toHaveLength(5);
   });
 
   test("an empty plan sends no batch, so it never takes the write lock", async () => {
@@ -179,9 +182,9 @@ describe("applyMigrations", () => {
 
   test("a DB carrying a newer version is refused", async () => {
     const db = await migrated();
-    await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (5, 'future', ${AT}, '9.0.0')`)]);
+    await db.batch([db.build.run(sql`INSERT INTO schema_migration VALUES (6, 'future', ${AT}, '9.0.0')`)]);
     const version = await readSchemaVersion(db);
-    expect(version).toBe(5);
+    expect(version).toBe(6);
     expect(() => planMigrations(version)).toThrow(NewerDatabaseError);
   });
 

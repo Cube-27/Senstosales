@@ -195,8 +195,9 @@ describe("streaming 10,000 POs", () => {
       await reader.read();
       await reader.cancel();
       const atCancel = queries;
-      // The supplier, then a page of 500 and its item counts per read-ahead; all 20 pages would be 41 reads.
-      expect(atCancel).toBeLessThan(10);
+      // The supplier, then pages of 2000 with their item counts, 100 ids a read (D1): 21 reads a page. The first
+      // 64 KB chunk takes two pages, 43 reads; all five pages would be 106.
+      expect(atCancel).toBeLessThanOrEqual(43);
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect(queries).toBe(atCancel);
     } finally {

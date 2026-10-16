@@ -108,6 +108,7 @@ describe("/dc/:id (SPEC-18 PR 1)", () => {
     fireEvent.change(within(dialog).getByLabelText("Department"), { target: { value: "" } });
     // The invoice the DC sheet cites, filled in by the user (EC-47).
     fireEvent.change(within(dialog).getByLabelText("Invoice No"), { target: { value: " INV-17 " } });
+    fireEvent.change(within(dialog).getByLabelText("Lot No."), { target: { value: "12345 - Example Agency" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(calls.find((c) => c.method === "PUT")?.body).toEqual({
@@ -119,6 +120,7 @@ describe("/dc/:id (SPEC-18 PR 1)", () => {
       consigneeName: "Example Consignee Two",
       departmentNo: null,
       invoiceNumber: "INV-17",
+      lotNo: "12345 - Example Agency",
     });
     expect(await screen.findByText("Example Consignee Two")).toBeTruthy();
   });

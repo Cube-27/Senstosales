@@ -135,18 +135,47 @@ async function readJson(c: Context): Promise<unknown> {
 }
 
 /**
+ * Bytes per body chunk. The writers yield many small pieces, and each write to the socket waits a turn of the event
+ * loop, so pieces go out joined: the owner's all-dates reconciliation export took 1 s over HTTP piece by piece
+ * against 0.2 s in process (N-PERF-REC).
+ */
+const BODY_CHUNK = 64 * 1024;
+
+const encoder = new TextEncoder();
+
+/** The source's next pieces joined until {@link BODY_CHUNK} bytes or its end; null once it is done. */
+async function nextChunk(source: AsyncIterator<Uint8Array | string>): Promise<Uint8Array | null> {
+  const parts: Uint8Array[] = [];
+  let size = 0;
+  while (size < BODY_CHUNK) {
+    const next = await source.next();
+    if (next.done) break;
+    const part = typeof next.value === "string" ? encoder.encode(next.value) : next.value;
+    parts.push(part);
+    size += part.length;
+  }
+  if (parts.length <= 1) return parts[0] ?? null;
+  const chunk = new Uint8Array(size);
+  let at = 0;
+  for (const part of parts) {
+    chunk.set(part, at);
+    at += part.length;
+  }
+  return chunk;
+}
+
+/**
  * The chunks as a response body, each pulled only when the client reads (INV-99). A source error errors the body, so
  * the client sees a failed download rather than a short file; a client that goes away closes the source.
  */
 function body(chunks: AsyncIterable<Uint8Array | string>): ReadableStream<Uint8Array> {
   const source = chunks[Symbol.asyncIterator]();
-  const encoder = new TextEncoder();
   return new ReadableStream(
     {
       async pull(controller) {
-        const next = await source.next();
-        if (next.done) controller.close();
-        else controller.enqueue(typeof next.value === "string" ? encoder.encode(next.value) : next.value);
+        const chunk = await nextChunk(source);
+        if (chunk === null) controller.close();
+        else controller.enqueue(chunk);
       },
       async cancel() {
         await source.return?.();

@@ -67,11 +67,18 @@ describe("DC create: GC number and date may be blank (INV-26)", () => {
   });
 
   it("takes a body without the invoice the sheet cites (EC-47), as callers that predate it send", () => {
-    const { invoiceNumber: _, invoiceDate: __, ...header } = dcHeader;
+    const { invoiceNumber: _, invoiceDate: __, lotNo: ___, ...header } = dcHeader;
     const create = { poId: ID, number: "12", dcDate: "2025-04-03", gcNumber: null, gcDate: null, ...header, items: [] };
-    expect(routes["dc.create"].body.parse(create)).toMatchObject({ invoiceNumber: null, invoiceDate: null });
+    expect(routes["dc.create"].body.parse(create)).toMatchObject({
+      invoiceNumber: null,
+      invoiceDate: null,
+      lotNo: null,
+    });
     const update = { number: "12", dcDate: "2025-04-03", version: 1, gcNumber: null, gcDate: null, ...header };
-    expect(routes["dc.update"].body.parse(update)).toMatchObject({ invoiceNumber: null, invoiceDate: null });
+    const parsed = routes["dc.update"].body.parse(update);
+    expect(parsed).toMatchObject({ invoiceNumber: null, invoiceDate: null });
+    // An edit without the lot line leaves it out, so the stored one stays.
+    expect("lotNo" in parsed).toBe(false);
   });
 });
 

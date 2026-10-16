@@ -36,6 +36,8 @@ export const dc = sqliteTable(
     /** The invoice the DC sheet cites, filled in by the user (EC-47). */
     invoiceNumber: text("invoice_number"),
     invoiceDate: isoDate("invoice_date"),
+    /** The lot line of the DC sheet, typed by the user; not a PO lot (owner, 2026-10-16). */
+    lotNo: text("lot_no"),
   },
   (t) => [
     // INV-22: DC numbers restart each FY. INV-26: so do GC numbers, independently of DC numbers.

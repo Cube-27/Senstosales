@@ -90,6 +90,16 @@ describe("PUT /api/dc/:id", () => {
     expect(res.body).toMatchObject({ number: "9", dcDate: "2025-04-10", gcNumber: "9", gcDate: "2025-04-10" });
   });
 
+  test("saves the lot line's text (owner, 2026-10-16)", async () => {
+    const r = await withDc7();
+    expect(r.dc7).toMatchObject({ lotNo: null });
+    const res = await put(r, r.dc7.id, edit({ lotNo: "12345 - Example Agency" }));
+    expect(res.body).toMatchObject({ lotNo: "12345 - Example Agency", version: 2 });
+    // A caller that predates the field sends none: the stored lot stays.
+    const { lotNo: _, ...older } = edit({ version: 2 });
+    expect((await put(r, r.dc7.id, older)).body).toMatchObject({ lotNo: "12345 - Example Agency", version: 3 });
+  });
+
   test("a stale version is a 409 and changes nothing (INV-95)", async () => {
     const r = await withDc7();
     expect((await put(r, r.dc7.id, edit({ vehicleNo: "VEH-2" }))).status).toBe(200);

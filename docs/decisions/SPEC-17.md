@@ -153,3 +153,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Rename either to match the other.
 - Why: Legacy shows both, the sidebar item and the page title; both are frozen labels (C7).
 - Reversible: yes.
+
+### D-0642 — "Daily Reports" everywhere
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: The `/reports` page title reads "Daily Reports", as the sidebar. Replaces D-0633.
+- Alternatives: Keep legacy's two labels; "Operations Insights" in the sidebar too.
+- Why: Owner 2026-10-16 (N-LABEL); ARCHITECTURE rev 1.13.
+- Reversible: yes.

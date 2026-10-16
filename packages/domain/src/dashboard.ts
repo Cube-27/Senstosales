@@ -20,7 +20,7 @@ export function rangeStart(range: DashboardRange, today: IsoDate): IsoDate | nul
 
 /**
  * INV-113: a report's period when none is chosen: the start of today's FY to today (owner, 2026-10-15; legacy used
- * yesterday to today on Operations Insights and the 30 days to today on reconciliation).
+ * yesterday to today on Daily Reports and the 30 days to today on reconciliation).
  */
 export const defaultReportRange = (today: IsoDate): { from: IsoDate; to: IsoDate } => ({
   from: fyStartOf(today),

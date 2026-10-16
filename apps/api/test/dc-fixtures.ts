@@ -61,6 +61,7 @@ export const HEADER = {
   remarks: null,
   invoiceNumber: null,
   invoiceDate: null,
+  lotNo: null,
   supplierName: "Example Supplier",
   supplierAddress: "1 Example Road",
   supplierGstin: "TESTGSTIN0001",

@@ -68,6 +68,7 @@ const BLANK_HEADER = {
   remarks: null,
   invoiceNumber: null,
   invoiceDate: null,
+  lotNo: null,
 } satisfies Partial<DcCreate>;
 
 /** The plain reason a DC delete is refused (INV-35). */

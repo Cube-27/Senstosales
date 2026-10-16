@@ -277,3 +277,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Reserve the largest page's height (contradicts §12.3; about 3,600 px of blank rows under a 10-row page).
 - Why: Agreed with the orchestrator, 2026-10-16.
 - Reversible: yes.
+
+### D-0645 — Tracker widths for the pending value
+
+- Date: 2026-10-16 · Spec/PR: E2E round 3 (#99) · Status: decided
+- Decision: Pending Value 136px, Due and Entry Date 112px, Days Overdue 124px; the largest pending value shows whole at 1366 and 1920.
+- Alternatives: Keep the shared date width and cut Days Overdue further.
+- Why: N-TRK-VAL, measured on the owner's data. Badges of items overdue 1000+ days and 3-digit lots still overflow in sorted views, as before.
+- Reversible: yes.

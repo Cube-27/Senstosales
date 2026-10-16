@@ -47,11 +47,15 @@ function after<Row>(key: readonly KeyPart<Row>[], last: Row): SQL | undefined {
   );
 }
 
-/** Every row `fetch` returns in `keyset` order, page by page, fetching a page only when the previous one has been read. */
+/**
+ * Every row `fetch` returns in `keyset` order, page by page, fetching a page only when the previous one has been read.
+ * Each page sorts every row after the cursor again, so exports read 2000 rows a page: on the owner's data the
+ * all-dates reconciliation export took 1.2 s at 500 (N-PERF-REC), and a page of 2000 rows is still small.
+ */
 export async function* keysetRows<Row>(
   keyset: Keyset<Row>,
   fetch: (page: KeysetPage) => Promise<readonly Row[]>,
-  pageSize = 500,
+  pageSize = 2000,
 ): AsyncGenerator<Row> {
   const key = [...keyset.parts, keyset.id];
   const orderBy = key.map((part) => (part.dir === "asc" ? asc(part.by) : desc(part.by)));

@@ -150,6 +150,7 @@ const EXPECTED: Record<string, string[]> = {
     "created_at text not null",
     "invoice_number text",
     "invoice_date text",
+    "lot_no text",
   ],
   dc_item: [
     "id text pk",

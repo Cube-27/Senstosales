@@ -25,6 +25,7 @@ export type { ItemQuantities, ItemQuantityInput, PoTotals, PoTotalsItem } from "
 export {
   computeItemQuantities,
   computePoTotals,
+  linePackets,
   manualPoValue,
   poUninvoicedQty,
   supplyProgressPct,

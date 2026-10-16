@@ -3494,6 +3494,13 @@
                       }
                     ]
                   },
+                  "lotNo": {
+                    "default": null,
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
                   "supplierName": {
                     "type": [
                       "string",
@@ -3966,6 +3973,12 @@
                             }
                           ]
                         },
+                        "lotNo": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "supplierName": {
                           "type": [
                             "string",
@@ -4006,6 +4019,7 @@
                         "remarks",
                         "invoiceNumber",
                         "invoiceDate",
+                        "lotNo",
                         "supplierName",
                         "supplierAddress",
                         "supplierGstin",
@@ -4449,6 +4463,12 @@
                       {
                         "type": "null"
                       }
+                    ]
+                  },
+                  "lotNo": {
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "supplierName": {
@@ -7587,16 +7607,9 @@
                             "$ref": "#/components/schemas/Qty"
                           },
                           "packets": {
-                            "anyOf": [
-                              {
-                                "type": "integer",
-                                "minimum": 0,
-                                "maximum": 9007199254740991
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
                           },
                           "gemcNumber": {
                             "type": [
@@ -10410,6 +10423,12 @@
               }
             ]
           },
+          "lotNo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "supplierName": {
             "type": [
               "string",
@@ -10465,6 +10484,7 @@
           "remarks",
           "invoiceNumber",
           "invoiceDate",
+          "lotNo",
           "supplierName",
           "supplierAddress",
           "supplierGstin",
