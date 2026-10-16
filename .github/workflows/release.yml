@@ -81,10 +81,12 @@ jobs:
           rm dry-run.key dry-run.key.pub
       - name: Build and sign the installer
         env:
-          TAURI_CONFIG: '{"bundle":{"createUpdaterArtifacts":true}}'
           TAURI_SIGNING_PRIVATE_KEY: ${{ github.ref_type == 'tag' && secrets.TAURI_SIGNING_PRIVATE_KEY || env.DRY_RUN_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ github.ref_type == 'tag' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || env.DRY_RUN_PASSWORD }}
-        run: pnpm build:desktop
+        # pnpm appends the flag to the script's last command, `tauri build`; only release builds make updater files.
+        run: |
+          echo '{"bundle":{"createUpdaterArtifacts":true}}' > "$RUNNER_TEMP/updater.conf.json"
+          pnpm build:desktop --config "$RUNNER_TEMP/updater.conf.json"
       - run: node apps/desktop/test/smoke.ts
       # A tag run checks the signature against the committed pubkey; a dry run against its throwaway key.
       - name: Write latest.json
