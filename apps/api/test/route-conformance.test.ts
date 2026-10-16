@@ -34,7 +34,13 @@ function handlers(withScraper: boolean): Handlers {
   // No test here lists or restores a backup.
   const none = () => Promise.reject(new Error("no backups in this test"));
   const backups = { list: none, create: none, delete: none, restore: none };
-  const restore = restoreService({ db, clock: fixedClock, backups, logger: memoryLogger() });
+  const restore = restoreService({
+    db,
+    clock: fixedClock,
+    backups,
+    logger: memoryLogger(),
+    supplierId: services.supplierId,
+  });
   return allRoutes(services, { health: { version: "1.2.3", db }, restore });
 }
 

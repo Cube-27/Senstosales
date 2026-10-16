@@ -11,13 +11,16 @@ export type SupplierBody = Omit<Supplier, "id">;
 
 /**
  * The supplier id, which every other write belongs to. Once found it is kept: no route deletes the supplier, so the
- * onboarding gate and the services read it without a query.
+ * onboarding gate and the services read it without a query. A restore replaces the data, so it `forget`s the id.
  */
 export function supplierRef(db: Db) {
   let known: string | undefined;
   const find = async (): Promise<string | undefined> => (known ??= (await repo.findSupplierId(db)) ?? undefined);
   return {
     find,
+    forget(): void {
+      known = undefined;
+    },
     async require(): Promise<string> {
       const id = await find();
       if (id === undefined) throw onboardingRequired();
