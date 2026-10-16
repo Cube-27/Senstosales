@@ -53,7 +53,16 @@ describe("/dc (SPEC-18 PR 1)", () => {
       "Flags",
       "Actions",
     ]);
-    expect(cells(rowOf("17")).slice(0, 8)).toEqual(["17", "02/05/2025", "4100000101", "15", "7", "3", "₹500.00", "2"]);
+    expect(cells(rowOf("17")).slice(0, 8)).toEqual([
+      "17",
+      "02/05/2025",
+      "4100000101",
+      "15",
+      "6.5",
+      "3",
+      "₹500.00",
+      "2",
+    ]);
     expect(screen.getByRole("link", { name: "4100000101" }).getAttribute("href")).toBe(
       "/po/01J00000000000000000000010",
     );

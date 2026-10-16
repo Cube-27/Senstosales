@@ -1,10 +1,9 @@
 // Display formatters shared by screens and exports, so the two never disagree (ARCHITECTURE §11.2). Output matches
 // the legacy frontend's visible strings (SPEC-04 §4.4, A-2); all arithmetic stays on the branded integers (C3).
 import type { Fy, IsoDate, Money, Qty } from "@senstosales/domain";
-import { MONEY_DP, QTY_DP, moneyToString, parseIsoDate, parseQty, qtyToString, roundMoney } from "@senstosales/domain";
+import { MONEY_DP, moneyToString, parseIsoDate, parseQty, qtyToString, roundMoney } from "@senstosales/domain";
 
 const RUPEE = "₹";
-const ONE_UNIT = 10 ** QTY_DP;
 /** Money units in one rupee, a lakh and a crore. */
 const ONE_RUPEE = 10 ** MONEY_DP;
 const LAKH = 100_000 * ONE_RUPEE;
@@ -49,17 +48,24 @@ export const moneyNumber = (m: Money, { gemc }: Precision): number =>
 /** A count of records or items: `1234567` -> `"12,34,567"`. */
 export const fmtCount = (n: number): string => (n < 0 ? `-${groupIndian(String(-n))}` : groupIndian(String(n)));
 
-/** A quantity in whole units, as legacy shows every quantity: `2.5` -> `"3"` (EC-21). */
-export const fmtQty = (q: Qty): string => fmtCount(roundDiv(q, ONE_UNIT));
+/** A decimal string with its whole part in Indian grouping: `"-123456.05"` -> `"-1,23,456.05"`. */
+function groupDecimal(text: string): string {
+  const [int = "", frac] = text.split(".");
+  const sign = int.startsWith("-") ? "-" : "";
+  return `${sign}${groupIndian(int.slice(sign.length))}${frac === undefined ? "" : `.${frac}`}`;
+}
+
+/** A quantity exactly, to its 3 dp without trailing zeros, so a fractional quantity is never rounded away on screen:
+ * `12.345` -> `"12.345"`, `1234` -> `"1,234"` (D-0625, replaces EC-21's whole units). */
+export const fmtQty = (q: Qty): string => groupDecimal(qtyToString(q));
 
 /**
- * A unit rate without the rupee sign (legacy rate cells draw it apart), always with two decimals or more, so the
- * amounts of a column line up (UI-MISC): `1234.5` -> `"1,234.50"`, GEMC `719.27966` -> `"719.27966"`.
+ * A unit rate without the rupee sign (legacy rate cells draw it apart), always at its precision's decimals, so the
+ * amounts of a column line up (UI-MISC, D-0626): `1234.5` -> `"1,234.50"`, GEMC `719.2` -> `"719.20000"`.
  */
 export function fmtRate(m: Money, precision: Precision): string {
   const [int = "", frac = ""] = fmtPlain(m, precision).split(".");
-  const sign = int.startsWith("-") ? "-" : "";
-  return `${sign}${groupIndian(int.slice(sign.length))}.${frac.padEnd(2, "0")}`;
+  return `${groupDecimal(int)}.${frac.padEnd(precision.gemc ? MONEY_DP : 2, "0")}`;
 }
 
 /**
