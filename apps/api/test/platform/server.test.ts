@@ -37,6 +37,7 @@ afterEach(async () => {
 interface Reply {
   status: number;
   type: string | undefined;
+  cache: string | undefined;
   body: string;
 }
 
@@ -47,7 +48,12 @@ function get(port: number, path: string, host = `127.0.0.1:${port}`): Promise<Re
       let body = "";
       res.setEncoding("utf8");
       res.on("data", (chunk: string) => (body += chunk));
-      res.on("end", () => resolve({ status: res.statusCode ?? 0, type: res.headers["content-type"], body }));
+      res.on("end", () => resolve({
+          status: res.statusCode ?? 0,
+          type: res.headers["content-type"],
+          cache: res.headers["cache-control"],
+          body,
+        }),);
     });
     req.on("error", reject);
     req.end();
@@ -132,12 +138,16 @@ describe("startServer", () => {
 
   it("serves the SPA: files, index.html for app paths, and 404 for missing files and unknown API paths", async () => {
     const server = await start(await webRoot());
+    // index.html is checked on every load, so a new build shows at once; the built assets carry a content hash in
+    // their names, so the browser keeps them (N-PERF-UI).
+    const page = { status: 200, type: "text/html; charset=utf-8", cache: "no-cache", body: INDEX };
 
-    expect(await get(server.port, "/")).toEqual({ status: 200, type: "text/html; charset=utf-8", body: INDEX });
-    expect(await get(server.port, "/po/1001")).toEqual({ status: 200, type: "text/html; charset=utf-8", body: INDEX });
+    expect(await get(server.port, "/")).toEqual(page);
+    expect(await get(server.port, "/po/1001")).toEqual(page);
     expect(await get(server.port, "/assets/app.js")).toEqual({
       status: 200,
       type: "text/javascript; charset=utf-8",
+      cache: "public, max-age=31536000, immutable",
       body: "console.log(1);",
     });
     expect((await get(server.port, "/assets/missing.js")).status).toBe(404);

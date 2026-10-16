@@ -14,8 +14,18 @@ const PLACEHOLDER = new TextEncoder().encode(
   '<!doctype html><html lang="en"><meta charset="utf-8"><title>SenstoSales</title><p>SenstoSales is running.</p></html>',
 );
 
-const send = (c: Context, bytes: Uint8Array, name: string): Response =>
-  c.body(new Uint8Array(bytes), 200, { "content-type": getMimeType(name) ?? "application/octet-stream" });
+/**
+ * The build names every file under `assets/` by its content hash, so the browser keeps those for good; `index.html`
+ * and any other file are checked on each load, so a new build shows at once. Without this every screen load fetched
+ * every script and font again (N-PERF-UI).
+ */
+const cacheControl = (key: string) => (key.startsWith("assets/") ? "public, max-age=31536000, immutable" : "no-cache");
+
+const send = (c: Context, bytes: Uint8Array, key: string): Response =>
+  c.body(new Uint8Array(bytes), 200, {
+    "content-type": getMimeType(key.slice(key.lastIndexOf("/") + 1)) ?? "application/octet-stream",
+    "cache-control": cacheControl(key),
+  });
 
 export function spa(files: WebFiles): MiddlewareHandler {
   return async (c, next) => {
@@ -32,7 +42,7 @@ export function spa(files: WebFiles): MiddlewareHandler {
     if (name.includes(".")) {
       // A refused key (`..`, backslashes, drive letters) is answered like a missing file.
       const file = await files.get(key).catch(() => null);
-      return file ? send(c, file, name) : next();
+      return file ? send(c, file, key) : next();
     }
     return send(c, (await files.get("index.html")) ?? PLACEHOLDER, "index.html");
   };
