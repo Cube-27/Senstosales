@@ -47,6 +47,16 @@ describe("DC workbook", () => {
     expect([sheet!.cells["I9"]?.value, sheet!.cells["D14"]?.value]).toEqual([dcCell, poCell]);
   });
 
+  it.each([
+    ["0456", 456],
+    ["1234567890123456", "1234567890123456"],
+    ["45-A", "45-A"],
+  ])("department %s prints as %j: a number only up to the 15 digits Excel holds", async (departmentNo, cell) => {
+    const one = input("dc-1");
+    const [sheet] = await build({ ...one, dc: { ...one.dc, departmentNo } });
+    expect(sheet!.cells["F15"]?.value).toBe(cell);
+  });
+
   it("EC-47: prints the invoice number and date the user filled in, else the DC's own invoice's", async () => {
     const one = input("dc-1");
     const cells = async (doc: DcDocument) => {

@@ -14,8 +14,8 @@ export const numberCell = (text: string): string | number => (/^(0|[1-9]\d{0,14}
 
 /** Legacy's department column held integers, so a number-only department prints as a number (`0456` -> 456). */
 export function departmentCell<T extends string | null>(departmentNo: T): T | number {
-  const number = departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : Number.NaN;
-  return Number.isSafeInteger(number) ? number : departmentNo;
+  // At most 15 digits, which Excel holds exactly.
+  return departmentNo !== null && /^\d{1,15}$/.test(departmentNo) ? Number(departmentNo) : departmentNo;
 }
 
 /**

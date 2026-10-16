@@ -1,6 +1,5 @@
 // What the export services share (SPEC-13 §4.2): a download's file name and chunks, written by the documents
 // package's writers from rows pulled as the client reads (INV-99).
-import type * as Documents from "@senstosales/documents";
 import type {
   Column,
   GcDocument,
@@ -11,10 +10,10 @@ import type {
   SummaryTotal,
 } from "@senstosales/documents";
 
-type Writers = typeof Documents;
-
 /** The writers, loaded on the first export: exceljs would add most of a second to every start of the app. */
 const writers = () => import("@senstosales/documents");
+
+type Writers = Awaited<ReturnType<typeof writers>>;
 
 /** Each row through `f`; an undefined result drops the row. */
 export async function* mapped<T, U>(rows: AsyncIterable<T>, f: (row: T) => U | undefined): AsyncGenerator<U> {

@@ -112,7 +112,7 @@ export const poNumbersOf = (db: Db, poIds: readonly string[]) =>
 /** The destination codes of a PO item's lots, distinct and joined by `,`; null when none has one. */
 const lotDestCodes = sql<
   string | null
->`(select group_concat(distinct ${poLot.destCode}) from ${poLot} where ${poLot.poItemId} = ${poItem.id} and trim(${poLot.destCode}) <> '')`;
+>`(select group_concat(distinct trim(${poLot.destCode})) from ${poLot} where ${poLot.poItemId} = ${poItem.id} and trim(${poLot.destCode}) <> '')`;
 
 /**
  * One page of DC lines with their DC, PO item and PO, and the invoice made from the DC (at most one, INV-30) with its

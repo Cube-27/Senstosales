@@ -29,7 +29,7 @@ describe("the daily dispatch summary", () => {
       // A DC with no department takes its item's lot destination codes.
       r.lot({ id: id("L1"), poItemId: id("I3"), lotNo: 1, delyQty: 9_000, destCode: "205" }),
       r.lot({ id: id("L2"), poItemId: id("I1"), lotNo: 1, delyQty: 50_000, destCode: "202" }),
-      r.lot({ id: id("L3"), poItemId: id("I1"), lotNo: 2, delyQty: 50_000, destCode: "202" }),
+      r.lot({ id: id("L3"), poItemId: id("I1"), lotNo: 2, delyQty: 50_000, destCode: " 202 " }),
       // Created second, so listed second, though its id sorts first.
       r.dc({
         id: id("D2"),
@@ -113,7 +113,7 @@ describe("the daily dispatch summary", () => {
     expect(got.fileName).toBe("Daily_Dispatch_2025-05-10_to_2025-05-11.xlsx");
     expect(values(got.rows[6]!).slice(1, 3)).toEqual(["Date:", "10-05-2025 to 11-05-2025"]);
     expect(got.rows.slice(9, -1).map((row) => values(row)[7])).toEqual([301, 301, 302, 303, null]);
-    // Two lots with the same destination code give it once.
+    // Two lots with the same destination code, spaced differently, give it once.
     expect(values(got.rows[12]!)[8]).toBe(202);
   });
 
