@@ -285,3 +285,11 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: One shared mutable dataset that the tests walk through in sequence.
 - Why: Each test stays independent of order; the lifecycle test still covers how the flows interact.
 - Reversible: yes.
+
+### D-0611 — A blank GEMC number on create takes the PO's
+
+- Date: 2026-10-16 · Spec/PR: SPEC-11 E2E round 2 R2-A (#96) · Status: decided
+- Decision: On create, a null or blank `gemcNumber` takes the PO's (domain `invoiceGemcNumber`); a typed one is kept. Header edit is unchanged.
+- Alternatives: Default on edit too.
+- Why: SCN-GEMC-04: the create form starts from the PO's number, so the API does the same; the edit dialog shows the stored value.
+- Reversible: yes.

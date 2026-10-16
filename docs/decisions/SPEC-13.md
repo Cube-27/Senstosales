@@ -355,3 +355,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Keep the 30-day API default and yesterday-to-today in the web.
 - Why: Owner-approved 2026-10-15; one function keeps the screen and its downloads on the same range.
 - Reversible: yes.
+
+### D-0615 — Daily dispatch summary as the owner's
+
+- Date: 2026-10-16 · Spec/PR: SPEC-13 E2E round 2 R2-A (#96) · Status: decided
+- Decision: Both summaries print the letterhead description (`invoiceDefaults.description`) in the tagline row. The daily dispatch summary adds a bold `For <supplier>` line under TOTAL in the GEMC column, writes digit-only PO, invoice and DC numbers as numbers and the department as the DC sheet does, and prints descriptions as stored (repeated lines once), as legacy printed `material_description`.
+- Alternatives: A shortened item name.
+- Why: N-DISP; the owner's sample summary; INV-120 amended, EC-41 updated.
+- Reversible: yes.
+
+### D-0616 — Daily dispatch packets and department
+
+- Date: 2026-10-16 · Spec/PR: SPEC-13 E2E round 2 R2-A (#96) · Status: decided
+- Decision: Packets are the invoice line's, else the DC line's. The department is the DC's, else the item's distinct trimmed lot destination codes joined by `,` (EC-68).
+- Alternatives: The lot's code only.
+- Why: Owner 2026-10-16: packets from the invoice line, the department from the PO lot's destination code; the DC's own department when the user filled it in.
+- Reversible: yes.

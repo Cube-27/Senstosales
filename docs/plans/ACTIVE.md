@@ -112,6 +112,10 @@ Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE r
 | FIX-4 | Settings: no currency, April-March FY only, GSTIN format; Backup now writes a manual copy                | done (#95) | D-0601..D-0603.                                                                      |
 | FIX-4 | Reset to defaults with the phrase alone, API and web                                                     | done (#95) | D-0600; EC-08 resolved.                                                              |
 | FIX-4 | Docs: ARCHITECTURE rev 1.9, 1.10, A-17; INV-80; SPEC-04, 07, 14, 15, 21; process commit                  | done (#95) | No new invariant.                                                                    |
+| R2-A  | Daily dispatch summary as the owner's: tagline, sign-off, numbers, packets, department                   | done (#96) | D-0615, D-0616; INV-120; EC-41, EC-68.                                               |
+| R2-A  | DC sheet: blank unfilled lines, `Lot No.` as legacy, value at 2 dp                                       | done (#96) | D-0612..D-0614; INV-116; EC-67.                                                      |
+| R2-A  | API GEMC default on create (SCN-GEMC-04); SRV detail `rawRcdQty` (N-SRV-RCD)                             | done (#96) | D-0610, D-0611.                                                                      |
+| R2-A  | EXP-09 verified with a test; tracker and dashboard reads under 50 ms on full data (N-PERF)               | done (#96) | D-0617.                                                                              |
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 
