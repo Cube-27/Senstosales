@@ -16,6 +16,9 @@ export interface Column<Row> {
   readonly key: string;
   readonly header: string;
   readonly width: string;
+  /** The least width of the `auto` column, in pixels: what its content needs, so a narrow window scrolls the table
+   * sideways rather than cutting it. Without it the column may shrink to `AUTO_FLOOR`. */
+  readonly minWidth?: number;
   readonly align?: "left" | "right";
   readonly sortable?: boolean;
   /** The cell's content; without it the cell shows `row[key]`. */
@@ -58,18 +61,18 @@ const SELECT_WIDTH = 40;
 
 /** The least width of a percentage column. */
 const SHARE_FLOOR = 160;
-/** The least width of the `auto` column. */
+/** The least width of an `auto` column without its own `minWidth`. */
 const AUTO_FLOOR = 48;
 
 /**
  * The table's least width: its pixel columns at their widths, each percentage column at `SHARE_FLOOR` and the `auto`
- * column at `AUTO_FLOOR`. A narrower window scrolls the table sideways instead of squeezing a column.
+ * column at its `minWidth`. A narrower window scrolls the table sideways instead of squeezing a column.
  */
-const minWidth = (columns: readonly Pick<Column<never>, "width">[], selectable: boolean): number =>
-  columns.reduce((sum, { width }) => sum + leastWidth(width), selectable ? SELECT_WIDTH : 0);
+const minWidth = (columns: readonly Pick<Column<never>, "width" | "minWidth">[], selectable: boolean): number =>
+  columns.reduce((sum, column) => sum + leastWidth(column), selectable ? SELECT_WIDTH : 0);
 
-function leastWidth(width: string): number {
-  if (width === "auto") return AUTO_FLOOR;
+function leastWidth({ width, minWidth = AUTO_FLOOR }: Pick<Column<never>, "width" | "minWidth">): number {
+  if (width === "auto") return minWidth;
   return width.endsWith("%") ? SHARE_FLOOR : Number.parseFloat(width);
 }
 

@@ -70,7 +70,7 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
     {
       key: "rate",
       header: "Unit Rate",
-      width: "92px",
+      width: "104px",
       align: "right",
       render: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : "—"),
     },

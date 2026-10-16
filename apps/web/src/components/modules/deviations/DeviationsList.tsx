@@ -25,6 +25,11 @@ import type { DeviationsSearch } from "./search.ts";
 
 const refLink = "inline-flex max-w-full items-center gap-1 role-reference-number hover:underline";
 
+/**
+ * Widths from the measured content (D-0628): Issue keeps room for every field mismatch ("Invoiced Qty mismatch"), Status
+ * for "Resolved", Detected for the date and time. Together they pass 1366, so there the table scrolls sideways, as
+ * the legacy screen did, instead of cutting the issue.
+ */
 function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
   return [
     {
@@ -50,7 +55,7 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "document",
       header: "Document",
-      width: "118px",
+      width: "120px",
       render: (f) =>
         f.srvId === null ? (
           <span className="role-helper-text">{SCOPE_LABEL[f.scopeType]}</span>
@@ -61,18 +66,18 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
           </Link>
         ),
     },
-    { key: "issue", header: "Issue", width: "auto", title: issueText, render: issueText },
+    { key: "issue", header: "Issue", width: "auto", minWidth: 176, title: issueText, render: issueText },
     {
       key: "expected",
       header: "Expected",
-      width: "90px",
+      width: "88px",
       align: "right",
       render: (f) => <span className="tabular-nums">{f.details.expected ?? "—"}</span>,
     },
     {
       key: "actual",
       header: "Actual",
-      width: "92px",
+      width: "80px",
       align: "right",
       render: (f) => <span className="text-error tabular-nums">{f.details.actual}</span>,
     },
@@ -85,7 +90,7 @@ function columns(onResolve: (flag: FlagRow) => void): Column<FlagRow>[] {
     {
       key: "status",
       header: "Status",
-      width: "80px",
+      width: "100px",
       render: (f) =>
         f.status === "open" ? <Badge color="warning">Open</Badge> : <Badge color="success">Resolved</Badge>,
     },

@@ -188,6 +188,8 @@ describe("Pagination", () => {
     ["a 30% column", [{ key: "note", header: "Note", width: "30%" }], "580px"],
     // The auto column keeps at least 48px.
     ["an auto column", [{ key: "note", header: "Note", width: "auto" }], "468px"],
+    // Or the floor its content needs.
+    ["an auto column with a floor", [{ key: "note", header: "Note", width: "auto", minWidth: 176 }], "596px"],
   ])(
     "is wide enough for its columns (%s), so a narrow window scrolls it rather than squeezing one",
     (_, extra, min) => {
