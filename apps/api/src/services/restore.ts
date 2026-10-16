@@ -12,7 +12,6 @@ import type { Clock } from "../ports/clock.ts";
 import type { Logger } from "../ports/logger.ts";
 import { activeJobs, cancelOrphan, findActiveJob } from "../repositories/jobs.ts";
 import { parseBackupName, safetyBackupName } from "./backup.ts";
-import type { SupplierRef } from "./supplier.ts";
 
 type Backup = z.output<(typeof routes)["backups.list"]["response"]>[number];
 
@@ -21,11 +20,9 @@ export interface RestoreDeps {
   readonly clock: Clock;
   readonly backups: BackupFiles;
   readonly logger: Logger;
-  /** Forgotten after a restore: the restored data may hold another supplier, or none (N-RESTORE). */
-  readonly supplierId: SupplierRef;
 }
 
-export function restoreService({ db, clock, backups, logger, supplierId }: RestoreDeps) {
+export function restoreService({ db, clock, backups, logger }: RestoreDeps) {
   /** The backups, newest first. */
   async function list(): Promise<Backup[]> {
     const parsed = (await backups.list()).flatMap((name) => {
@@ -66,7 +63,6 @@ export function restoreService({ db, clock, backups, logger, supplierId }: Resto
     }
     try {
       await backups.restore(name);
-      supplierId.forget();
       await endRestoredJobs();
     } catch (err) {
       if (err instanceof AppError) throw err;

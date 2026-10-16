@@ -88,7 +88,7 @@ export async function openRuntime({
     services,
     jobs,
     close,
-    restore: restoreService({ db, clock, backups, logger, supplierId: services.supplierId }),
+    restore: restoreService({ db, clock, backups, logger }),
     startDailyBackup: () => startDailyBackup({ clock, backups, jobs: services.jobs, logger }),
   };
 }

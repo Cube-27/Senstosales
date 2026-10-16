@@ -51,7 +51,6 @@ export function createServices(deps: ServiceDeps) {
   const supplier = createSupplierService(withSupplier);
   const secrets = createSecretsService(withSupplier);
   return {
-    supplierId: withSupplier.supplierId,
     auth: createAuthService(deps),
     onboarding: createOnboardingService(withSupplier),
     supplier,
