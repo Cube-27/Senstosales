@@ -1,8 +1,8 @@
 # Release (SPEC-20 PR 5, INV-93, INV-105). A `v<VERSION>` tag builds the per-user NSIS installer (unsigned in v1,
 # A-25), signs it for the updater with the Tauri key (secrets TAURI_SIGNING_PRIVATE_KEY and
-# TAURI_SIGNING_PRIVATE_KEY_PASSWORD, H6; H10 moves them into the `release` environment, which only tag runs enter), smoke-tests it, writes latest.json
-# and publishes the three files as the GitHub release `v<VERSION>`. The app's updater reads the newest release's
-# latest.json (tauri.conf.json).
+# TAURI_SIGNING_PRIVATE_KEY_PASSWORD, H6; H10 moves them into the `release` environment, which only tag runs enter),
+# smoke-tests it, writes latest.json and publishes the three files as the GitHub release `v<VERSION>`. The app's
+# updater reads the newest release's latest.json (tauri.conf.json).
 # A pull request that changes the release files, or a manual run, is a dry run: the same build, signing and manifest,
 # kept as a workflow artifact for 7 days, but signed with a key made for the run, so branch code never gets the release
 # key. Only a tag publishes.
