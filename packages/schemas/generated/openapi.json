@@ -4466,7 +4466,6 @@
                     ]
                   },
                   "lotNo": {
-                    "default": null,
                     "type": [
                       "string",
                       "null"

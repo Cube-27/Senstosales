@@ -51,24 +51,26 @@ export const zDispatchable = z.object({
 /** A blank GC number or date defaults to the DC's (INV-26). */
 const zGc = { gcNumber: z.string().nullable(), gcDate: zIsoDate.nullable() };
 
-/** The invoice the DC sheet cites (EC-47) and its lot line: optional, as callers that predate them send none. */
-const zLaterHeader = {
+/** The invoice the DC sheet cites (EC-47): optional, as callers that predate it send none. */
+const zCitedInvoice = {
   invoiceNumber: zDcHeader.shape.invoiceNumber.default(null),
   invoiceDate: zDcHeader.shape.invoiceDate.default(null),
-  lotNo: zDcHeader.shape.lotNo.default(null),
 };
 
 export const zDcCreateBody = zDc.pick({ poId: true, number: true, dcDate: true }).extend({
   ...zGc,
   ...zDcHeader.shape,
-  ...zLaterHeader,
+  ...zCitedInvoice,
+  // The lot line: a caller that predates it sends none, and none is stored.
+  lotNo: zDcHeader.shape.lotNo.default(null),
   items: z.array(zDcItem.pick({ poItemId: true, dspQty: true }).extend({ packets: zPackets.default(null) })),
 });
 
 /** A changed date moves the DC to its new FY (INV-25); the version guards the edit (INV-95). */
 export const zDcUpdateBody = zDc
   .pick({ number: true, dcDate: true, version: true })
-  .extend({ ...zGc, ...zDcHeader.shape, ...zLaterHeader });
+  // The lot line: an edit from a caller that predates it sends none, and the stored one stays.
+  .extend({ ...zGc, ...zDcHeader.shape, ...zCitedInvoice, lotNo: zDcHeader.shape.lotNo.optional() });
 
 /** The create forms' live duplicate check: is `(number, FY of date)` taken (INV-22)? */
 export const zNumberCheckQuery = z.object({ number: z.string().trim().min(1), date: zIsoDate });

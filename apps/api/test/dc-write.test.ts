@@ -95,6 +95,9 @@ describe("PUT /api/dc/:id", () => {
     expect(r.dc7).toMatchObject({ lotNo: null });
     const res = await put(r, r.dc7.id, edit({ lotNo: "12345 - Example Agency" }));
     expect(res.body).toMatchObject({ lotNo: "12345 - Example Agency", version: 2 });
+    // A caller that predates the field sends none: the stored lot stays.
+    const { lotNo: _, ...older } = edit({ version: 2 });
+    expect((await put(r, r.dc7.id, older)).body).toMatchObject({ lotNo: "12345 - Example Agency", version: 3 });
   });
 
   test("a stale version is a 409 and changes nothing (INV-95)", async () => {
