@@ -11833,6 +11833,16 @@
           "rcdQty": {
             "$ref": "#/components/schemas/Qty"
           },
+          "rawRcdQty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Qty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "acceptedQty": {
             "$ref": "#/components/schemas/Qty"
           },
@@ -11951,6 +11961,7 @@
           "ordQty",
           "challanQty",
           "rcdQty",
+          "rawRcdQty",
           "acceptedQty",
           "rejQty",
           "challanNo",
