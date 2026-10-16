@@ -38,7 +38,7 @@ export { matchSrvItem, resolveDocLink } from "./links.ts";
 export type { LineTax, LineTaxInput } from "./tax.ts";
 export { invoiceLineTax, invoiceTotals } from "./tax.ts";
 export type { GemcSourceRate } from "./gemc.ts";
-export { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate } from "./gemc.ts";
+export { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate, invoiceGemcNumber } from "./gemc.ts";
 export type { DeleteBlockReason, DeleteLinks, Issue, IssueCode } from "./guards.ts";
 export {
   acceptIncoming,
@@ -50,7 +50,7 @@ export {
 } from "./guards.ts";
 export type { DesiredFlag, FlagDetails, FlagScope, FlagType, PoFlagSnapshot } from "./flags.ts";
 export { FLAG_SCOPES, FLAG_TYPES, detectFlags, diffFlags, fingerprint } from "./flags.ts";
-export { deliveryDue, pendingValueOfItems } from "./tracker.ts";
+export { deliveryDue, pendingValueOfItems, TRACKED_STATUSES } from "./tracker.ts";
 export type { ListProgress } from "./list-exports.ts";
 export { dcListProgress, dcListTotals, invoiceListProgress } from "./list-exports.ts";
 export type { DashboardRange } from "./dashboard.ts";

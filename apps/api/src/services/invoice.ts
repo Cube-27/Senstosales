@@ -11,6 +11,7 @@ import {
   compareIsoDate,
   deleteBlock,
   fyOf,
+  invoiceGemcNumber,
   invoiceLineTax,
   invoiceTotals,
   sumMoney,
@@ -188,6 +189,7 @@ export function invoiceService({ db, clock, supplierId }: Pick<SupplierDeps, "db
     const dcId = dc?.id ?? null;
     const invoiceRow = {
       ...header,
+      gemcNumber: invoiceGemcNumber(header.gemcNumber, row.gemcNumber),
       ...totals,
       id,
       supplierId: supplier,

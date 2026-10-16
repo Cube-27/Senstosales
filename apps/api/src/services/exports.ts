@@ -1,12 +1,19 @@
 // What the export services share (SPEC-13 §4.2): a download's file name and chunks, written by the documents
 // package's writers from rows pulled as the client reads (INV-99).
-import type * as Documents from "@senstosales/documents";
-import type { Column, GcDocument, Row, Sheet, SummaryHeading, SummaryTotal } from "@senstosales/documents";
-
-type Writers = typeof Documents;
+import type {
+  Column,
+  GcDocument,
+  Row,
+  Sheet,
+  SummaryExtras,
+  SummaryHeading,
+  SummaryTotal,
+} from "@senstosales/documents";
 
 /** The writers, loaded on the first export: exceljs would add most of a second to every start of the app. */
 const writers = () => import("@senstosales/documents");
+
+type Writers = Awaited<ReturnType<typeof writers>>;
 
 /** Each row through `f`; an undefined result drops the row. */
 export async function* mapped<T, U>(rows: AsyncIterable<T>, f: (row: T) => U | undefined): AsyncGenerator<U> {
@@ -37,13 +44,14 @@ export const csvFile = (
   rows: AsyncIterable<Row<string>>,
 ) => streamed(entry.fileName(), (w) => w.csvChunks(entry.columns, rows));
 
-/** The pending-items workbook, named `fileName`; `total` is read after the last row. */
+/** A summary workbook with `extras`, named `fileName`; `total` is read after the last row. */
 export const summaryFile = (
+  extras: SummaryExtras,
   fileName: string,
   heading: SummaryHeading,
   rows: AsyncIterable<Row<string>>,
   total: () => SummaryTotal,
-) => streamed(fileName, (w) => w.summaryChunks(heading, rows, total));
+) => streamed(fileName, (w) => w.summaryChunks(extras, heading, rows, total));
 
 type SupplierArgs = Parameters<Writers["documentSupplier"]>;
 

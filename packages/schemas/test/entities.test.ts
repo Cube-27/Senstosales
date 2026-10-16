@@ -284,6 +284,7 @@ const CASES = [
       ordQty: "10",
       challanQty: "3",
       rcdQty: "2.5",
+      rawRcdQty: null,
       acceptedQty: "2",
       rejQty: "0.5",
       challanNo: "100",
@@ -297,7 +298,7 @@ const CASES = [
       resolvedDcId: DC_ID,
       resolvedInvoiceId: null,
     },
-    decoded: { challanQty: 3000, acceptedQty: 2000, rejQty: 500 },
+    decoded: { challanQty: 3000, rawRcdQty: null, acceptedQty: 2000, rejQty: 500 },
   },
   {
     name: "flag",

@@ -346,3 +346,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: A timing test against a large synthetic dataset.
 - Why: Plans are deterministic in CI; timings flake. Verified red with the three indexes dropped.
 - Reversible: yes — test only.
+
+### D-0610 — SRV detail returns RECVD as printed
+
+- Date: 2026-10-16 · Spec/PR: SPEC-10 E2E round 2 R2-A (#96) · Status: decided
+- Decision: Each SRV detail item carries `rawRcdQty`, the RECVD QTY as printed (null when the cell was empty), beside `rcdQty`, the received it counts as (`COALESCE(NULLIF(rcd, 0), accepted)`, INV-11).
+- Alternatives: A nullable `rcdQty`.
+- Why: N-SRV-RCD: the screens show the printed value; `rcdQty` keeps one meaning for totals and every reader. Agreed with R2-B.
+- Reversible: yes.
+
+### D-0617 — Tracker reads only tracked items' lots
+
+- Date: 2026-10-16 · Spec/PR: SPEC-10 E2E round 2 R2-A (#96) · Status: decided
+- Decision: The tracker query keeps lots of items whose status is in the domain's `TRACKED_STATUSES` (Pending, Delivered); `deliveryDue` uses the same constant, so the domain still decides.
+- Alternatives: Read every scheduled lot and filter in the service.
+- Why: N-PERF: about 90 % of the scheduled lots on full data belong to closed items. Measured on a local copy: dashboard summary 490 → 32 ms, tracker list 550 → 27 ms.
+- Reversible: yes.

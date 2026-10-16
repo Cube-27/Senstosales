@@ -8,8 +8,10 @@ import ExcelJS from "exceljs";
 
 import {
   consigneeLines,
+  departmentCell,
   documentFileName,
   insertRows,
+  numberCell,
   put,
   setPortraitPage,
   writeItemRows,
@@ -36,7 +38,7 @@ export interface DcDocument {
     invoiceNumber: string | null;
     invoiceDate: IsoDate | null;
   };
-  po: { poNumber: string; poDate: IsoDate | null; isGemc: boolean };
+  po: { poNumber: string; poDate: IsoDate | null };
   /** The invoice made from this DC, cited where the user filled in none. */
   invoice: { number: string; invoiceDate: IsoDate } | null;
   items: ReadonlyArray<ItemRow & { rate: Money }>;
@@ -51,15 +53,6 @@ const REMARKS_ROW = 31;
 const NOTE_SLOTS = 3;
 /** Legacy grows an item row by 18 points for each 95 characters of description. */
 const LINE_HEIGHT = 18;
-
-/** Legacy's department column held integers, so a number-only value prints as a number (`0456` -> 456). */
-function departmentCell(departmentNo: string | null): Value {
-  const number = departmentNo !== null && /^\d+$/.test(departmentNo) ? Number(departmentNo) : Number.NaN;
-  return Number.isSafeInteger(number) ? number : departmentNo;
-}
-
-/** A DC or PO number of digits alone prints as a number, as the owner's DCs show it; `075` keeps its zero as text. */
-const numberCell = (text: string): Value => (/^(0|[1-9]\d{0,14})$/.test(text) ? Number(text) : text);
 
 type Cited = { number: string; date: string };
 
@@ -87,23 +80,31 @@ function writeHeader(ws: ExcelJS.Worksheet, { dc, po }: DcDocument, invoice: Cit
   for (const [address, value] of cells) put(ws, address, value);
 }
 
-/** The user's notes for remarks 4 to 6, notes past the sixth joined onto it; none prints legacy's blank TC line. */
+/** The user's notes for remarks 4 to 6, notes past the sixth joined onto it; none leaves the rows blank. */
 function noteLines(remarks: string | null): string[] {
   const notes = (remarks ?? "")
     .split(/\n\s*\n/)
     .map((note) => note.trim())
     .filter((note) => note !== "");
-  if (notes.length === 0) return ["TC No  dt.  Of"];
   if (notes.length <= NOTE_SLOTS) return notes;
   return [...notes.slice(0, NOTE_SLOTS - 1), notes.slice(NOTE_SLOTS - 1).join("  ")];
 }
 
 /**
- * The numbered remarks, the GC line (INV-36), the user's notes and the consignment value; returns the last row, the
- * template's signature block 10 and 11 rows down.
+ * The numbered remarks: the invoice, the GC line (INV-36), the Dimension Report when there is a reference and the
+ * user's notes; then legacy's lot line and the consignment value. Returns the last row, the template's signature block
+ * 10 and 11 rows down.
  */
-function writeFooter(ws: ExcelJS.Worksheet, { dc, po, items }: DcDocument, invoice: Cited, at: number): number {
+function writeFooter(ws: ExcelJS.Worksheet, { dc, items }: DcDocument, invoice: Cited, at: number): number {
   const total = sumMoney(items.map((item) => qtyValue(item.dspQty, item.rate)));
+  const ourRef = (dc.ourRef ?? "").trim();
+  const dimension: Array<[number, string, Value]> =
+    ourRef === ""
+      ? []
+      : [
+          [2, "B", 3],
+          [2, "C", `Dimension Report ${ourRef}`],
+        ];
   const notes = noteLines(dc.remarks).flatMap((note, i): Array<[number, string, Value]> => [
     [3 + i, "B", 4 + i],
     [3 + i, "C", note],
@@ -113,12 +114,12 @@ function writeFooter(ws: ExcelJS.Worksheet, { dc, po, items }: DcDocument, invoi
     [0, "C", `GST Bill No. ${invoice.number} Dt.${invoice.date}`],
     [1, "B", 2],
     [1, "C", `Guarantee Certificate No. ${dc.gcNumber}   Dt. ${fmtDate(dc.gcDate)}`],
-    [2, "B", 3],
-    [2, "C", `Dimension Report ${(dc.ourRef ?? "").trim()}`.trimEnd()],
+    ...dimension,
     ...notes,
+    // Legacy's DC had no lot number, so it printed the label alone (dc_excel.py); the owner writes the lot in.
     [6, "C", "Lot No."],
-    // No trailing zeros (`123900`, `2157.84`): GEMC at 5 dp, others at 2 (INV-18).
-    [7, "C", `Consignment Value of BHEL PO ${fmtPlain(total, { gemc: po.isGemc })}`],
+    // 2 dp with no trailing zeros (`123900`, `2157.84`), a GEMC PO's net value too, as the owner's DCs print it.
+    [7, "C", `Consignment Value of BHEL PO ${fmtPlain(total, { gemc: false })}`],
   ];
   for (const [offset, column, value] of cells) put(ws, `${column}${at + offset}`, value);
   return at + 11;

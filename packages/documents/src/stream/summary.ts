@@ -1,9 +1,10 @@
 // The summary workbooks (SPEC-13 §2): pending items (legacy "Items Summary") and the daily dispatch summary, which
-// share a layout, streamed (INV-99): the catalog's heading, the table header, one row per item as it arrives, then the
-// TOTAL row and a print area ending at it.
+// share a layout, streamed (INV-99): the catalog's heading, the table header, one row per item as it arrives, the
+// TOTAL row, the summary's footer line if it has one, and a print area ending at the last row.
 import type ExcelJS from "exceljs";
 
-import { EXPORTS } from "../reports/catalog.ts";
+import { departmentCell, numberCell } from "../layout.ts";
+import { EXPORTS, type SummaryExtras } from "../reports/catalog.ts";
 import type { Row } from "./sheet.ts";
 import { addStreamedSheet, workbookChunks } from "./xlsx.ts";
 
@@ -29,14 +30,14 @@ function put(cell: ExcelJS.Cell, value: string | number, style: Style) {
   cell.style = SUMMARY.styles[style];
 }
 
+/** `text` with each `<name>` replaced by that heading text. */
+const filled = (text: string, heading: SummaryHeading) =>
+  text.replaceAll(/<([^>]+)>/g, (_, name: string) => heading[name] ?? "");
+
 function writeHeading(ws: ExcelJS.Worksheet, heading: SummaryHeading) {
   for (const { cell, text, style, ...rest } of SUMMARY.heading) {
     if ("merge" in rest) ws.mergeCells(rest.merge);
-    put(
-      ws.getCell(cell),
-      text.replaceAll(/<([^>]+)>/g, (_, name: string) => heading[name] ?? ""),
-      style,
-    );
+    put(ws.getCell(cell), filled(text, heading), style);
   }
   const header = ws.getRow(SUMMARY.headerRow);
   SUMMARY.columns.forEach((c, i) => put(header.getCell(i + 1), c.header, "th"));
@@ -55,11 +56,19 @@ function writeTotal(ws: ExcelJS.Worksheet, r: number, { qty, packets }: SummaryT
   row.commit();
 }
 
+/** A row's cell value: digit-only text in the number and department columns as a number. */
+function cellValue(extras: SummaryExtras, key: Key, value: string | number): string | number {
+  if (typeof value !== "string") return value;
+  if (key === extras.departmentColumn) return departmentCell(value);
+  return extras.numberColumns.includes(key) ? numberCell(value) : value;
+}
+
 /**
  * The workbook as chunks. `total` is read once the rows are done, so the caller can add them up as they pass. Every
  * cell of a row is written, an empty string for a missing value, as legacy did.
  */
 export function summaryChunks(
+  extras: SummaryExtras,
   heading: SummaryHeading,
   rows: AsyncIterable<Row<Key>>,
   total: () => SummaryTotal,
@@ -73,13 +82,25 @@ export function summaryChunks(
       r += 1;
       const row = ws.getRow(r);
       SUMMARY.columns.forEach((c, i) =>
-        put(row.getCell(i + 1), values[c.key] ?? "", c.key === SUMMARY.leftColumn ? "cellLeft" : "cell"),
+        put(
+          row.getCell(i + 1),
+          cellValue(extras, c.key, values[c.key] ?? ""),
+          c.key === SUMMARY.leftColumn ? "cellLeft" : "cell",
+        ),
       );
       row.commit();
       if (await pace()) return;
     }
     r += 1;
     writeTotal(ws, r, total());
+    const { footer } = extras;
+    if (footer !== null) {
+      r += 1;
+      const row = ws.getRow(r);
+      const column = SUMMARY.columns.findIndex((c) => c.key === footer.column) + 1;
+      put(row.getCell(column), filled(footer.text, heading), footer.style);
+      row.commit();
+    }
     ws.pageSetup.printArea = `A1:${LAST_COLUMN}${r}`;
     ws.commit();
   });

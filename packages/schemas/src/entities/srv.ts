@@ -34,7 +34,10 @@ export const zSrvItem = z.object({
   unit: z.string().nullable(),
   ordQty: zQty,
   challanQty: zQty.nullable(),
+  /** Received as the screens and totals count it: RECVD QTY, else ACCEPTED QTY when RECVD is empty or 0 (INV-11). */
   rcdQty: zQty,
+  /** RECVD QTY as printed; `null` when the cell was empty. */
+  rawRcdQty: zQty.nullable(),
   acceptedQty: zQty,
   rejQty: zQty,
   challanNo: z.string().nullable(),

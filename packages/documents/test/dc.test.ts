@@ -47,6 +47,16 @@ describe("DC workbook", () => {
     expect([sheet!.cells["I9"]?.value, sheet!.cells["D14"]?.value]).toEqual([dcCell, poCell]);
   });
 
+  it.each([
+    ["0456", 456],
+    ["1234567890123456", "1234567890123456"],
+    ["45-A", "45-A"],
+  ])("department %s prints as %j: a number only up to the 15 digits Excel holds", async (departmentNo, cell) => {
+    const one = input("dc-1");
+    const [sheet] = await build({ ...one, dc: { ...one.dc, departmentNo } });
+    expect(sheet!.cells["F15"]?.value).toBe(cell);
+  });
+
   it("EC-47: prints the invoice number and date the user filled in, else the DC's own invoice's", async () => {
     const one = input("dc-1");
     const cells = async (doc: DcDocument) => {
@@ -73,20 +83,26 @@ describe("DC workbook", () => {
     ]);
   });
 
-  it("INV-18: prints a GEMC consignment value at 5 dp, others at 2", async () => {
+  it("prints the consignment value at 2 dp, a GEMC PO's net value too, as the owner's DCs show it", async () => {
     const one = input("dc-1");
+    // A GEMC PO's net rate: 3 × 719.27966 = 2157.83898.
     const item = { ...one.items[0]!, dspQty: unwrap(parseQty("3")), rate: unwrap(parseMoney("719.27966")) };
-    const value = async (isGemc: boolean) =>
-      (await build({ ...one, po: { ...one.po, isGemc }, items: [item] }))[0]!.cells["C38"]?.value;
-    expect([await value(false), await value(true)]).toEqual([
+    expect((await build({ ...one, items: [item] }))[0]!.cells["C38"]?.value).toBe(
       "Consignment Value of BHEL PO 2157.84",
-      "Consignment Value of BHEL PO 2157.83898",
-    ]);
+    );
     // No trailing zeros: 1 × 123900 prints `123900`.
     const whole = { ...item, dspQty: unwrap(parseQty("1")), rate: unwrap(parseMoney("123900")) };
     expect((await build({ ...one, items: [whole] }))[0]!.cells["C38"]?.value).toBe(
       "Consignment Value of BHEL PO 123900",
     );
+  });
+
+  it("leaves the consignee, Dimension Report and TC lines blank when they are not filled in", async () => {
+    const one = input("dc-1");
+    const empty = { ...one.dc, consigneeName: null, consigneeAddress: null, ourRef: " ", remarks: null };
+    const [sheet] = await build({ ...one, dc: empty });
+    const cells = ["B9", "B10", "B11", "B33", "C33", "B34", "C34", "C37"].map((at) => sheet!.cells[at]?.value ?? null);
+    expect(cells).toEqual([null, null, null, null, null, null, null, "Lot No."]);
   });
 
   it.each([

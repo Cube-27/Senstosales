@@ -31,6 +31,7 @@ const srvItem = (over: Record<string, unknown> = {}) => ({
   ordQty: "10",
   challanQty: "6",
   rcdQty: "6",
+  rawRcdQty: "6",
   acceptedQty: "5",
   rejQty: "1",
   challanNo: "DC/7",

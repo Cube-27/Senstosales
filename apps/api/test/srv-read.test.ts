@@ -442,6 +442,7 @@ describe("GET /api/srv/:id", () => {
             srvItemNo: 1,
             // rcd 0 falls back to accepted 4 (INV-11); Accepted is the source value (INV-09).
             rcdQty: "4",
+            rawRcdQty: "0",
             acceptedQty: "4",
             rejQty: "1",
             challanNo: " 12 ",
@@ -456,6 +457,7 @@ describe("GET /api/srv/:id", () => {
             srvItemNo: 2,
             ordQty: "5",
             rcdQty: "2",
+            rawRcdQty: "2",
             acceptedQty: "0",
             rejQty: "0",
             challanNo: null,
@@ -479,6 +481,17 @@ describe("GET /api/srv/:id", () => {
         ],
       },
     });
+  });
+
+  it("returns an empty RECVD as null beside the accepted it counts as received (INV-11)", async () => {
+    const app = await seeded();
+    await app.db.batch([app.db.build.update(srvItem).set({ rcdQty: null }).where(eq(srvItem.id, L1))]);
+    const { body } = await get(app, `/api/srv/${S1}`);
+    const { items } = body as { items: Array<{ rawRcdQty: string | null; rcdQty: string }> };
+    expect(items.map((i) => [i.rawRcdQty, i.rcdQty])).toEqual([
+      [null, "4"],
+      ["2", "2"],
+    ]);
   });
 
   it("answers 404 for an unknown SRV and 400 for a malformed id", async () => {

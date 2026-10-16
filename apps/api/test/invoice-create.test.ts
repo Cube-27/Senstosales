@@ -133,6 +133,19 @@ describe("POST /api/invoice from a DC", () => {
     });
   });
 
+  test("a blank GEMC number takes the PO's, as the form starts from it; a typed one is kept (SCN-GEMC-04)", async () => {
+    const { storedPo, storedDc, createInvoice } = await ready();
+    const { poId, item10 } = await storedPo(GEMC_PO);
+    const create = async (number: string, gemcNumber: string | null) => {
+      const { dcId, lineIds } = await storedDc(poId, number, "2025-04-02", [{ poItemId: item10, dspQty: "1" }]);
+      const lines = [{ dcItemId: lineIds[0], qty: "1", rate: "719.27966" }];
+      return (await createInvoice({ dcId, number, invoiceDate: "2025-04-03", gemcNumber, lines })).body["gemcNumber"];
+    };
+    expect(await create("1", null)).toBe("GEMC-77");
+    expect(await create("2", " ")).toBe("GEMC-77");
+    expect(await create("3", "GEMC-78")).toBe("GEMC-78");
+  });
+
   test("the GST rates and buyer are copied: a later settings change leaves a saved invoice as it was (A2-4)", async () => {
     const { send, storedDc, createInvoice, invoices, poId, item10, dcId, lines } = await withDc();
     const first = await createInvoice({ dcId, number: "1", invoiceDate: "2025-04-03", lines });

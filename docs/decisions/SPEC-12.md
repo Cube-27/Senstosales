@@ -292,3 +292,27 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: One wrapped cell.
 - Why: The owner's DCs.
 - Reversible: yes.
+
+### D-0612 — DC sheet leaves unfilled lines blank
+
+- Date: 2026-10-16 · Spec/PR: SPEC-12 E2E round 2 R2-A (#96) · Status: decided
+- Decision: No consignee leaves B9 to B11 blank; the Dimension Report line prints only with an Our Ref; no notes leave remarks 4 to 6 blank. This replaces the `Consignee` default of D-0589 and the blank TC line.
+- Alternatives: Legacy's `Consignee` and `TC No  dt.  Of` placeholders.
+- Why: The owner's DC (N-DOC); INV-116 amended.
+- Reversible: yes.
+
+### D-0613 — DC lot line as legacy
+
+- Date: 2026-10-16 · Spec/PR: SPEC-12 E2E round 2 R2-A (#96) · Status: decided
+- Decision: The lot line prints `Lot No.` alone (EC-67).
+- Alternatives: Derive a lot from the PO lots.
+- Why: Legacy's DC never carried a lot; the owner writes it in. No new DC fields (owner 2026-10-16).
+- Reversible: yes.
+
+### D-0614 — DC consignment value at 2 dp
+
+- Date: 2026-10-16 · Spec/PR: SPEC-12 E2E round 2 R2-A (#96) · Status: decided
+- Decision: The consignment value prints at 2 dp without trailing zeros on every PO, a GEMC PO's net value too.
+- Alternatives: 5 dp on a GEMC PO.
+- Why: The owner's DCs; the value is net (owner 2026-10-16). INV-18 covers invoice amounts.
+- Reversible: yes.

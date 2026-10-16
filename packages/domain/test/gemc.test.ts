@@ -2,7 +2,14 @@ import fc from "fast-check";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { Money } from "../src/index.ts";
-import { extractGemcNumber, gemcNetRate, gemcNumberOf, gemcSourceRate, moneyToString } from "../src/index.ts";
+import {
+  extractGemcNumber,
+  gemcNetRate,
+  gemcNumberOf,
+  gemcSourceRate,
+  invoiceGemcNumber,
+  moneyToString,
+} from "../src/index.ts";
 import { money } from "./unwrap.ts";
 
 // The domain package has no DOM or Node types; the test runtime provides the timer.
@@ -103,5 +110,16 @@ describe("gemcNumberOf", () => {
     ["", null, null],
   ])("entered %j, remarks %j -> %j", (entered, remarks, expected) => {
     expect(gemcNumberOf(entered, remarks)).toBe(expected);
+  });
+});
+
+describe("invoiceGemcNumber", () => {
+  it.each<[string | null, string | null, string | null]>([
+    [null, "5116", "5116"],
+    [" ", "5116", "5116"],
+    ["GEMC-78", "5116", "GEMC-78"],
+    [null, null, null],
+  ])("entered %j, PO %j -> %j", (entered, po, expected) => {
+    expect(invoiceGemcNumber(entered, po)).toBe(expected);
   });
 });

@@ -92,6 +92,12 @@ describe("over the report dataset", () => {
       expect(await exported(send, path, "reconciliation-one-po.json")).toEqual(golden);
     });
 
+    it("EXP-09: with no rows in the range, keeps its header row (INV-119)", async () => {
+      const golden = workbookGoldenFile("reconciliation.json");
+      const path = "/api/reports/reconciliation/export?from=2030-01-01&to=2030-01-31";
+      expect(await exported(send, path, "reconciliation.json")).toEqual({ ...golden, rows: golden.rows.slice(0, 1) });
+    });
+
     it("lists the rows the tab lists for the same filters and sort", async () => {
       const query = `${range}&sort=rejQty&dir=desc`;
       const { rows: cells } = await exported(
