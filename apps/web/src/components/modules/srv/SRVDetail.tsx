@@ -85,7 +85,14 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
       title: () => "Dispatched against the PO item",
       render: (r) => <span className="tabular-nums">{r.poItem ? fmtQty(r.poItem.dspQty) : "—"}</span>,
     },
-    shownQty("rcdQty", "Received"),
+    // RECVD QTY as the SRV printed it: an empty cell stays empty, though received counts the accepted for it.
+    {
+      key: "rcdQty",
+      header: "Received",
+      width: "88px",
+      align: "right",
+      render: (r) => <span className="tabular-nums">{r.rawRcdQty === null ? "" : fmtQty(r.rawRcdQty)}</span>,
+    },
     shownQty("acceptedQty", "Accepted"),
     shownQty("rejQty", "Rejected"),
     {
