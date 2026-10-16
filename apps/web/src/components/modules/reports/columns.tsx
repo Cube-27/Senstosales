@@ -70,7 +70,8 @@ export const PENDING_COLUMNS: Column<PendingRow>[] = [
     render: (r) => <DocLinks docs={r.dcs} to="/dc/$id" />,
   },
   // The legacy "Received" is the dispatched (delivered) quantity, as the workbook's Dispatch Delivered.
-  qtyColumn<PendingRow>("dspQty", "Received", (r) => r.dspQty, { sortable: true, width: "100px" }),
+  // 92px keeps the tab's least width at 1000, so at 1280 it fills the page as the other tabs do (C8).
+  qtyColumn<PendingRow>("dspQty", "Received", (r) => r.dspQty, { sortable: true, width: "92px" }),
 ];
 
 export const RECONCILIATION_COLUMNS: Column<ReconciliationRow>[] = [
