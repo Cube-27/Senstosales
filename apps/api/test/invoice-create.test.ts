@@ -139,7 +139,7 @@ describe("POST /api/invoice from a DC", () => {
     const create = async (number: string, gemcNumber: string | null) => {
       const { dcId, lineIds } = await storedDc(poId, number, "2025-04-02", [{ poItemId: item10, dspQty: "1" }]);
       const lines = [{ dcItemId: lineIds[0], qty: "1", rate: "719.27966" }];
-      return (await createInvoice({ dcId, number, invoiceDate: "2025-04-03", gemcNumber, lines })).body.gemcNumber;
+      return (await createInvoice({ dcId, number, invoiceDate: "2025-04-03", gemcNumber, lines })).body["gemcNumber"];
     };
     expect(await create("1", null)).toBe("GEMC-77");
     expect(await create("2", " ")).toBe("GEMC-77");

@@ -487,7 +487,8 @@ describe("GET /api/srv/:id", () => {
     const app = await seeded();
     await app.db.batch([app.db.build.update(srvItem).set({ rcdQty: null }).where(eq(srvItem.id, L1))]);
     const { body } = await get(app, `/api/srv/${S1}`);
-    expect(body.items.map((i: { rawRcdQty: string | null; rcdQty: string }) => [i.rawRcdQty, i.rcdQty])).toEqual([
+    const { items } = body as { items: Array<{ rawRcdQty: string | null; rcdQty: string }> };
+    expect(items.map((i) => [i.rawRcdQty, i.rcdQty])).toEqual([
       [null, "4"],
       ["2", "2"],
     ]);
