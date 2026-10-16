@@ -38,11 +38,13 @@ function DaysToDue({ days }: { readonly days: number | null }) {
 
 const money = (m: Lot["rate"]) => fmtMoney(m, { gemc: false });
 
+/** Widths from the measured content (D-0630): at 1366 the other columns leave PO / Material its header's width. */
 const COLUMNS: Column<Lot>[] = [
   {
     key: "poNumber",
     header: "PO / Material",
     width: "auto",
+    minWidth: 112,
     sortable: true,
     title: (l) => `${l.poNumber} · ${l.materialCode ?? ""} · ${l.description}`,
     render: (l) => (
@@ -67,7 +69,7 @@ const COLUMNS: Column<Lot>[] = [
   {
     key: "lotNo",
     header: "Lot",
-    width: "64px",
+    width: "60px",
     render: (l) => <span className="rounded-md bg-surface-sunken px-2 py-1 role-metadata">L{l.lotNo}</span>,
   },
   { key: "delyDate", header: "Due Date", width: DATE_WIDTH, sortable: true, render: (l) => fmtDate(l.delyDate) },
@@ -82,16 +84,16 @@ const COLUMNS: Column<Lot>[] = [
   qtyColumn<Lot>("dspQty", "Dsp", (l) => l.dspQty, { sortable: true, width: "76px" }),
   qtyColumn<Lot>("rcdQty", "Rcd", (l) => l.rcdQty, { sortable: true, width: "76px" }),
   qtyColumn<Lot>("balanceQty", "Bal", (l) => l.balanceQty, { width: "76px" }),
-  { key: "rate", header: "Unit Price", width: "128px", align: "right", render: (l) => money(l.rate) },
+  { key: "rate", header: "Unit Price", width: "124px", align: "right", render: (l) => money(l.rate) },
   {
     key: "pendingValue",
     header: "Pending Value",
-    width: "128px",
+    width: "124px",
     align: "right",
     sortable: true,
     render: (l) => money(l.pendingValue),
   },
-  { key: "daysToDue", header: "Days Overdue", width: "132px", render: (l) => <DaysToDue days={l.daysToDue} /> },
+  { key: "daysToDue", header: "Days Overdue", width: "128px", render: (l) => <DaysToDue days={l.daysToDue} /> },
 ];
 
 /** The three counting cards, each also a status toggle (D-0240). */

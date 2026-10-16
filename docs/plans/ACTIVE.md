@@ -116,6 +116,11 @@ Fixes from the owner's real-data test (owner-approved 2026-10-15, ARCHITECTURE r
 | R2-A  | DC sheet: blank unfilled lines, `Lot No.` as legacy, value at 2 dp                                       | done (#96) | D-0612..D-0614; INV-116; EC-67.                                                      |
 | R2-A  | API GEMC default on create (SCN-GEMC-04); SRV detail `rawRcdQty` (N-SRV-RCD)                             | done (#96) | D-0610, D-0611.                                                                      |
 | R2-A  | EXP-09 verified with a test; tracker and dashboard reads under 50 ms on full data (N-PERF)               | done (#96) | D-0617.                                                                              |
+| R2-B  | Quantities exact to 3 dp on screen; GEMC amounts at 5 dp, mixed list columns at 2 dp                     | done (#97) | D-0625, D-0626; EC-21 admitted.                                                      |
+| R2-B  | Tables show their content at 1366: invoice lines, tracker, Reports GEMC chip, Deviations, rates          | done (#97) | D-0627..D-0630; `Column.minWidth`.                                                   |
+| R2-B  | UI-SHIFT: ten-row window kept (§12.3), check measures the scroll box                                     | done (#97) | D-0631; 0 shifts.                                                                    |
+| R2-B  | A pre-onboarding restore leads to onboarding (N-RESTORE)                                                 | done (#97) | D-0632.                                                                              |
+| R2-B  | SRV detail shows an empty RECVD as empty; labels kept (C7); PERF-02 met with #96                         | done (#97) | D-0633, D-0634.                                                                      |
 
 ## [SPEC-00 — Repo bootstrap and engineering foundations](../specs/SPEC-00-repo-bootstrap.md)
 

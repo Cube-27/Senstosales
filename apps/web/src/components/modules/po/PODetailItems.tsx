@@ -73,7 +73,15 @@ function columns(detail: Detail, flagsOf: (id: string) => readonly Flag[]): Colu
       render: (item) => <MaterialCell code={item.materialCode} description={item.description} />,
     },
     { key: "unit", header: "Unit", width: "56px", render: (item) => item.unit ?? "—" },
-    { key: "rate", header: "Rate", width: "104px", align: "right", render: (item) => fmtRate(item.rate, { gemc }) },
+    {
+      key: "rate",
+      header: "Rate",
+      // A GEMC rate up to 99,999.12345; a longer one is in the title.
+      width: "120px",
+      align: "right",
+      title: (item) => fmtRate(item.rate, { gemc }),
+      render: (item) => fmtRate(item.rate, { gemc }),
+    },
     qty("ordQty", "Ordered"),
     qty("balanceQty", "Pending"),
     {

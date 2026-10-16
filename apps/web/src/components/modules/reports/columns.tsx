@@ -43,14 +43,15 @@ export const PENDING_COLUMNS: Column<PendingRow>[] = [
   {
     key: "gemcNumbers",
     header: "GEMC #",
-    width: "130px",
+    // One 15-digit GEMC number in its chip; more are cut inside the chip, with all of them in the title (D-0629).
+    width: "188px",
     title: (r) => r.gemcNumbers.join(", "),
     render: (r) =>
       r.gemcNumbers.length === 0 ? (
         "-"
       ) : (
-        <Badge size="sm" className="role-reference-number-sm">
-          {r.gemcNumbers.join(", ")}
+        <Badge size="sm" className="max-w-full role-reference-number-sm">
+          <span className="truncate">{r.gemcNumbers.join(", ")}</span>
         </Badge>
       ),
   },
@@ -69,7 +70,8 @@ export const PENDING_COLUMNS: Column<PendingRow>[] = [
     render: (r) => <DocLinks docs={r.dcs} to="/dc/$id" />,
   },
   // The legacy "Received" is the dispatched (delivered) quantity, as the workbook's Dispatch Delivered.
-  qtyColumn<PendingRow>("dspQty", "Received", (r) => r.dspQty, { sortable: true, width: "100px" }),
+  // 92px keeps the tab's least width at 1000, so at 1280 it fills the page as the other tabs do (C8).
+  qtyColumn<PendingRow>("dspQty", "Received", (r) => r.dspQty, { sortable: true, width: "92px" }),
 ];
 
 export const RECONCILIATION_COLUMNS: Column<ReconciliationRow>[] = [
@@ -107,7 +109,7 @@ export const DISPATCH_COLUMNS: Column<DispatchRow>[] = [
   {
     key: "gemcNumber",
     header: "GEMC #",
-    width: "130px",
+    width: "152px",
     title: (r) => r.gemcNumber ?? "",
     render: (r) => dash(r.gemcNumber),
   },

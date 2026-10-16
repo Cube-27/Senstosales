@@ -37,7 +37,7 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 
 ### D-0054 — Quantities display in whole units
 
-- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: decided
+- Date: 2026-10-14 · Spec/PR: SPEC-04 PR 5 (#21) · Status: superseded by D-0625
 - Decision: `fmtQty` rounds to whole units half toward +infinity, as legacy does for every quantity cell and total (`2.5 -> 3`, `-2.5 -> -2`). Recorded as EC-21.
 - Alternatives: Show up to 3 dp.
 - Why: SPEC-04 §4.4 asks for legacy-identical output; showing decimals would be new behaviour (C18).
@@ -289,4 +289,20 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Decision: `fmtRate` (and so `fmtMoney`) pads to two decimals; GEMC keeps up to five. Documents and exports are unchanged.
 - Alternatives: Trim trailing zeros as before.
 - Why: A column's amounts did not line up (UI-MISC); owner-approved rev 1.10.
+- Reversible: yes.
+
+### D-0625 — Quantities show exact to 3 dp on screen
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: `fmtQty` writes the quantity's exact decimal, to 3 dp without trailing zeros, with Indian grouping (`12.345`, `1,234`). Supersedes D-0054; EC-21 admitted.
+- Alternatives: Whole units, as legacy.
+- Why: E2E round 2: quantities show exactly on screen too, as imported and as the exports write them (N-FRAC-UI).
+- Reversible: yes.
+
+### D-0626 — GEMC amounts at 5 dp; mixed list columns at 2 dp
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: `fmtRate` and `fmtMoney` pad a GEMC amount or rate to 5 dp (`₹719.20000`); the PO list Value column, which holds GEMC and other POs, shows every row at 2 dp. Replaces D-0606's "GEMC keeps up to five".
+- Alternatives: 2 to 5 dp trimmed (a column's amounts did not line up); GEMC rows at 5 dp in the PO list (cut, and still misaligned).
+- Why: N-INV-DETAIL: inconsistent money dp; legacy shows GEMC at 5 dp.
 - Reversible: yes.

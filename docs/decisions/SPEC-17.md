@@ -137,3 +137,19 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Sort alphabetically.
 - Why: The E2E check compared statuses alphabetically and so read grouped rows as ungrouped; the order is frozen UI (C7).
 - Reversible: yes.
+
+### D-0629 — Reports GEMC chip
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: The GEMC # column is 188 px (152 on Daily Dispatch, plain text); several numbers are cut inside the chip, with all of them in the title. Items Summary's Received is 92 px, so the tab's least width stays 1000 and the tabs move nothing at 1280.
+- Alternatives: Size for several numbers.
+- Why: One number is the common case; a cut chip border looked broken (N-UI).
+- Reversible: yes.
+
+### D-0633 — "Operations Insights" and "Daily Reports" stay
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: No label change: the sidebar item reads "Daily Reports" and the page title "Operations Insights".
+- Alternatives: Rename either to match the other.
+- Why: Legacy shows both, the sidebar item and the page title; both are frozen labels (C7).
+- Reversible: yes.

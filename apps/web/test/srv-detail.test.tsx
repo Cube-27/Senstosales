@@ -95,6 +95,25 @@ describe("/srv/:id (SPEC-16 PR 4)", () => {
     expect(calls.some((c) => c.path.startsWith("/api/po/"))).toBe(false);
   });
 
+  it("shows an empty RECVD QTY as empty, while the totals count the accepted for it (N-SRV-RCD)", async () => {
+    stubApi({
+      [`GET /api/srv/${SRV_ID}`]: () => srvDetail({ items: [srvItem({ rcdQty: "5", rawRcdQty: null })] }),
+      [`GET /api/po/${PO_ID}`]: () => detail({ items: [item()] }),
+    });
+    renderApp(`/srv/${SRV_ID}`);
+    const row = (await screen.findByText("#10.1")).closest("tr") as HTMLElement;
+    const cells = within(row)
+      .getAllByRole("cell")
+      .map((td) => td.textContent);
+    const headers = screen.getAllByRole("columnheader").map((th) => th.textContent);
+    expect(cells[headers.indexOf("Received")]).toBe("");
+    expect(cells[headers.indexOf("Accepted")]).toBe("5");
+    // A quantity cell carries its value as the title, for when the column cuts it.
+    expect(within(row).getAllByRole("cell")[headers.indexOf("Accepted")]?.getAttribute("title")).toBe("5");
+    const totals = screen.getByRole("region", { name: "Line items" });
+    expect(within(totals).getByText(/^Received/, { selector: "span.role-metadata" }).textContent).toBe("Received 5");
+  });
+
   it("marks flagged items", async () => {
     stubApi({
       [`GET /api/srv/${SRV_ID}`]: () =>

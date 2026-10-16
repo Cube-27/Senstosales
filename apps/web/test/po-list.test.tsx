@@ -23,7 +23,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   poNumber: "4100000101",
   poDate: "2025-01-05",
   isGemc: false,
-  poValue: "1234.5",
+  poValue: "1234.56789",
   status: "Pending",
   ordQty: "10",
   dspQty: "4",
@@ -89,7 +89,7 @@ describe("/po (SPEC-16 PR 1)", () => {
       "7",
       "7",
       "1",
-      "₹1,234.50",
+      "₹1,234.57",
       "Delivered",
       "2",
     ]);

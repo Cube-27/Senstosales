@@ -245,3 +245,35 @@ Template, statuses and rules: [DECISIONS.md](../DECISIONS.md).
 - Alternatives: Invalidate after navigating.
 - Why: Refetching the left page's invoice preview of a now-invoiced DC gave a 409; invalidating after navigating fetched the new page twice.
 - Reversible: yes.
+
+### D-0627 — Invoice line widths
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: S.N. 48, HSN 104, Unit 60, Qty 104, Rate 120, Taxable and Total 140, CGST and SGST 132 px; Material is the `auto` column. Amount cells carry their value as the title.
+- Alternatives: Material at 260 px (the amounts were cut at 1366).
+- Why: Measured text at 1366: GEMC line amounts up to ₹99,999.12345 fit (N-INV-DETAIL).
+- Reversible: yes.
+
+### D-0628 — Deviations keeps measured widths and scrolls at 1366
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: Issue is the `auto` column with `minWidth` 176 (new `Column.minWidth`, the floor of an `auto` column); Status 100, Detected 200, Document 120, Expected 88, Actual 80 px. Together they pass 1366, so the table scrolls sideways there, as legacy did and as the PO list does (D-0597).
+- Alternatives: Fit 1366 by cutting Issue (the finding), Type or Detected.
+- Why: No arrangement fits every column's content at 1366; the issue is the column the user reads (N-UI).
+- Reversible: yes.
+
+### D-0630 — Tracker widths
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: Lot 60, Unit Price 124, Pending Value 124, Days Overdue 128 px; PO / Material is `auto` with `minWidth` 112, its header's width.
+- Alternatives: A sideways scroll.
+- Why: The header was cut at 1366; the material text truncates with its title by design (N-UI).
+- Reversible: yes.
+
+### D-0631 — UI-SHIFT: ARCHITECTURE §12.3 governs
+
+- Date: 2026-10-16 · Spec/PR: E2E R2-B (#97) · Status: decided
+- Decision: No DataTable change: the body stays the ten-row window of §12.3 (rev 1.10). The finding measured the inner `<table>` inside the fixed scroll box; measured on the scroll box, 0 interactions shift anything.
+- Alternatives: Reserve the largest page's height (contradicts §12.3; about 3,600 px of blank rows under a 10-row page).
+- Why: Agreed with the orchestrator, 2026-10-16.
+- Reversible: yes.

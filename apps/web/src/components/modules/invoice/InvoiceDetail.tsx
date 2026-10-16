@@ -29,37 +29,43 @@ import { PartyBlock, SourceLink } from "./parties.tsx";
 type Detail = RouteOutput<"invoice.detail">;
 type Line = Detail["items"][number];
 
+/**
+ * Widths from the measured text at 1366 (1086 px for the table, D-0627): Taxable and Total fit a GEMC line amount up
+ * to ₹99,999.12345, CGST and SGST their 9 % share, Qty `1,234.567`, HSN eight digits; Material takes the rest.
+ */
 function columns(gemc: boolean, sn: (line: Line) => number): Column<Line>[] {
-  const money = (key: "taxable" | "cgst" | "sgst" | "total", header: string): Column<Line> => ({
+  const money = (key: "taxable" | "cgst" | "sgst" | "total", header: string, width: string): Column<Line> => ({
     key,
     header,
-    width: "112px",
+    width,
     align: "right",
+    // A larger amount than the widths fit is cut; the title holds it in full.
+    title: (line) => fmtMoney(line[key], { gemc }),
     render: (line) => <span className="tabular-nums">{fmtMoney(line[key], { gemc })}</span>,
   });
   return [
-    { key: "sn", header: "S.N.", width: "56px", render: (line) => String(sn(line)) },
+    { key: "sn", header: "S.N.", width: "48px", render: (line) => String(sn(line)) },
     {
       key: "material",
       header: "Material",
-      width: "260px",
+      width: "auto",
       title: (line) => materialTitle(line.materialCode, line.description, line.drawingNo),
       render: (line) => <MaterialCell code={line.materialCode} description={line.description} />,
     },
-    { key: "hsn", header: "HSN", width: "88px", title: (line) => line.hsn ?? "", render: (line) => line.hsn ?? "—" },
-    { key: "unit", header: "Unit", width: "64px", render: (line) => line.unit ?? "—" },
+    { key: "hsn", header: "HSN", width: "104px", title: (line) => line.hsn ?? "", render: (line) => line.hsn ?? "—" },
+    { key: "unit", header: "Unit", width: "60px", render: (line) => line.unit ?? "—" },
     {
       key: "qty",
       header: "Qty",
-      width: "80px",
+      width: "104px",
       align: "right",
       render: (line) => <span className="tabular-nums">{fmtQty(line.qty)}</span>,
     },
-    { key: "rate", header: "Rate", width: "112px", align: "right", render: (line) => fmtRate(line.rate, { gemc }) },
-    money("taxable", "Taxable"),
-    money("cgst", "CGST"),
-    money("sgst", "SGST"),
-    money("total", "Total"),
+    { key: "rate", header: "Rate", width: "120px", align: "right", render: (line) => fmtRate(line.rate, { gemc }) },
+    money("taxable", "Taxable", "140px"),
+    money("cgst", "CGST", "132px"),
+    money("sgst", "SGST", "132px"),
+    money("total", "Total", "140px"),
   ];
 }
 

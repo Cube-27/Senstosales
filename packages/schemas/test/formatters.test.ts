@@ -41,21 +41,22 @@ const date = (s: string): IsoDate => unwrap(parseIsoDate(s));
 // "legacy": there legacy printed a negative zero ("-0", "-₹0") or rounded a binary float tie down; these print
 // zero unsigned and round exact ties half away from zero (D-0021).
 
-describe("fmtQty: whole units, Indian grouping", () => {
+describe("fmtQty: exact to 3 dp, Indian grouping", () => {
   it.each([
     ["0", "0"],
     ["1", "1"],
-    ["2.499", "2"],
-    ["2.5", "3"],
-    ["-2.5", "-2"],
-    ["-2.501", "-3"],
-    ["-0.4", "0"], // legacy "-0"
+    ["0.001", "0.001"],
+    ["2.5", "2.5"],
+    ["2.499", "2.499"],
+    ["12.345", "12.345"],
+    ["-2.5", "-2.5"],
+    ["-0.4", "-0.4"],
     ["1234", "1,234"],
     ["123456", "1,23,456"],
-    ["12345678.9", "1,23,45,679"],
+    ["12345678.9", "1,23,45,678.9"],
     ["-100000", "-1,00,000"],
-    ["9007199254740.499", "90,07,19,92,54,740"],
-    ["-9007199254740.501", "-90,07,19,92,54,741"],
+    ["-123456.05", "-1,23,456.05"],
+    ["9007199254740.499", "90,07,19,92,54,740.499"],
   ])("%s -> %s", (q, expected) => {
     expect(fmtQty(qty(q))).toBe(expected);
   });
@@ -125,11 +126,11 @@ describe("fmtMoney: rupee sign, 2 dp", () => {
   });
 });
 
-describe("fmtMoney: GEMC at 2 to 5 dp (A-12)", () => {
+describe("fmtMoney: GEMC always at 5 dp (A-12), so a column lines up", () => {
   it.each([
-    ["0", "₹0.00"],
-    ["100", "₹100.00"],
-    ["719.2", "₹719.20"],
+    ["0", "₹0.00000"],
+    ["100", "₹100.00000"],
+    ["719.2", "₹719.20000"],
     ["719.27966", "₹719.27966"],
     ["1234567.12345", "₹12,34,567.12345"],
     ["-0.00001", "-₹0.00001"],
@@ -145,7 +146,7 @@ describe("fmtRate: as fmtMoney without the rupee sign", () => {
     ["1234.50", false, "1,234.50"],
     ["719.27966", false, "719.28"],
     ["719.27966", true, "719.27966"],
-    ["719.2", true, "719.20"],
+    ["719.2", true, "719.20000"],
     ["-12.3", false, "-12.30"],
   ])("%s gemc=%s -> %s", (m, gemc, expected) => {
     expect(fmtRate(money(m), { gemc })).toBe(expected);

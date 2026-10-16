@@ -20,9 +20,11 @@ import { restoreRoutes } from "../../src/routes/restore.ts";
 import { backupHandlers, startDailyBackup } from "../../src/services/backup.ts";
 import { jobWorker } from "../../src/services/job-worker.ts";
 import { jobsService } from "../../src/services/jobs.ts";
+import { createOnboardingService } from "../../src/services/onboarding.ts";
 import { restoreService } from "../../src/services/restore.ts";
+import { supplierRef } from "../../src/services/supplier.ts";
 import { gate, json, memoryLogger, testApp } from "../helpers.ts";
-import { fixedClock, NOW, SUPPLIER, supplierDb } from "../service-deps.ts";
+import { fixedClock, memoryStorage, NOW, SUPPLIER, supplierDb } from "../service-deps.ts";
 
 const TODAY = "daily-2025-06-01.db";
 const SAFETY = "safety-20250601T053000Z.db";
@@ -55,10 +57,18 @@ function harness(wrap: (files: BackupFiles) => BackupFiles = (files) => files) {
     jobWorker({ db, clock: fixedClock, logger, handlers: backupHandlers({ clock: fixedClock, backups }) }),
   );
   const jobs = jobsService({ db, clock: fixedClock, jobs: runner });
+  const supplierId = supplierRef(db);
+  const onboarding = createOnboardingService({
+    db,
+    clock: fixedClock,
+    jobs: runner,
+    storage: memoryStorage(),
+    supplierId,
+  });
   const restore = restoreService({ db, clock: fixedClock, backups, logger });
   const { send } = testApp({ ...jobsRoutes(jobs), ...restoreRoutes(restore) });
   const daily = () => startDailyBackup({ clock: fixedClock, backups, jobs, logger });
-  return { send, daily, logger };
+  return { send, daily, logger, onboarding };
 }
 
 const openCopy = (name: string): NodeDb => {
@@ -263,6 +273,17 @@ describe("restore", () => {
     expect((await restore(send, "pre-upgrade-0-20250101T053000Z.db")).status).toBe(200);
     expect(await readSchemaVersion(db)).toBe(LATEST_VERSION);
     expect(await supplierName(db)).toBeUndefined();
+  });
+
+  it("asks for onboarding again after restoring a backup made before it (N-RESTORE)", async () => {
+    const empty = openNodeDb(join(backupsDir, "pre-upgrade-0-20250101T053000Z.db"));
+    await empty.query(empty.build.values(sql`PRAGMA user_version`));
+    empty.close();
+    const { send, onboarding } = harness();
+    expect(await onboarding.done()).toBe(true);
+
+    expect((await restore(send, "pre-upgrade-0-20250101T053000Z.db")).status).toBe(200);
+    expect(await onboarding.done()).toBe(false);
   });
 
   it("refuses a backup from a newer version, or a damaged one, without touching the data", async () => {

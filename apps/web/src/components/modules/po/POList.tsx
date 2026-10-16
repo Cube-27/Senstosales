@@ -194,7 +194,8 @@ function columns(onDelete: (row: Row) => void): Column<Row>[] {
       width: "136px",
       align: "right",
       sortable: true,
-      render: (row) => (row.poValue === null ? "—" : fmtMoney(row.poValue, { gemc: row.isGemc })),
+      // GEMC and other POs share the column, so every row shows 2 dp and the amounts line up (D-0626).
+      render: (row) => (row.poValue === null ? "—" : fmtMoney(row.poValue, { gemc: false })),
     },
     {
       key: "status",

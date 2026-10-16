@@ -70,8 +70,10 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
     {
       key: "rate",
       header: "Unit Rate",
-      width: "92px",
+      // A GEMC rate up to 99,999.12345; a longer one is in the title.
+      width: "120px",
       align: "right",
+      title: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : ""),
       render: (r) => (r.poItem ? fmtRate(r.poItem.rate, { gemc }) : "—"),
     },
     // The SRV's own UNIT as printed; a row stored without one shows the PO item's.
@@ -85,7 +87,8 @@ function columns(flagsOf: (id: string) => readonly Flag[], gemc: boolean): Colum
       title: () => "Dispatched against the PO item",
       render: (r) => <span className="tabular-nums">{r.poItem ? fmtQty(r.poItem.dspQty) : "—"}</span>,
     },
-    shownQty("rcdQty", "Received"),
+    // RECVD QTY as the SRV printed it: an empty cell stays empty, though received counts the accepted for it.
+    qtyColumn<Row>("rcdQty", "Received", (r) => r.rawRcdQty, { width: "88px" }),
     shownQty("acceptedQty", "Accepted"),
     shownQty("rejQty", "Rejected"),
     {

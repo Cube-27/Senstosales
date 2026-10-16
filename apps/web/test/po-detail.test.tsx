@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { entryAllow } from "../src/components/modules/po/PODetailItems.tsx";
 import { renderApp, stubApi } from "./screens.tsx";
-import { detail, flag, item, ITEM_A, PO_ID } from "./po-fixtures.ts";
+import { detail, flag, item, ITEM_A, po, PO_ID } from "./po-fixtures.ts";
 
 afterEach(() => {
   cleanup();
@@ -49,6 +49,13 @@ describe("/po/:id (SPEC-16 PR 2)", () => {
       "1",
     ]);
     expect(cells(itemRow(20))[10]).toBe("Cancelled");
+  });
+
+  it("shows a GEMC rate at 5 dp, with the rate as the cell's title (D-0626)", async () => {
+    stubApi({ [DETAIL_PATH]: () => detail({ po: po({ isGemc: true }), items: [item({ rate: "719.2" })] }) });
+    renderApp(`/po/${PO_ID}`);
+    const rate = await within(await waitFor(() => itemRow(10))).findByText("719.20000");
+    expect(rate.closest("td")?.getAttribute("title")).toBe("719.20000");
   });
 
   it("shows a lot's entry-allow note in place of the date (INV-46)", async () => {

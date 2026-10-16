@@ -114,7 +114,7 @@ describe("dashboard (SPEC-15 PR 4)", () => {
       "DispatchedVia Delivery Challans40040.0%",
     );
     expect(within(funnel).getByText("Accepted").closest("div.px-4")?.textContent).toBe(
-      "AcceptedConfirmed via SRV33333.3%",
+      "AcceptedConfirmed via SRV333.433.3%",
     );
     expect(within(funnel).getByText("Pending Dispatch").parentElement?.textContent).toBe(
       "Pending Dispatch550 units(55.0%)",
