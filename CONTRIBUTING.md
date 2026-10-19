@@ -19,7 +19,8 @@ merge. Each job runs a root script; `pnpm verify` runs them all in CI's order (C
 
 ```sh
 pnpm check:code        # check: vp check (Oxfmt + Oxlint), language (INV-90), status-source (INV-64), migration SQL lint
-                       # and D1 dialect step (INV-84), design validators (INV-66), tsc -b, vp test run (incl. tools)
+                       # and D1 dialect step (INV-84), design validators (INV-66), tsc -b
+pnpm check:test        # test: vp test run, every Vitest file (packages, apps, tools); CI runs it in three shards
 pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
 pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
 pnpm check:build       # build: pnpm -r build, then the web shell bundle budget (INV-104)
