@@ -16,7 +16,7 @@ Rules:
 
 Test types: **domain** (Vitest unit test in `packages/domain`, table-driven, literal values), **parser** (golden
 test on anonymised fixtures), **API** (Hono `app.request()` against in-memory SQLite), **export** (golden file),
-**e2e** (Playwright), **CI** (a CI job or lint rule), **review** (reviewer checklist).
+**e2e** (Playwright), **CI** (a CI job or lint rule), **review** (the PR template checklist).
 
 ## Quantities
 
@@ -160,7 +160,7 @@ test on anonymised fixtures), **API** (Hono `app.request()` against in-memory SQ
 | INV-86 | Buyers are BHEL units only; scraping launches the system Edge through playwright-core with no bundled browser.                                                                                                                                             | A-5; §7.5            | `packages/db` seed, `packages/scraper`; review             | specified |
 | INV-87 | The dropped features (procurement intel page and its analytics endpoints, multi-PO invoices) have no route, screen or endpoint; the daily-dispatch report is back (rev 1.12, INV-120).                                                                     | A-16; §9             | `packages/schemas` route table; review                     | specified |
 | INV-88 | Nothing in the Candidates register or `EDGE_CASES.md` is built without an Appendix A owner decision.                                                                                                                                                       | A-21, A-27; §2 C14   | review                                                     | specified |
-| INV-89 | Agents never merge a PR directly; the orchestrator's merge script is the only merge path.                                                                                                                                                                  | A-20; §14.2          | `merge_pr.sh`; rulesets; review                            | specified |
+| INV-89 | Agents never merge their own PR; `main` takes PRs only.                                                                                                                                                                                                    | A-20; §14.2          | rulesets; review                                           | specified |
 | INV-90 | All production code is TypeScript.                                                                                                                                                                                                                         | A-1; §16             | CI (language check)                                        | specified |
 | INV-91 | No legacy code is copied verbatim.                                                                                                                                                                                                                         | A-22; §2 C16         | review                                                     | specified |
 | INV-92 | An edge case the spec does not cover is recorded in `EDGE_CASES.md` and gets the spec's (or frozen legacy) behaviour, never invented handling.                                                                                                             | A-27; §2 C18         | review; PR template                                        | specified |

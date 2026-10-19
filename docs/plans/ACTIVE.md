@@ -1,8 +1,7 @@
 # Implementation tracker
 
-The live state of implementation. The orchestrator (`/run-plan`) decides its content and the implementor writes it
-in its PR's tracker commit; a solo agent with no orchestrator updates it in its own PR (`CLAUDE.md` §3). One row is
-one PR from a spec's PR plan (120 rows). Spec dependencies are in [`specs/README.md`](../specs/README.md). Work in
+The live state of implementation. A PR that finishes rows marks them `done (#n)` in its tracker commit
+(`/implement-pr` §5). One row is one PR from a spec's PR plan (120 rows). Spec dependencies are in [`specs/README.md`](../specs/README.md). Work in
 flight is read from open PRs and `spec-*` branches, not from this file.
 
 A row is ready when everything it needs is available: the code it touches or builds on is merged, or what it needs
@@ -70,7 +69,7 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-08/SPEC-11 (#55): SRV ingest does not bump the PO version, so an overlapping DC create can write rcd_qty from a stale snapshot until the next recompute; SRV ingest race on links.
 - SPEC-11 (#59 review): a DC create racing a DC edit that frees the same number (SRV items on a third PO).
 - SPEC-11 (#60 review): held-batch test for a DC delete committing between an invoice create's read and commit.
-- SPEC-05 (#80 simplify): an index on po_lot(po_item_id) (the srv_item and reconciliation_issue ones came with migration 0004).
+- SPEC-05 (#80): an index on po_lot(po_item_id) (the srv_item and reconciliation_issue ones came with migration 0004).
 - SPEC-08 PR 5 (#47 review): finish() deletes files staged into the same id after documents() listed them; safe while the client stages the whole folder before starting.
 - SPEC-16 (#84): light/dark screenshots of the PO and SRV screens (§7); `/po` e2e for paging bounding boxes and the blocked-delete reason once SPEC-18 can create a DC (now ct suite and unit tests).
 - SPEC-16 (#84): PO rows and items show received under Accepted (INV-09) in the UI; the API could return `acceptedQty` as SRV does.
@@ -85,7 +84,7 @@ Open notes, not yet rows. Notes on rows not done stay on those rows.
 - SPEC-18 (#88 review): `LineTable` clips its right-hand columns in a narrow window (`overflow-x-auto`); DC and invoice list values format every row as non-GEMC (list rows carry no `isGemc`).
 - SPEC-18 (#88): DC detail reads `po.detail` only for Received; `dc.detail` could carry it (D-0486).
 - SPEC-18 (#94 review): a packets field that is not a whole number is saved as no packets without a message; validate it in the form.
-- SPEC-13 (#94 simplify): the daily dispatch read filters and orders by `dc.dc_date` with no index on it; add one with the next migration.
+- SPEC-13 (#94): the daily dispatch read filters and orders by `dc.dc_date` with no index on it; add one with the next migration.
 
 ## E2E fixes (2026-10-15)
 

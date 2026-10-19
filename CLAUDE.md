@@ -60,36 +60,15 @@ Generic rules:
 
 ## 3. How work runs
 
-One PR covers a batch of related ready rows, normally all ready rows of one spec, or of adjacent specs touching the same
-code. Target 30-80 changed files or about 1500-4000 changed lines; split only when a row waits on a human task or on
-unmerged code, or the PR would pass ~4000 lines. Branch `spec-NN/pr-A-B-<name>`, worktree `spec-NN-pr-A-B`. Commit row
-by row; the tracker commit marks every row in the batch `done (#n)`. One `/simplify` pass and one review per PR,
-regardless of size. Project skills in `.claude/skills/` hold the procedures:
-
-| Skill           | Who runs it               | Does                                                                                                                                                                                             |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/run-plan`     | The orchestrator          | Assigns batches of ready rows to workers (at most 4 at once; reviewers don't count), hands out decision IDs, merges `READY` PRs one at a time on green CI, keeps the tracker current, escalates. |
-| `/implement-pr` | A worker                  | Takes one batch of rows from `todo` to an open, verified PR: tests first, then code, self-review, PR body. Owns the PR until it merges.                                                          |
-| `/review-pr`    | A fresh reviewer          | One verdict per PR against its spec rows, §2 and `docs/ENGINEERING.md`: `MERGE`, `MERGE AFTER FIX` or `ESCALATE`.                                                                                |
-| `/pickup`       | Anyone starting a session | Resumes in-flight rows from the trail, or pauses cleanly.                                                                                                                                        |
-
-Worktrees live in `C:/Projects/SenstoSales-worktrees/spec-NN-pr-A-B` (beside the repo, never inside it), on branch
-`spec-NN/pr-A-B-<short-name>`. Never work in the main checkout.
-
-**Shared files.** With an orchestrator running, it gives each implementor a decision-ID range at assignment; the
-implementor writes its rows (`done (#n)`) to `ACTIVE.md` and its decisions to the decisions log (`DECISIONS.md`,
-"Where an entry goes") in the PR's tracker commit, before its first `READY`. "Current focus" is refreshed only when
-it materially changes, by the implementor the orchestrator asks. Workers put their decisions in the PR body
-(`## Decisions`). A solo agent with no orchestrator uses the next free IDs.
-
-`main` requires a PR for every change, including tracker updates. Work in flight is read from open PRs and
-`spec-*` branches, not from ACTIVE.md. Never merge without a `MERGE` or `MERGE AFTER FIX` verdict from someone other
-than the author (every listed fix made) and green CI. One review per PR, no re-review. Agents never merge directly:
-`tools/orchestrator/merge_pr.sh` is the only merge path; never run `gh pr merge` yourself.
+Every change goes through a PR: `main` takes PRs only. Work in a worktree beside the repo
+(`C:/Projects/SenstoSales-worktrees/<name>`), never in the main checkout. Flow: branch off fresh `origin/main` →
+change, tests first → targeted checks (§7) → PR → green CI → answer any bot threads once → done. The
+`/implement-pr` skill holds the steps. Agents never merge their own PR (INV-89). Work in flight is read from open
+PRs, not from `ACTIVE.md`.
 
 ## 4. Decisions: decide and log, or escalate
 
-**Decide yourself and record it** (status `decided`, through the PR body or the decisions log per §3): implementation
+**Decide yourself and record it** (status `decided`, in the PR body and the decisions log): implementation
 choices within one spec's scope that don't change ARCHITECTURE, a public API shape, a schema other specs rely on,
 or a §2 rule. For example internal module structure, a library among licence-clean equivalents, naming, error
 messages, or the most conservative reading of a genuinely ambiguous spec detail. Don't log trivial choices.
@@ -108,7 +87,7 @@ messages, or the most conservative reading of a genuinely ambiguous spec detail.
 1. Record a `needs-owner` decision: the question, the options, your recommendation, and what is blocked. Copy it
    as a row to `OPEN_QUESTIONS.md`. This copy is the only change an agent makes to that file without owner
    approval.
-2. The row becomes `blocked (D-NNNN)`. The orchestrator writes both; working solo, you do.
+2. The row becomes `blocked (D-NNNN)`.
 3. Move on to the next ready row. Don't wait idle; the owner answers asynchronously.
 
 ## 6. Editing documents

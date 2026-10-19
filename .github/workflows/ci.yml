@@ -16,12 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The first job: tools/orchestrator/config.sh CI_FIRST_JOB names it, and it never skips. It decides which jobs a
-  # pull request needs (tools/checks/src/changes.ts): one that touches only docs/**, *.md and .claude/skills/** skips
-  # check, licenses, build, audit and e2e; anything else, and every push to main, runs everything. The gate is a
-  # job-level `if:`, never workflow-level `paths:`, so a skipped job still reports and satisfies the required checks.
-  # real-data-scan always runs. A docs-only change still gets check's format step (Oxfmt formats *.md): this job runs
-  # `vp fmt --check` on its changed files, so a misformatted doc never reaches main.
+  # The first job, and it never skips. It decides which jobs a pull request needs (tools/checks/src/changes.ts): one
+  # that touches only docs/**, *.md and .claude/skills/** skips check, licenses, build, audit and e2e; anything else,
+  # and every push to main, runs everything. The gate is a job-level `if:`, never workflow-level `paths:`, so a
+  # skipped job still reports and satisfies the required checks. real-data-scan always runs. A docs-only change still
+  # gets check's format step (Oxfmt formats *.md): this job runs `vp fmt --check` on its changed files, so a
+  # misformatted doc never reaches main.
   changes:
     runs-on: ubuntu-24.04
     outputs:
@@ -50,8 +50,7 @@ jobs:
         run: xargs -d '\n' pnpm exec vp fmt --check --no-error-on-unmatched-pattern < "$RUNNER_TEMP/changed.txt"
 
   # Format, lint (C15 guardrails, C12/C3 boundaries), the INV-90 language check, the INV-64 status-source check, the
-  # INV-84 migration SQL lint and D1 dialect step (every migration applied on a local in-memory D1), typecheck, tests
-  # (including the orchestrator tools and `bash -n` over tools/orchestrator/*.sh).
+  # INV-84 migration SQL lint and D1 dialect step (every migration applied on a local in-memory D1), typecheck, tests.
   check:
     needs: changes
     if: needs.changes.outputs.code == 'true'

@@ -21,13 +21,13 @@ job must pass before merge.
 - Title in Conventional Commits form: `type(scope): subject`, e.g. `feat(api): reject empty batch requests`.
 - Fill in `.github/pull_request_template.md`: why, what changed, scope, verification, decisions, checklist.
 - Tests come first and test behaviour: call the code the way its users do and assert the exact result.
-- Merge needs a `MERGE` (or `MERGE AFTER FIX`, fixes made) verdict from someone other than the author, and green
-  CI. Hooks and checks are never skipped or weakened.
+- Merge needs green CI and is done by someone other than the author. Hooks and checks are never skipped or
+  weakened.
 
 ## Decisions and escalation
 
 Implementation choices within a spec's scope are decided and logged in the decisions log (`docs/DECISIONS.md`,
-"Where an entry goes"; in the PR body under `## Decisions` while an orchestrator runs). Changes to `docs/ARCHITECTURE.md` or `docs/OPEN_QUESTIONS.md`,
+"Where an entry goes", and the PR body under `## Decisions`). Changes to `docs/ARCHITECTURE.md` or `docs/OPEN_QUESTIONS.md`,
 candidates, secrets and paid accounts are escalated to the owner (`CLAUDE.md` §4–§5).
 
 ## Licensing
