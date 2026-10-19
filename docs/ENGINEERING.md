@@ -71,7 +71,7 @@ convention.
 accounts and irreversible actions are escalated, never decided.
 
 **Own the exit condition.** Before starting, state "done" as a checkable predicate ("acceptance criteria 1–4 pass;
-`pnpm verify` green"). Drive to it. A plateau is not a stop: change approach. Never relax the predicate to
+CI green"). Drive to it. A plateau is not a stop: change approach. Never relax the predicate to
 declare victory. A real dead end, after three honest attempts, is escalated.
 
 **Encode lessons in structure.** When the same mistake recurs, fix it with the strongest tool that works, in this

@@ -18,19 +18,19 @@ Planned for v1 (see the specs; nothing below is claimed until its tests pass):
 
 ## Documentation
 
-| Document                                         | Purpose                                                             |
-| ------------------------------------------------ | ------------------------------------------------------------------- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)     | The single design reference                                         |
-| [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md) | Owner decisions still open, each with a recommended default         |
-| [docs/specs/](docs/specs/README.md)              | Implementation specs in build order, each with a PR plan            |
-| [docs/DECISIONS.md](docs/DECISIONS.md)           | Decisions log: rules, cross-cutting entries, index of open items    |
-| [docs/decisions/](docs/decisions)                | Decisions made during implementation, one file per spec             |
-| [docs/plans/ACTIVE.md](docs/plans/ACTIVE.md)     | Current implementation state                                        |
-| [docs/INVARIANTS.md](docs/INVARIANTS.md)         | Testable invariants, each with what enforces it                     |
-| [docs/ENGINEERING.md](docs/ENGINEERING.md)       | Engineering principles for agents                                   |
-| [CLAUDE.md](CLAUDE.md)                           | Rules for coding agents, and every command                          |
-| [CONTRIBUTING.md](CONTRIBUTING.md)               | Checks, pull requests, decisions                                    |
-| [.claude/skills/](.claude/skills/)               | Agent procedures: `run-plan`, `implement-pr`, `review-pr`, `pickup` |
+| Document                                         | Purpose                                                          |
+| ------------------------------------------------ | ---------------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)     | The single design reference                                      |
+| [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md) | Owner decisions still open, each with a recommended default      |
+| [docs/specs/](docs/specs/README.md)              | Implementation specs in build order, each with a PR plan         |
+| [docs/DECISIONS.md](docs/DECISIONS.md)           | Decisions log: rules, cross-cutting entries, index of open items |
+| [docs/decisions/](docs/decisions)                | Decisions made during implementation, one file per spec          |
+| [docs/plans/ACTIVE.md](docs/plans/ACTIVE.md)     | Current implementation state                                     |
+| [docs/INVARIANTS.md](docs/INVARIANTS.md)         | Testable invariants, each with what enforces it                  |
+| [docs/ENGINEERING.md](docs/ENGINEERING.md)       | Engineering principles for agents                                |
+| [CLAUDE.md](CLAUDE.md)                           | Rules for coding agents that apply to every task                 |
+| [CONTRIBUTING.md](CONTRIBUTING.md)               | Checks by CI job, pull requests, decisions                       |
+| [.claude/skills/](.claude/skills/)               | Agent procedures for situational tasks                           |
 
 ## Stack
 
@@ -38,16 +38,15 @@ TypeScript (pnpm monorepo), Hono, Drizzle over SQLite, Vite + React, Tauri 2
 
 ## Getting started
 
-You need: Node 26+ and pnpm 11.
+You need: Node 26+, pnpm 11 (`corepack enable`) and, on Windows, Git Bash.
 
 ```sh
 pnpm install
 pnpm hooks     # once per clone
-pnpm verify
 pnpm start     # build the web UI and run the app at http://127.0.0.1:<port>; Ctrl+C stops it
 ```
 
-Every other command, including the checks CI runs, is in [CLAUDE.md §7](CLAUDE.md#7-commands).
+The checks CI runs, by job, are in [CONTRIBUTING.md](CONTRIBUTING.md#setup-and-checks).
 
 ## Repository layout
 
@@ -55,7 +54,7 @@ Every other command, including the checks CI runs, is in [CLAUDE.md §7](CLAUDE.
 packages/    domain rules, schemas, db, parsers, documents, scraper (added as the specs land)
 apps/        api, web, desktop
 docs/        architecture, open questions, specs, decisions, tracker, invariants
-tools/       repo checks and the agent orchestrator scripts
+tools/       repo checks, generators, corpus import, release and start scripts
 .github/     CI workflows and the pull request template
 .claude/     agent skills
 ```

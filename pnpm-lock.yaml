@@ -321,12 +321,6 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
 
-  tools/orchestrator:
-    devDependencies:
-      yaml:
-        specifier: ^2.9.1
-        version: 2.9.1
-
   tools/release:
     devDependencies:
       '@senstosales/db':

@@ -22,7 +22,7 @@
 
 ## Bot findings
 
-<!-- After the one bot pass (/implement-pr §6.1): each CodeAnt, CodeRabbit or SonarCloud finding not fixed, as `bot · path:line · rule — reason`; or "None". -->
+<!-- After the one bot pass (/implement-pr §6): each CodeAnt, CodeRabbit or SonarCloud finding not fixed, as `bot · path:line · rule — reason`; or "None". -->
 
 ## Checklist
 
@@ -32,7 +32,7 @@
 - [ ] No real data, secrets or customer names; fixtures are synthetic.
 - [ ] No dependency under a denied licence; `NOTICE` updated for any adapted third-party material.
 - [ ] New invariants appended to `docs/INVARIANTS.md`.
-- [ ] Decisions recorded in the decisions log (`docs/DECISIONS.md`, "Where an entry goes"), or listed above for the orchestrator to record.
+- [ ] Decisions recorded in the decisions log (`docs/DECISIONS.md`, "Where an entry goes"), in the tracker commit for spec rows.
 - [ ] Every business rule touched cites its `INV-NN`; uncovered edge cases recorded as `EC-NN` rows in `docs/EDGE_CASES.md` (C18), with the spec's behaviour implemented.
-- [ ] Simplify pass ran (`/simplify`); no file over 800 lines, no function over complexity 15 (C15).
+- [ ] No file over 800 lines, no function over complexity 15 (C15).
 - [ ] A bug or finding that recurred now has a check or regression test, and a `docs/plans/RECURRING.md` row.
