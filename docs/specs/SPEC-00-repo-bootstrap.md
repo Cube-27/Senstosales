@@ -180,7 +180,7 @@ INV-88, INV-91, INV-92.
 
 ## 6. Testing strategy
 
-- Unit tests for every check in `tools/checks/src` (`tools/checks/test/`, Vitest, run in `check`).
+- Unit tests for every check in `tools/checks/src` (`tools/checks/test/`, Vitest, run in `test`).
 - Planted violations, constructed at run time or added and removed within the PR: a denied-licence dev dependency
   fails `licenses`; a GSTIN-shaped string and a local data path fail `real-data-scan`; a 801-line file and a
   complexity-16 function fail `check`; a `node:fs` import from `packages/domain` fails `check`.
