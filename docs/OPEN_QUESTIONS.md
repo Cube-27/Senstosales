@@ -10,7 +10,7 @@ A2: questions closed by the spec or by frozen legacy behaviour). Items deferred 
 - mechanisms that might be built later go to the Candidates register (`ARCHITECTURE.md` §17).
 
 This file changes only with owner approval, with one exception: an agent's `needs-owner` decision is copied here as
-a new row, citing its `D-NNNN` (`CLAUDE.md` §5). Decisions agents make within their authority go in `DECISIONS.md`.
+a new row, citing its `D-NNNN` (the `/escalate` skill). Decisions agents make within their authority go in `DECISIONS.md`.
 Resolved rows are struck through and say when and how: `~~question~~ **Resolved YYYY-MM-DD:** …`.
 
 | #   | Question | Why it matters | Recommended default |

@@ -48,7 +48,7 @@ becomes a note in the PR body, not code.
 
 - Map each acceptance criterion to the test or command that proves it.
 - A check failing twice for the same reason: attack the premise (ENGINEERING). After three honest attempts,
-  escalate (`CLAUDE.md` §5).
+  escalate (`/escalate`).
 - Throwaway services (databases, containers) bind to `127.0.0.1` and are removed before you finish.
 
 ## 4. Self-review before the PR

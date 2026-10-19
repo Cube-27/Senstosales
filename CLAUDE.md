@@ -1,26 +1,20 @@
 # CLAUDE.md — rules for agents working in this repo
 
-SenstoSales: a supplier-side ERP for BHEL purchase orders: upload POs and SRVs, create DCs and invoices, and track quantities. See `README.md`. Coding agents implement it, mostly autonomously, from the specs. The
-owner is involved only for the escalations listed below. Read this file fully before doing anything.
+SenstoSales: a supplier-side ERP for BHEL purchase orders: upload POs and SRVs, create DCs and invoices, and track
+quantities. See `README.md`. The product is built; coding agents maintain it. This file holds only the rules that
+apply to every task; situational procedures are skills in `.claude/skills/` (`implement-pr`, `escalate`,
+`edit-docs`).
 
-## 1. Read order
+## 1. Sources of truth
 
-1. `docs/plans/ACTIVE.md`: its "Current focus" section and your spec's table (plus "Follow-ups" if your spec is
-   named there).
-2. The spec for your work in `docs/specs/`: its design, invariants, acceptance criteria, and your PR's row in the
-   PR plan.
-3. `docs/ARCHITECTURE.md` §2 and only the sections your spec cites. **§2 (the contract, C1–Cn) is binding on every
-   change.** Read it once per session.
-4. Decisions you must stay consistent with: your spec's `docs/decisions/SPEC-NN.md` (large files: scan the `### D-`
-   headings, read the entries your rows touch), the "Index of open items" in `docs/DECISIONS.md`, and any D-ID
-   you are pointed to (`grep -rn "### D-NNNN" docs/DECISIONS.md docs/decisions`).
-5. `docs/ENGINEERING.md`: how to write code here. Read it once per session.
-
-**Never read `ACTIVE.md`, `ARCHITECTURE.md` or `DECISIONS.md` in full**: together they cost tens of thousands of
-tokens. Find sections with `grep -n "^#"` and read line ranges.
-
-`ARCHITECTURE.md` is the single source of truth. Where a spec and the architecture disagree, stop and escalate
-(§5). You may read every project document. Never read, copy or quote private data into the repo: the owner's local BHEL corpus (`SENSTO_CORPUS_DIR`), the legacy database, or anything under `C:/Projects/SenstoSales-private`. The legacy code backup may be read for business rules and visible output only (C16).
+- `docs/ARCHITECTURE.md` is the single source of truth. **§2 (the contract, C1–Cn) is binding on every change**;
+  §2 below copies it. Where a spec and the architecture disagree, stop and escalate (§4).
+- `docs/ENGINEERING.md`: how to write code here. Read it once per session.
+- Read only what the change needs. Never read `ACTIVE.md`, `ARCHITECTURE.md` or `DECISIONS.md` in full: together
+  they cost tens of thousands of tokens. Find sections with `grep -n "^#"` and read line ranges.
+- You may read every project document. Never read, copy or quote private data into the repo: the owner's local BHEL
+  corpus (`SENSTO_CORPUS_DIR`), the legacy database, or anything under `C:/Projects/SenstoSales-private`. The legacy
+  code backup may be read for business rules and visible output only (C16).
 
 ## 2. Hard rules
 
@@ -62,9 +56,25 @@ Generic rules:
 
 Every change goes through a PR: `main` takes PRs only. Work in a worktree beside the repo
 (`C:/Projects/SenstoSales-worktrees/<name>`), never in the main checkout. Flow: branch off fresh `origin/main` →
-change, tests first → targeted checks (§7) → PR → green CI → answer any bot threads once → done. The
-`/implement-pr` skill holds the steps. Agents never merge their own PR (INV-89). Work in flight is read from open
-PRs, not from `ACTIVE.md`.
+change, tests first → targeted checks → PR → green CI → answer any bot threads once → done. The `/implement-pr`
+skill holds the steps. Agents never merge their own PR (INV-89). Work in flight is read from open PRs, not from
+`ACTIVE.md`.
+
+Never run the full suite locally: no `pnpm verify`, `pnpm check:code`, unfiltered `vp test run`, repo-wide `tsc -b`
+or the full e2e. Run only the tests for the files you changed and fmt/lint on the changed files; CI runs everything
+(the checks by job are in `CONTRIBUTING.md`). Run tools through pnpm, never `npx`. In shell commands write `C:/...`
+paths, never `/c/...`.
+
+```sh
+pnpm install                    # dependencies (Node 26+, pnpm 11)
+pnpm test <files>               # only the files you changed; locally at most two workers
+pnpm exec vp check <files>      # format and lint the files you changed (`pnpm format` rewrites formatting)
+```
+
+Tooling is Vite+ (`vp`): Oxlint for lint (including the C15 limits), Oxfmt for formatting, Vitest for tests (import
+from `vite-plus/test`). There is no ESLint or Prettier.
+
+Write plainly: no marketing language, and no claim that isn't backed by a test or a measured result.
 
 ## 4. Decisions: decide and log, or escalate
 
@@ -73,7 +83,7 @@ choices within one spec's scope that don't change ARCHITECTURE, a public API sha
 or a §2 rule. For example internal module structure, a library among licence-clean equivalents, naming, error
 messages, or the most conservative reading of a genuinely ambiguous spec detail. Don't log trivial choices.
 
-**Escalate** (§5) when:
+**Escalate** with the `/escalate` skill, never decide, when:
 
 - the change would alter or contradict `ARCHITECTURE.md` or `OPEN_QUESTIONS.md`;
 - it would build a candidate from the candidates register;
@@ -82,50 +92,4 @@ messages, or the most conservative reading of a genuinely ambiguous spec detail.
 - two specs contradict each other;
 - the same failure persists after three honest attempts.
 
-## 5. Escalation procedure
-
-1. Record a `needs-owner` decision: the question, the options, your recommendation, and what is blocked. Copy it
-   as a row to `OPEN_QUESTIONS.md`. This copy is the only change an agent makes to that file without owner
-   approval.
-2. The row becomes `blocked (D-NNNN)`.
-3. Move on to the next ready row. Don't wait idle; the owner answers asynchronously.
-
-## 6. Editing documents
-
-- `ARCHITECTURE.md` and `OPEN_QUESTIONS.md` change only with owner approval. When approved, add a revision-log row
-  and keep the specs consistent in the same change.
-- Specs follow one template (`docs/specs/README.md`). Clarifying edits that don't change the architecture are
-  allowed and logged in the spec's decisions file.
-- A spec that adds an invariant appends its row to `docs/INVARIANTS.md`. Invariants are never removed.
-- `ACTIVE.md`, `DECISIONS.md` and `docs/decisions/` are working documents: current, short and factual. In
-  `ACTIVE.md`, a spec whose rows are all done collapses to one line under "Done specs"; its open notes move to
-  "Follow-ups" unless a row not done already carries them.
-- Write plainly. No marketing language, and no claim that isn't backed by a test or a measured result.
-
-## 7. Commands
-
-Needs: Node 26+, pnpm 11 (`corepack enable`), Git Bash on Windows. Run from the repo root.
-
-```sh
-pnpm install         # dependencies
-pnpm hooks           # once per clone: the `vp staged` pre-commit hook (fmt, lint, real-data scan --staged)
-pnpm verify          # CI only, never run locally: everything CI runs, in CI's order; stops at the first failure
-pnpm start           # builds apps/web, then runs the app on 127.0.0.1 and prints its address; Ctrl+C stops it
-pnpm format          # vp fmt --write (Oxfmt)
-pnpm test <files>    # only the files you changed; locally at most two workers. Run tools through pnpm, never npx
-```
-
-The checks CI runs, by job (every job must pass before merge). Each is a root script, so `pnpm verify` runs them all:
-
-```sh
-pnpm check:code        # check: vp check (Oxfmt + Oxlint), language (INV-90), status-source (INV-64), migration SQL lint
-                       # and D1 dialect step (INV-84), design validators (INV-66), tsc -b, vp test run (incl. tools)
-pnpm check:real-data   # real-data-scan (C1); exceptions only in tools/checks/real-data-allow.txt
-pnpm check:licenses    # licenses (C13), plus a CycloneDX SBOM artifact in CI
-pnpm check:build       # build: pnpm -r build, then the web shell bundle budget (INV-104)
-pnpm check:audit       # audit: pnpm audit --prod at high, action pins and read-only permissions (INV-108)
-pnpm check:desktop     # desktop (Windows CI only, not in verify: installs, runs and uninstalls the app; SPEC-20)
-```
-
-Tooling is Vite+ (`vp`): Oxlint for lint (including the C15 limits `max-lines` 800 and `complexity` 15), Oxfmt for
-formatting, Vitest for tests (import from `vite-plus/test`). There is no ESLint or Prettier.
+Editing `docs/` (architecture, specs, invariants, the tracker, decisions): the `/edit-docs` skill.

@@ -28,8 +28,8 @@ Planned for v1 (see the specs; nothing below is claimed until its tests pass):
 | [docs/plans/ACTIVE.md](docs/plans/ACTIVE.md)     | Current implementation state                                     |
 | [docs/INVARIANTS.md](docs/INVARIANTS.md)         | Testable invariants, each with what enforces it                  |
 | [docs/ENGINEERING.md](docs/ENGINEERING.md)       | Engineering principles for agents                                |
-| [CLAUDE.md](CLAUDE.md)                           | Rules for coding agents, and every command                       |
-| [CONTRIBUTING.md](CONTRIBUTING.md)               | Checks, pull requests, decisions                                 |
+| [CLAUDE.md](CLAUDE.md)                           | Rules for coding agents that apply to every task                 |
+| [CONTRIBUTING.md](CONTRIBUTING.md)               | Checks by CI job, pull requests, decisions                       |
 | [.claude/skills/](.claude/skills/)               | Agent procedures for situational tasks                           |
 
 ## Stack
@@ -38,16 +38,15 @@ TypeScript (pnpm monorepo), Hono, Drizzle over SQLite, Vite + React, Tauri 2
 
 ## Getting started
 
-You need: Node 26+ and pnpm 11.
+You need: Node 26+, pnpm 11 (`corepack enable`) and, on Windows, Git Bash.
 
 ```sh
 pnpm install
 pnpm hooks     # once per clone
-pnpm verify
 pnpm start     # build the web UI and run the app at http://127.0.0.1:<port>; Ctrl+C stops it
 ```
 
-Every other command, including the checks CI runs, is in [CLAUDE.md §7](CLAUDE.md#7-commands).
+The checks CI runs, by job, are in [CONTRIBUTING.md](CONTRIBUTING.md#setup-and-checks).
 
 ## Repository layout
 

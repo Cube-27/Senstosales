@@ -36,8 +36,8 @@ Core:
   CycloneDX SBOM artefact (C13, INV-77).
 - Real-data scan (C1, INV-74) in CI and the pre-commit hook.
 - Branch ruleset on `main`; secret scanning and push protection.
-- Root files: `CLAUDE.md` (§1 read order, §2 contract C1–C18 copied from ARCHITECTURE, §3 how work runs, §4 decide
-  vs escalate, §5 escalation, §6 editing documents, §7 commands), `AGENTS.md` (one-line pointer to `CLAUDE.md`),
+- Root files: `CLAUDE.md` (§1 sources of truth, §2 contract C1–C18 copied from ARCHITECTURE, §3 how work runs, §4
+  decide vs escalate; only rules that apply to every task), `AGENTS.md` (one-line pointer to `CLAUDE.md`),
   `README.md`, `CONTRIBUTING.md`, `NOTICE` (with the pstack MIT block), `LICENSE` (exists, AGPL-3.0), PR template,
   `.gitignore`, `.gitattributes`; `docs/ENGINEERING.md`, `docs/DECISIONS.md`, `docs/plans/{ACTIVE,RECURRING}.md`.
 - Agent procedures as project skills in `.claude/skills/` (§4.9).
@@ -149,8 +149,8 @@ scanning and push protection on. The applied `gh api` commands are recorded in `
 
 - `CLAUDE.md`: §2 copies C1–C18 verbatim from ARCHITECTURE §2 (with C15 and C16 as amended: hard 800-line and
   complexity-15 limits, fixed by splitting; legacy code read only for business rules and visible output, never as an
-  implementation model). §3 says: a bug or review finding that recurs becomes a check or a regression test in the
-  PR that fixes it, and is listed in `docs/plans/RECURRING.md`. §6: specs cite `spec §n` / `A-n` / `INV-NN`;
+  implementation model). C15 says: a bug or review finding that recurs becomes a check or a regression test in the
+  PR that fixes it, and is listed in `docs/plans/RECURRING.md`. Specs cite `spec §n` / `A-n` / `INV-NN`;
   uncovered edge cases go to `EDGE_CASES.md` (C18).
 - `README.md`: product paragraph (ARCHITECTURE §1), AGPL-3.0, how to start, layout, "Agents: read CLAUDE.md before
   changing anything."
